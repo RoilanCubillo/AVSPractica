@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReferenceGroup xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="005931a6-e8fc-477b-8151-489d60260809" xmlns="urn:schemas-microsoft-com:xml-wcfservicemap">
+  <ClientOptions>
+    <GenerateAsynchronousMethods>false</GenerateAsynchronousMethods>
+    <GenerateTaskBasedAsynchronousMethod>true</GenerateTaskBasedAsynchronousMethod>
+    <EnableDataBinding>true</EnableDataBinding>
+    <ExcludedTypes />
+    <ImportXmlTypes>false</ImportXmlTypes>
+    <GenerateInternalTypes>false</GenerateInternalTypes>
+    <GenerateMessageContracts>false</GenerateMessageContracts>
+    <NamespaceMappings />
+    <CollectionMappings />
+    <GenerateSerializableTypes>true</GenerateSerializableTypes>
+    <Serializer>Auto</Serializer>
+    <UseSerializerForFaults>true</UseSerializerForFaults>
+    <ReferenceAllAssemblies>true</ReferenceAllAssemblies>
+    <ReferencedAssemblies />
+    <ReferencedDataContractTypes />
+    <ServiceContractMappings />
+  </ClientOptions>
+  <MetadataSources>
+    <MetadataSource Address="http://192.168.137.219:7580/UltraERP_Service/AnaliticaService.svc" Protocol="http" SourceId="1" />
+  </MetadataSources>
+  <Metadata>
+    <MetadataFile FileName="AnaliticaService.disco" MetadataType="Disco" ID="215d659b-29cb-4178-8861-669a7160e7f3" SourceId="1" SourceUrl="http://192.168.137.219:7580/UltraERP_Service/AnaliticaService.svc?disco" />
+    <MetadataFile FileName="AnaliticaService.wsdl" MetadataType="Wsdl" ID="69180f7b-63ca-4242-ae0e-8bb64bbdc305" SourceId="1" SourceUrl="http://192.168.137.219:7580/UltraERP_Service/AnaliticaService.svc?wsdl" />
+    <MetadataFile FileName="AnaliticaService.xsd" MetadataType="Schema" ID="fec352e4-0603-49e9-acbd-7ac176e9fbda" SourceId="1" SourceUrl="http://192.168.137.219:7580/UltraERP_Service/AnaliticaService.svc?xsd=xsd2" />
+    <MetadataFile FileName="AnaliticaService1.xsd" MetadataType="Schema" ID="8065eba8-0902-4e0e-90b7-2d8ebf5e0a80" SourceId="1" SourceUrl="http://192.168.137.219:7580/UltraERP_Service/AnaliticaService.svc?xsd=xsd3" />
+    <MetadataFile FileName="AnaliticaService2.xsd" MetadataType="Schema" ID="3d4b41fb-14f3-4282-bb62-d0ad9e936f36" SourceId="1" SourceUrl="http://192.168.137.219:7580/UltraERP_Service/AnaliticaService.svc?xsd=xsd1" />
+    <MetadataFile FileName="AnaliticaService3.xsd" MetadataType="Schema" ID="e98bac09-5f43-43c8-a6a4-db492c4c5908" SourceId="1" SourceUrl="http://192.168.137.219:7580/UltraERP_Service/AnaliticaService.svc?xsd=xsd0" />
+  </Metadata>
+  <Extensions>
+    <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />
+    <ExtensionFile FileName="configuration.svcinfo" Name="configuration.svcinfo" />
+  </Extensions>
+</ReferenceGroup>

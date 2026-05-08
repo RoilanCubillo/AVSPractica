@@ -1,0 +1,1522 @@
+﻿@{
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+    var culture = System.Threading.Thread.CurrentThread.CurrentCulture;
+    var CurrencySymbol = culture.NumberFormat.CurrencySymbol;
+    var CurrencyDecimalSeparator = culture.Name.ToUpper() == "ES-CR" ? "." : culture.NumberFormat.CurrencyDecimalSeparator;
+    var CurrencyThousandSeparator = culture.Name.ToUpper() == "ES-CR" ? "," : culture.NumberFormat.NumberGroupSeparator;
+    var Name = Resources.views.mant_arts;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    <!-- Tempusdominus Bootstrap 4 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
+    <!-- Select2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+    <!-- iCheck for checkboxes and radio inputs -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/dist/css/adminlte.min.css">
+
+    <!-- moment.js -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- Select2 -->
+    <script src="~/Content/AdminLTE/plugins/select2/js/select2.full.min.js"></script>
+    <!-- Tempusdominus Bootstrap 4 -->
+    <script src="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+    <!-- InputMask -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/inputmask/jquery.inputmask.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6"><h1>@Name</h1></div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager", "Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">@Resources.views.inventario</li>
+                                <li class="breadcrumb-item active">@Resources.views.articulos</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Encabezado -->
+            <!-- Muestra de Artículos -->
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="col-md-12 mb-3" style="overflow: auto;">
+                                        <div class="row-cols-md-6">
+                                            <button type="button" class="btn btn-primary float-right fa-pull-right" onclick="onClickBtnAddItem()"><i class="fa fa-plus"> </i> @Resources.views.agregar</button>
+                                        </div>
+                                    </div>
+                                    @*
+                                        <div class="overlay-wrapper">
+                                            <div id="spn_tbl_items" class="overlay justify-content-center">
+                                                <i class="fas fa-3x fa-sync-alt fa-spin"></i>
+                                                <div class="text-bold pt-2">@Resources.views.cargando</div>
+                                            </div>
+
+                                            <div class="card card-primary card-outline">
+                                                <div id="spn_filter" class="overlay justify-content-center">
+                                                    <i class="fas fa-3x fa-sync-alt fa-spin"></i>
+                                                    <div class="text-bold pt-2">@Resources.views.cargando</div>
+                                                </div>
+                                                <div class="card-header">
+                                                    <h3 class="card-title">Filtros</h3>
+                                                    <div class="card-tools">
+                                                        <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                                                    </div>
+                                                </div>
+                                                <!-- /.card-header -->
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <div class="col-md-6">
+                                                            <div class="form-group">
+                                                                <label>@Resources.views.familias</label>
+                                                                <select id="select_families" class="form-control select2" multiple="multiple" data-placeholder="Seleccionar familias" style="width: 100%;"></select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6 d-inline-flex">
+                                                            <div class="form-group w-100">
+                                                                <label>@Resources.views.departs</label>
+                                                                <select id="select_deparments" class="form-control select2" multiple="multiple" data-placeholder="Seleccionar departamentos" style="width: 100%;"></select>
+                                                            </div>
+                                                            <div class="d-flex align-items-center ml-1 mb-3 mt-4">
+                                                                <button class="btn btn-primary rounded-circle" onclick="onClickBtnApplySelDepart()"><i class="fa fa-arrow-right"></i></button>
+                                                            </div>
+                                                        </div>
+                                                        <div id="div_select_categories" class="col-md-6">
+                                                            <div class="d-inline-flex w-100">
+                                                                <div class="form-group w-100">
+                                                                    <label>@Resources.views.categs</label>
+                                                                    <select id="select_categories" class="form-control select2" multiple="multiple" data-placeholder="Seleccionar categorías" style="width: 100%;" disabled="disabled"></select>
+                                                                </div>
+                                                                <div class="d-flex align-items-center ml-1 mb-3 mt-4">
+                                                                    <button class="btn btn-primary rounded-circle" onclick="onClickBtnApplySelCategs()"><i class="fa fa-arrow-right"></i></button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div id="div_select_subCategories" class="col-md-6">
+                                                            <div class="d-inline-flex w-100">
+                                                                <div class="form-group w-100">
+                                                                    <label>@Resources.views.subCategoria</label>
+                                                                    <select id="select_subCategories" class="form-control select2" multiple="multiple" data-placeholder="Seleccionar subcategorías" style="width: 100%;" disabled="disabled"></select>
+                                                                </div>
+                                                                <div class="d-flex align-items-center ml-1 mb-3 mt-4">
+                                                                    <button class="btn btn-primary rounded-circle" onclick="onClickBtnApplySelSubCategs()"><i class="fa fa-arrow-right"></i></button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div id="div_select_segments" class="col-md-6">
+                                                            <div class="form-group">
+                                                                <label>@Resources.views.segmento</label>
+                                                                <select id="select_segments" class="form-control select2" multiple="multiple" data-placeholder="Seleccionar segmentos" style="width: 100%;" disabled="disabled"></select>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-md-6">
+                                                            <div class="form-group">
+                                                                <label>@Resources.views.buscar</label>
+                                                                <input id="inputSearch" type="text" name="table_search" class="form-control" placeholder="@Resources.messages.validacion_ing_valor" style="width: 100%;">
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <button type="button" class="btn btn-primary w-100" onclick="onClickBtnSearch()"><i class="fa fa-search"></i></button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    *@
+                                    <div id="tbl_content_items" class="dataTables_wrapper dt-bootstrap4">
+                                        <table class="table table-striped table-bordered text-sm text-nowrap"></table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="modal fade" id="modal_item">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <!-- Spinner Modal -->
+                        <div id="spn_modal_items" class="overlay">
+                            <div class="d-table-cell justify-content-center">
+                                <i class="fas fa-2x fa-sync fa-spin d-flex justify-content-center"></i>
+                                <h3 id="spn_modal_text"></h3>
+                            </div>
+                        </div><!-- Spinner Modal -->
+                        <!-- Encabezado Modal -->
+                        <div class="modal-header text-center">
+                            <h4 id="modal_title" class="modal-title"></h4>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div><!-- Encabezado Modal -->
+                        @**@
+                        <div class="modal-body">
+                            <div class="card card-info card-tabs">
+                                <div class="card-header p-0 pt-2 px-1 overflow-auto">
+                                    <ul class="nav nav-tabs" role="tablist">
+                                        <li class="nav-item"><a class="nav-link active" id="nav_tab_general" data-toggle="pill" role="tab" href="#tab_general" aria-controls="tab_general" aria-selected="true">General</a></li>
+                                        <li class="nav-item"><a class="nav-link" id="nav_tab_cost_price" data-toggle="pill" role="tab" href="#tab_cost_price" aria-controls="tab_cost_price" aria-selected="false">Costos/Precios</a></li>
+                                        <li class="nav-item"><a class="nav-link" id="nav_tab_detalles" data-toggle="pill" role="tab" href="#tab_detalles" aria-controls="tab_detalles" aria-selected="false">Detalles por tienda</a></li>
+                                    </ul>
+                                </div>
+                                <div class="card-body">
+                                    <div class="tab-content">
+                                        <div class="tab-pane fade show active" id="tab_general" role="tabpanel" aria-labelledby="nav_tab_general">
+                                            <form id="form_general">
+                                                <div class="row">
+                                                    <div class="col-lg-6">
+                                                        <div class="card card-teal">
+                                                            <div class="card-header pb-1">
+                                                                <h3 class="card-title">Información General</h3>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <input id="itemID" type="hidden" />
+                                                                <div class="form-group">
+                                                                    <label for="itemlookupcode" class="text-truncate" title="Código de búsqueda del artículo">Código de búsqueda del artículo:</label>
+                                                                    <input class="form-control" id="itemlookupcode" placeholder="Código de búsqueda del artículo..." name="itemlookupcode" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="description" class="text-truncate">Descripción Corta:</label>
+                                                                    <input class="form-control" id="description" placeholder="Descripción corta..." name="description" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="extdescription" class="text-truncate" title="Descripción extra">Descripción Larga:</label>
+                                                                    <textarea class="form-control" id="extdescription" placeholder="Descripción larga..." name="extdescription" s="2"></textarea>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="card card-teal">
+                                                            <div class="card-header pb-1">
+                                                                <h3 class="card-title">Segmentación del producto</h3>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <div class="form-group">
+                                                                    <label for="family" class="text-truncate">@Resources.views.familia:</label>
+                                                                    <select class="form-control select2" id="family" name="family" data-placeholder="Seleccionar familia" style="width: 100%;"></select>
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="department" class="text-truncate">@Resources.views.depart (Categoría):</label>
+                                                                    <select class="form-control select2" id="department" name="department" data-placeholder="Seleccionar departamento" style="width: 100%;"></select>
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="category" class="text-truncate">@Resources.views.categ (Subcategoría):</label>
+                                                                    <select class="form-control select2" id="category" name="category" data-placeholder="Seleccionar categoría" style="width: 100%;"></select>
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="subcategory" class="text-truncate">@Resources.views.subCategoria (Segmento):</label>
+                                                                    <select class="form-control select2" id="subcategory" name="subcategory" data-placeholder="Seleccionar subcategoría" style="width: 100%;"></select>
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="segment" class="text-truncate">@Resources.views.segmento (Subsegmento):</label>
+                                                                    <select class="form-control select2" id="segment" name="segment" data-placeholder="Seleccionar segmento" style="width: 100%;"></select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="card card-teal">
+                                                            <div class="card-header pb-1">
+                                                                <h3 class="card-title">Segmentación Adicional</h3>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <div class="row">
+                                                                    <div class="form-group col-12">
+                                                                        <label for="manufacturer" class="text-truncate">Fabricante:</label>
+                                                                        <select class="form-control select2" id="manufacturer" name="manufacturer" data-placeholder="Seleccionar fabricante" style="width: 100%;"></select>
+                                                                    </div>
+                                                                    <div class="form-group col-12">
+                                                                        <label for="brand" class="text-truncate">Marca:</label>
+                                                                        <select class="form-control select2" id="brand" name="brand" data-placeholder="Seleccionar marca" style="width: 100%;"></select>
+                                                                    </div>
+                                                                    <div class="form-group col-12">
+                                                                        <label for="purchaser" class="text-truncate">Casa comercial:</label>
+                                                                        <select class="form-control select2" id="purchaser" name="purchaser" data-placeholder="Seleccionar Casa Comercial" style="width: 100%;"></select>
+                                                                    </div>
+                                                                    <div class="form-group col-12">
+                                                                        <label for="supplier" class="text-truncate">Proveedor:</label>
+                                                                        <select class="form-control select2 W-100" id="supplier" name="supplier" data-placeholder="Seleccionar Proveedor" style="width: 100%;"></select>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-lg-6">
+                                                        <div class="card card-teal">
+                                                            <div class="card-header pb-1"><h3 class="card-title">Cabys/Contenido/UOM</h3></div>
+                                                            <div class="card-body">
+                                                                <div class="row">
+                                                                    <div class="col-12">
+                                                                        <div class="form-group">
+                                                                            <label for="cabys" class="text-truncate" title="Cabys">Cabys:</label>
+                                                                            <div class="d-inline-flex w-100">
+                                                                                <input type="text" class="form-control w-100" id="cabys" name="cabys" placeholder="Código cabys" />
+                                                                                <a href="https://api.hacienda.go.cr/fe/cabys/test" class="btn btn-primary ml-1" title="Buscar código cabys" target="_blank"> <i class="fa fa-search"></i></a>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-12">
+                                                                        <div class="form-group">
+                                                                            <label for="subdescription4" class="text-truncate">Contenido</label>
+                                                                            <input type="text" class="form-control" id="subdescription4" name="subdescription4" />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-12">
+                                                                        <div class="form-group">
+                                                                            <label for="uom" class="text-truncate">Unidad de Medida (UOM):</label>
+                                                                            <select class="form-control select2" id="uom" name="uom" data-placeholder="Seleccionar UOM" style="width: 100%;"></select>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="card card-teal">
+                                                            <div class="card-header pb-1">
+                                                                <h3 class="card-title">Subdescripciones Adicionales</h3>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <div class="form-group">
+                                                                    <label for="subdescription5" class="text-truncate">Habladores</label>
+                                                                    <input type="text" class="form-control" id="subdescription5" name="subdescription5" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="subdescription6" class="text-truncate">Subdescripción 6</label>
+                                                                    <input type="text" class="form-control" id="subdescription6" name="subdescription6" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="subdescription7" class="text-truncate">Subdescripción 7</label>
+                                                                    <input type="text" class="form-control" id="subdescription7" name="subdescription7" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="subdescription8" class="text-truncate">Subdescripción 8</label>
+                                                                    <input type="text" class="form-control" id="subdescription8" name="subdescription8" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="subdescription9" class="text-truncate">Subdescripción 9</label>
+                                                                    <input type="text" class="form-control" id="subdescription9" name="subdescription9" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="subdescription10" class="text-truncate">Subdescripción 10</label>
+                                                                    <input type="text" class="form-control" id="subdescription10" name="subdescription10" />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="card card-teal">
+                                                            <div class="card-header pb-1">
+                                                                <h3 class="card-title">Costos/Precios</h3>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <div class="row">
+                                                                    <div class="col-12">
+                                                                        <label>Tiendas a actualizar:</label>
+                                                                        <div class="d-inline-flex w-100">
+                                                                            <div class="form-group m-0 p-0 w-100">
+                                                                                <select id="stores" name="stores" class="form-control select2 w-100" multiple="multiple" data-placeholder="Seleccionar tiendas a actualizar"></select>
+                                                                            </div>
+                                                                            <div class="d-flex align-items-center input-group-text p-0">
+                                                                                <div class="icheck-primary d-inline px-1 ml-1">
+                                                                                    <input type="checkbox" id="chkAllStore">
+                                                                                    <label for="chkAllStore"></label>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div class="col-12">
+                                                                        <div class="form-group">
+                                                                            <label class="control-label">@Resources.views.IVA:</label>
+                                                                            <select id="select2_iva" name="select2_iva" class="form-control select2" data-placeholder="@Resources.views.buscar" style="width: 100%;"></select>
+                                                                            <input type="hidden" id="porcentaje" />
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-group">
+                                                                            <label for="cost" class="col-12 text-truncate">Costo:</label>
+                                                                            <div class="input-group">
+                                                                                <div class="input-group-prepend"><span class="input-group-text"><i class="fas">@CurrencySymbol</i></span></div>
+                                                                                <input id="cost" type="text" name="cost" class="form-control" data-inputmask="'alias' : 'currency', 'groupSeparator':'@CurrencyThousandSeparator', 'radixPoint':'@CurrencyDecimalSeparator'" data-mask />
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label for="msrp" class="col-12 text-truncate">Impuesto específico:</label>
+                                                                            <div class="input-group">
+                                                                                <div class="input-group-prepend"><span class="input-group-text"><i class="fas">@CurrencySymbol</i></span></div>
+                                                                                <input id="msrp" type="text" name="msrp" class="form-control" data-inputmask="'alias' : 'currency', 'groupSeparator':'@CurrencyThousandSeparator', 'radixPoint':'@CurrencyDecimalSeparator'" data-mask />
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div class="col-md-6">
+                                                                        <div class="form-group">
+                                                                            <label for="invoice-discount" class="col-12 text-truncate">Descuento en factura:</label>
+                                                                            <div class="input-group">
+                                                                                <input id="invoice-discount" type="text" name="invoice-discount" class="form-control" data-inputmask="'alias': 'decimal', 'digits':'2'" placeholder="0~99" data-mask />
+                                                                                <div class="input-group-append"><span class="input-group-text"><i class="fas">%</i></span></div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label for="customer-discount" class="col-12 text-truncate">Descuento para cliente:</label>
+                                                                            <div class="input-group">
+                                                                                <input id="customer-discount" type="text" name="customer-discount" class="form-control" data-inputmask="'alias': 'decimal', 'digits':'2'" placeholder="0~99" data-mask />
+                                                                                <div class="input-group-append"><span class="input-group-text"><i class="fas">%</i></span></div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-12">
+                                                                        <div class="form-group row">
+                                                                            <label for="utility" class="col-sm-5 col-form-label text-truncate">Utilidad Sugerida:</label>
+                                                                            <div class="input-group col-sm-7">
+                                                                                <input id="utility" type="text" name="utility" class="form-control" data-inputmask="'alias': 'decimal', 'digits':'2'" placeholder="0~100" data-mask />
+                                                                                <div class="input-group-append"><span class="input-group-text"><i class="fas">%</i></span></div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-12">
+                                                                        <div class="form-group row">
+                                                                            <label for="real-utility" class="col-sm-5 col-form-label text-truncate">Utilidad Real:</label>
+                                                                            <div class="input-group col-sm-7">
+                                                                                <input id="real-utility" type="text" disabled name="real_utility" class="form-control" data-inputmask="'alias': 'decimal', 'digits':'8'" data-mask placeholder="0" />
+                                                                                <div class="input-group-append"><span class="input-group-text"><i class="fas">%</i></span></div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                </div>
+                                                                <div class="list-seperator"></div><div class="d-flex justify-content-center"><strong class="text-truncate">Previa de costos y precios finales</strong></div><div class="list-seperator"></div>
+                                                                <div class="form-group row">
+                                                                    <label for="final-cost" class="col-sm-7 col-form-label text-truncate">Costo de compra final:</label>
+                                                                    <div class="input-group col-sm-5">
+                                                                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas">@CurrencySymbol</i></span></div>
+                                                                        <input disabled id="final-cost" type="text" class="form-control" data-inputmask="'alias' : 'currency', 'groupSeparator':'@CurrencyThousandSeparator', 'radixPoint':'@CurrencyDecimalSeparator'" data-mask />
+                                                                    </div>
+                                                                </div>
+                                                                <div class="form-group row">
+                                                                    <label for="final-price" class="col-sm-7 col-form-label text-truncate">Precio de venta final (Sin IVA):</label>
+                                                                    <div class="input-group col-sm-5">
+                                                                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas">@CurrencySymbol</i></span></div>
+                                                                        <input disabled id="final-price" type="text" class="form-control" data-inputmask="'alias' : 'currency', 'groupSeparator':'@CurrencyThousandSeparator', 'radixPoint':'@CurrencyDecimalSeparator'" data-mask />
+                                                                    </div>
+                                                                </div>
+                                                                <div class="form-group row">
+                                                                    <label for="final-price-iva" class="col-sm-7 col-form-label text-truncate">Precio de venta final (Con IVA):</label>
+                                                                    <div class="input-group col-sm-5">
+                                                                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas">@CurrencySymbol</i></span></div>
+                                                                        <input disabled id="final-price-iva" type="text" class="form-control" data-inputmask="'alias' : 'currency', 'groupSeparator':'@CurrencyThousandSeparator', 'radixPoint':'@CurrencyDecimalSeparator'" data-mask />
+                                                                    </div>
+                                                                </div>
+                                                                <div class="form-group row">
+                                                                    <label for="real-price" class="col-sm-7 col-form-label text-truncate">Precio final Real:</label>
+                                                                    <div class="input-group col-sm-5">
+                                                                        <div class="input-group-prepend"><span class="input-group-text"><i class="fas">@CurrencySymbol</i></span></div>
+                                                                        <input disabled id="real-price" type="text" class="form-control" data-inputmask="'alias' : 'currency', 'groupSeparator':'@CurrencyThousandSeparator', 'radixPoint':'@CurrencyDecimalSeparator'" data-mask />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        <div class="tab-pane fade show" id="tab_cost_price" role="tabpanel" aria-labelledby="nav_tab_cost_price">
+                                            <div class="row">
+                                                <div class="card card-teal col-12 p-0">
+                                                    <div class="card-header p-0 pt-2 px-1">
+                                                        <h3 class="card-title">Proveedores</h3>
+                                                        <div class="card-tools">
+                                                            <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div id="content_item_suppliers" class="dataTables_wrapper dt-bootstrap4">
+                                                            <table class="table table-striped table-bordered text-sm display responsive m-0">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Primario</th>
+                                                                        <th>Cod. Proveedor</th>
+                                                                        <th>Proveedor</th>
+                                                                        <th>N° Re-orden</th>
+                                                                        <th>Costo</th>
+                                                                        <th>Tax</th>
+                                                                    </tr>
+                                                                </thead>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="card card-teal col-12 p-0">
+                                                    <div class="card-header p-0 pt-2 px-1">
+                                                        <h3 class="card-title">Costo del artículo del proveedor</h3>
+                                                        <div class="card-tools">
+                                                            <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div id="content_item_supplierPrices" class="dataTables_wrapper dt-bootstrap4">
+                                                            <table class="table table-striped table-bordered text-sm display responsive m-0">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Cod. Proveedor</th>
+                                                                        <th>Proveedor</th>
+                                                                        <th>Cant. Mínima</th>
+                                                                        <th>Fecha de inicio</th>
+                                                                        <th>Fecha finalización</th>
+                                                                        <th>Costo</th>
+                                                                    </tr>
+                                                                </thead>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade show" id="tab_detalles" role="tabpanel" aria-labelledby="nav_tab_detalles">
+                                            <div id="div_tbl_details" class="dataTables_wrapper dt-bootstrap4">
+                                                <table class="table table-striped table-bordered text-sm display responsive">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>@Resources.views.tienda</th>
+                                                            <th>Cantidad Inventario</th>
+                                                            <th>Costo Promedio</th>
+                                                            <th>Costo Bruto</th>
+                                                            <th>Utilidad</th>
+                                                            <th>Desc. Factura</th>
+                                                            <th>Desc. Cliente</th>
+                                                            <th>Proveedor</th>
+                                                            <th>Ult. Fecha Ajuste</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @**@
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="onClickBtnNewItem()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                            <button type="button" class="btn btn-success" onclick="onClickBtnSaveItem()"> <i class="fa fa-save"></i> @Resources.views.guardar</button>
+                            <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    @* Variables *@
+    <script>
+        var urls = {
+            url_getAllItemsDynamic: '@Url.Action("GetDynamicJson", "Articulos")',
+            details: '@Url.Action("GetItemsDetail", "Articulos")',
+            getCategoriesItem: '@Url.Action("GetCategoriesByDepartmentID", "Articulos")',
+            getSubCategoriesItem: '@Url.Action("GetSubcategoriesByCategoryID", "Articulos")',
+            getSegmentsItem: '@Url.Action("GetSegmentsBySubCategoryID", "Articulos")',
+            saveItem: '@Url.Action("SaveItem", "Articulos")',
+            stores_ItemStatus: '@Url.Action("GetStores_ItemStatus", "Articulos")',
+        };
+        var urls_data = {
+            initial: '@Url.Action("GetInitialData", "Articulos")',
+            categories: '@Url.Action("GetListCategoriesByDepartments", "Articulos")',
+            subcategories: '@Url.Action("GetListSubcategoriesByCategories", "Articulos")',
+            departs: '@Url.Action("GetDepartments", "Articulos")',
+            segments: '@Url.Action("GetSegmentsBySubCategories", "Articulos")'
+        };
+        var elements = {
+            div_table: "tbl_content_items", spn_table: "spn_tbl_items", spn_modal: "spn_modal_items", spn_filter: "spn_filter",
+            select_families: null, select_departs: null, select_categories: null, select_subCategories: null, select_stores: null,
+            title_modal: "modal_title", modal: "modal_item", form_general: "form_item_general",
+            tbl_detail: "div_tbl_details", tbl_supplier: "content_item_suppliers", tbl_supplierPrice: "content_item_supplierPrices"
+        };
+        var gItem = null;
+        var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4000 });
+        var list_families = [], list_departments = [], list_categories = [], list_subCategories = [], list_segments = [], list_tax= [];
+        var list_details = [];
+        var list_dtItems = { categories: [], subcategories: [], segments: [], brands: [], manufacturers: [], purchasers: [], suppliers: [], supplierPrices: [], uoms: [], taxes: [], stores: [] };
+        var item_type = { 0: 'Standdar', 1:'Serialized', 3: 'Kit', 6:'Pesado', 7:'Non-Inventory' };
+        var dt, dtd, sdtd, pdtd, val_selects_departs = -1, val_selects_categs = -1;
+        var threads_ids = { catID: null, subCatID: null, segID: null };
+        var validate = {
+            rules: {
+                data_general: {
+                    itemlookupcode: { required: true, maxlength: 25 },
+                    description: { required: true, maxlength: 80 },
+                    extdescription: { required: true },
+                    cabys: { required: true, maxlength: 30 },
+                    family: { required: true, number: true },
+                    department: { required: true, number: true },
+                    category: { required: true, number: true },
+                    subcategory: { required: false, number: true },
+                    segment: { required: false, number: true },
+                    supplier: { required: true },
+                    select2_iva: { required: true },
+                    cost: { required: true, number: true },
+                    msrp: { required: true, number: true },
+                    utility: { required: true, number: true, min: 0.01, max: 800 },
+                    "invoice-discount": { required: true, number: true, min: 0, max: 99 },
+                    "customer-discount": { required: true, number: true, min: 0, max: 99 },
+                    subdescription4: { maxlength: 30 }, // Contenido
+                    subdescription5: { maxlength: 38 }, // Habladores
+                    subdescription6: { maxlength: 80 }, //
+                    subdescription7: { maxlength: 80 }, // Subdescripciones
+                    subdescription8: { maxlength: 80 }, //
+                    subdescription9: { maxlength: 80 }, //
+                    subdescription10: { maxlength: 80 },//
+                    stores: { required: function (el) { return +$('#itemID').val() > 0; } }
+                }
+            },
+            messages: {
+                data_general: {
+                    itemlookupcode: { required: "@Resources.messages.validacion_req", maxlength: "@Resources.messages.validacion_max" },
+                    description: { required: "@Resources.messages.validacion_req", maxlength: "@Resources.messages.validacion_max" },
+                    extdescription: { required: "@Resources.messages.validacion_req", maxlength: "@Resources.messages.validacion_max" },
+                    cabys: { required: "@Resources.messages.validacion_req", maxlength: "@Resources.messages.validacion_max" },
+                    family: { required: "@Resources.messages.validacion_req", number: "@Resources.messages.validacion_invalid" },
+                    department: { required: "@Resources.messages.validacion_req", number: "@Resources.messages.validacion_invalid" },
+                    category: { required: "@Resources.messages.validacion_req", number: "@Resources.messages.validacion_invalid" },
+                    subcategory: { required: "@Resources.messages.validacion_req", number: "@Resources.messages.validacion_invalid" },
+                    segment: { required: "@Resources.messages.validacion_req", number: "@Resources.messages.validacion_invalid" },
+                    supplier: { required: "@Resources.messages.validacion_req" },
+                    select2_iva: { required: "@Resources.messages.validacion_req" },
+                    cost: { required: "Costo inválido", number: "@Resources.messages.validacion_invalid", min: "El costo debe ser mayor a 0." },
+                    msrp: { required: "@Resources.messages.validacion_req", number: "@Resources.messages.validacion_invalid", min: "El costo debe ser mayor a 0." },
+                    utility: { required: "@Resources.messages.validacion_req", number: "@Resources.messages.validacion_invalid", min: "@Resources.messages.validacion_cant_may_0", max: "El valor debe ser menor a 100." },
+                    "invoice-discount": { required: "@Resources.messages.validacion_req", number: "@Resources.messages.validacion_invalid", min: "@Resources.messages.validacion_cant_may_0", max: "El valor debe ser menor a 100." },
+                    "customer-discount": { required: "@Resources.messages.validacion_req", number: "@Resources.messages.validacion_invalid", min: "@Resources.messages.validacion_cant_may_0", max: "El valor debe ser menor a 100." },
+                    subdescription4: { maxlength: "@Resources.messages.validacion_max" },
+                    subdescription5: { maxlength: "@Resources.messages.validacion_max" },
+                    subdescription6: { maxlength: "@Resources.messages.validacion_max" },
+                    subdescription7: { maxlength: "@Resources.messages.validacion_max" },
+                    subdescription8: { maxlength: "@Resources.messages.validacion_max" },
+                    subdescription9: { maxlength: "@Resources.messages.validacion_max" },
+                    subdescription10: { maxlength: "@Resources.messages.validacion_max" },
+                    stores: { required: 'Debe seleccionar por lo menos una tienda.' }
+                }
+            }
+        }
+    </script>
+
+    <script>
+        /** Función initialize */
+        $(async function () {
+            fillMenuItemsLayout();
+            initStutasElements();
+            initDataPlugins();
+            setOnChanges();
+            getInitialData();
+            setAllValidationsForm();
+        });
+
+        function initStutasElements() {
+            $("#div_select_categories").hide();
+            $("#div_select_subCategories").hide();
+            $("#div_select_segments").hide();
+            $("#" + elements.spn_table).hide();
+            $("#" + elements.spn_modal).hide();
+            $("#" + elements.spn_filter).hide();
+            $("#category").prop('disabled', true);
+            $("#subcategory").prop('disabled', true);
+            $("#segment").prop('disabled', true);
+            $("#department").prop('disabled', true);
+        }
+
+        function initDataPlugins() {
+            $('[data-mask]').inputmask();
+            $(".select2").select2();
+            $('.datetimepicker-input').datetimepicker({ format: 'DD/MM/YYYY', });
+            initDataTable();
+            initDataTableDetail();
+            initDataTableDetailSupplier();
+            initDataTableDetailSupplierPrice();
+            $(document).on('shown.bs.modal', function (e) {
+                $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+            });
+            $('a[data-toggle="pill"]').on('shown.bs.tab', function (e) {
+                $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+            });
+            elements.select_stores = $('#stores').select2();
+            $('#chkAllStore').click(function () {
+                var status = $('#chkAllStore').is(":checked");
+                if (status) {
+                    $('#stores').find('option').prop("selected", true);
+                    $('#stores').trigger('change');
+                } else $('#stores').val(null).trigger("change");
+            });
+            $('#stores').on('select2:select', function (e) {
+                if ($('#stores').find(':selected').length === list_dtItems.stores.length) $('#chkAllStore').prop("checked", true);
+                else $('#chkAllStore').prop("checked", false);
+            });
+            $('#stores').on('select2:unselect', function (e) {
+                if ($('#stores').find(':selected').length === list_dtItems.stores.length) $('#chkAllStore').prop("checked", true);
+                else $('#chkAllStore').prop("checked", false);
+            });
+            $('#stores').on('select2:clear', function (e) { $('#chkAllStore').prop("checked", false); });
+        }
+
+        function initDataTableDetail() {
+            dtd = $("#" + elements.tbl_detail + " > table").DataTable({
+                dom: "<'row' <'mb-1 col-12'B><'col-lg-6'l><'col-lg-6'f>>" +
+                    "<'row' <'col-12't>>" +
+                    "<'row' <'col-md-6'i><'col-md-6'p>>",
+                language: dtable_i18n, paging: true, lengthChange: true, searching: true,
+                serverSide: false, autoWidth: false, ordering: true, destroy: true,
+                processing: true, responsive: true, buttons: ['excel', 'colvis']
+            });
+        }
+
+        function initDataTableDetailSupplier() {
+            sdtd = $("#" + elements.tbl_supplier + " > table").DataTable({
+                dom: "<'row' <'mb-1 col-12'B><'col-lg-6'l><'col-lg-6'f>>" +
+                    "<'row' <'col-12't>>" +
+                    "<'row' <'col-md-6'i><'col-md-6'p>>",
+                language: dtable_i18n, paging: true, lengthChange: true, searching: true,
+                serverSide: false, autoWidth: false, ordering: true, destroy: true,
+                processing: true, responsive: true, buttons: ['excel', 'colvis']
+            });
+        }
+
+        function initDataTableDetailSupplierPrice() {
+            pdtd = $("#" + elements.tbl_supplierPrice + " > table").DataTable({
+                dom: "<'row' <'mb-1 col-12'B><'col-lg-6'l><'col-lg-6'f>>" +
+                    "<'row' <'col-12't>>" +
+                    "<'row' <'col-md-6'i><'col-md-6'p>>",
+                language: dtable_i18n, paging: true, lengthChange: true, searching: true,
+                serverSide: false, autoWidth: false, ordering: true, destroy: true,
+                processing: true, responsive: true, buttons: ['excel', 'colvis']
+            });
+        }
+
+        async function initDataTable() {
+            dt = $("#" + elements.div_table + " > table").DataTable({
+                ajax: {
+                    url: urls.url_getAllItemsDynamic, type: 'POST', datatype: 'json',
+                    data: function (d) {
+                        var data = $.extend({}, d, {
+                            "filtered": $('#inputSearch').val(),
+                            families: [], //$("#select_families").select2('data').map(d => { return d.id }),
+                            departments: [], //$("#select_deparments").select2('data').map(d => { return d.id }),
+                            categories: [], //$("#select_categories").select2('data').map(d => { return d.id }),
+                            subCategories: [], //$("#select_subCategories").select2('data').map(d => { return d.id }),
+                            segments: [], //$("#select_segments").select2('data').map(d => { return d.id }),
+                        });
+                        return data;
+                    },
+                },
+                columns: [
+                    { title: 'Código', data: 'ItemLookupCode' },
+                    { title: 'Descripción', data: 'Description' },
+                    { title: 'Descripción extendida', visible: false, data: 'ExtendedDescription' },
+                    { title: 'Tipo de artículo', data: 'ItemType', render: function (data, type, row, meta) { return type == 'display' ? item_type[data] : data; } },
+                    { title: 'Cantidad', data: 'Quantity' },
+                    { title: 'Precio', data: 'Price' },
+                    { title: 'Precio A', data: 'PriceA' }, { title: 'Precio B', data: 'PriceB' }, { title: 'Precio C', data: 'PriceC' },
+                    { title: 'Cod. Familia', visible: false, data: 'FamilyCode' }, { title: 'Familia', data: 'FamilyName' },
+                    { title: 'Cod. Departamento', visible: false, data: 'DepartmentCode' }, { title: 'Departamento', data: 'DepartmentName' },
+                    { title: 'Cod. Categoría', visible: false, data: 'CategoryCode' }, { title: 'Categoría', data: 'CategoryName' },
+                    { title: 'Cod. Subcategoría', visible: false, data: 'SubCategoryCode' }, { title: 'Subcategoría', data: 'SubCategoryName' },
+                    { title: 'Cod. Segmento', visible: false, data: 'SegmentCode' }, { title: 'Segmento', data: 'SegmentName' },
+                    { title: 'Cod. Fabricante', visible: false, data: 'ManufacturerID' }, { title: 'Fabricante', data: 'ManufacturerDescription' },
+                    { title: 'Cod. Marca', visible: false, data: 'BrandID' }, { title: 'Marca', data: 'BrandDescription' },
+                    { title: 'Cod. Casa Comercial', visible: false, data: 'PurchaserCode' }, { title: 'Casa Comercial', data: 'PurchaserName' },
+                    { title: 'Última actualización', data: 'LastUpdatedAux' },
+                    {
+                        orderable: false, data: 'ID', render: function (data, type, row, meta) {
+                            var title = "@Resources.views.editar @Resources.views.articulo";
+                            return type == 'display' ? "<td><button class='btn btn-primary' title='" + title + "' data-toggle='modal' data-target='' onClick='onClickBtnEditItem(" + data + ")'> <i class='fa fa-edit' aria-hidden='true'></i></button></td>" : data;
+                        }
+                    }
+                ],
+                dom: `<'row' <'col-md-6'l><'col-md-6'f><'col-12 col-md-6'B>>
+                    <'row' <'col-12'tr>>
+                    <'row' <'col-12 col-md-6'i><'col-12 col-md-6'p>>`,
+                language: dtable_i18n, paging: true, lengthChange: true,
+                serverSide: true, autoWidth: false, ordering: true,
+                processing: true, deferLoading: 0, responsive: true, buttons: ['colvis', 'pdf', 'excel'],
+            });
+            $(".dataTables_filter").html($(`<div class="input-group justify-content-end p-0 mb-2 mb-md-0">
+                                        <input id="inputSearch" type="text" name="table_search" class="form-control" placeholder="Buscar..." style="max-width:450px">
+                                        <button id="btnClearSearch" class="btn bg-transparent position-absolute mr-5" style="z-index: 100;" onclick="onClickCBtnClearSearch()"><i class="fa fa-times"></i></button>
+                                        <div class="input-group-append">
+                                            <button type="button" class="btn btn-default" onclick="onClickBtnSearch()"><i class="fas fa-search"></i></button>
+                                        </div>
+                                    </div>`));
+            $('#inputSearch').keyup(function (e) { if (e.keyCode == 13) onClickBtnSearch(); });
+        }
+
+        async function fillTableDetails() {
+            try {
+                dtd.destroy();
+                $("#" + elements.tbl_detail + " table > tbody").html(null);
+                if (list_details.length > 0) {
+                    await list_details.forEach(function (i) {
+                        var row = $("<tr />");
+                        $("#" + elements.tbl_detail + " > table").append(row);
+                        row.append($("<td> " + i.StoreName + "</td>"));
+                        row.append($("<td> " + i.Quantity + "</td>"));
+                        row.append($("<td> " + i.Cost + "</td>"));
+                        row.append($("<td> " + i.GrossCost + "</td>"));
+                        row.append($("<td> " + i.Utility + "</td>"));
+                        row.append($("<td> " + i.InvoiceDiscount + "</td>"));
+                        row.append($("<td> " + i.CustomerDiscount + "</td>"));
+                        row.append($("<td> " + i.SupplierName + "</td>"));
+                        row.append($("<td> " + i.LastReceivedAux + "</td>"));
+
+                    });
+                }
+                initDataTableDetail();
+            } catch (e) { error(e, "@Resources.messages.error_llenar_registros"); }
+        }
+
+        async function fillTableDetailSuppliers() {
+            try {
+                sdtd.destroy();
+                $("#" + elements.tbl_supplier + " table > tbody").html(null);
+                if (list_dtItems.suppliers.length > 0) {
+                    await list_dtItems.suppliers.forEach(function (i) {
+                        var row = $("<tr />");
+                        $("#" + elements.tbl_supplier + " > table").append(row);
+                        row.append($(`<td>${i.IsPrimary ? '<span class="badge bg-success">PRIMARIO</span>' : ''}</td>`));
+                        row.append($("<td> " + i.SupplierCode + "</td>"));
+                        row.append($("<td> " + i.SupplierName + "</td>"));
+                        row.append($("<td> " + i.ReorderNumber + "</td>"));
+                        row.append($("<td> " + i.Cost + "</td>"));
+                        row.append($("<td> " + i.TaxRate + "</td>"));
+                    });
+                }
+                initDataTableDetailSupplier();
+            } catch (e) { error(e, "@Resources.messages.error_llenar_registros"); }
+        }
+
+        async function fillTableDetailSuppliersPrices() {
+            try {
+                pdtd.destroy();
+                $("#" + elements.tbl_supplierPrice + " table > tbody").html(null);
+                if (list_dtItems.supplierPrices.length > 0) {
+                    await list_dtItems.supplierPrices.forEach(function (i) {
+                        var row = $("<tr />");
+                        $("#" + elements.tbl_supplierPrice + " > table").append(row);
+                        row.append($("<td> " + i.SupplierCode + "</td>"));
+                        row.append($("<td> " + i.SupplierName + "</td>"));
+                        row.append($("<td> " + i.MinQuantity + "</td>"));
+                        row.append($("<td> " + i.StartingDateAux + "</td>"));
+                        row.append($("<td> " + i.EndingDateAux + "</td>"));
+                        row.append($("<td> " + i.UnitCost + "</td>"));
+                    });
+                }
+                initDataTableDetailSupplierPrice();
+            } catch (e) { error(e, "@Resources.messages.error_llenar_registros"); }
+        }
+
+        function fillSelectStores() {
+            if (elements.select_stores) {
+                elements.select_stores.val(null).trigger("change");
+                elements.select_stores.html(null).trigger("change");
+                elements.select_stores.select2("destroy");
+            }
+            elements.select_stores = $('#stores').select2({
+                closeOnSelect: false,
+                allowClear: true,
+                data: list_dtItems.stores.map(s => { return { id: s.IDS, text: s.NameS }; })
+            });
+
+            elements.select_stores.val(gItem.StoresSelected.split(',')).trigger("change");
+
+            if ($('#stores').find(':selected').length === list_dtItems.stores.length) $('#chkAllStore').prop("checked", true);
+            else $('#chkAllStore').prop("checked", false);
+        }
+
+        /** Marca los items del menú del MainLayout para que se muestre en qué parte del menú se encuentra*/
+        function fillMenuItemsLayout() {
+            openMenu(["#nav-item-inventarios"]);
+            activeItemMenu([".nav-item-inventarios", "#nav-link-inventarios-articulos"])
+        }
+
+        function fillSelectFamilies() {
+            var data = list_families.map(d => { return { 'id': d.ID, 'text': d.Name } });
+
+            $("#select_families").select2("destroy");
+            elements.select_families = $("#select_families").select2({ data: data, allowClear: true, tags: true, closeOnSelect: false });
+
+            $("#family").select2("destroy");
+            $("#family").select2({ data: data, allowClear: true, tags: true });
+            $("#family").val(0).trigger('change');
+        }
+
+        function fillSelectDeparmets() {
+            var data = list_departments.map(d => { return { 'id': d.ID, 'text': d.Name } });
+            $("#select_deparments").select2("destroy");
+            elements.select_departs = $("#select_deparments").select2({ data: data, allowClear: true, closeOnSelect: false});
+        }
+
+        function fillSelectCategories() {
+            var data = list_categories.map(d => { return { 'id': d.ID, 'text': d.Name } });
+            $("#select_categories").val(null).trigger("change");
+            $("#select_categories").html(null).trigger("change");
+            $("#select_categories").select2("destroy");
+            elements.select_categories = $("#select_categories").select2({ data: data, allowClear: true, closeOnSelect: false });
+        }
+
+        function fillSelectSubCategories() {
+            var data = list_subCategories.map(d => { return { 'id': d.ID, 'text': d.Description } });
+            $("#select_subCategories").val(null).trigger("change");
+            $("#select_subCategories").html(null).trigger("change");
+            $("#select_subCategories").select2("destroy");
+            elements.select_subCategories = $("#select_subCategories").select2({ data: data, allowClear: true, closeOnSelect: false });
+        }
+
+        function fillSelectSegments() {
+            var data = list_segments.map(d => { return { 'id': d.ID, 'text': d.Description } });
+            $("#select_segments").val(null).trigger("change");
+            $("#select_segments").html(null).trigger("change");
+            $("#select_segments").select2("destroy");
+            $("#select_segments").select2({ data: data, allowClear: true, closeOnSelect: false });
+        }
+
+        function fillSelectDepartmentsItem() {
+            var data = [];
+
+            list_departments.forEach(x => { if (x.FamilyID === +$("#family").val()) data.push({ 'id': x.ID, 'text': x.Name }); });
+
+            $("#department").val(null).trigger("change");
+            $("#department").html(null).trigger("change");
+            $("#department").select2("destroy");
+            $("#department").select2({ data: data, allowClear: true });
+        }
+
+        function fillSelectCategoriesItem() {
+            var data = list_dtItems.categories.map(x => { return { 'id': x.ID, 'text': x.Name } });
+            $("#category").val(null).trigger("change");
+            $("#category").html(null).trigger("change");
+            $("#category").select2('destroy');
+            $("#category").select2({ data: data, allowClear: true });
+        }
+
+        function fillSelectSubCategoriesItem() {
+            var data = list_dtItems.subcategories.map(x => { return { 'id': x.ID, 'text': x.Description } });
+            $("#subcategory").val(null).trigger("change");
+            $("#subcategory").html(null).trigger("change");
+            $("#subcategory").select2('destroy');
+            $("#subcategory").select2({ data: data, allowClear: true });
+        }
+
+        function fillSelectSegmentsItem() {
+            var data = list_dtItems.segments.map(x => { return { 'id': x.ID, 'text': x.Description } });
+            $("#segment").val(null).trigger("change");
+            $("#segment").html(null).trigger("change");
+            $("#segment").select2('destroy');
+            $("#segment").select2({ data: data, allowClear: true });
+        }
+
+        function fillSelectManufacturersItem() {
+            var data = list_dtItems.manufacturers.map(x => { return { 'id': x.ID, 'text': x.Description } });
+            $("#manufacturer").html(null).trigger("change");
+            $("#manufacturer").select2('destroy');
+            $("#manufacturer").select2({ data: data, allowClear: true });
+            $("#manufacturer").val(null).trigger("change");
+        }
+
+        function fillSelectBrandsItem() {
+            var data = list_dtItems.brands.map(x => { return { 'id': x.ID, 'text': x.Description } });
+            $("#brand").html(null).trigger("change");
+            $("#brand").select2('destroy');
+            $("#brand").select2({ data: data, allowClear: true });
+            $("#brand").val(null).trigger("change");
+        }
+
+        function fillSelectPurchasersItem() {
+            var data = list_dtItems.purchasers.map(x => { return { 'id': x.ID, 'text': x.Name } });
+            $("#purchaser").html(null).trigger("change");
+            $("#purchaser").select2('destroy');
+            $("#purchaser").select2({ data: data, allowClear: true });
+            $("#purchaser").val(null).trigger("change");
+        }
+
+        function fillSelectSuppliersItem() {
+            var data = list_dtItems.suppliers.map(x => { return { 'id': x.ID, 'text': `${x.Code} - ${x.Name}` } });
+            $("#supplier").val(null).trigger("change");
+            $("#supplier").html(null).trigger("change");
+            $("#supplier").select2('destroy');
+            $("#supplier").select2({ data: data, allowClear: true });
+        }
+
+        function fillSelectUOMSItem() {
+            var data = list_dtItems.uoms.map(x => { return { 'id': x.Code, 'text': x.Name } });
+            $("#uom").val(null).trigger("change");
+            $("#uom").html(null).trigger("change");
+            $("#uom").select2('destroy');
+            $("#uom").select2({ data: data, allowClear: true });
+        }
+
+        function fillSelectTax() {
+            var data = list_dtItems.taxes.map(x => { return { 'id': x.ID, 'text': x.Name, 'percentage': x.Percentage } });
+            $("#select2_iva").val(null).trigger("change");
+            $("#select2_iva").html(null).trigger("change");
+            $("#select2_iva").select2('destroy');
+            $("#select2_iva").select2({ data: data, allowClear: true });
+        }
+
+        async function getInitialData() {
+            try {
+                $("#" + elements.spn_filter).show();
+                await $.get(urls_data.initial).done(function (data) {
+                    list_families = data.families;
+                    list_departments = data.departments;
+                    list_dtItems.brands = data.brands;
+                    list_dtItems.manufacturers = data.manufacturers;
+                    list_dtItems.purchasers = data.purchasers;
+                    list_dtItems.suppliers = data.suppliers;
+                    list_dtItems.uoms = data.uoms;
+                    list_dtItems.taxes = data.list_tax;
+                    fillSelectFamilies();
+                    fillSelectDeparmets();
+                    fillSelectBrandsItem();
+                    fillSelectManufacturersItem();
+                    fillSelectPurchasersItem();
+                    fillSelectSuppliersItem();
+                    fillSelectUOMSItem();
+                    fillSelectTax();
+                });
+                $("#" + elements.spn_filter).hide();
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        async function getItemDetails() {
+            try {
+                $("#" + elements.spn_modal).show();
+                await $.get(urls.details + "?itemID=" + $("#itemID").val()).done(async function (data) {
+                    if (data.Status) {
+                        list_details = data.Result.details;
+                        list_dtItems.suppliers = data.Result.suppliers;
+                        list_dtItems.supplierPrices = data.Result.supplierPrices;
+                        list_dtItems.stores = data.Result.stores;
+                        await fillTableDetails();
+                        await fillTableDetailSuppliers();
+                        await fillTableDetailSuppliersPrices();
+                        fillSelectStores();
+                    } else Toast.fire({ icon: 'error', title: data.Message });
+                    $("#" + elements.spn_modal).hide();
+                });
+            } catch (e) {
+                $("#" + elements.spn_modal).hide();
+            }
+        }
+
+        function getItemFromModal() {
+            var item = {
+                ID: +$("#itemID").val(),
+                ItemLookupCode: $("#itemlookupcode").val(),
+                Description: $("#description").val(),
+                ExtendedDescription: $("#extdescription").val(),
+                SubDescription3: $("#cabys").val(),
+                FamilyID: +$("#family").val(),
+                DepartmentID: +$("#department").val(),
+                CategoryID: +$("#category").val(),
+                SubCategoryID: +$("#subcategory").val(),
+                SegmentID: +$("#segment").val(),
+                TaxID: +$("#select2_iva").val(),
+                ManufacturerID: +$("#manufacturer").val(),
+                BrandID: +$("#brand").val(),
+                PurchaserID: +$("#purchaser").val(),
+                SupplierID: +$("#supplier").val(),
+                SubDescription4: $("#subdescription4").val(),
+                UnitOfMeasure: $("#uom").val(),
+                SubDescription5: $("#subdescription5").val(),
+                SubDescription6: $("#subdescription6").val(),
+                SubDescription7: $("#subdescription7").val(),
+                SubDescription8: $("#subdescription8").val(),
+                SubDescription9: $("#subdescription9").val(),
+                SubDescription10: $("#subdescription10").val(),
+                Cost: "" + $("#cost").val().replaceAll("@CurrencyThousandSeparator", ""),
+                ReplacementCost: "" + $("#cost").val().replaceAll("@CurrencyThousandSeparator", ""),
+                Utility: "" + $("#utility").val(),
+                InvoiceDiscount: "" + $("#invoice-discount").val(),
+                CustomerDiscount: "" + $("#customer-discount").val(),
+                MSRP: $("#msrp").val().replaceAll("@CurrencyThousandSeparator", ""),
+                StoresSelected: elements.select_stores.val().toString()
+            }
+
+            return item;
+        }
+
+        /**
+         * Era para hacer para que Toast se tragera la info ella sola
+         */
+        async function getStores_ItemStatus(ItemID) {
+            try {
+                const urlStores = urls.stores_ItemStatus;
+
+                const storeValues = fetch(urlStores)
+                    .then(response => response.json())
+                    .then(data => data.stores.map(function (x) {
+                        var obj = {};
+                        obj[x.IDS] = `${x.NameS}`;
+                        return obj;
+                    }));
+
+                /*var array = data.Result.stores.map(x => {
+                    var obj = {};
+                    obj[x.IDS] = `${x.NameS} <span class="badge bg-${x.ItemStatus ? 'success' : 'danger'}">${x.ItemStatus ? 'Activo' : 'Inactivo'}</span>`;
+                    return x.IDS;
+                })*/
+
+                const { value: stores } = await AskSelectStores(storeValues);
+
+                console.log(stores);
+            } catch (e) {
+                $("#" + elements.spn_modal).hide();
+                $("#spn_modal_text").html("Cargando...");
+                error(e, "@Resources.messages.error_obt_regs");
+            }
+        }
+
+        function setOnChanges() {
+            $("#select_deparments").on('change', function (e) { onChangeSelectDepartments(); });
+            $("#select_categories").on('change', function (e) { onChangeSelectCategories(); });
+            $("#select_subCategories").on('change', function (e) { onChangeSelectSubCategory(); });
+            $("#family").on('change', function (e) { onChangeFamilyItems(); });
+            $("#department").on('change', function (e) { onChangeDepartmentItem(); });
+            $("#category").on('change', function (e) { onChangeCategoryItem(); });
+            $("#subcategory").on('change', function (e) { onChangeSubCategoryItem(); });
+            $("#select2_iva").on('change', function (e) { onKeyUpToGetFinalPriceCost(); });
+
+            $("#cost").on("keyup", onKeyUpToGetFinalPriceCost);
+            $("#msrp").on("keyup", onKeyUpToGetFinalPriceCost);
+            $("#utility").on("keyup", onKeyUpToGetFinalPriceCost);
+            $("#invoice-discount").on("keyup", onKeyUpToGetFinalPriceCost);
+            $("#customer-discount").on("keyup", onKeyUpToGetFinalPriceCost);
+        }
+
+        function setItemInModal(id) {
+            $("#itemID").val(id);
+            gItem = dt.data().toArray().find(x => x.ID === id);
+            $("#family").val(gItem.FamilyID).trigger('change');
+            $("#itemlookupcode").val(gItem.ItemLookupCode);
+            $("#description").val(gItem.Description);
+            $("#extdescription").val(gItem.ExtendedDescription);
+            $("#cabys").val(gItem.SubDescription3);
+            $("#subdescription4").val(gItem.SubDescription4);
+            $("#subdescription5").val(gItem.SubDescription5);
+            $("#subdescription6").val(gItem.SubDescription6);
+            $("#subdescription7").val(gItem.SubDescription7);
+            $("#subdescription8").val(gItem.SubDescription8);
+            $("#subdescription9").val(gItem.SubDescription9);
+            $("#subdescription10").val(gItem.SubDescription10);
+            $("#select2_iva").val(gItem.TaxID).trigger('change');
+            $("#manufacturer").val(gItem.ManufacturerID).trigger('change');
+            $("#brand").val(gItem.BrandID).trigger('change');
+            $("#purchaser").val(gItem.PurchaserID).trigger('change');
+            $("#supplier").val(gItem.SupplierID).trigger('change');
+            var objUom = list_dtItems.uoms.find(x => x.Name === gItem.UnitOfMeasure);
+            $("#uom").val(objUom ? objUom.Code : null).trigger('change');
+            $("#cost").val(gItem.ReplacementCost);
+            $("#utility").val(gItem.Utility);
+            $("#msrp").val(gItem.MSRP);
+            $("#invoice-discount").val(gItem.InvoiceDiscount);
+            $("#customer-discount").val(gItem.CustomerDiscount);
+            $("#department").val(gItem.DepartmentID).trigger('change');
+            threads_ids.catID = gItem.CategoryID;
+            threads_ids.subCatID = gItem.SubCategoryID;
+            threads_ids.segID = gItem.SegmentID;
+            onKeyUpToGetFinalPriceCost();
+            console.log(gItem);
+        }
+
+        function setValidationForm(formID, rules, messages, onSubmit) {
+            $.validator.setDefaults({ submitHandler: function () { onSubmit(); } });
+
+            $('#' + formID).validate({
+                rules: rules, messages: messages, errorElement: 'span',
+                errorPlacement: function (err, element) {
+                    err.addClass('invalid-feedback mx-2 d-flex justify-content-start');
+                    element.closest('.form-group').append(err);
+                },
+                highlight: function (element, errorClass, validClass) {
+
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        }
+
+        function setAllValidationsForm() {
+            setValidationForm("form_general", validate.rules.data_general, validate.messages.data_general, onSubmitFormGeneralItem);
+        }
+
+        function onClickBtnSearch(flag = true) {
+            if ($('#inputSearch').val().length >= 4) dt.ajax.reload();
+            else if(flag) Toast.fire({ icon: 'warning', title: 'Debe ingresar por lo menos 5 caracteres para aplicar la búsqueda' });
+        }
+
+        function onClickBtnAddItem() {
+            openModal();
+        }
+
+        async function onClickBtnApplySelDepart() {
+            if (elements.select_departs.find(":selected").length != 0) {
+                $("#" + elements.spn_filter).show();
+                try {
+                    await $.post(urls_data.categories, { 'departments': elements.select_departs.select2('data').map(d => { return d.id }) }).done(function (data) {
+                        list_categories = data.categories;
+                        fillSelectCategories();
+                        elements.select_categories.prop("disabled", false);
+                    }).fail(function (xhr, ajaxOptions, thrownError) {
+                        error(thrownError, "@Resources.messages.error_obt_regs");
+                    });
+                } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+                $("#" + elements.spn_filter).hide();
+            }
+        }
+
+        async function onClickBtnApplySelCategs() {
+            if ($("#select_categories").find(":selected").length != 0) {
+                $("#" + elements.spn_filter).show();
+                try {
+                    await $.post(urls_data.subcategories, { 'categories': elements.select_categories.select2('data').map(d => { return d.id }) }).done(function (data) {
+                        list_subCategories = data.subCategories;
+                        fillSelectSubCategories();
+                        elements.select_subCategories.prop("disabled", false)
+                    }).fail(function (xhr, ajaxOptions, thrownError) {
+                        error(thrownError, "@Resources.messages.error_obt_regs");
+                    });
+                } catch (e) { error(e, "@Resources.messages.error_obt_regs");}
+                $("#" + elements.spn_filter).hide();
+            }
+        }
+
+        async function onClickBtnApplySelSubCategs() {
+            if ($("#select_subCategories").find(":selected").length != 0) {
+                $("#" + elements.spn_filter).show();
+                try {
+                    await $.post(urls_data.segments, { 'subCategoriesID': $("#select_subCategories").select2('data').map(d => { return d.id }) }).done(function (data) {
+                        list_segments = data.Result.list_segments;
+                        fillSelectSegments();
+                        $("#select_segments").select2().prop("disabled", false);
+                    }).fail(function (xhr, ajaxOptions, thrownError) {
+                        error(thrownError, "@Resources.messages.error_obt_regs");
+                    });
+                } catch (e) { error(e, "@Resources.messages.error_obt_regs");}
+                $("#" + elements.spn_filter).hide();
+            }
+        }
+
+        async function onClickBtnEditItem(id) {
+            await setItemInModal(id);
+            openModal();
+            getItemDetails();
+        }
+
+        function onClickBtnSaveItem() {
+            $("#form_general").submit();
+        }
+
+        function onClickBtnNewItem() {
+            Swal.fire({
+                title: "@Resources.messages.msj_continuar", html: "@Resources.messages.msj_campos_limpiar", icon: 'warning', showCancelButton: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    clearModal();
+                    openModal();
+                }
+            });
+        }
+
+        function onClickCBtnClearSearch() {
+            $('#inputSearch').val('');
+        }
+
+        function onChangeSelectDepartments() {
+            var selects = $("#select_deparments").select2('data');
+            $("#select_categories").val(null).trigger("change");
+            $("#select_categories").prop("disabled", true);
+            if (selects.length > 0) $("#div_select_categories").slideDown();
+            else $("#div_select_categories").slideUp();
+        }
+
+        function onChangeSelectCategories() {
+            var selects = $("#select_categories").select2('data');
+            $("#select_subCategories").val(null).trigger("change");
+            $("#select_subCategories").prop("disabled", true);
+            if (selects.length > 0) $("#div_select_subCategories").slideDown();
+            else $("#div_select_subCategories").slideUp();
+        }
+
+        function onChangeSelectSubCategory() {
+            var selects = $("#select_subCategories").select2('data');
+            $("#select_segments").val(null).trigger("change");
+            $("#select_segments").prop("disabled", true);
+            if (selects.length > 0) $("#div_select_segments").slideDown();
+            else $("#div_select_segments").slideUp();
+        }
+
+        function onChangeFamilyItems() {
+            var familyID = $("#family").val();
+            if (familyID > 0) {
+                fillSelectDepartmentsItem();
+                $("#department").prop('disabled', false);
+                $("#department").val(null).trigger("change");
+            }
+            else {
+                $("#department").prop('disabled', true);
+                $("#department").val(null).trigger("change");
+            }
+        }
+
+        function onChangeDepartmentItem() {
+            var departmentID = $("#department").val();
+            if (departmentID > 0) {
+                $("#" + elements.spn_modal).show();
+                $("#spn_modal_text").html("Obteniendo Categorías...");
+                $.get(urls.getCategoriesItem + "?departmentID=" + departmentID).done(async function (data) {
+                    if (data.Status) {
+                        list_dtItems.categories = data.Result;
+                        await fillSelectCategoriesItem();
+                        $("#" + elements.spn_modal).hide();
+                        $("#spn_modal_text").html("");
+                        $("#category").val(threads_ids.catID).trigger("change");
+                        $("#category").prop('disabled', false);
+                        threads_ids.catID = null;
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#" + elements.spn_table).hide();
+                    }
+                }).fail(function (data) {
+                    error(data, "@Resources.messages.error_obt_regs");
+                    $("#" + elements.spn_table).hide();
+                    $("#spn_modal_text").html("");
+                });
+            } else {
+                $("#category").prop('disabled', true);
+                $("#category").val(null).trigger("change");
+            }
+        }
+
+        function onChangeCategoryItem() {
+            var categoryID = $("#category").val();
+            if (categoryID > 0) {
+                $("#" + elements.spn_modal).show();
+                $("#spn_modal_text").html("Obteniendo Subcategorías...");
+                $.get(urls.getSubCategoriesItem + "?categoryID=" + categoryID).done(async function (data) {
+                    if (data.Status) {
+                        list_dtItems.subcategories = data.Result;
+                        await fillSelectSubCategoriesItem();
+                        $("#" + elements.spn_modal).hide();
+                        $("#spn_modal_text").html("");
+                        $("#subcategory").val(threads_ids.subCatID).trigger("change");
+                        $("#subcategory").prop('disabled', false);
+                        threads_ids.subCatID = null;
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#" + elements.spn_table).hide();
+                    }
+                }).fail(function (data) {
+                    error(data, "@Resources.messages.error_obt_regs");
+                    $("#" + elements.spn_table).hide();
+                    $("#spn_modal_text").html("");
+                });
+            } else {
+                $("#subcategory").prop('disabled', true);
+                $("#subcategory").val(null).trigger("change");
+            }
+        }
+
+        function onChangeSubCategoryItem() {
+            var subcategoryID = $("#subcategory").val();
+            if (subcategoryID > 0) {
+                $("#" + elements.spn_modal).show();
+                $("#spn_modal_text").html("Obteniendo Segmentos...");
+                $.get(urls.getSegmentsItem + "?subCategoryID=" + subcategoryID).done(async function (data) {
+                    if (data.Status) {
+                        list_dtItems.segments = data.Result;
+                        await fillSelectSegmentsItem();
+                        $("#" + elements.spn_modal).hide();
+                        $("#spn_modal_text").html("");
+                        $("#segment").val(threads_ids.segID).trigger("change");
+                        $("#segment").prop('disabled', false);
+                        threads_ids.segID = null;
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#" + elements.spn_table).hide();
+                        $("#spn_modal_text").html("");
+                    }
+                }).fail(function (data) {
+                    error(data, "@Resources.messages.error_obt_regs");
+                    $("#" + elements.spn_table).hide();
+                    $("#spn_modal_text").html("");
+                });
+            } else {
+                $("#segment").prop('disabled', true);
+                $("#segment").val(null).trigger("change");
+            }
+        }
+
+        function onSubmitFormGeneralItem() {
+            onActionSaveItem();
+        }
+
+        function onActionSaveItem(stores) {
+            var item = getItemFromModal();
+            console.log(item);
+            if (item) {
+
+                $("#" + elements.spn_modal).show();
+                $("#spn_modal_text").html("Guardando Artículo...");
+                try {
+                    $.ajax({
+                        url: urls.saveItem, type: 'post', contentType: 'application/json',
+                        data: JSON.stringify({ item: JSON.stringify(item), stores: stores }), cache: false,
+                        success: async function (data) {
+                            Toast.fire({ icon: (data.Status ? 'success' : error), title: data.Message });
+
+                            if (data.Status) {
+                                $("#itemID").val(data.Result);
+                                onClickBtnSearch(false);
+                                if (gItem) gItem.StoresSelected = elements.select_stores.val().toString();
+                                getItemDetails();
+                            } else error(data.Message, data.Message + " | " + data.InternalMessage);
+
+                            $("#" + elements.spn_modal).hide();
+                            $("#spn_modal_text").html("");
+                        },
+                        error: function (xhr, ajaxOptions, thrownError) {
+                            error("Error guardando item...", "@Resources.messages.error_guardar");
+                            $("#" + elements.spn_modal).hide();
+                            $("#spn_modal_text").html("");
+                        }
+                    });
+                } catch (e) {
+                    error(e, "@Resources.messages.error_intento_guardar");
+                    $("#" + elements.spn_modal).hide();
+                    $("#spn_modal_text").html("");
+                }
+            } else {
+                error("DATA ITEM ERROR", "@Resources.messages.error_intento_guardar");
+            }
+        }
+
+        function onKeyUpToGetFinalPriceCost() {
+            if ((+$("#cost").val().replaceAll("@CurrencyThousandSeparator", "")) <= 0) { $("#cost").val(null); }
+            if ((+$("#msrp").val().replaceAll("@CurrencyThousandSeparator", "")) <= 0) { $("#msrp").val(0); }
+
+            var iva = list_dtItems.taxes.find(x => x.ID === +$("#select2_iva").val());
+            var cost = (+$("#cost").val().replaceAll("@CurrencyThousandSeparator", ""));
+            var utility = +$("#utility").val();
+            var customer_discount = +$("#customer-discount").val();
+            var invoice_discount = +$("#invoice-discount").val();
+            var msrp = +$("#msrp").val().replaceAll("@CurrencyThousandSeparator", "");
+            var final_cost = (cost - (cost * (invoice_discount / 100)) + msrp);
+            var final_price = (cost - (cost * (customer_discount / 100)) + msrp) * (1 + (utility / 100));
+            var final_price_sin_utilidad = (cost - (cost * (customer_discount / 100)) + msrp);
+            var final_price_iva = iva ? (final_price * (1 + (iva.Percentage / 100))) : 0;
+
+            var real_price = Math.round(final_price_iva / 5) * 5;
+            var real_utility = iva ? (((real_price - (final_price * (iva.Percentage / 100))) / final_price_sin_utilidad) - 1) * 100 : 0;
+
+            $("#final-cost").val(final_cost);
+            $("#final-price").val(final_price);
+            $("#final-price-iva").val(final_price_iva);
+
+            $("#real-utility").val(real_utility);
+            $("#real-price").val(real_price);
+        }
+
+        function AskSelectStores(stores) {
+            return Swal.fire({
+                title: 'Seleccionar Tiendas a Actualizar',
+                input: 'select',
+                inputOptions: stores,
+                inputPlaceholder: 'Seleccionar tienda/s..',
+                showCancelButton: true,
+                allowOutsideClick: false,
+                inputAttributes: { 'multiple': 'multiple', },
+                inputValidator: (value) => {
+                    return new Promise((resolve) => {
+                        if (value) resolve();
+                        else resolve('Debe seleccionar una o varias tiendas');
+                    })
+                }
+            });
+        }
+
+        function validateExistsSupplierCost() {
+            var flag = false;
+            list_dtItems.supplierPrices.forEach(x => {
+
+            });
+
+            return flag;
+        }
+
+        /** Abre la modal */
+        function openModal() {
+            $("#" + elements.title_modal).html(($("#itemID").val() > 0 ? "@Resources.views.editar" : "@Resources.views.agregar") + " @Resources.views.prod");
+            $('#' + elements.modal).modal({ backdrop: 'static', keyboard: false });
+        }
+
+        function clearModal() {
+            $("#form_general input").val("");
+            $("#form_general textarea").val("");
+            $("#form_general select").val(null).trigger("change");
+            elements.select_stores.val(null).trigger("change");
+            elements.select_stores.html(null).trigger("change");
+            gItem = null;
+            list_details = [];
+            list_dtItems.suppliers = [];
+            list_dtItems.supplierPrices = [];
+            fillTableDetails();
+            fillTableDetailSuppliers();
+            fillTableDetailSuppliersPrices();
+        }
+
+        /** Muestra un error, recibe excepcion para mostrar en consola y el mensaje para el usuario. */
+        function error(e, msj) {
+            Toast.fire({ icon: 'error', title: msj });
+            console.error(e);
+        }
+    </script>
+</body>
+</html>

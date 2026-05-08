@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:wsap="http://schemas.xmlsoap.org/ws/2004/08/addressing/policy" xmlns:wsa10="http://www.w3.org/2005/08/addressing" xmlns:tns="http://tempuri.org/" xmlns:msc="http://schemas.microsoft.com/ws/2005/12/wsdl/contract" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsx="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:wsp="http://schemas.xmlsoap.org/ws/2004/09/policy" xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="SecurityServices" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://tempuri.org/Imports">
+      <xsd:import schemaLocation="http://localhost/DemoSecurityService/SecurityServices.svc?xsd=xsd0" namespace="http://tempuri.org/" />
+      <xsd:import schemaLocation="http://localhost/DemoSecurityService/SecurityServices.svc?xsd=xsd1" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+      <xsd:import schemaLocation="http://localhost/DemoSecurityService/SecurityServices.svc?xsd=xsd2" namespace="http://schemas.datacontract.org/2004/07/System" />
+      <xsd:import schemaLocation="http://localhost/DemoSecurityService/SecurityServices.svc?xsd=xsd3" namespace="http://schemas.datacontract.org/2004/07/Security.Entities" />
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="ISecurityServices_User_ValidateUser_InputMessage">
+    <wsdl:part name="parameters" element="tns:User_ValidateUser" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityServices_User_ValidateUser_OutputMessage">
+    <wsdl:part name="parameters" element="tns:User_ValidateUserResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityServices_User_ValidateUserSession_InputMessage">
+    <wsdl:part name="parameters" element="tns:User_ValidateUserSession" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityServices_User_ValidateUserSession_OutputMessage">
+    <wsdl:part name="parameters" element="tns:User_ValidateUserSessionResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityServices_System_ValidateSystem_InputMessage">
+    <wsdl:part name="parameters" element="tns:System_ValidateSystem" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityServices_System_ValidateSystem_OutputMessage">
+    <wsdl:part name="parameters" element="tns:System_ValidateSystemResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityServices_Module_ValidateModules_InputMessage">
+    <wsdl:part name="parameters" element="tns:Module_ValidateModules" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityServices_Module_ValidateModules_OutputMessage">
+    <wsdl:part name="parameters" element="tns:Module_ValidateModulesResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityServices_View_ValidateViews_InputMessage">
+    <wsdl:part name="parameters" element="tns:View_ValidateViews" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityServices_View_ValidateViews_OutputMessage">
+    <wsdl:part name="parameters" element="tns:View_ValidateViewsResponse" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityServices_DataAccess_ValidateDataAccess_InputMessage">
+    <wsdl:part name="parameters" element="tns:DataAccess_ValidateDataAccess" />
+  </wsdl:message>
+  <wsdl:message name="ISecurityServices_DataAccess_ValidateDataAccess_OutputMessage">
+    <wsdl:part name="parameters" element="tns:DataAccess_ValidateDataAccessResponse" />
+  </wsdl:message>
+  <wsdl:portType name="ISecurityServices">
+    <wsdl:operation name="User_ValidateUser">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityServices/User_ValidateUser" message="tns:ISecurityServices_User_ValidateUser_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityServices/User_ValidateUserResponse" message="tns:ISecurityServices_User_ValidateUser_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="User_ValidateUserSession">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityServices/User_ValidateUserSession" message="tns:ISecurityServices_User_ValidateUserSession_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityServices/User_ValidateUserSessionResponse" message="tns:ISecurityServices_User_ValidateUserSession_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="System_ValidateSystem">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityServices/System_ValidateSystem" message="tns:ISecurityServices_System_ValidateSystem_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityServices/System_ValidateSystemResponse" message="tns:ISecurityServices_System_ValidateSystem_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="Module_ValidateModules">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityServices/Module_ValidateModules" message="tns:ISecurityServices_Module_ValidateModules_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityServices/Module_ValidateModulesResponse" message="tns:ISecurityServices_Module_ValidateModules_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="View_ValidateViews">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityServices/View_ValidateViews" message="tns:ISecurityServices_View_ValidateViews_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityServices/View_ValidateViewsResponse" message="tns:ISecurityServices_View_ValidateViews_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="DataAccess_ValidateDataAccess">
+      <wsdl:input wsaw:Action="http://tempuri.org/ISecurityServices/DataAccess_ValidateDataAccess" message="tns:ISecurityServices_DataAccess_ValidateDataAccess_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/ISecurityServices/DataAccess_ValidateDataAccessResponse" message="tns:ISecurityServices_DataAccess_ValidateDataAccess_OutputMessage" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="BasicHttpBinding_ISecurityServices" type="tns:ISecurityServices">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="User_ValidateUser">
+      <soap:operation soapAction="http://tempuri.org/ISecurityServices/User_ValidateUser" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="User_ValidateUserSession">
+      <soap:operation soapAction="http://tempuri.org/ISecurityServices/User_ValidateUserSession" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="System_ValidateSystem">
+      <soap:operation soapAction="http://tempuri.org/ISecurityServices/System_ValidateSystem" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="Module_ValidateModules">
+      <soap:operation soapAction="http://tempuri.org/ISecurityServices/Module_ValidateModules" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="View_ValidateViews">
+      <soap:operation soapAction="http://tempuri.org/ISecurityServices/View_ValidateViews" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="DataAccess_ValidateDataAccess">
+      <soap:operation soapAction="http://tempuri.org/ISecurityServices/DataAccess_ValidateDataAccess" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="SecurityServices">
+    <wsdl:port name="BasicHttpBinding_ISecurityServices" binding="tns:BasicHttpBinding_ISecurityServices">
+      <soap:address location="http://localhost/DemoSecurityService/SecurityServices.svc" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

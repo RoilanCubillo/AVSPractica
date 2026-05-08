@@ -1,0 +1,490 @@
+﻿
+/****** Object:  StoredProcedure [dbo].[AVS_WS_CREATE_CUSTOMER]    Script Date: 11/06/2024 10:54:19 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[AVS_WS_CREATE_CUSTOMER](@NUMEROCUENTA VARCHAR(20),@COMPAÑIA VARCHAR(50), @NOMBRE VARCHAR(30), 
+											   @APELLIDOS VARCHAR(50), @DIRECCION VARCHAR(50),
+											   @CORREO VARCHAR(255) ,@CEDULA VARCHAR(20), @TELEFONO VARCHAR(30))
+AS
+BEGIN
+DECLARE  @EXISTE SMALLINT
+DECLARE  @ID INT
+
+SELECT @EXISTE = COUNT(AccountNumber) FROM Customer
+WHERE AccountNumber = @NUMEROCUENTA
+
+IF @EXISTE =0
+BEGIN
+
+-- Obtener el ID del Impuesto del producto
+	SELECT @ID = (SELECT MAX(ID)+1 from Customer)
+
+
+	INSERT INTO Customer (ID, TaxNumber , Company, FirstName, LastName, PhoneNumber, 
+					      EmailAddress, [Address], AccountNumber)
+	SELECT @ID,@CEDULA, @COMPAÑIA, @NOMBRE,@APELLIDOS,@TELEFONO, @CORREO, @DIRECCION, @NUMEROCUENTA
+END
+ELSE
+BEGIN
+	UPDATE customer SET TaxNumber = @CEDULA, Company = @COMPAÑIA, FirstName = @NOMBRE, LastName = @APELLIDOS,
+						PhoneNumber = @TELEFONO, [Address]= @DIRECCION, EmailAddress = @CORREO,
+						LastUpdated = getdate()
+	WHERE AccountNumber = @NUMEROCUENTA
+END
+
+END
+GO
+/****** Object:  StoredProcedure [dbo].[AVS_WS_CREATE_ITEMS]    Script Date: 11/06/2024 10:54:19 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE PROCEDURE [dbo].[AVS_WS_CREATE_ITEMS](@COD_PRODUCTO VARCHAR(25), @DESCRIPCION VARCHAR(80), @COD_DEPARTAMENTO VARCHAR(17), @NOM_DEPARTAMENTO VARCHAR(30),
+											   @COD_CATEGORIA VARCHAR(17), @NOM_CATEGORIA VARCHAR(30), @PRECIO MONEY, @PRECIOA MONEY, @PRECIOB MONEY,
+											   @PRECIOC MONEY, @PRECIO_VENTA MONEY,@COD_IMPUESTO VARCHAR(17), @COSTO MONEY,@COD_PROVEEDOR VARCHAR(17),
+											   @NOM_PROVEEDOR VARCHAR(30), @DESCRIPCION_EXTENDIDA NTEXT,@SUBDESCRIPCION1 VARCHAR(30),@SUBDESCRIPCION2 VARCHAR(30),
+											   @COD_CABYS VARCHAR(30), @TIENEIMPUESTO BIT, @VENTAENLINEA BIT, @STOREID INT)
+AS
+BEGIN
+DECLARE  @EXISTEPROD SMALLINT
+DECLARE  @EXISTEItemDynamic SMALLINT
+DECLARE  @ID_DEPARTAMENTO INT
+DECLARE  @ID_CATEGORIA INT
+DECLARE  @ID_IMPUESTO INT
+DECLARE  @ID_PROVEEDOR INT
+DECLARE  @ItemId int =0
+
+SELECT @EXISTEPROD = COUNT(ItemLookupCode) FROM Item
+WHERE ItemLookupCode = @COD_PRODUCTO
+
+IF @EXISTEPROD =0
+BEGIN
+
+	-- Verificar si existe la Categori sino se crea
+	INSERT INTO Department([Name], code) SELECT @NOM_DEPARTAMENTO, @COD_DEPARTAMENTO WHERE NOT EXISTS(SELECT 1 FROM Department WHERE code = @COD_DEPARTAMENTO)
+	SELECT @ID_DEPARTAMENTO = ID FROM Department WHERE code = @COD_DEPARTAMENTO
+
+	-- Verificar si existe el Departamento sino se crea
+	INSERT INTO Category(DepartmentID,[Name], code) SELECT @ID_DEPARTAMENTO,@NOM_CATEGORIA ,@COD_CATEGORIA WHERE NOT EXISTS(SELECT 1 FROM Category WHERE Code = @COD_CATEGORIA)
+	SELECT @ID_CATEGORIA = ID FROM Category WHERE Code = @COD_CATEGORIA AND DepartmentID = @ID_DEPARTAMENTO
+
+	-- Obtener el ID del Impuesto del producto
+	SELECT @ID_IMPUESTO = ID FROM ItemTax WHERE Code = @COD_IMPUESTO
+
+	-- Verificar si existe el Proveedor sino se crea
+	INSERT INTO Supplier(Code, SupplierName) SELECT @COD_PROVEEDOR,@NOM_PROVEEDOR WHERE NOT EXISTS(SELECT 1 FROM Supplier WHERE Code = @COD_PROVEEDOR)
+	SELECT @ID_PROVEEDOR = ID FROM Supplier WHERE Code = @COD_PROVEEDOR
+
+	-- Insertar el producto
+	INSERT INTO Item (ItemLookupCode, [Description], DepartmentID, CategoryID, Price, PriceA, PriceB, PriceC, SalePrice, TaxID,
+					 Cost, SupplierID,ExtendedDescription, SubDescription1, SubDescription2, SubDescription3, Taxable, WebItem)
+	SELECT @COD_PRODUCTO,@DESCRIPCION,@ID_DEPARTAMENTO,@ID_CATEGORIA, @PRECIO, @PRECIOA, @PRECIOB, @PRECIOC, @PRECIO_VENTA, @ID_IMPUESTO,
+			  @COSTO, @ID_PROVEEDOR, @DESCRIPCION_EXTENDIDA, @SUBDESCRIPCION1, @SUBDESCRIPCION2, @COD_CABYS,@TIENEIMPUESTO, @VENTAENLINEA
+
+	
+END
+	
+	SELECT @EXISTEItemDynamic = COUNT(ItemID) FROM ItemDynamic
+		WHERE ItemID = @ItemId AND StoreID = @STOREID
+IF @EXISTEItemDynamic =0
+BEGIN
+	-- Obtener el ID del Impuesto del producto
+	SELECT @ID_IMPUESTO = ID FROM ItemTax WHERE Code = @COD_IMPUESTO
+
+	-- Obtener el ID del producto
+	SELECT @ItemId = ID FROM Item WHERE ItemLookupCode = @COD_PRODUCTO
+
+	-- Insertar en ItemDynamic
+	INSERT INTO ItemDynamic(ItemID, StoreID,Cost,TaxID,Price,PriceLevelA, PriceLevelB, PriceLevelC, SalePrice,QuantityCommitted,Quantity) --Lo inserta
+				select @ItemId,@STOREID,@COSTO,@ID_IMPUESTO,@PRECIO,@PRECIOA, @PRECIOB, @PRECIOC, @PRECIO_VENTA, 0,0
+
+END
+END
+GO
+/****** Object:  StoredProcedure [dbo].[AVS_WS_DETAIL]    Script Date: 11/06/2024 10:54:19 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[AVS_WS_DETAIL] 
+(@WorksheetID INT,@ItemCode VARCHAR(30))
+	AS
+	BEGIN
+		DECLARE @ItemID INT
+		select @ItemID = isnull(id,0) from Item where ItemLookupCode = @ItemCode
+		if @ItemID <> 0
+		begin
+			INSERT INTO Worksheet_ItemUpdate(WorksheetID,ItemId)
+			Values(@WorksheetID,@ItemID)
+	end
+
+END
+GO
+/****** Object:  StoredProcedure [dbo].[AVS_WS_HEADER]    Script Date: 11/06/2024 10:54:19 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[AVS_WS_HEADER] (@STYLE INT, @TASKCODE VARCHAR(50), @NOTES VARCHAR(255), @TITLE VARCHAR(50), @FROMDATE DATETIME, @STOREID INT, @USER_ID VARCHAR(50))
+AS
+BEGIN
+	/*
+	declare @storeInfo varchar(30)
+	set @storeInfo = (select 'Tienda Destino: ' + [Name] from Store where id = @STOREID)
+	*/
+	--
+	DECLARE @USER_NAME VARCHAR(50) = (SELECT UserName FROM HQUser WHERE ID = @USER_ID)
+
+	DECLARE @WorksheetID INT
+	INSERT [Worksheet] (Style, EffectiveDate, [Status], Notes, Title, FromDate)
+	VALUES (@STYLE, GETDATE(), 1, @NOTES, @TITLE, @FROMDATE)
+
+	set @WorksheetID = SCOPE_IDENTITY()
+
+	INSERT [dbo].[WorksheetStore](WorksheetID, StoreID, [Status], Originator, DateProcessed)
+	VALUES (@WorksheetID, @STOREID, 1,0, NULL)
+
+	INSERT INTO WorksheetHistory (WorksheetID, [Status], HistoryDate, HQEntry, StoreID, Comment) 
+	VALUES (@WorksheetID, 1, GETDATE(), 1, @STOREID, CONCAT('Creado por ', @USER_NAME, ' desde Central Wizard.'))
+
+	-- GUARDAR BITÁCORA DE USUARIO Y HOJA DE TRABAJO --
+	EXEC [UEP_ExtCentral_Worksheet_INSERT] @USER_ID, @WorksheetID, @STYLE, @TASKCODE, @TITLE, @STOREID
+
+	/*
+	insert dbo.[WorksheetHeader_PurchaseOrder](WorksheetID,ConfirmingTo,CurrencyID,DateCreated,ExchangeRate,FOBPoint,Freight,MasterPOID,OtherFees
+		, PONumber, Remarks, RequiredDate, Requisitioner,Shipping, ShipTo, SupplierID, TaxRate, Terms, [To])
+	values(@WorksheetID, 'Wizard Import OC',0, GETDATE(),1,'','',0,'',@WorksheetID,'P.O from Wizard',@FROMDATE,'RMHC',''
+		, @storeInfo,0,0,'','')
+	*/
+
+	select @WorksheetID as WorksheetID
+END
+GO
+/****** Object:  StoredProcedure [dbo].[AVS_WS_HEADER_STORES]    Script Date: 11/06/2024 10:54:19 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[AVS_WS_HEADER_STORES]
+(
+	@STYLE INT, @NOTES VARCHAR(255),@TITLE VARCHAR(50), @EFFECTIVEDATE DATETIME, @STORES VARCHAR(MAX)
+)
+
+AS
+
+BEGIN
+	-- CREAR HOJA DE TRABAJO --
+	DECLARE @WorksheetID INT
+	INSERT [Worksheet] (Style, EffectiveDate, [Status], Notes, Title, FromDate)
+	VALUES (@STYLE, @EFFECTIVEDATE, 1, @NOTES, @TITLE, GETDATE())
+	set @WorksheetID = CAST(SCOPE_IDENTITY() AS INT)
+
+	-- ASIGNAR TIENDAS A HOJA DE TRABAJO --
+	INSERT [dbo].[WorksheetStore](WorksheetID, StoreID, [Status], Originator, DateProcessed)
+	SELECT @WorksheetID, VALUE, 1,0, NULL
+	FROM STRING_SPLIT(@STORES, ',')
+	WHERE VALUE <> ''
+
+	-- ASIGNAR HISTORICO INICIAL POR TIENDA --
+	INSERT INTO WorksheetHistory (WorksheetID, [Status], HistoryDate, HQEntry, StoreID, Comment) 
+	SELECT @WorksheetID, 1, GETDATE(), 1, VALUE, 'Creado automaticamente por Central Wizard WHS'
+	FROM STRING_SPLIT(@STORES, ',')
+	WHERE VALUE <> ''
+
+	select @WorksheetID as WorksheetID
+END
+GO
+/****** Object:  StoredProcedure [dbo].[AVS_WS_PO_ITEMS]    Script Date: 11/06/2024 10:54:19 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[AVS_WS_PO_ITEMS](@CodProducto varchar(25),@NmbProducto varchar(80)
+,@NmbProductoExtendido varchar(80) =''
+,@SubDesc1 varchar(30),@SubDesc2 varchar(30),@SubDesc3 varchar(30)
+,@CodDept varchar(17),@NmbDept varchar(30)
+,@CodCat varchar(17),@NmbCat varchar(30)
+,@CodProveedor varchar(17), @NmbProveedor varchar(30)
+,@Costo decimal(18,2)=0,@CostoReemplazo decimal(18,2)=0, @Cantidad decimal(18,2)=0, @Factura varchar(12) =''
+,@PrecioVenta decimal(18,2)=0,@PrecioA decimal(18,2)=0,@PrecioB decimal(18,2)=0,@PrecioC decimal(18,2)=0
+, @WorksheetID int)
+AS
+BEGIN
+
+declare @ItemId int =0
+declare @SupplierId int =0
+declare @DepartmentId int =0
+declare @CategoryId int =0
+declare @StoreId int =0
+
+insert Department(code, Name)
+select @CodDept, @NmbDept where @CodDept not in (select code from Department)
+
+select @DepartmentId = id from Department where Code = @CodDept
+
+print 'DepartmentId ' + convert(varchar(100),@DepartmentId)
+
+insert Category(DepartmentID, code, Name)
+select Department.ID, @CodCat, @NmbCat 
+from Department 
+where Department.code = @CodDept
+and @CodCat not in (select Category.Code from Category where Category.Code = @CodCat and Category.DepartmentID = Department.ID)
+
+print '@CodDept ' + convert(varchar(100),@CodDept)
+select @CategoryId = id from Category where Code = @CodCat and DepartmentID = @DepartmentId
+
+insert Supplier(code, SupplierName)
+select @CodProveedor, @NmbProveedor where @CodProveedor not in (select code from supplier)
+
+select @SupplierId = id from Supplier where Code = @CodProveedor
+
+IF EXISTS(SELECT 1 FROM item WITH (NOLOCK)  WHERE ItemLookupCode = @CodProducto)
+begin
+	UPDATE ITEM
+	SET [Description] = @NmbProducto, ExtendedDescription = @NmbProductoExtendido
+	WHERE ItemLookupCode = @CodProducto
+end
+else
+begin
+	INSERT item (ItemLookupCode, [Description], [ExtendedDescription]
+	, Cost, LastCost,ReplacementCost
+	, SubDescription1, SubDescription2, SubDescription3
+	,Price, PriceA, PriceB, PriceC
+	, DepartmentID, CategoryID, SupplierID)
+	SELECT @CodProducto, @NmbProducto,@NmbProductoExtendido
+	, @Costo,@Costo, @CostoReemplazo
+	, @SubDesc1, @SubDesc2, @SubDesc3
+	, @PrecioVenta, @PrecioA, @PrecioB, @PrecioC
+	, @DepartmentId, @CategoryId, @SupplierId
+	WHERE @CodProducto not in (SELECT ItemLookupCode FROM Item)
+end
+
+select @ItemId = id from Item where ItemLookupCode = @CodProducto
+
+insert into SupplierList(itemid, Cost,SupplierID)
+select @ItemId, @Costo, @SupplierId
+where @ItemId not in (select ITEMID from SupplierList WHERE ITEMID=@ItemId AND SUPPLIERID =@SupplierId)
+
+
+select @StoreId = isnull(storeid,1) from WorksheetStore where WorksheetID = @WorksheetID
+
+INSERT INTO WORKSHEET_PURCHASEORDER(WorksheetID,ItemDescription,QuantityOrdered,
+        ItemID,DetailID,OrderNumber,Price,StoreID,TaxRate)
+		VALUES(@WorksheetID,CONVERT(VARCHAR(30),@NmbProducto),@Cantidad,@ItemId,0,@Factura,@Costo,@StoreID,0) 
+END
+GO
+/****** Object:  StoredProcedure [dbo].[AVS_WS_PO_ITEMS_CLASS]    Script Date: 11/06/2024 10:54:19 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[AVS_WS_PO_ITEMS_CLASS](@CodProducto varchar(25),@NmbProducto varchar(80)
+,@NmbProductoExtendido varchar(80) =''
+,@SubDesc1 varchar(30),@SubDesc2 varchar(30),@SubDesc3 varchar(30)
+,@CodDept varchar(17),@NmbDept varchar(30)
+,@CodCat varchar(17),@NmbCat varchar(30)
+,@CodProveedor varchar(17), @NmbProveedor varchar(30)
+,@Costo decimal(18,2)=0,@CostoReemplazo decimal(18,2)=0, @Cantidad decimal(18,2)=0, @Factura varchar(12) =''
+,@PrecioVenta decimal(18,2)=0,@PrecioA decimal(18,2)=0,@PrecioB decimal(18,2)=0,@PrecioC decimal(18,2)=0
+, @WorksheetID int
+, @CodTax varchar(10) =''
+, @Referencia VARCHAR(30)
+, @COD_DM_1 varchar(5)='', @DESC_DIM_1 varchar(40) ='', @VALUE_DIM_1 varchar(60) =''
+, @COD_DM_2 varchar(5)='', @DESC_DIM_2 varchar(40) ='', @VALUE_DIM_2 varchar(60) =''
+, @COD_DM_3 varchar(5)='', @DESC_DIM_3 varchar(40) ='', @VALUE_DIM_3 varchar(60) ='')
+AS
+BEGIN
+
+declare @ItemId int =0
+declare @SupplierId int =0
+declare @DepartmentId int =0
+declare @CategoryId int =0
+declare @StoreId int =0
+declare @TaxId int =0
+declare @QtyDimensions int =0;
+
+set @TaxId=(select isnull(id,0) from ItemTax where Code = @CodTax)
+
+insert Department(code, Name)
+select @CodDept, @NmbDept where @CodDept not in (select code from Department)
+
+SET @DepartmentId = (Select id from Department where Code = @CodDept)
+
+insert Category(DepartmentID, code, Name)
+select Department.ID, @CodCat, @NmbCat 
+from Department 
+where Department.code = @CodDept
+and @CodCat not in (select Category.Code from Category where Category.Code = @CodCat and Category.DepartmentID = Department.ID)
+
+set @CategoryId = (select id from Category where Code = @CodCat and DepartmentID = @DepartmentId)
+
+insert Supplier(code, SupplierName)
+select @CodProveedor, @NmbProveedor where @CodProveedor not in (select code from supplier)
+
+select @SupplierId = id from Supplier where Code = @CodProveedor
+
+--Inicia la creación de las matrices y sus atributos
+
+IF LEN(@COD_DM_1) > 0
+BEGIN
+	--Inserta Dimension A y sus atributos
+	insert into Dimension(DimensionName, [Description])
+	select 'DM1-'+@Referencia, 'DM1-'+@Referencia
+	where 'DM1-'+@Referencia NOT IN (SELECT DimensionName FROM Dimension)
+	
+
+	--ATRIBUTOS
+	insert into DimensionAttribute(Attribute,Code, DisplayOrder, DimensionId)
+				            select @VALUE_DIM_1, @COD_DM_1,0, Dimension.Id from Dimension
+								where Dimension.Description = 'DM1-'+@Referencia 
+									AND @COD_DM_1 NOT IN (SELECT Code FROM DimensionAttribute 
+										WHERE DimensionAttribute.DimensionId = Dimension.Id)
+	set @QtyDimensions =1;
+END
+
+IF LEN(@COD_DM_2) > 0
+BEGIN
+	--Inserta Dimension B y sus atributos
+	insert into Dimension(DimensionName, [Description])
+	select 'DM2-'+@Referencia, 'DM2-'+@Referencia
+	where 'DM2-'+@Referencia NOT IN (SELECT DimensionName FROM Dimension)
+
+		--ATRIBUTOS
+	insert into DimensionAttribute(Attribute,Code, DisplayOrder, DimensionId)
+				            select @VALUE_DIM_2, @COD_DM_2,0, Dimension.Id from Dimension
+								where Dimension.Description = 'DM2-'+@Referencia 
+									AND @COD_DM_2 NOT IN (SELECT Code FROM DimensionAttribute 
+										WHERE DimensionAttribute.DimensionId = Dimension.Id)
+
+	set @QtyDimensions =2;
+END
+
+IF LEN(@COD_DM_3) > 0
+BEGIN
+	--Inserta Dimension C y sus atributos
+	insert into Dimension(DimensionName, [Description])
+	select 'DM3-'+@Referencia, 'DM3-'+@Referencia
+	where 'DM3-'+@Referencia NOT IN (SELECT DimensionName FROM Dimension)
+
+		--ATRIBUTOS
+	insert into DimensionAttribute(Attribute,Code, DisplayOrder, DimensionId)
+				            select @VALUE_DIM_3, @COD_DM_3,0, Dimension.Id from Dimension
+								where Dimension.Description = 'DM3-'+@Referencia 
+									AND @COD_DM_3 NOT IN (SELECT Code FROM DimensionAttribute 
+										WHERE DimensionAttribute.DimensionId = Dimension.Id)
+
+	set @QtyDimensions =3;
+END
+
+IF EXISTS(SELECT 1 FROM ItemClass WITH (NOLOCK)  WHERE ItemLookupCode = @CodProducto)
+begin
+PRINT 'EXISTE ItemClass'
+end
+else
+begin
+--itemClass es un unico registro por matriz
+	INSERT INTO ItemClass([Description], SubDescription1,SubDescription2, SubDescription3, Title1, Title2, Title3
+			,ItemLookupCode,DepartmentID, CategoryID, Price, Cost, SupplierID, TaxID, Dimensions)
+			SELECT @NmbProducto, @SubDesc1, @SubDesc2, @SubDesc3, @DESC_DIM_1, @DESC_DIM_2, @DESC_DIM_3
+					, @CodProducto, @DepartmentId, @CategoryId, @PrecioVenta, @Costo, @SupplierId,@TaxId,@QtyDimensions
+					WHERE @CodProducto not in (SELECT ItemLookupCode FROM ItemClass)
+end
+
+	--Inserta los valores de desplegue de la informacion
+
+	IF LEN(@COD_DM_1) > 0
+		BEGIN
+			INSERT MatrixAttributeDisplayOrder(ItemClassID, Dimension,Attribute,Code,Inactive, DisplayOrder)
+			SELECT ItemClass.ID, 1, @VALUE_DIM_1, @COD_DM_1,0,1
+			FROM ItemClass
+			WHERE ItemLookupCode = @CodProducto
+		END
+
+			IF LEN(@COD_DM_2) > 0
+		BEGIN
+			INSERT MatrixAttributeDisplayOrder(ItemClassID, Dimension,Attribute,Code,Inactive, DisplayOrder)
+			SELECT ItemClass.ID, 2, @VALUE_DIM_2, @COD_DM_2,0,1
+			FROM ItemClass
+			WHERE ItemLookupCode = @CodProducto
+		END
+
+			IF LEN(@COD_DM_3) > 0
+		BEGIN
+			INSERT MatrixAttributeDisplayOrder(ItemClassID, Dimension,Attribute,Code,Inactive, DisplayOrder)
+			SELECT ItemClass.ID, 3, @VALUE_DIM_3, @COD_DM_3,0,1
+			FROM ItemClass
+			WHERE ItemLookupCode = @CodProducto
+		END
+
+declare @NewItemCode varchar(25)
+declare @DescAvanzada varchar(80)
+
+set @NewItemCode = @CodProducto + @COD_DM_1+@COD_DM_2+@COD_DM_3
+set @DescAvanzada = @NmbProducto +' ' + @VALUE_DIM_1 +' '+ @VALUE_DIM_2 +' '+ @VALUE_DIM_3
+
+IF EXISTS(SELECT 1 FROM item WITH (NOLOCK)  WHERE ItemLookupCode = @NewItemCode)
+begin
+Print 'Existe Item' + @NewItemCode
+end
+else
+begin
+	INSERT item (ItemLookupCode, [Description], [ExtendedDescription]
+	, Cost, LastCost,ReplacementCost
+	, SubDescription1, SubDescription2, SubDescription3
+	,Price, PriceA, PriceB, PriceC
+	, DepartmentID, CategoryID, SupplierID, Taxable, TaxID)
+	SELECT @NewItemCode,@DescAvanzada ,@DescAvanzada + ' ' + @NmbProductoExtendido
+	, @Costo,@Costo, @CostoReemplazo
+	, @SubDesc1, @SubDesc2, @SubDesc3
+	, @PrecioVenta, @PrecioA, @PrecioB, @PrecioC
+	, @DepartmentId, @CategoryId, @SupplierId, 1,@TaxId
+	WHERE @NewItemCode not in (SELECT ItemLookupCode FROM Item)
+end
+
+select @ItemId = id from Item where ItemLookupCode = @NewItemCode
+
+insert into SupplierList(itemid, Cost,SupplierID)
+select @ItemId, @Costo, @SupplierId
+where @ItemId not in (select ITEMID from SupplierList WHERE ITEMID=@ItemId AND SUPPLIERID =@SupplierId)
+
+--crea El itemClassComponent que permite ver las matrices en el Loockup de RMH
+
+insert ItemClassComponent(ItemClassID, ItemID,Quantity, Detail1, Detail2,Detail3, LastUpdated, Price)
+							SELECT ItemClass.ID, @ItemId,0,@DESC_DIM_1, @DESC_DIM_2, @DESC_DIM_3, GETDATE(), @PrecioVenta 			
+							FROM ItemClass WHERE ItemLookupCode = @CodProducto
+
+select @StoreId = isnull(storeid,1) from WorksheetStore where WorksheetID = @WorksheetID
+
+INSERT INTO WORKSHEET_PURCHASEORDER(WorksheetID,ItemDescription,QuantityOrdered,
+        ItemID,DetailID,OrderNumber,Price,StoreID,TaxRate)
+		VALUES(@WorksheetID,CONVERT(VARCHAR(30),@NmbProducto),@Cantidad,@ItemId,0,@Factura,@Costo,@StoreID,0) 
+END
+GO
+/****** Object:  StoredProcedure [dbo].[AVS_WS_UpdateItemPrices]    Script Date: 11/06/2024 10:54:19 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[AVS_WS_UpdateItemPrices] (@WorksheetID INT,@ItemCode VARCHAR(30),@Price decimal(8,4),@Cost decimal(7,4)
+,@PriceLevelA decimal(4,4),@PriceLevelB decimal(4,4),@PriceLevelC decimal(4,4),@MSRP decimal(4,4)
+,@SalePrice decimal(4,4),@SaleStartDate datetime,@SaleEndDate datetime,@LowerBound decimal(4,4)
+,@UpperBound decimal(4,4), @BuydownPrice decimal(4,4),@BuydownQuantity float
+)
+	AS
+	BEGIN
+		DECLARE @ItemID INT
+		select @ItemID = isnull(id,0) from Item where ItemLookupCode = @ItemCode
+		if @ItemID <> 0
+		begin
+			INSERT INTO WorksheetUpdateItemPrices (WorksheetID, ItemID, Price, Cost, PriceLevelA, PriceLevelB, PriceLevelC, MSRP, 
+			SalePrice, SaleStartDate, SaleEndDate, LowerBound, UpperBound, BuydownPrice, BuydownQuantity) 
+			VALUES (@WorksheetID, @ItemID, @Price, @Cost, @PriceLevelA, @PriceLevelB, @PriceLevelC, @MSRP, 
+			@SalePrice, @SaleStartDate, @SaleEndDate, @LowerBound, @UpperBound, @BuydownPrice, @BuydownQuantity)
+		end
+	END
+GO

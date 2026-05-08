@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="http://schemas.datacontract.org/2004/07/Security.Entities" elementFormDefault="qualified" targetNamespace="http://schemas.datacontract.org/2004/07/Security.Entities" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="http://localhost:49253/SecurityServices.svc?xsd=xsd1" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+  <xs:complexType name="EN_SC_User">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Account" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="AutoID" type="xs:int" />
+      <xs:element minOccurs="0" name="Enable" type="xs:boolean" />
+      <xs:element minOccurs="0" name="EnableCloseSession" type="xs:boolean" />
+      <xs:element minOccurs="0" name="ID" type="xs:int" />
+      <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="SystemID" type="xs:int" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="EN_SC_User" nillable="true" type="tns:EN_SC_User" />
+  <xs:simpleType name="SC_Enum.ESystemValidateStatus">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="SYSTEM_NOT_CONFIGURED">
+        <xs:annotation>
+          <xs:appinfo>
+            <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">404</EnumerationValue>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="SYSTEM_DISABLED">
+        <xs:annotation>
+          <xs:appinfo>
+            <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">403</EnumerationValue>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="SYSTEM_UPDATING">
+        <xs:annotation>
+          <xs:appinfo>
+            <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">0</EnumerationValue>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="USER_UNAUTHORIZED">
+        <xs:annotation>
+          <xs:appinfo>
+            <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">401</EnumerationValue>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="ALLOW_ACCESS">
+        <xs:annotation>
+          <xs:appinfo>
+            <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">200</EnumerationValue>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="NOT_VERIFIED">
+        <xs:annotation>
+          <xs:appinfo>
+            <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">-1</EnumerationValue>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:enumeration>
+      <xs:enumeration value="NONE">
+        <xs:annotation>
+          <xs:appinfo>
+            <EnumerationValue xmlns="http://schemas.microsoft.com/2003/10/Serialization/">0</EnumerationValue>
+          </xs:appinfo>
+        </xs:annotation>
+      </xs:enumeration>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:element name="SC_Enum.ESystemValidateStatus" nillable="true" type="tns:SC_Enum.ESystemValidateStatus" />
+  <xs:complexType name="ArrayOfEN_SC_Module">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="EN_SC_Module" nillable="true" type="tns:EN_SC_Module" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfEN_SC_Module" nillable="true" type="tns:ArrayOfEN_SC_Module" />
+  <xs:complexType name="EN_SC_Module">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:EN_SC">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="SystemID" type="xs:int" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="EN_SC_Module" nillable="true" type="tns:EN_SC_Module" />
+  <xs:complexType name="EN_SC">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Code" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Enable" type="xs:boolean" />
+      <xs:element minOccurs="0" name="ID" type="xs:int" />
+      <xs:element minOccurs="0" name="Name" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="EN_SC" nillable="true" type="tns:EN_SC" />
+  <xs:complexType name="ArrayOfEN_SC_View">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="EN_SC_View" nillable="true" type="tns:EN_SC_View" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfEN_SC_View" nillable="true" type="tns:ArrayOfEN_SC_View" />
+  <xs:complexType name="EN_SC_View">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:EN_SC">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="ModuleID" type="xs:int" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="EN_SC_View" nillable="true" type="tns:EN_SC_View" />
+  <xs:complexType name="ArrayOfEN_SC_DataAccess">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="EN_SC_DataAccess" nillable="true" type="tns:EN_SC_DataAccess" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfEN_SC_DataAccess" nillable="true" type="tns:ArrayOfEN_SC_DataAccess" />
+  <xs:complexType name="EN_SC_DataAccess">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:EN_SC_Data">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="DataID" type="xs:int" />
+          <xs:element minOccurs="0" name="DataIDs" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="EnableAll" type="xs:boolean" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="EN_SC_DataAccess" nillable="true" type="tns:EN_SC_DataAccess" />
+  <xs:complexType name="EN_SC_Data">
+    <xs:complexContent mixed="false">
+      <xs:extension base="tns:EN_SC">
+        <xs:sequence>
+          <xs:element minOccurs="0" name="SystemID" type="xs:int" />
+          <xs:element minOccurs="0" name="TableName" nillable="true" type="xs:string" />
+          <xs:element minOccurs="0" name="TablePKName" nillable="true" type="xs:string" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="EN_SC_Data" nillable="true" type="tns:EN_SC_Data" />
+</xs:schema>

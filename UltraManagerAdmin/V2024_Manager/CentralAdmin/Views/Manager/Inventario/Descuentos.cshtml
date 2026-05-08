@@ -1,0 +1,783 @@
+﻿
+@{
+    ViewBag.Title = Resources.views.descuentos;
+    ViewBag.Name = Resources.views.mant_descuentos;
+    var culture = System.Threading.Thread.CurrentThread.CurrentCulture;
+    var CurrencySymbol = culture.NumberFormat.CurrencySymbol;
+    var CurrencyDecimalSeparator = culture.Name.ToUpper() == "ES-CR" ? "." : culture.NumberFormat.CurrencyDecimalSeparator;
+    var CurrencyThousandSeparator = culture.Name.ToUpper() == "ES-CR" ? "," : culture.NumberFormat.NumberGroupSeparator;
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+}
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>@ViewBag.Title</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    <!-- iCheck for checkboxes and radio inputs -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- InputMask -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/inputmask/jquery.inputmask.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <!-- Encabezado -->
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>@ViewBag.Name</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager","Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">@Resources.views.inventario</li>
+                                <li class="breadcrumb-item active">@ViewBag.Title</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Encabezado -->
+            <!-- Muestra de Descuentos -->
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="overlay-wrapper">
+                                        <!-- Spinner tbl -->
+                                        <div id="spn_tbl_discounts" class="overlay justify-content-center">
+                                            <i class="fas fa-3x fa-sync-alt fa-spin"></i>
+                                            <div class="text-bold pt-2">@Resources.views.cargando</div>
+                                        </div><!-- Spinner tbl -->
+                                        <!-- Boton agregar -->
+                                        <div class="col-md-12 mb-3" style="overflow: auto;">
+                                            <div class="row-cols-md-6">
+                                                <button type="button" class="btn btn-primary float-right fa-pull-right" onclick="onClickBtnAddDiscount()"><i class="fa fa-plus"> </i> @Resources.views.agregar</button>
+                                            </div>
+                                        </div><!-- Boton agregar -->
+                                        <!-- Table discounts -->
+                                        <div id="tbl_content_discounts" class="dataTables_wrapper dt-bootstrap4">
+                                            <table class="table table-bordered table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>@Resources.views.descripcion</th>
+                                                        <th>@Resources.views.tipo</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div><!-- Table discounts -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Modal de Descuentos -->
+            <div class="modal fade" id="modal_discount">
+                <div class="modal-dialog modal-dialog-scrollable modal-lg">
+                    <form id="form_modal_discount" class="modal-content">
+                        <!-- Encabezado Modal -->
+                        <div class="modal-header">
+                            <h4 id="title_modal_discount" class="modal-title"></h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                        </div><!-- Encabezado Modal -->
+                        <!-- Spinner Modal -->
+                        <div id="spn_modal_discount" class="overlay">
+                            <i class="fas fa-2x fa-sync fa-spin"></i>
+                        </div><!-- Spinner Modal -->
+                        <!-- Cuerpo Modal -->
+                        <div class="modal-body">
+                            <!-- Tap Panel -->
+                            <div class="card card-primary card-tabs">
+                                <!-- Tap Panel - Header -->
+                                <div class="card-header p-0 pt-1">
+                                    <ul class="nav nav-tabs" role="tablist">
+                                        <li class="nav-item"><a class="nav-link active" id="nav_tab_discounts" data-toggle="pill" role="tab" href="#tab_discount" aria-controls="tab_discount" aria-selected="true">@Resources.views.descuento</a></li>
+                                        <li class="nav-item"><a class="nav-link" id="nav_tab_stores" data-toggle="pill" role="tab" href="#tab_stores" aria-controls="tab_stores" aria-selected="false">@Resources.views.grupos_tiendas</a></li>
+                                    </ul>
+                                </div><!-- Tap Panel - Header -->
+                                <!-- Tap Panel - Body -->
+                                <div class="card-body">
+                                    <div class="tab-content">
+                                        <!-- Panel de formulario de descuentos -->
+                                        <div class="tab-pane fade show active" id="tab_discount" role="tabpanel" aria-labelledby="nav_tab_discounts">
+                                            <input id="input_disc_id" type="hidden" /><input id="input_disc_hqid" type="hidden" />
+                                            <!-- Descripción de descuento -->
+                                            <div class="form-group">
+                                                <label for="input_disc_desc">@Resources.views.descripcion</label>
+                                                <input type="text" class="form-control" name="input_disc_desc" id="input_disc_desc" placeholder="@Resources.views.ingresar_desc">
+                                            </div><!-- Descripción de descuento -->
+                                            <!-- Tipos de descuento -->
+                                            <div class="card card-outline card-primary">
+                                                <div class="card-header">
+                                                    <h3 class="card-title">@Resources.views.tipo_descuento</h3>
+                                                    <div class="card-tools">
+                                                        <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                                                    </div>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="form-group rbg_types">
+                                                        <div class="icheck-primary clearfix">
+                                                            <input type="radio" id="rdb_disc_type1" name="rdg_disc_type" value="1" checked>
+                                                            <label for="rdb_disc_type1">@Resources.views.tipo_descuento_1</label>
+                                                        </div>
+                                                        <div class="icheck-primary clearfix">
+                                                            <input type="radio" id="rdb_disc_type3" name="rdg_disc_type" value="2">
+                                                            <label for="rdb_disc_type3">@Resources.views.tipo_descuento_3</label>
+                                                        </div>
+                                                        <div class="icheck-primary clearfix">
+                                                            <input type="radio" id="rdb_disc_type2" name="rdg_disc_type" value="3">
+                                                            <label for="rdb_disc_type2">@Resources.views.tipo_descuento_2</label>
+                                                        </div>
+                                                        <div class="icheck-primary clearfix">
+                                                            <input type="radio" id="rdb_disc_type4" name="rdg_disc_type" value="4">
+                                                            <label for="rdb_disc_type4">@Resources.views.tipo_descuento_4</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Horarios de descuento -->
+                                            <div class="card card-outline card-primary">
+                                                <div class="card-header">
+                                                    <h3 class="card-title">@Resources.views.horario_precios</h3>
+                                                    <div class="card-tools">
+                                                        <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                                                    </div>
+                                                </div>
+                                                <div class="card-body p-0">
+                                                    <!-- Formulario TIPO 1 y 2 -->
+                                                    <div id="div_tipe_1_2">
+                                                        <table id="tbl_type_1_2" class="table table-responsive table-bordered table-sm text-nowrap">
+                                                            <thead class="table-head-fixed">
+                                                                <tr><th>@Resources.views.cant</th><th>@Resources.views.prec_reg</th><th>@Resources.views.nivel_a</th><th>@Resources.views.nivel_b</th><th>@Resources.views.nivel_c</th></tr>
+                                                            </thead>
+                                                            <tbody></tbody>
+                                                        </table>
+                                                        <div class="form-group clearfix">
+                                                            <div class="icheck-primary ml-3">
+                                                                <input type="checkbox" id="chk_disc_descontar" name="chk_disc_descontar">
+                                                                <label for="chk_disc_descontar">@Resources.views.descont_impares</label>
+                                                            </div>
+                                                        </div>
+                                                    </div><!-- Formulario TIPO 1 y 2 -->
+                                                    <!-- Formulario TIPO 3 y 4 -->
+                                                    <div id="div_tipe_3_4" class="m-3">
+                                                        <div class="form-group row">
+                                                            <label for="quantity_to_pay" class="col-sm-7 col-form-label">@Resources.views.cant_prec:</label>
+                                                            <div class="col-sm-5">
+                                                                @*APLICAR FORMATO POR REGIÓN cantidades*@
+                                                                <input id="quantity_to_pay" type="text" name="quantity_to_pay" class="form-control" data-inputmask="'alias': 'decimal', 'digits':'2'" placeholder="0" data-mask />
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group row">
+                                                            <label for="quantity_to_get" class="col-sm-7 col-form-label">@Resources.views.cant_desc:</label>
+                                                            <div class="col-sm-5">
+                                                                @*APLICAR FORMATO POR REGIÓN cantidades*@
+                                                                <input id="quantity_to_get" type="text" name="quantity_to_get" class="form-control" data-inputmask="'alias': 'decimal', 'digits':'2'" placeholder="0" data-mask />
+                                                            </div>
+                                                        </div>
+                                                        <div id="input_price_discount" class="form-group row">
+                                                            <label for="price_discount" class="col-sm-7 col-form-label">@Resources.views.prec_desc:</label>
+                                                            <div class="input-group col-sm-5">
+                                                                <div class="input-group-prepend"><span class="input-group-text"><i class="fas">@CurrencySymbol</i></span></div>
+                                                                <input id="price_discount" type="text" name="price_discount" class="form-control" data-inputmask="'alias' : 'currency', 'groupSeparator':'@CurrencyThousandSeparator', 'radixPoint':'@CurrencyDecimalSeparator'" data-mask/>
+                                                            </div>
+                                                        </div>
+                                                        <div id="input_percent_discount" class="form-group row">
+                                                            <label for="percent_discount" class="col-sm-7 col-form-label">@Resources.views.porcent_desc:</label>
+                                                            <div class="input-group col-sm-5">
+                                                                @*APLICAR FORMATO POR REGIÓN cantidades*@
+                                                                <input id="percent_discount" type="text" name="percent_discount" class="form-control" data-inputmask="'alias': 'decimal', 'digits':'2'" placeholder="0" data-mask />
+                                                                <div class="input-group-append"><span class="input-group-text"><i class="fas">%</i></span></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div><!-- Panel de formulario de descuentos -->
+                                        <!-- Panel de Grupos de tiendas -->     @* Esto es una prueba *@
+                                        <div class="tab-pane fade" id="tab_stores" role="tabpanel" aria-labelledby="nav_tab_stores">
+                                            <!-- Table store groups -->
+                                            <table id="tbl_content_str_grps" class="table table-bordered table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_all_groups" indeterminate="true" />
+                                                                <label for="chk_all_groups"></label>
+                                                            </div>
+                                                        </th>
+                                                        <th>@Resources.views.cod</th>
+                                                        <th>@Resources.views.descripcion</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr data-widget="expandable-table" aria-expanded="false">
+                                                        <td>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_store_groupid1" />
+                                                                <label for="chk_store_groupid1"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>200000-200000</td>
+                                                        <td>Ferreterías BM</td>
+                                                    </tr>
+                                                    <tr class="expandable-body">
+                                                        <td colspan="3">
+                                                            <div>
+                                                                <table class="table table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>@Resources.views.id_tienda</th>
+                                                                            <th>@Resources.views.nom</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td>1</td>
+                                                                            <td>BM Pacífico</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>2</td>
+                                                                            <td>BM Buenos Aires</td>
+                                                                        </tr>
+
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr data-widget="expandable-table" aria-expanded="false">
+                                                        <td>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_store_groupid2" />
+                                                                <label for="chk_store_groupid2"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>200000-200000</td>
+                                                        <td>Ferreterías BM</td>
+                                                    </tr>
+                                                    <tr class="expandable-body">
+                                                        <td colspan="3">
+                                                            <div>
+                                                                <table class="table table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>@Resources.views.id_tienda</th>
+                                                                            <th>@Resources.views.nom</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td>1</td>
+                                                                            <td>BM Pacífico</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>2</td>
+                                                                            <td>BM Buenos Aires</td>
+                                                                        </tr>
+
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr data-widget="expandable-table" aria-expanded="false">
+                                                        <td>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_store_groupid3" />
+                                                                <label for="chk_store_groupid3"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>200000-200000</td>
+                                                        <td>Ferreterías BM</td>
+                                                    </tr>
+                                                    <tr class="expandable-body">
+                                                        <td colspan="3">
+                                                            <div>
+                                                                <table class="table table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>@Resources.views.id_tienda</th>
+                                                                            <th>@Resources.views.nom</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td>1</td>
+                                                                            <td>BM Pacífico</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>2</td>
+                                                                            <td>BM Buenos Aires</td>
+                                                                        </tr>
+
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr data-widget="expandable-table" aria-expanded="false">
+                                                        <td>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_store_groupid4" />
+                                                                <label for="chk_store_groupid4"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>200000-200000</td>
+                                                        <td>Ferreterías BM</td>
+                                                    </tr>
+                                                    <tr class="expandable-body">
+                                                        <td colspan="3">
+                                                            <div>
+                                                                <table class="table table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>@Resources.views.id_tienda</th>
+                                                                            <th>@Resources.views.nom</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td>1</td>
+                                                                            <td>BM Pacífico</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>2</td>
+                                                                            <td>BM Buenos Aires</td>
+                                                                        </tr>
+
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr data-widget="expandable-table" aria-expanded="false">
+                                                        <td>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_store_groupid5" />
+                                                                <label for="chk_store_groupid5"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>200000-200000</td>
+                                                        <td>Ferreterías BM</td>
+                                                    </tr>
+                                                    <tr class="expandable-body">
+                                                        <td colspan="3">
+                                                            <div>
+                                                                <table class="table table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>@Resources.views.id_tienda</th>
+                                                                            <th>@Resources.views.nom</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td>1</td>
+                                                                            <td>BM Pacífico</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>2</td>
+                                                                            <td>BM Buenos Aires</td>
+                                                                        </tr>
+
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+
+                                                </tbody>
+                                            </table><!-- Table discounts -->
+                                        </div><!-- Panel de Grupos de tiendas -->
+                                    </div>
+                                </div><!-- Tap Panel - Body -->
+                            </div><!-- Tap Panel -->
+                        </div><!-- Cuerpo Modal -->
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="onClickBtnNewDiscount()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                            <button type="submit" class="btn btn-success"> <i class="fa fa-save"></i> @Resources.views.guardar</button>
+                            <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                        </div>
+                    </form>
+                </div>
+            </div><!-- Modal de Descuentos -->
+        </div>
+    </div>
+
+    <!-- Variables -->
+    <script>
+        var url_getAllDiscounts = '@Url.Action("GetAll", "Descuentos")'; // URL del evento obtener decuentos
+        var url_saveDiscounts = '@Url.Action("Save", "Descuentos")'; // URL del evento obtener decuentos
+        var list_discounts = []; // Almacena los descuentos obtenidas
+        var elements = { div_table: "tbl_content_discounts", spn_table: "spn_tbl_discounts", spn_modal: "spn_modal_discount" };
+        var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4000 }); // Variable para mostrar los mensajes.
+        var list_types = ["@Resources.views.tipo_descuento_1", "@Resources.views.tipo_descuento_2", "@Resources.views.tipo_descuento_3", "@Resources.views.tipo_descuento_4"];
+        var rules = {
+            input_disc_desc: { required: true, maxlength: 30 },
+            rdg_disc_type: { required: true },
+            quantity_to_pay: {
+                number: true, min: 0.01, required: function () {
+                    return $("#rdb_disc_type2").is(":checked") || $("#rdb_disc_type4").is(":checked");
+                }
+            },
+            quantity_to_get: {
+                number: true, min: 0.01, required: function () {
+                    return $("#rdb_disc_type2").is(":checked") || $("#rdb_disc_type4").is(":checked");
+                }
+            }
+        }; // Roles que cumplirán los componentes del formulario
+        var messagesQuantity = {
+            required: "@Resources.messages.validacion_ing_valor",
+            number: "@Resources.messages.validacion_num_inval",
+            min: "@Resources.messages.validacion_cant_may_0",
+        };
+        var messages = {
+            input_disc_desc: {
+                required: "@Resources.messages.validacion_desc_req",
+                maxlength: "@Resources.messages.validacion_desc_maxLen"
+            },
+            rdg_disc_type: { required: "@Resources.messages.validacion_tipoDesc_req" },
+            quantity_to_pay: messagesQuantity,
+            quantity_to_get: messagesQuantity,
+
+        }; // Ménsajes de error para el formulario
+    </script>
+
+    <!-- Funciones -->
+    <script>
+        /** Función initialize */
+        $(function () {
+            $("#" + elements.spn_modal).hide();
+            StartLoadTable(elements.div_table, true);
+            EndLoadTable("@ViewBag.Name", elements.div_table, true);
+            getAllDiscounts();
+            setDataType_1_3(3);
+            setDataType_1_3(1);
+            setOnChangeRbgTypes();
+            $('[data-mask]').inputmask();
+            setValidationForm();
+            setOnChangeChkAllGroups();
+            setOnChangeChkGroup();
+            fillMenuItemsLayout();
+        });
+
+        /** Marca los items del menú del MainLayout para que se muestre en qué parte del menú se encuentra*/
+        function fillMenuItemsLayout() {
+            openMenu(["#nav-item-inventarios"]);
+            activeItemMenu([".nav-item-inventarios", "#nav-link-inventarios-descuentos"])
+        }
+
+        /** Método encargado de recibir una lista de descuentos, cargar la tabla con los DataTables y mostrar la lista en dicha tabla. */
+        function fillTableDiscounts(data) {
+            StartLoadTable(elements.div_table, true);
+            $("#" + elements.spn_table).show();
+            if (data) {
+                $("#" + elements.div_table + " > table > tbody").html("");
+                data.forEach(function (d) {
+                    var row = $("<tr />");
+                    $("#" + elements.div_table + " > table").append(row);
+                    row.append($("<td> " + d.Description + "</td>"));
+                    row.append($("<td> " + list_types[d.Type - 1] + "</td>"));
+                    row.append($("<td><button class='btn btn-primary' title='@Resources.views.editar' data-toggle='modal' data-target='' onClick='onClickBtnEditDiscount(" + d.ID + ")'> <i class='fa fa-edit' aria-hidden='true'></i></button></td>"));
+                });
+            } else Toast.fire({ icon: 'warning', title: '@Resources.messages.msj_lista_vacia' });
+            EndLoadTable("@ViewBag.Name", elements.div_table, true);
+            $("#" + elements.spn_table).hide();
+        }
+
+        /** Busca y devuelve un objeto QuantityDiscount según el id suministrado */
+        function findDiscount(id_discount) {
+            for (var i = 0; i < list_discounts.length; i++)
+                if (list_discounts[i].ID === id_discount)
+                    return list_discounts[i];
+            return null;
+        }
+
+        /** Valida qué tipo de secuento es (1 ó 2) y ejecuta según sea el necesario */
+        function setDataType_1_3(n_type) {
+            if (n_type === 1 || n_type === 3) {
+                $("#div_tipe_3_4").hide();
+                $("#div_tipe_1_2").show();
+                $((n_type === 1 ? (".tr_percent") : (".tr_price"))).hide();
+                var tr_show = n_type === 1 ? "tr_price" : "tr_percent", tr = $("." + tr_show);
+                if (tr && tr.length === 4) tr.show();
+                else {
+                    /* APLICAR FORMATO POR REGIÓN cantidades*/
+                    if (tr && tr.length > 0 && tr.length !== 4) tr.remove();
+                    var td_count1 = '<td><div class="form-group"><div class="input-group"><input type="text" class="form-control form-control-sm Quantity';
+                    var td_count2 = '" style="width: 100px;" data-inputmask="' + "'alias': 'decimal', 'digits': '2'" + '" data-mask placeholder="0"/></div></div></td>';
+                    if (n_type === 1) setDataType_1(td_count1, td_count2);
+                    else setDataType_2(td_count1, td_count2);
+                }
+            } else error("Valor de radio button erroneo <<val: " + n_type + " >>", "@Resources.messages.error_tipo_desc_inval");
+        }
+
+        /** Valida qué tipo de secuento es (3 ó 4) y ejecuta según sea el necesario */
+        function setDataType_2_4(n_type) {
+            if (n_type === 2 || n_type === 4) {
+                $("#div_tipe_3_4").show();
+                $("#div_tipe_1_2").hide();
+                $("#input_price_discount").hide();
+                $("#input_percent_discount").hide();
+                if (n_type === 2) $("#input_price_discount").show();
+                else $("#input_percent_discount").show();
+            } else error("Valor de radio button erroneo <<val: " + n_type + " >>", "@Resources.messages.error_tipo_desc_inval");
+        }
+
+        /** Settea todos los row para cuando el tipo es 1 */
+        function setDataType_1(td_count1, td_count2) {
+            var atr1 = '<td><div class="form-group"><div class="input-group" style="min-width:120px;">\
+                  <div class="input-group-prepend p-0"><span class="input-group-text p-0 px-1"> @CurrencySymbol </span></div>\
+                  <input type="text" class="form-control form-control-sm Price';
+            var atr2 = '" data-inputmask="' + "'alias': 'currency', 'groupSeparator':'@CurrencyThousandSeparator', 'radixPoint':'@CurrencyDecimalSeparator'" + '"' + 'data-mask placeholder="0.00"></div></div></td>';
+            for (var i = 1; i <= 4; i++) {
+                var row = $("<tr class='tr_price'/>");
+                $("#tbl_type_1_2").append(row);
+                row.append($(td_count1 + i + td_count2)); row.append($(atr1 + i + atr2));
+                var let = 65;
+                for (var j = 0; j < 3; j++, let++) row.append($(atr1 + i + String.fromCharCode(let) + atr2));
+            }
+        }
+
+        /** Settea todos los row para cuando el tipo es 2 */
+        function setDataType_2(td_count1, td_count2) {
+            /** APLICAR FORMATO POR REGIÓN cantidades*/
+            var atr1 = '<td><div class="form-group"><div class="input-group" style = "min-width:120px;">\
+                          <input type="text" class="form-control form-control-sm PercentOffPrice';
+            var atr2 = '" data-inputmask="' + "'alias': 'decimal', 'digits':'2'" + '" data-mask placeholder="0">\
+                          <div class="input-group-append p-0"><span class="input-group-text p-0 px-1">%</span></div>\
+                       </div></div></td>';
+            for (var i = 1; i <= 4; i++) {
+                var row = $("<tr class='tr_percent'/>");
+                $("#tbl_type_1_2").append(row);
+                row.append($(td_count1 + i + td_count2)); row.append($(atr1 + i + atr2));
+                var let = 65;
+                for (var j = 0; j < 3; j++, let++) row.append($(atr1 + i + String.fromCharCode(let) + atr2));
+            }
+        }
+
+        /** Asigna el evento onChange al Radio Button Group de tipos de descuentos */
+        function setOnChangeRbgTypes() {
+            $(document).ready(function () { $('.rbg_types input[type="radio"]').click(function () { onChangeType($(this).attr('id')); }); });
+        }
+
+        /** Asigna funcionalida para cuando se selecciona o no el checkbox de todos los grupos de tiendas */
+        function setOnChangeChkAllGroups() {
+            $('#chk_all_groups').click(function () {
+                var status = $('#chk_all_groups').is(":checked");
+                $("#tbl_content_str_grps tbody input:checkbox" + (status ? ":not(:checked)" : ":checked")).prop("checked", status);
+            });
+        }
+
+        /** Asigna funcionalida para cuando se selecciona o no el checkbox un grupo de tiendas */
+        function setOnChangeChkGroup() {
+            $("#tbl_content_str_grps tbody input:checkbox").click(function () {
+                if ($('#tbl_content_str_grps tbody input:checkbox:checked').length === $("#tbl_content_str_grps tbody input:checkbox").length)
+                    $('#chk_all_groups').prop("checked", true);
+                else $('#chk_all_groups').prop("checked", false);
+            });
+        }
+
+        /** Da formato de Validación al formulario */
+        function setValidationForm() {
+            $.validator.setDefaults({ submitHandler: function () { onActionSaveDiscount(); } });
+            $('#form_modal_discount').validate({
+                rules: rules, messages: messages, errorElement: 'span',
+                errorPlacement: function (er, element) {
+                    er.addClass('invalid-feedback ml-2');
+                    element.closest('.form-group').append(er);
+                    error("Faltan campos", "@Resources.messages.validacion_campos_requeridos");
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        }
+
+        /** Recibe un objeto QuantityDiscount y lo settea en el formulario de la modal */
+        function setDataDiscountInModal(disc) {
+            $("#input_disc_id").val(disc.ID); $("#input_disc_hqid").val(disc.HQID);
+            $("#input_disc_desc").val(disc.Description);
+            if ($('#chk_disc_descontar').is(':checked') !== disc.DiscountOddItems) $('#chk_disc_descontar').click();
+            $("input:radio[id='rdb_disc_type" + disc.Type + "']").click();
+            if (disc.Type === 2 || disc.Type === 4) {
+                $("#quantity_to_pay").val(disc.Quantity1);
+                $("#quantity_to_get").val(disc.Quantity2);
+                if (disc.Type === 2) $("#price_discount").val(disc.Price2);
+                else $("#percent_discount").val(disc.PercentOffPrice2);
+            } else {
+                var field = disc.Type === 1 ? 'Price' : 'PercentOffPrice';
+                var tr = disc.Type === 1 ? 'tr_price' : 'tr_percent';
+                for (var i = 1; i <= 4; i++) {
+                    $("." + tr + " .Quantity" + i).val(disc["Quantity" + i]);
+                    $("." + field + i).val(disc[field + i]);
+                }
+                for (var i = 1; i <= 4; i++) for (var j = 65; j <= 67; j++)
+                    $("." + field + i + String.fromCharCode(j)).val(disc[field + i + String.fromCharCode(j)])
+            }
+        }
+
+        /** Método encargado de consultar al servidor por la lista de descuentos */
+        async function getAllDiscounts() {
+            try {
+                await $.get(url_getAllDiscounts).done(async function (data) {
+                    if (data.Status) {
+                        list_discounts = data.Result;
+                        await fillTableDiscounts(list_discounts);
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#" + elements.spn_table).hide();
+                    }
+                }).fail(function (data) { error(data, "@Resources.messages.error_obt_regs"); });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        /** Devuelve un objeto QuantityDiscount según la info que esté en la modal*/
+        function getDiscountFromModal() {
+            var discount = {
+                Description: $("#input_disc_desc").val(), HQID: +$("#input_disc_hqid").val(), ID: +$("#input_disc_id").val(),
+                DiscountOddItems: $('#chk_disc_descontar').is(':checked'),
+            }; // Objeto QuantityDiscount (con variables inicialies)
+            var disc_type = $('.rbg_types input[type="radio"]:checked').attr("id"); // Obtengo el Botón type seleccionado
+            disc_type = disc_type.substring(disc_type.length - 1); // Obtengo el número type del id del botón seleccionado
+            discount['Type'] = +disc_type; // Le asigno el Type al decuento.
+            if (discount['Type'] === 2 || discount['Type'] === 4) { // Valido si el tipo de decuento seleccionado es 2 ó 4
+                discount['Quantity1'] = +$("#quantity_to_pay").val();
+                discount['Quantity2'] = +$("#quantity_to_get").val();
+            if (discount['Type'] === 2) discount['Price2'] = +($("#price_discount").val().replaceAll(",", ""));
+                else discount['PercentOffPrice2'] = +$("#percent_discount").val();
+            } else if (discount['Type'] === 1 || discount['Type'] === 3) { // Valido si el tipo de descuento seleccionado es 1 ó 3
+                var field = discount['Type'] === 1 ? 'Price' : 'PercentOffPrice'; // Obtengo qué tipo de matriz es
+                var tr = discount['Type'] === 1 ? 'tr_price' : 'tr_percent'; // Ubico la información en el table
+                for (var i = 1; i <= 4; i++) { // Obtengo la info del table y se la setteo en el descuento
+                    discount["Quantity" + i] = +$("." + tr + " .Quantity" + i).val(); // Setteo cantidades
+                    discount[field + i] = +($("." + field + i).val().replaceAll(",", "")); // Setteo primeros porcentajes o precios
+                    for (var j = 65; j <= 67; j++) // Setteo los valores de las columnas A,B y C
+                        discount[field + i + String.fromCharCode(j)] = +($("." + field + i + String.fromCharCode(j)).val().replaceAll(",", ""));
+                }
+            } else return null; // Devuelve NULL si los tipos de descuentos no cuadran.
+            return discount; // Devuelve el objeto descuento.
+        }
+
+        /** Accion ejecutada cuando un tipo de descuento cambia */
+        function onChangeType(r_type) {
+            switch (r_type) {
+                case "rdb_disc_type1": { setDataType_1_3(1); break; }
+                case "rdb_disc_type2": { setDataType_2_4(2); break; }
+                case "rdb_disc_type3": { setDataType_1_3(3); break; }
+                case "rdb_disc_type4": { setDataType_2_4(4); break; }
+                default: error("Valor de radio button erroneo <<val: " + r_type + " >>", "@Resources.messages.error_tipo_desc_inval");
+            }
+            $('[data-mask]').inputmask();
+        }
+
+        /** Método encargardo de acomodar la #modal_discount para agregar una nueva categoría. */
+        function onClickBtnAddDiscount() {
+            newModal(true);
+        }
+
+        /** Evento accionado al dar click a uno de los botones editar del table */
+        function onClickBtnEditDiscount(id_disc) {
+            newModal(false);
+            var disc = findDiscount(id_disc);
+            if (disc !== null) setDataDiscountInModal(disc);
+            else error("Descuento no existe<<" + id_disc + ">>", "@Resources.messages.error_reg_edit_inval");
+        }
+
+        /** Evento de cuando se desea crear un nuevo registro para que limpie la modal */
+        function onClickBtnNewDiscount() {
+            Swal.fire({
+                title: "@Resources.messages.msj_continuar", html: "@Resources.messages.msj_campos_limpiar", icon: 'warning', showCancelButton: true,
+            }).then((result) => { if (result.isConfirmed) newModal(true); });
+        }
+
+        /** Evento accionado al querer guaradar un descuento, siempre y cuando el formulario lo permita */
+        async function onActionSaveDiscount() {
+            $("#" + elements.spn_modal).show();
+            try {
+                var discount = getDiscountFromModal();
+                if (discount !== null) {
+                    await $.ajax({
+                        url: url_saveDiscounts, type: 'post', dataType: 'json', contentType: 'application/json',
+                        data: JSON.stringify({ discount: discount }), cache: false,
+                        success: async function (data) {
+                            if (data.Status) {
+                                Toast.fire({ icon: 'success', title: data.Message });
+                                $("#" + elements.spn_table).show();
+                                await getAllDiscounts();
+                                onClickBtnEditDiscount(data.Result);
+                            } else error(data.InternalMessage, data.Message);
+                            $("#" + elements.spn_modal).hide();
+                        },
+                        error: function (xhr, ajaxOptions, thrownError) {
+                            error(thrownError, "@Resources.messages.error_guardar");
+                            $("#" + elements.spn_modal).hide();
+                        }
+                    });
+                } else {
+                    error("Descuento a guardar: NULL", "@Resources.messages.error_accion");
+                    $("#" + elements.spn_modal).hide();
+                }
+            } catch (e) {
+                error(e, "@Resources.messages.error_intento_guardar");
+                $("#" + elements.spn_modal).hide();
+            }
+        }
+
+        /** Limpia la modal. is_new ? "Agregar Descuento" : "Editar Descuento" */
+        function newModal(is_new) {
+            CleanForm("form_modal_discount");
+            if ($('#chk_disc_descontar').is(':checked') !== false) $('#chk_disc_descontar').click();
+            setDataType_1_3(3);
+            $("#rdb_disc_type1").click();
+            $("#title_modal_discount").text((is_new ? "@Resources.views.agregar " : "@Resources.views.editar") + " @Resources.views.descuento");
+            $('#modal_discount').modal({ backdrop: 'static', keyboard: false });
+        }
+
+        /** Muestra un error, recibe excepcion para mostrar en consola y el mensaje para el usuario. */
+        function error(e, msg) {
+            Toast.fire({ icon: 'error', title: msg });
+            console.error(e);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,697 @@
+﻿
+
+@{
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+    var Name = Resources.views.mant_isla_side;
+    var Title = Resources.views.isla ;
+    var culture = System.Threading.Thread.CurrentThread.CurrentCulture;
+    var CurrencySymbol = culture.NumberFormat.CurrencySymbol;
+    var CurrencyDecimalSeparator = culture.Name.ToUpper() == "ES-CR" ? "." : culture.NumberFormat.CurrencyDecimalSeparator;
+    var CurrencyThousandSeparator = culture.Name.ToUpper() == "ES-CR" ? "," : culture.NumberFormat.NumberGroupSeparator;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+
+    @* < CSS > *@
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    <!-- Tempusdominus Bootstrap 4 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
+    <!-- Select2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+    @* < CSS / >*@
+    @* < SCRIPTS > *@
+    <!-- moment.js -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- Select2 -->
+    <script src="~/Content/AdminLTE/plugins/select2/js/select2.full.min.js"></script>
+    <!-- Tempusdominus Bootstrap 4 -->
+    <script src="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+    <!-- InputMask -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/inputmask/jquery.inputmask.min.js"></script>
+
+    @* < SCRIPTS / >*@
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <!-- Encabezado -->
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>@Name</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager", "Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">@Resources.views.espacios</li>
+                                <li class="breadcrumb-item active">@Resources.views.isla</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Encabezado -->
+            <!-- Muestra -->
+            <div class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="overlay-wrapper">
+                                        <!-- Spinner tbl -->
+                                        <div id="spn_tbl_islaSide" class="overlay justify-content-center">
+                                            <i class="fas fa-3x fa-sync-alt fa-spin"></i>
+                                            <div class="text-bold pt-2">@Resources.views.cargando</div>
+                                        </div>
+                                        <!-- Spinner tbl -->
+                                        <!-- Boton agregar -->
+                                        <div class="col-md-12 mb-3" style="overflow: auto;">
+                                            <div class="row-cols-md-6">
+                                                <button type="button" class="btn btn-primary float-right fa-pull-right" onclick="onClickBtnAddTipo()"><i class="fa fa-plus"> </i> @Resources.views.agregar</button>
+                                            </div>
+                                        </div><!-- Boton agregar -->
+                                        <div class="card card-primary ">
+                                            <!-- Tap Panel - Header -->
+                                            <div class="card-header p-0 pt-1"></div>
+                                            <div class="card-body">
+                                                <div class="tab-content" id="custom-content-below-tabContent">
+                                                    <!-- Table schedule -->
+                                                    <div id="tbl_content_islas" class="dataTables_wrapper dt-bootstrap4">
+                                                        <table class="table table-bordered table-striped">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>@Resources.views.tienda</th>
+                                                                    <th>@Resources.views.proveedor</th>
+                                                                    <th>@Resources.views.tipo</th>
+                                                                    <th>@Resources.views.nom</th>
+                                                                    <th>@Resources.views.ubicacion</th>
+                                                                    <th>@Resources.views.dinamica</th>
+                                                                    <th>@Resources.views.detalle</th>
+                                                                    <th>@Resources.views.fecha_ini</th>
+                                                                    <th>@Resources.views.fecha_fin</th>
+                                                                    <th>@Resources.views.monto</th>
+                                                                    <th>@Resources.views.IVA</th>
+                                                                    <th>@Resources.views.monto_total</th>
+                                                                    <th>Estado</th>
+                                                                    <th>@Resources.views.accion</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody></tbody>
+                                                        </table>
+                                                    </div><!-- Table schedule -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- Muestra -->
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal_tipo" class="modal fade" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <!-- Modal content-->
+            <form id="form_modal_tipo" class="modal-content">
+                <!-- Spinner Modal -->
+                <div id="spn_modal_islaSide" class="overlay">
+                    <i class="fas fa-2x fa-sync fa-spin"></i>
+                </div><!-- Spinner Modal -->
+                
+                <!-- Encabezado Modal -->
+                <div class="modal-header text-center">
+                    <h4 id="title_modal_tipo" class="modal-title"></h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div><!-- Encabezado Modal -->
+
+                <!-- Cuerpo Modal -->
+                <div class="modal-body" style="overflow: auto">
+                    <div class="col-12 d-flex justify-content-end">
+                        <div id="div_editar" class="checkbox icheck-turquoise">
+                            <input type="checkbox" id="ck_editar">
+                            <label for="ck_editar">
+                                Editar
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!--filtro-->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card card-outline card-primary">
+                                <input type="hidden" id="CTID" />
+                                <div class="card-header">
+                                    <h3 class="card-title">Asignación de Espacio</h3>
+                                    <div class="card-tools">
+                                        <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div id="actions" class="row">
+                                        <div class=" col-sm-4 form-group w-100">
+                                            <label>@Resources.views.tienda</label>
+                                            <select id="select_store" name="select_store" class="form-control select2bs4" data-placeholder="@Resources.views.buscar" style="width: 100%;"></select>
+                                            <input type="hidden" id="hfID" />
+                                        </div>
+                                        <div class="col-sm-4 form-group w-100">
+                                            <label class="control-label">Tipo de Espacio</label>
+                                            <select id="select_tipo" name="select_tipo" class="col-sm-5 form-control select2bs4" data-placeholder="@Resources.views.buscar" style="width: 100%;">
+                                                <option value="S">Side Kick</option>
+                                                <option value="I">Isla</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-sm-4 form-group w-100">
+                                            <label>@Resources.views.proveedor</label>
+                                            <select id="select_proveedor" name="select_proveedor" class="form-control select2bs4" data-placeholder="@Resources.views.buscar" style="width: 100%;"></select>
+                                        </div>
+                                        @* Input numero de espacio *@
+                                        <div class="col-sm-4 form-group">
+                                            <label for="input_num" class="control-label">Numero de Espacio</label>
+                                            <input id="input_num" name="input_num" type="text" class="form-control" placeholder="Nombre de espacio" />
+                                        </div>@* Input numero de espacio *@
+                                        @* Input de ubicacion del espacio *@
+                                        <div class="col-sm-4 form-group">
+                                            <label for="input_ubicacion" class="control-label">Ubicacion</label>
+                                            <input id="input_ubicacion" name="input_ubicacion" type="text" class="form-control" placeholder="Ubicación" />
+                                        </div> @* Input de ubicacion del espacio *@
+                                        <div class="col-sm-4 form-group w-100">
+                                            <label class="control-label">@Resources.views.dinamica</label>
+                                            <select id="select_dinamica" name="select_dinamica" class="col-sm-5 form-control select2bs4" data-placeholder="@Resources.views.buscar" style="width: 100%;">
+                                            </select>
+                                        </div>
+                                        @* Input detalle dinámica *@
+                                        <div class="col-sm-4 form-group">
+                                            <label for="input_detalle" class="control-label">Detalle de Dinámica</label>
+                                            <input id="input_detalle" name="input_detalle" type="text" class="form-control" placeholder="Detalle de Dinámica" />
+                                        </div>@* Input detalle dinámica *@
+                                        <div class="form-group  col-sm-4">
+                                            <label>Monto</label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas">@CurrencySymbol</i></span>
+                                                </div>
+                                                <input id="input_monto" type="text" name="input_monto" class="form-control" data-inputmask="'alias' : 'currency', 'groupSeparator':'@CurrencyThousandSeparator', 'radixPoint':'@CurrencyDecimalSeparator'" data-mask />
+                                            </div>
+                                            <!-- /.input group -->
+                                        </div>
+                                        <div class="col-sm-4 form-group w-100">
+                                            <label class="col-sm-5 control-label">@Resources.views.IVA</label>
+                                            <select id="select2_iva" name="select2_iva" class="form-control select2bs4">
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- /.card-body -->
+                            </div>
+                            <!-- /.card -->
+                        </div>
+                    </div>
+                    <!-- /agregar fechas-->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card card-outline card-primary">
+                                <div class="card-header">
+                                    <h3 class="card-title">Vigencia</h3>
+                                    <div class="card-tools">
+                                        <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div id="actions" class="row">
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Fecha Inicio</label>
+                                                <div class="input-group date" id="fecha_ini" data-target-input="nearest">
+                                                    <input type="text" name="fecha_ini" class="form-control datetimepicker-input" data-target="#fecha_ini" style="width:60%;" />
+                                                    <div class="input-group-append" data-target="#fecha_ini" data-toggle="datetimepicker">
+                                                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="form-group">
+                                                <label>Fecha Final</label>
+                                                <div class="input-group date" id="fecha_final" data-target-input="nearest">
+                                                    <input type="text" name="fecha_final" class="form-control datetimepicker-input" data-target="#fecha_final" style="width:60%;" />
+                                                    <div class="input-group-append" data-target="#fecha_final" data-toggle="datetimepicker">
+                                                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <script type="text/javascript">
+                                            $(function () { $('#fecha_ini').datetimepicker({ format: 'DD/MM/YYYY', }); });
+                                            $(function () { $('#fecha_final').datetimepicker({ format: 'DD/MM/YYYY', }); });
+                                        </script>
+                                    </div>
+                                </div>
+                                <!-- /.card-body -->
+                            </div>
+                            <!-- /.card -->
+                        </div>
+                    </div>
+                </div><!-- Cuerpo Modal -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="onClickBtnNewIslaSide()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                    <button type="submit" class="btn btn-success"> <i class="fa fa-save"></i> @Resources.views.guardar</button>
+                    <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                </div>
+            </form><!-- Modal content-->
+        </div>
+    </div><!-- Modal -->
+    @* Variables *@
+    <script>
+        var url_getAllIslasSide = '@Url.Action("GetAll", "IslaSide")';
+        var url_SaveIslaSide = '@Url.Action("SaveIslasSide", "IslaSide")';
+        var url_refresh = '@Url.Action("GetRefresh", "IslaSide")';
+        var list_Supplier = [];
+        var list_tax = [];
+        var list_dinamicas = [{ id: "1", text: "Descuento" }, { id: "2", text: "Bandeo" },];
+        var list_tipos = [{ id: "1", text: "Condimentos", "selected": true }, { id: "2", text: "Cereales y Leche" }, { id: "3", text: "Enlatados" }
+            , { id: "4", text: "Higiene personal" }, { id: "5", text: "Congelados" }, { id: "6", text: "Refrescos" }];
+        var list_Store = []; // Almacena las tiendas obtenidas
+        var list_islasSide = [];
+        var select_supplier;
+        var select_store;
+        var select_tax;
+        var rules = {
+            fecha_ini: { required: true},
+            fecha_final: { required: true },
+            select2_iva: { required: true },
+            select_dinamica: { required: true },
+            select_store: { required: true },
+            select_proveedor: { required: true },
+            select_tipo: { required: true },
+            input_detalle: { required: true, maxlength: 50 },
+            input_monto: { required: true, maxlength: 15 },
+            input_num: { required: true, maxlength: 10 },
+            input_ubicacion: { required: true, maxlength: 50 }
+        };
+        var messages = {
+            fecha_ini: { required: "@Resources.messages.validacion_req" },
+            fecha_final: { required: "@Resources.messages.validacion_req" },
+            select2_iva: { required: "@Resources.messages.validacion_req" },
+            select_dinamica: { required: "@Resources.messages.validacion_req" },
+            select_store: { required: "@Resources.messages.validacion_req" },
+            select_proveedor: { required: "@Resources.messages.validacion_req" },
+            select_tipo: { required: "@Resources.messages.validacion_req" },
+            input_detalle: { required: "@Resources.messages.validacion_req", maxlength: "@Resources.messages.validacion_max" },
+            input_monto: { required: "@Resources.messages.validacion_desc_req", maxlength: "@Resources.messages.validacion_desc_maxLen" },
+            input_num: { required: "@Resources.messages.validacion_desc_req", maxlength: "@Resources.messages.validacion_desc_maxLen" },
+            input_ubicacion: { required: "@Resources.messages.validacion_desc_req", maxlength: "@Resources.messages.validacion_desc_maxLen" }
+        };
+        var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4000 }); // Variable para mostrar los mensajes.
+        var estados = { 0: 'NO INICIADO', 1: 'ACTIVO', 2: 'FINALIZADO' };
+        var estadosColor = { 0: 'primary', 1: 'success', 2: 'secondary' };
+    </script>
+
+    @* Funciones *@
+    <script>
+        /** Función initialize */
+        $(async function () {
+            fillMenuItemsLayout();
+            fillFormTipo();
+            $("#spn_modal_islaSide").hide();
+            $(".select2").select2();
+            $('.select2bs4').select2({
+                theme: 'bootstrap4'
+            });
+            $('[data-mask]').inputmask();
+            StartLoadTable("tbl_content_islas", true);
+            EndLoadTable("@Name", "tbl_content_islas", true);
+            fillSelectDinamica();
+            await getAllIslasSide();
+            StartLoadTable("tbl_content_islas", true);
+            EndLoadTable("@Name", "tbl_content_islas", true);
+        });
+
+        /** Marca los items del menú del MainLayout para que se muestre en qué parte del menú se encuentra*/
+        function fillMenuItemsLayout() {
+            openMenu(["#nav-item-espacios"]);
+            activeItemMenu([".nav-item-espacios", "#nav-link-espacios-islas"])
+        }
+
+        function findStore(store_id) {
+            if (store_id && store_id > 0 && list_Store)
+                return list_Store.find(s => s.IDS === store_id);
+            else return null;
+        }
+
+        function findTax(id) {
+            if (id && id > 0 && list_tax)
+                return list_tax.find(t => t.ID === id);
+            else return null;
+        }
+
+        function findSupplier(id) {
+            if (id && id > 0 && list_Supplier)
+                return list_Supplier.find(sup => sup.ID === id);
+            else return null;
+        }
+
+        function findIslaSide(ID) {
+            for (var i = 0; i < list_islasSide.length; i++)
+                if (list_islasSide[i].ID === ID)
+                    return list_islasSide[i];
+            return null;
+        }
+
+        function findDinamica(id) {
+            if (id && id > 0 && list_dinamicas)
+                return list_dinamicas.find(x => x.id === id);
+            else return null;
+        }
+
+        function supplierToData() {
+            return list_Supplier.map(d => { return { 'id': d.ID, 'text': d.Name } });
+        }
+
+        function storeToData() {
+            return list_Store.map(d => { return { 'id': d.IDS, 'text': d.NameS } });
+        }
+
+
+        function taxToData() {
+                return list_tax.map(d => { return { 'id': d.ID, 'text': d.Name } });
+        }
+
+        function fillSelectSupplier() {
+            var data = list_Supplier.map(d => { return { 'id': d.ID, 'text': d.Name } });
+            $("#select_proveedor").select2("destroy");
+            select_supplier = $("#select_proveedor").select2({
+                data: supplierToData(), theme: 'bootstrap4'
+            });
+        }
+
+        function fillSelectTax() {
+            $("#select2_iva").select2("destroy");
+            select_tax = $("#select2_iva").select2({
+                data: taxToData(),  theme: 'bootstrap4'
+            });
+        }
+
+        function fillSelectStore() {
+            $("#select_store").select2("destroy");
+            select_store = $("#select_store").select2({
+               data: storeToData(), theme: 'bootstrap4'
+            });
+        }
+
+        function fillSelectDinamica() {
+            $("#select_dinamica").select2("destroy");
+            $("#select_dinamica").select2({  data: list_dinamicas, theme: 'bootstrap4' });
+        }
+
+        function fillFormTipoeee() {
+            $.validator.setDefaults({ submitHandler: function () { GuardarIslasSideKick(); } });
+            $('#form_modal_tipo').validate({
+                rules: rules, messages: messages, errorElement: 'span',
+                errorPlacement: function (err, element) {
+                    err.addClass('invalid-feedback ml-2');
+                    element.closest('.form-group').append(err);
+                },
+                highlight: function (element, errorClass, validClass) { $(element).addClass('is-invalid'); },
+                unhighlight: function (element, errorClass, validClass) { $(element).removeClass('is-invalid'); }
+            });
+        }
+
+        function fillFormTipo() {
+            $.validator.setDefaults({
+                submitHandler: function () { GuardarIslasSideKick(); }
+            });
+            $('#form_modal_tipo').validate({
+                rules: rules, messages: messages, errorElement: 'span',
+                errorPlacement: function (er, element) {
+                    er.addClass('invalid-feedback ml-2');
+                    element.closest('.form-group').append(er);
+                    error("Faltan campos", "@Resources.messages.validacion_campos_requeridos");
+                },
+                highlight: function (element, errorClass, validClass) { $(element).addClass('is-invalid'); },
+                unhighlight: function (element, errorClass, validClass) { $(element).removeClass('is-invalid'); }
+            });
+        }
+
+        function getIslasSideFromModal() {
+            var monto = $("#input_monto").val(),
+                monto = (monto ? monto.replaceAll("@CurrencyThousandSeparator", "") : monto),
+                precio = Number(monto),
+                porcentaje = findTax(+$("#select2_iva").val()).Percentage,
+                montoTotal = (precio * (1 + (porcentaje / 100))),
+                fechaini = $('#fecha_ini').datetimepicker('date').toDate(),
+                fechafin = $('#fecha_final').datetimepicker('date').toDate(),
+                id = $('#ck_editar').is(":checked") ? $("#CTID").val() : 0;
+
+            return {
+                ID: id ,
+                IDStore: $("#select_store").val(),
+                IDSupplier: $("#select_proveedor").val(),
+                TipoEspacio: $("#select_tipo").val(),
+                NumEspacio: $("#input_num").val(),
+                Ubicacion: $("#input_ubicacion").val(),
+                Dinamica: $("#select_dinamica").val(),
+                Detalle: $("#input_detalle").val(),
+                FechaInicio: fechaini,
+                FechaFin: fechafin,
+                Monto: precio,
+                IDTax: $("#select2_iva").val(),
+                Total: montoTotal
+            };
+        }
+
+        function GuardarIslasSideKick() {
+            $("#spn_modal_islaSide").show();
+            var ist = getIslasSideFromModal();
+            try {
+                $.ajax({
+                    url: url_SaveIslaSide, type: 'post', dataType: 'json', contentType: 'application/json',
+                    data: JSON.stringify({ islasSide: ist }), cache: false,
+                    success: async function (result) {
+                        $("#ck_editar").prop("checked", true);
+                        if (result.Status) {
+                            Toast.fire({ icon: 'success', title: result.Message });
+                            $("#CTID").val(result.Result);
+                            await refreshIslasSideKick();
+
+                            $("#spn_modal_islaSide").hide();
+                        } else {
+                            $("#spn_modal_islaSide").hide();
+                            error(result.InternalMessage, result.Message);
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        $("#spn_modal_islaSide").hide();
+                        console.log("error al guardar");
+                        error(thrownError, "@Resources.messages.error_guardar");
+                    }
+                });
+            } catch (e) {
+                $("#spn_modal_islaSide").hide();
+                error(e, "@Resources.messages.error_intento_guardar");
+            }
+        }
+
+        async function getAllIslasSide() {
+            $("#spn_tbl_islaSide").show();
+            try {
+                await
+                $.get(url_getAllIslasSide).done(async function (data) {
+                    if (data.Status) {
+                        list_Supplier = data.Result.supplier;
+                        list_tax = data.Result.tax;
+                        list_Store = data.Result.store;
+                        list_islasSide = data.Result.islaSide;
+                        fillSelectSupplier();
+                        fillSelectStore();
+                        fillSelectTax();
+                        $("#spn_tbl_islaSide").hide();
+                        await fillIslasSideTable();
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#spn_tbl_islaSide").hide();
+                    }
+                }).fail(function (data) {
+                    error(data, "@Resources.messages.error_obt_regs");
+                    $("#spn_tbl_islaSide").hide();
+                });
+            } catch (e) {
+                error(e, "@Resources.messages.error_obt_regs");
+                $("#spn_tbl_islaSide").hide();
+            }
+        }
+
+        async function refreshIslasSideKick() {
+            $("#spn_tbl_islaSide").show();
+            try {
+                await
+                $.get(url_refresh).done(async function (data) {
+                    if (data.Status) {
+                        list_islasSide = data.Result.islaSide;
+                        
+                        await fillIslasSideTable();
+                        $("#spn_tbl_islaSide").hide();
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#spn_tbl_islaSide").hide();
+                    }
+                }).fail(function (data) {
+                    error(data, "@Resources.messages.error_obt_regs");
+                    $("#spn_tbl_islaSide").hide();
+                });
+            } catch (e) {
+                error(e, "@Resources.messages.error_obt_regs");
+                $("#spn_tbl_islaSide").hide();
+            }
+        }
+
+        function setIslaSide(islaSide) {
+            try {
+                $("#CTID").val(islaSide.ID);
+                select_store.val(islaSide.IDStore).trigger('change');
+                select_supplier.val(islaSide.IDSupplier).trigger('change');
+                select_tax.val(islaSide.IDTax).trigger('change');
+
+                $('#fecha_ini').datetimepicker('date', moment(islaSide.FechaInicioAux, "DD/MM/YYYY"));
+                $('#fecha_final').datetimepicker('date', moment(islaSide.FechaFinAux, "DD/MM/YYYY"));
+
+                $("#select_tipo").val(islaSide.TipoEspacio).trigger('change');
+                $("#select_dinamica").val(islaSide.Dinamica).trigger('change');
+                $("#input_detalle").val(islaSide.Detalle);
+                $("#input_monto").val(islaSide.Monto);
+                $("#input_num").val(islaSide.NumEspacio);
+                $("#input_ubicacion").val(islaSide.Ubicacion);
+            } catch (e) {
+                error(e, "@Resources.messages.error_mostrar_reg_edit");
+            }
+        }
+
+        async function fillIslasSideTable() {
+            try {
+                StartLoadTable("tbl_content_islas", true);
+                $("#spn_tbl_islaSide").show();
+                if (list_islasSide) {
+                    $("#tbl_content_islas > table > tbody").html("");
+                    await list_islasSide.forEach(function (d) {
+                        var row = $("<tr />"), store = findStore(d.IDStore), tax = findTax(d.IDTax), supplier = findSupplier(d.IDSupplier), dinamica = findDinamica(d.Dinamica),
+                            tipo = d.TipoEspacio == "I" ? "Isla" : "Side Kick";
+                        $("#tbl_content_islas > table").append(row);
+                        row.append($("<td> " + (store ? store.NameS : "-@Resources.views.no_def-") + "</td>"));
+                        row.append($("<td> " + (supplier ? supplier.Name : "-@Resources.views.no_def-") + "</td>"));
+                        row.append($("<td> " + tipo + "</td>"));
+                        row.append($("<td> " + d.NumEspacio + "</td>"));
+                        row.append($("<td> " + d.Ubicacion + "</td>"));
+                        row.append($("<td> " + (dinamica ? dinamica.text : "-NO DEFINIDO-") + "</td>"));
+                        row.append($("<td> " + d.Detalle + "</td>"));
+                        row.append($("<td> " + d.FechaInicioAux + "</td>"));
+                        row.append($("<td> " + d.FechaFinAux + "</td>"));
+                        row.append($("<td> @CurrencySymbol" + numberWithCommas(d.Monto) + "</td>"));
+                        row.append($("<td> " + (tax ? tax.Name : "-@Resources.views.no_def-") + "</td>"));
+                        row.append($("<td> @CurrencySymbol" + numberWithCommas(d.Total) + "</td>"));
+
+                        var dateIni = new Date(moment(d.FechaInicioAux, "DD/MM/YYYY")),
+                            dateFin = new Date(moment(d.FechaFinAux, "DD/MM/YYYY")),
+                            dateActual = new Date();
+
+                        dateActual.setHours(0);
+                        dateActual.setMinutes(0);
+                        dateActual.setSeconds(0);
+                        dateActual.setMilliseconds(0);
+
+                        var estado = (dateActual > dateFin) ? 2 : (dateActual < dateIni) ? 0 : 1;
+
+                        row.append($("<td><span class='badge bg-" + estadosColor[estado] + "'>" + estados[estado] + "</span></td>"));
+                        var title = "@Resources.views.editar @Resources.views.isla";
+                        row.append($("<td><button class='btn btn-primary' title='" + title + "' data-toggle='modal' data-target='' onClick='onClickBtnEditIslaSide(" + d.ID + ")'> <i class='fa fa-edit' aria-hidden='true'></i></button></td>"));
+                    });
+                } else Toast.fire({ icon: 'warning', title: '@Resources.messages.msj_lista_vacia' });
+                EndLoadTable("@Name", "tbl_content_islas", true);
+                $("#spn_tbl_islaSide").hide();
+            } catch (e) { error(e, "@Resources.messages.error_llenar_registros"); }
+        }
+
+        function numberWithCommas(x) {
+            return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, "@CurrencyThousandSeparator");
+        }
+
+        function onClickBtnNewIslaSide() {
+            Swal.fire({
+                title: "@Resources.messages.msj_continuar", html: "@Resources.messages.msj_campos_limpiar", icon: 'warning', showCancelButton: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $("#form_modal_tipo  input").val("");
+                    $("#select_tipo").val("").trigger('change');
+                    $("#select_dinamica").val("").trigger('change');
+                    $("#select_store").val("").trigger('change');
+                    $("#select_proveedor").val("").trigger('change');
+                    $("#select2_iva").val("").trigger('change');
+                    openModal(true);
+                }
+            });
+        }
+
+        function onClickBtnAddTipo() {
+            $('#modal_tipo').modal({ backdrop: 'static', keyboard: false });
+            // id_edit = 0;
+            $("#title_modal_tipo").html('@Resources.views.agregar ' + '@Resources.views.espacios');
+        }
+
+        function onClickBtnEditIslaSide(ID) {
+            var islaSide = findIslaSide(ID);
+            if (islaSide) {
+                setIslaSide(islaSide);
+                openModal(false);
+                $("#ck_editar").prop("checked", true);
+            } else Toast.fire({ icon: "warning", title: "@Resources.messages.error_reg_edit_inval" });
+        }
+
+        /** Abre la modal */
+        function openModal(is_new) {
+            $("#title_modal_tipo").html((is_new ? "@Resources.views.agregar" : "@Resources.views.editar") + " @Resources.views.espacios");
+            $('#ck_editar').prop("disabled", false);
+            $('#modal_tipo').modal({ backdrop: 'static', keyboard: false });
+        }
+
+        /** Muestra un error, recibe excepcion para mostrar en consola y el mensaje para el usuario. */
+        function error(e, msg) {
+            Toast.fire({ icon: 'error', title: msg });
+            console.error(e);
+        }
+    </script>
+</body>
+</html>

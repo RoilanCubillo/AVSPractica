@@ -1,0 +1,1741 @@
+﻿<?xml version="1.0" encoding="utf-8"?><Database Name="BM_POS_CEDI" Class="MasterDBDataContext" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
+  <Connection Mode="AppSettings" ConnectionString="Data Source=45.56.165.226,9010;Initial Catalog=BM_POS_CEDI;User ID=us_rmhc_grupobm" SettingsObjectName="UltraERP.BusinessDataAccess.Properties.Settings" SettingsPropertyName="BM_POS_CEDIConnectionString" Provider="System.Data.SqlClient" />
+  <Table Name="dbo.View_UEP_ITEM_GET_BY_ITEMLOOKUPCODE_LIST" Member="View_UEP_ITEM_GET_BY_ITEMLOOKUPCODE_LISTs">
+    <Type Name="View_UEP_ITEM_GET_BY_ITEMLOOKUPCODE_LIST">
+      <Column Name="ItemLookupCode" Type="System.String" DbType="NVarChar(25) NOT NULL" CanBeNull="false" />
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="NVarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="ExtendedDescription" Type="System.String" DbType="NText NOT NULL" CanBeNull="false" UpdateCheck="Never" />
+      <Column Name="SubDescription1" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription2" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription3" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="Cost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="Inactive" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="TaxID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Price" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="ReplacementCost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="MSRP" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierName" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierCode" Type="System.String" DbType="NVarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierCost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierCostStartDate" Type="System.String" DbType="VarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="QuantityDiscountName" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomerDiscount" Type="System.Decimal" DbType="Decimal(18,2) NOT NULL" CanBeNull="false" />
+      <Column Name="Utility" Type="System.Decimal" DbType="Decimal(18,2) NOT NULL" CanBeNull="false" />
+      <Column Name="TaxPercentage" Type="System.Single" DbType="Real NOT NULL" CanBeNull="false" />
+    </Type>
+  </Table>
+  <Function Name="dbo.UEP_CATEGORY_GETALL_BY_SUPPLIER" Method="UEP_CATEGORY_GETALL_BY_SUPPLIER">
+    <Parameter Name="SupplierID" Parameter="supplierID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_CATEGORY_GETALL_BY_SUPPLIERResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_CXC_CABECERA_GETALL_TIENDA" Method="UEP_CXC_CABECERA_GETALL_TIENDA">
+    <Parameter Name="StoreID" Parameter="storeID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_CXC_CABECERA_GETALL_TIENDAResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="NumCabecera" Type="System.String" DbType="VarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="Monto" Type="System.Decimal" DbType="Decimal(18,2) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_CXC_FORMAREBAJO_GETALL" Method="UEP_CXC_FORMAREBAJO_GETALL">
+    <ElementType Name="UEP_CXC_FORMAREBAJO_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Nombre" Type="System.String" DbType="VarChar(30) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_CXC_FRECUENCIAPAGO_GETALL" Method="UEP_CXC_FRECUENCIAPAGO_GETALL">
+    <ElementType Name="UEP_CXC_FRECUENCIAPAGO_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Nombre" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_CXC_FRIOS_GETALL_TIENDA" Method="UEP_CXC_FRIOS_GETALL_TIENDA">
+    <Parameter Name="StoreID" Parameter="storeID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_CXC_FRIOS_GETALL_TIENDAResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Camara" Type="System.String" DbType="VarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="Puerta" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="NumParrillas" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Dimension" Type="System.String" DbType="VarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="Ubicacion" Type="System.String" DbType="VarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="Monto" Type="System.Decimal" DbType="Decimal(10,2) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_CXC_IDC_GETALL" Method="UEP_CXC_IDC_GETALL">
+    <Parameter Name="CXC_ProveedorID" Parameter="cXC_ProveedorID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_CXC_IDC_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CXC_ProveedorID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="FrecuenciaPagoID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="IDCTipoID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="NegociacionID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ValorNegMonetizado" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="ValorNegPorcentaje" Type="System.Double" DbType="Float" CanBeNull="true" />
+      <Column Name="ListaCategorias" Type="System.String" DbType="VarChar(500) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_CXC_IDCTIPO_GETALL" Method="UEP_CXC_IDCTIPO_GETALL">
+    <ElementType Name="UEP_CXC_IDCTIPO_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Nombre" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_CXC_IIC_GETALL" Method="UEP_CXC_IIC_GETALL">
+    <Parameter Name="CXC_ProveedorID" Parameter="cXC_ProveedorID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_CXC_IIC_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CXC_ProveedorID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="FrecuenciaPagoID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="IICTipoID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="NegociacionID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ValorNegMonetizado" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="ValorNegPorcentaje" Type="System.Double" DbType="Float" CanBeNull="true" />
+      <Column Name="ListaCategorias" Type="System.String" DbType="VarChar(500) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_CXC_IICTIPO_GETALL" Method="UEP_CXC_IICTIPO_GETALL">
+    <ElementType Name="UEP_CXC_IICTIPO_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Nombre" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_CXC_NEGOCIACION_GETALL" Method="UEP_CXC_NEGOCIACION_GETALL">
+    <ElementType Name="UEP_CXC_NEGOCIACION_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Nombre" Type="System.String" DbType="VarChar(30) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_CXC_PROVEEDOR_GETALL" Method="UEP_CXC_PROVEEDOR_GETALL">
+    <ElementType Name="UEP_CXC_PROVEEDOR_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="NumeroContrato" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+      <Column Name="FormaRebajoID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="VigenciaDesde" Type="System.DateTime" DbType="Date NOT NULL" CanBeNull="false" />
+      <Column Name="VigenciaHasta" Type="System.DateTime" DbType="Date NOT NULL" CanBeNull="false" />
+      <Column Name="ProveedorID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CasaComercialID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="Estado" Type="System.String" DbType="VarChar(2) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEM_GETALL" Method="UEP_ITEM_GETALL">
+    <Parameter Name="ValorBusqueda" Parameter="valorBusqueda" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="Estado" Parameter="estado" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="ResultCount" Parameter="resultCount" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_ITEM_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="HQID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ItemLookupCode" Type="System.String" DbType="NVarChar(25) NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="NVarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="ExtendedDescription" Type="System.String" DbType="NText NOT NULL" CanBeNull="false" UpdateCheck="Never" />
+      <Column Name="SubDescription1" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription2" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription3" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="ItemType" Type="System.Int16" DbType="SmallInt NOT NULL" CanBeNull="false" />
+      <Column Name="DepartmentID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CategoryID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Price" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="Cost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceA" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceB" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceC" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="MSRP" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceLowerBound" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceUpperBound" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="SaleType" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SalePrice" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="SaleStartDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="SaleEndDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="SaleScheduleID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="BuydownPrice" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="BuydownQuantity" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="QuantityDiscountID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="UnitOfMeasure" Type="System.String" DbType="NVarChar(4) NOT NULL" CanBeNull="false" />
+      <Column Name="ReplacementCost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="Quantity" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="LastReceived" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="LastUpdated" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="LastSold" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="LastCost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="LastCounted" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="DateCreated" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="Inactive" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="FamilyID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="SubCategoryID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="SubDescription4" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription5" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription6" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription7" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription8" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription9" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription10" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEM_GETALL_DYNAMIC" Method="UEP_ITEM_GETALL_DYNAMIC">
+    <Parameter Name="SearchValue" Parameter="searchValue" Type="System.String" DbType="NVarChar(30)" />
+    <Parameter Name="OrderColumn" Parameter="orderColumn" Type="System.Int32" DbType="Int" />
+    <Parameter Name="OrderDirection" Parameter="orderDirection" Type="System.String" DbType="NVarChar(4)" />
+    <Parameter Name="Skip" Parameter="skip" Type="System.Int32" DbType="Int" />
+    <Parameter Name="Take" Parameter="take" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_ITEM_GETALL_DYNAMICResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="HQID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ItemLookupCode" Type="System.String" DbType="NVarChar(25) NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="NVarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="ExtendedDescription" Type="System.String" DbType="NText NOT NULL" CanBeNull="false" UpdateCheck="Never" />
+      <Column Name="SubDescription1" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription2" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription3" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="ItemType" Type="System.Int16" DbType="SmallInt NOT NULL" CanBeNull="false" />
+      <Column Name="DepartmentID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CategoryID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Price" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="Cost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceA" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceB" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceC" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="MSRP" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceLowerBound" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceUpperBound" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="SaleType" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SalePrice" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="SaleStartDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="SaleEndDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="SaleScheduleID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="BuydownPrice" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="BuydownQuantity" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="QuantityDiscountID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="UnitOfMeasure" Type="System.String" DbType="NVarChar(4) NOT NULL" CanBeNull="false" />
+      <Column Name="ReplacementCost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="Quantity" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="LastReceived" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="LastUpdated" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="LastSold" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="LastCost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="LastCounted" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="DateCreated" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="Inactive" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="FamilyID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="SubCategoryID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="SubDescription4" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription5" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription6" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription7" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription8" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription9" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription10" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEM_GETALL_DYNAMIC_2_0" Method="UEP_ITEM_GETALL_DYNAMIC_2_0">
+    <Parameter Name="SearchValue" Parameter="searchValue" Type="System.String" DbType="NVarChar(30)" />
+    <Parameter Name="OrderColumn" Parameter="orderColumn" Type="System.Int32" DbType="Int" />
+    <Parameter Name="OrderDirection" Parameter="orderDirection" Type="System.String" DbType="NVarChar(4)" />
+    <Parameter Name="Skip" Parameter="skip" Type="System.Int32" DbType="Int" />
+    <Parameter Name="Take" Parameter="take" Type="System.Int32" DbType="Int" />
+    <Parameter Name="STR_FAMILIES" Parameter="sTR_FAMILIES" Type="System.String" DbType="NVarChar(MAX)" />
+    <Parameter Name="STR_DEPARTMENTS" Parameter="sTR_DEPARTMENTS" Type="System.String" DbType="NVarChar(MAX)" />
+    <Parameter Name="STR_CATEGORIES" Parameter="sTR_CATEGORIES" Type="System.String" DbType="NVarChar(MAX)" />
+    <Parameter Name="STR_SUBCATEGORIES" Parameter="sTR_SUBCATEGORIES" Type="System.String" DbType="NVarChar(MAX)" />
+    <ElementType Name="UEP_ITEM_GETALL_DYNAMIC_2_0Result">
+      <Column Name="BinLocation" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="BuydownPrice" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="BuydownQuantity" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="CommissionAmount" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="CommissionMaximum" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="CommissionMode" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CommissionPercentProfit" Type="System.Single" DbType="Real NOT NULL" CanBeNull="false" />
+      <Column Name="CommissionPercentSale" Type="System.Single" DbType="Real NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="NVarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="FoodStampable" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="HQID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ItemNotDiscountable" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="LastReceived" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="LastUpdated" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="Notes" Type="System.String" DbType="NText" CanBeNull="true" UpdateCheck="Never" />
+      <Column Name="QuantityCommitted" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="SerialNumberCount" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="TareWeightPercent" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ItemLookupCode" Type="System.String" DbType="NVarChar(25) NOT NULL" CanBeNull="false" />
+      <Column Name="DepartmentID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CategoryID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="MessageID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Price" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceA" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceB" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceC" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="SalePrice" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="SaleStartDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="SaleEndDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="QuantityDiscountID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="TaxID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ItemType" Type="System.Int16" DbType="SmallInt NOT NULL" CanBeNull="false" />
+      <Column Name="Cost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="Quantity" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="ReorderPoint" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="RestockLevel" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="TareWeight" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="TagAlongItem" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="TagAlongQuantity" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="ParentItem" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ParentQuantity" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="BarcodeFormat" Type="System.Int16" DbType="SmallInt NOT NULL" CanBeNull="false" />
+      <Column Name="PriceLowerBound" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceUpperBound" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PictureName" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="LastSold" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="ExtendedDescription" Type="System.String" DbType="NText NOT NULL" CanBeNull="false" UpdateCheck="Never" />
+      <Column Name="SubDescription1" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription2" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription3" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="UnitOfMeasure" Type="System.String" DbType="NVarChar(4) NOT NULL" CanBeNull="false" />
+      <Column Name="SubCategoryID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="QuantityEntryNotAllowed" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="PriceMustBeEntered" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="BlockSalesReason" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="BlockSalesAfterDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="Weight" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="Taxable" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="DBTimeStamp" Type="System.Data.Linq.Binary" DbType="rowversion" CanBeNull="true" />
+      <Column Name="BlockSalesBeforeDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="LastCost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="ReplacementCost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="WebItem" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="BlockSalesType" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="BlockSalesScheduleID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SaleType" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SaleScheduleID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Consignment" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="Inactive" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="LastCounted" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="DoNotOrder" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="MSRP" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="DateCreated" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="Content" Type="System.String" DbType="NText NOT NULL" CanBeNull="false" UpdateCheck="Never" />
+      <Column Name="UsuallyShip" Type="System.String" DbType="NVarChar(255) NOT NULL" CanBeNull="false" />
+      <Column Name="NumberFormat" Type="System.String" DbType="NVarChar(20)" CanBeNull="true" />
+      <Column Name="ItemCannotBeRet" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
+      <Column Name="ItemCannotBeSold" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
+      <Column Name="IsAutogenerated" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
+      <Column Name="IsGlobalvoucher" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="DeleteZeroBalanceEntry" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
+      <Column Name="TenderID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SyncGuid" Type="System.Guid" DbType="UniqueIdentifier" CanBeNull="true" />
+      <Column Name="FamilyID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="SubDescription4" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription5" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription6" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription7" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription8" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription9" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="SubDescription10" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="Departamento" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="Categoria" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="Familia" Type="System.String" DbType="VarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="SubCategoria" Type="System.String" DbType="VarChar(80) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEM_GETALL_SIMPLE" Method="UEP_ITEM_GETALL_SIMPLE">
+    <Parameter Name="SupplierID" Parameter="supplierID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_ITEM_GETALL_SIMPLEResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="NVarChar(80) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_EXTCENTRAL_SEGMENT_GETALL" Method="UEP_EXTCENTRAL_SEGMENT_GETALL">
+    <ElementType Name="UEP_EXTCENTRAL_SEGMENT_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SubCategoryID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Code" Type="System.String" DbType="VarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="VarChar(80) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_EXTCENTRAL_SEGMENT_INSERT_UPDATE" Method="UEP_EXTCENTRAL_SEGMENT_INSERT_UPDATE">
+    <Parameter Name="ID" Parameter="iD" Type="System.Int32" DbType="Int" />
+    <Parameter Name="SubCategoryID" Parameter="subCategoryID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="Code" Parameter="code" Type="System.String" DbType="VarChar(17)" />
+    <Parameter Name="Description" Parameter="description" Type="System.String" DbType="VarChar(80)" />
+    <ElementType Name="UEP_EXTCENTRAL_SEGMENT_INSERT_UPDATEResult">
+      <Column Name="" Member="Column1" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="RESPUESTA" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+      <Column Name="SCOPE" Type="System.Int32" DbType="Int" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_EXTCENTRAL_SUBCATEGORY_GETALL_BY_CATEGORYID" Method="UEP_EXTCENTRAL_SUBCATEGORY_GETALL_BY_CATEGORYID">
+    <Parameter Name="CategoryID" Parameter="categoryID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_EXTCENTRAL_SUBCATEGORY_GETALL_BY_CATEGORYIDResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="VarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="Code" Type="System.String" DbType="VarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="CategoryID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_EXTCENTRAL_SEGMENT_GETALL_BY_SUBCATEGORYID" Method="UEP_EXTCENTRAL_SEGMENT_GETALL_BY_SUBCATEGORYID">
+    <Parameter Name="SubCategoryID" Parameter="subCategoryID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_EXTCENTRAL_SEGMENT_GETALL_BY_SUBCATEGORYIDResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SubCategoryID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Code" Type="System.String" DbType="VarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="VarChar(80) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_CATEGORY_GETALL_BY_DEPARTMENTID" Method="UEP_CATEGORY_GETALL_BY_DEPARTMENTID">
+    <Parameter Name="DepartmentID" Parameter="departmentID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_CATEGORY_GETALL_BY_DEPARTMENTIDResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Code" Type="System.String" DbType="NVarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="DepartmentID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="HQID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_WS_EXTCENTRAL_WIZARDLIST_GETALL" Method="UEP_WS_EXTCENTRAL_WIZARDLIST_GETALL">
+    <ElementType Name="UEP_WS_EXTCENTRAL_WIZARDLIST_GETALLResult">
+      <Column Name="Codigo" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Descripcion" Type="System.String" DbType="VarChar(150) NOT NULL" CanBeNull="false" />
+      <Column Name="Estado" Type="System.Char" DbType="Char(1) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEMTAX_GETALL" Method="UEP_ITEMTAX_GETALL">
+    <ElementType Name="UEP_ITEMTAX_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="TaxID01" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="TaxID02" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="TaxID03" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Code" Type="System.String" DbType="NVarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_QUANTITYDISCOUNT_GETALL_SIMPLE_BY_TYPE" Method="UEP_QUANTITYDISCOUNT_GETALL_SIMPLE_BY_TYPE">
+    <Parameter Name="TYPE" Parameter="tYPE" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_QUANTITYDISCOUNT_GETALL_SIMPLE_BY_TYPEResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEM_VALIDATE_EXISTS_BY_ITEMLOOKUPCODE" Method="UEP_ITEM_VALIDATE_EXISTS_BY_ITEMLOOKUPCODE">
+    <Parameter Name="ITEMLOOKUPCODE" Parameter="iTEMLOOKUPCODE" Type="System.String" DbType="VarChar(30)" />
+    <ElementType Name="UEP_ITEM_VALIDATE_EXISTS_BY_ITEMLOOKUPCODEResult">
+      <Column Name="[EXISTS]" Member="EXISTS" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_PURCHASER_GETALL" Method="UEP_PURCHASER_GETALL">
+    <ElementType Name="UEP_PURCHASER_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Code" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Inactive" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="EmailAddress" Type="System.String" DbType="NVarChar(255) NOT NULL" CanBeNull="false" />
+      <Column Name="ExtCode" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="LastUpdated" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="Telephone" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_PURCHASER_INSERT_UPDATE" Method="UEP_PURCHASER_INSERT_UPDATE">
+    <Parameter Name="ID" Parameter="iD" Type="System.Int32" DbType="Int" />
+    <Parameter Name="CODE" Parameter="cODE" Type="System.String" DbType="VarChar(20)" />
+    <Parameter Name="EXTCODE" Parameter="eXTCODE" Type="System.String" DbType="VarChar(20)" />
+    <Parameter Name="NAME" Parameter="nAME" Type="System.String" DbType="VarChar(50)" />
+    <Parameter Name="EMAILADDRESS" Parameter="eMAILADDRESS" Type="System.String" DbType="VarChar(225)" />
+    <Parameter Name="TELEPHONE" Parameter="tELEPHONE" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="INACTIVE" Parameter="iNACTIVE" Type="System.Boolean" DbType="Bit" />
+    <ElementType Name="UEP_PURCHASER_INSERT_UPDATEResult">
+      <Column Name="RESPUESTA" Type="System.String" DbType="VarChar(MAX)" CanBeNull="true" />
+      <Column Name="SCOPE" Type="System.Int32" DbType="Int" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_EXTCENTRAL_BRAND_GETALL" Method="UEP_EXTCENTRAL_BRAND_GETALL">
+    <ElementType Name="UEP_EXTCENTRAL_BRAND_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_EXTCENTRAL_BRAND_INSERT_UPDATE" Method="UEP_EXTCENTRAL_BRAND_INSERT_UPDATE">
+    <Parameter Name="ID" Parameter="iD" Type="System.Int32" DbType="Int" />
+    <Parameter Name="DESCRIPTION" Parameter="dESCRIPTION" Type="System.String" DbType="VarChar(50)" />
+    <ElementType Name="UEP_EXTCENTRAL_BRAND_INSERT_UPDATEResult">
+      <Column Name="RESPUESTA" Type="System.String" DbType="VarChar(MAX)" CanBeNull="true" />
+      <Column Name="SCOPE" Type="System.Int32" DbType="Int" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_EXTCENTRAL_MANUFACTURER_GETALL" Method="UEP_EXTCENTRAL_MANUFACTURER_GETALL">
+    <ElementType Name="UEP_EXTCENTRAL_MANUFACTURER_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_EXTCENTRAL_MANUFACTURER_INSERT_UPDATE" Method="UEP_EXTCENTRAL_MANUFACTURER_INSERT_UPDATE">
+    <Parameter Name="ID" Parameter="iD" Type="System.Int32" DbType="Int" />
+    <Parameter Name="DESCRIPTION" Parameter="dESCRIPTION" Type="System.String" DbType="VarChar(50)" />
+    <ElementType Name="UEP_EXTCENTRAL_MANUFACTURER_INSERT_UPDATEResult">
+      <Column Name="RESPUESTA" Type="System.String" DbType="VarChar(MAX)" CanBeNull="true" />
+      <Column Name="SCOPE" Type="System.Int32" DbType="Int" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_PURCHASER_GETALL_BY_INACTIVE" Method="UEP_PURCHASER_GETALL_BY_INACTIVE">
+    <Parameter Name="INACTIVE" Parameter="iNACTIVE" Type="System.Boolean" DbType="Bit" />
+    <ElementType Name="UEP_PURCHASER_GETALL_BY_INACTIVEResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Code" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Inactive" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="EmailAddress" Type="System.String" DbType="NVarChar(255) NOT NULL" CanBeNull="false" />
+      <Column Name="ExtCode" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="LastUpdated" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="Telephone" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_UOM_GETALL_BY_INACTIVE" Method="UEP_UOM_GETALL_BY_INACTIVE">
+    <Parameter Name="INACTIVE" Parameter="iNACTIVE" Type="System.Boolean" DbType="Bit" />
+    <ElementType Name="UEP_UOM_GETALL_BY_INACTIVEResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Code" Type="System.String" DbType="NVarChar(10) NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Inactive" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_DEPARTMENT_GETALL_BY_FAMILY" Method="UEP_DEPARTMENT_GETALL_BY_FAMILY">
+    <Parameter Name="FAMILYID" Parameter="fAMILYID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_DEPARTMENT_GETALL_BY_FAMILYResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Code" Type="System.String" DbType="NVarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="FamilyID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="FamilyCode" Type="System.String" DbType="VarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="FamilyName" Type="System.String" DbType="VarChar(30) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_DEPARTMENT_GETALL" Method="UEP_DEPARTMENT_GETALL">
+    <Parameter Name="ValorBusqueda" Parameter="valorBusqueda" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="Estado" Parameter="estado" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="ResultCount" Parameter="resultCount" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_DEPARTMENT_GETALLResult">
+      <Column Name="HQID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="code" Type="System.String" DbType="NVarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="FamilyID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="FamilyCode" Type="System.String" DbType="VarChar(17)" CanBeNull="true" />
+      <Column Name="FamilyName" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_STORES_ITEM_STATUS" Method="UEP_STORES_ITEM_STATUS">
+    <Parameter Name="ITEMID" Parameter="iTEMID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="STORES_AVAILABLE" Parameter="sTORES_AVAILABLE" Type="System.String" DbType="VarChar(100)" />
+    <ElementType Name="UEP_STORES_ITEM_STATUSResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="IsActive" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_STOREGROUP_GETALL" Method="UEP_STOREGROUP_GETALL">
+    <Parameter Name="STORES_ID" Parameter="sTORES_ID" Type="System.String" DbType="VarChar(500)" />
+    <ElementType Name="UEP_STOREGROUP_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Code" Type="System.String" DbType="NVarChar(25)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_STORE_GETALL_BY_STOREGROUP" Method="UEP_STORE_GETALL_BY_STOREGROUP">
+    <Parameter Name="STOREGROUPID" Parameter="sTOREGROUPID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="STORES_ID" Parameter="sTORES_ID" Type="System.String" DbType="VarChar(500)" />
+    <ElementType Name="UEP_STORE_GETALL_BY_STOREGROUPResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="StoreCode" Type="System.String" DbType="VarChar(30) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEM_GETALL_DYNAMIC_3_0" Method="UEP_ITEM_GETALL_DYNAMIC_3_0">
+    <Parameter Name="SearchValue" Parameter="searchValue" Type="System.String" DbType="NVarChar(30)" />
+    <Parameter Name="OrderColumn" Parameter="orderColumn" Type="System.Int32" DbType="Int" />
+    <Parameter Name="OrderDirection" Parameter="orderDirection" Type="System.String" DbType="NVarChar(4)" />
+    <Parameter Name="Skip" Parameter="skip" Type="System.Int32" DbType="Int" />
+    <Parameter Name="Take" Parameter="take" Type="System.Int32" DbType="Int" />
+    <Parameter Name="STR_FAMILIES" Parameter="sTR_FAMILIES" Type="System.String" DbType="NVarChar(MAX)" />
+    <Parameter Name="STR_DEPARTMENTS" Parameter="sTR_DEPARTMENTS" Type="System.String" DbType="NVarChar(MAX)" />
+    <Parameter Name="STR_CATEGORIES" Parameter="sTR_CATEGORIES" Type="System.String" DbType="NVarChar(MAX)" />
+    <Parameter Name="STR_SUBCATEGORIES" Parameter="sTR_SUBCATEGORIES" Type="System.String" DbType="NVarChar(MAX)" />
+    <Parameter Name="STR_SEGMENTS" Parameter="sTR_SEGMENTS" Type="System.String" DbType="NVarChar(MAX)" />
+    <Parameter Name="STORES_ID" Parameter="sTORES_ID" Type="System.String" DbType="VarChar(1000)" />
+    <ElementType Name="UEP_ITEM_GETALL_DYNAMIC_3_0Result">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="HQID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ItemLookupCode" Type="System.String" DbType="NVarChar(25) NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="NVarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="ExtendedDescription" Type="System.String" DbType="NText NOT NULL" CanBeNull="false" UpdateCheck="Never" />
+      <Column Name="SubDescription1" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription2" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription3" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="ItemType" Type="System.Int16" DbType="SmallInt NOT NULL" CanBeNull="false" />
+      <Column Name="Price" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="Cost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="ReplacementCost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceA" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceB" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceC" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="MSRP" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceLowerBound" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PriceUpperBound" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="SaleType" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SalePrice" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="SaleStartDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="SaleEndDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="SaleScheduleID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="BuydownPrice" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="BuydownQuantity" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="QuantityDiscountID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="UnitOfMeasure" Type="System.String" DbType="NVarChar(4) NOT NULL" CanBeNull="false" />
+      <Column Name="Quantity" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="LastReceived" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="LastUpdated" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="LastSold" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="LastCost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="LastCounted" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="DateCreated" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="Inactive" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="TaxID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="SupplierID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Utility" Type="System.Decimal" DbType="Decimal(18,2) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription4" Type="System.String" DbType="VarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription5" Type="System.String" DbType="VarChar(38) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription6" Type="System.String" DbType="VarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription7" Type="System.String" DbType="VarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription8" Type="System.String" DbType="VarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription9" Type="System.String" DbType="VarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription10" Type="System.String" DbType="VarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="FamilyID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="FamilyCode" Type="System.String" DbType="VarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="DepartmentID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="DepartmentCode" Type="System.String" DbType="NVarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="CategoryID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CategoryCode" Type="System.String" DbType="NVarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="SubCategoryID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SubCategoryCode" Type="System.String" DbType="VarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="SegmentID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SegmentCode" Type="System.String" DbType="VarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="BrandID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ManufacturerID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="PurchaserID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="PurchaserCode" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="FamilyName" Type="System.String" DbType="VarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="DepartmentName" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CategoryName" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="SubCategoryName" Type="System.String" DbType="VarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="SegmentName" Type="System.String" DbType="VarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="BrandDescription" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="ManufacturerDescription" Type="System.String" DbType="VarChar(150) NOT NULL" CanBeNull="false" />
+      <Column Name="PurchaserName" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="InvoiceDiscount" Type="System.Decimal" DbType="Decimal(18,2) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomerDiscount" Type="System.Decimal" DbType="Decimal(18,2) NOT NULL" CanBeNull="false" />
+      <Column Name="StoresSelected" Type="System.String" DbType="VarChar(500) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEM_GET_ALLRECORDS" Method="UEP_ITEM_GET_ALLRECORDS">
+    <Parameter Name="STORES_ID" Parameter="sTORES_ID" Type="System.String" DbType="VarChar(1000)" />
+    <ElementType Name="UEP_ITEM_GET_ALLRECORDSResult">
+      <Column Name="TOTAL" Type="System.Int32" DbType="Int" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEM_GET_COUNTFILTERED" Method="UEP_ITEM_GET_COUNTFILTERED">
+    <Parameter Name="SearchValue" Parameter="searchValue" Type="System.String" DbType="NVarChar(30)" />
+    <Parameter Name="STR_FAMILIES" Parameter="sTR_FAMILIES" Type="System.String" DbType="NVarChar(MAX)" />
+    <Parameter Name="STR_DEPARTMENTS" Parameter="sTR_DEPARTMENTS" Type="System.String" DbType="NVarChar(MAX)" />
+    <Parameter Name="STR_CATEGORIES" Parameter="sTR_CATEGORIES" Type="System.String" DbType="NVarChar(MAX)" />
+    <Parameter Name="STR_SUBCATEGORIES" Parameter="sTR_SUBCATEGORIES" Type="System.String" DbType="NVarChar(MAX)" />
+    <Parameter Name="STR_SEGMENTS" Parameter="sTR_SEGMENTS" Type="System.String" DbType="NVarChar(MAX)" />
+    <Parameter Name="STORES_ID" Parameter="sTORES_ID" Type="System.String" DbType="VarChar(1000)" />
+    <ElementType Name="UEP_ITEM_GET_COUNTFILTEREDResult">
+      <Column Name="RECORDSFILTERED" Type="System.Int32" DbType="Int" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_SUPPLIERLIST_GETALL_BY_ITEM" Method="UEP_SUPPLIERLIST_GETALL_BY_ITEM">
+    <Parameter Name="ITEMID" Parameter="iTEMID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="STORES_ID" Parameter="sTORES_ID" Type="System.String" DbType="VarChar(1000)" />
+    <ElementType Name="UEP_SUPPLIERLIST_GETALL_BY_ITEMResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ItemID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="MinimumOrder" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="Cost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="ReorderNumber" Type="System.String" DbType="NVarChar(25) NOT NULL" CanBeNull="false" />
+      <Column Name="MasterPackQuantity" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="TaxRate" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="IsPrimary" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
+      <Column Name="ItemLookupCode" Type="System.String" DbType="NVarChar(25) NOT NULL" CanBeNull="false" />
+      <Column Name="ItemDescription" Type="System.String" DbType="NVarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierCode" Type="System.String" DbType="NVarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierName" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_POC_ITEMPRICE_GETALL_BY_ITEM" Method="UEP_POC_ITEMPRICE_GETALL_BY_ITEM">
+    <Parameter Name="ITEMID" Parameter="iTEMID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="STORES_ID" Parameter="sTORES_ID" Type="System.String" DbType="VarChar(1000)" />
+    <ElementType Name="UEP_POC_ITEMPRICE_GETALL_BY_ITEMResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ItemID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CurrencyID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="UOMID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="StartingDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="EndingDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="MinQuantity" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="UnitCost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="CurrencyCode" Type="System.String" DbType="NVarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="ItemLookupCode" Type="System.String" DbType="NVarChar(25) NOT NULL" CanBeNull="false" />
+      <Column Name="ItemDescription" Type="System.String" DbType="NVarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierCode" Type="System.String" DbType="NVarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierName" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEM_GET_BY_ITEMLOOKUPCODE" Method="UEP_ITEM_GET_BY_ITEMLOOKUPCODE">
+    <Parameter Name="ItemLookupCode" Parameter="itemLookupCode" Type="System.String" DbType="VarChar(MAX)" />
+    <Parameter Name="STORES_ID" Parameter="sTORES_ID" Type="System.String" DbType="VarChar(1000)" />
+    <ElementType Name="UEP_ITEM_GET_BY_ITEMLOOKUPCODEResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="NVarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="ExtendedDescription" Type="System.String" DbType="NText NOT NULL" CanBeNull="false" UpdateCheck="Never" />
+      <Column Name="SubDescription1" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription2" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="SubDescription3" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="Cost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="Inactive" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="TaxID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Price" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="ReplacementCost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="MSRP" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierName" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierCode" Type="System.String" DbType="NVarChar(17) NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierCost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierCostStartDate" Type="System.String" DbType="VarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="QuantityDiscountName" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomerDiscount" Type="System.Decimal" DbType="Decimal(18,2) NOT NULL" CanBeNull="false" />
+      <Column Name="Utility" Type="System.Decimal" DbType="Decimal(18,2) NOT NULL" CanBeNull="false" />
+      <Column Name="TaxPercentage" Type="System.Single" DbType="Real NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEM_INSERT_UPDATE" Method="UEP_ITEM_INSERT_UPDATE">
+    <Parameter Name="ID" Parameter="iD" Type="System.Int32" DbType="Int" />
+    <Parameter Name="ItemLookupCode" Parameter="itemLookupCode" Type="System.String" DbType="VarChar(25)" />
+    <Parameter Name="Description" Parameter="description" Type="System.String" DbType="VarChar(80)" />
+    <Parameter Name="ExtDescription" Parameter="extDescription" Type="System.String" DbType="VarChar(MAX)" />
+    <Parameter Name="SubDescription3" Parameter="subDescription3" Type="System.String" DbType="VarChar(MAX)" />
+    <Parameter Name="SubDescription4" Parameter="subDescription4" Type="System.String" DbType="VarChar(MAX)" />
+    <Parameter Name="SubDescription5" Parameter="subDescription5" Type="System.String" DbType="VarChar(MAX)" />
+    <Parameter Name="SubDescription6" Parameter="subDescription6" Type="System.String" DbType="VarChar(MAX)" />
+    <Parameter Name="SubDescription7" Parameter="subDescription7" Type="System.String" DbType="VarChar(MAX)" />
+    <Parameter Name="SubDescription8" Parameter="subDescription8" Type="System.String" DbType="VarChar(MAX)" />
+    <Parameter Name="SubDescription9" Parameter="subDescription9" Type="System.String" DbType="VarChar(MAX)" />
+    <Parameter Name="SubDescription10" Parameter="subDescription10" Type="System.String" DbType="VarChar(MAX)" />
+    <Parameter Name="FamilyID" Parameter="familyID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="DepartmentID" Parameter="departmentID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="CategoryID" Parameter="categoryID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="SubCategoryID" Parameter="subCategoryID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="SegmentID" Parameter="segmentID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="TaxID" Parameter="taxID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="ManufacturerID" Parameter="manufacturerID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="BrandID" Parameter="brandID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="PurchaserID" Parameter="purchaserID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="SupplierID" Parameter="supplierID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="UnitOfMeasure" Parameter="unitOfMeasure" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="ReplacementCost" Parameter="replacementCost" Type="System.Decimal" DbType="Money" />
+    <Parameter Name="Utility" Parameter="utility" Type="System.Double" DbType="Float" />
+    <Parameter Name="InvoiceDiscount" Parameter="invoiceDiscount" Type="System.Double" DbType="Float" />
+    <Parameter Name="CustomerDiscount" Parameter="customerDiscount" Type="System.Double" DbType="Float" />
+    <Parameter Name="MSRP" Parameter="mSRP" Type="System.Decimal" DbType="Money" />
+    <Parameter Name="STORESSELECTED" Parameter="sTORESSELECTED" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="TITLE" Parameter="tITLE" Type="System.String" DbType="VarChar(50)" />
+    <Parameter Name="USER_ID" Parameter="uSER_ID" Type="System.String" DbType="VarChar(50)" />
+    <ElementType Name="UEP_ITEM_INSERT_UPDATEResult">
+      <Column Name="RESPUESTA" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+      <Column Name="SCOPE" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="ERROR" Type="System.String" DbType="VarChar(MAX)" CanBeNull="true" />
+      <Column Name="LASTACTION" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_WORKSHEET_GET_COUNT_RECORDS" Method="UEP_WORKSHEET_GET_COUNT_RECORDS">
+    <Parameter Name="STORES" Parameter="sTORES" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="TASKS" Parameter="tASKS" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="USERS_ID" Parameter="uSERS_ID" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="SearchValue" Parameter="searchValue" Type="System.String" DbType="NVarChar(100)" />
+    <Parameter Name="FROMDATE" Parameter="fROMDATE" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="TODATE" Parameter="tODATE" Type="System.String" DbType="VarChar(30)" />
+    <ElementType Name="UEP_WORKSHEET_GET_COUNT_RECORDSResult">
+      <Column Name="TOTAL_RECORDS" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="TOTAL_FILTERED" Type="System.Int32" DbType="Int" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_WORKSHEET_CHANGE_STATUS" Method="UEP_WORKSHEET_CHANGE_STATUS">
+    <Parameter Name="STORES" Parameter="sTORES" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="TASKS" Parameter="tASKS" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="USERS" Parameter="uSERS" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="HQUSERID" Parameter="hQUSERID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="WORKSHEETID" Parameter="wORKSHEETID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="STATUS" Parameter="sTATUS" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_WORKSHEET_CHANGE_STATUSResult">
+      <Column Name="RESPUESTA" Type="System.String" DbType="VarChar(30)" CanBeNull="true" />
+      <Column Name="STATUS" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
+      <Column Name="ERROR_NUMBER" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="ERROR_MESSAGE" Type="System.String" DbType="VarChar(MAX)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_WORKSHEET_GET" Method="UEP_WORKSHEET_GET">
+    <Parameter Name="STORES" Parameter="sTORES" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="TASKS" Parameter="tASKS" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="USER_ID" Parameter="uSER_ID" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="WORKSHEET_ID" Parameter="wORKSHEET_ID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_WORKSHEET_GETResult">
+      <Column Name="DateApplied" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="HQUserID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="WizardTaskCode" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Style" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="Title" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+      <Column Name="EffectiveDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="Notes" Type="System.String" DbType="NVarChar(255)" CanBeNull="true" />
+      <Column Name="Status" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="StoresID" Type="System.String" DbType="NVarChar(4000)" CanBeNull="true" />
+      <Column Name="StoresName" Type="System.String" DbType="VarChar(8000)" CanBeNull="true" />
+      <Column Name="WizardTaskDescription" Type="System.String" DbType="VarChar(150) NOT NULL" CanBeNull="false" />
+      <Column Name="UserID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="UserName" Type="System.String" DbType="NVarChar(50)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_WORKSHEET_DETAIL_251_GETALL" Method="UEP_WORKSHEET_DETAIL_251_GETALL">
+    <Parameter Name="STORES" Parameter="sTORES" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="TASKS" Parameter="tASKS" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="USER_ID" Parameter="uSER_ID" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="WORKSHEET_ID" Parameter="wORKSHEET_ID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_WORKSHEET_DETAIL_251_GETALLResult">
+      <Column Name="ItemLookupCode" Type="System.String" DbType="NVarChar(25) NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="NVarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="ExtendedDescription" Type="System.String" DbType="NText NOT NULL" CanBeNull="false" UpdateCheck="Never" />
+      <Column Name="DateCreated" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="WebItem" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="ProfitMargin" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="ItemTaxDescription" Type="System.String" DbType="NVarChar(20)" CanBeNull="true" />
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="WorksheetID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="ItemID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="Price" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="Cost" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="PriceLevelA" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="PriceLevelB" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="PriceLevelC" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="MSRP" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="SalePrice" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="SaleStartDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="SaleEndDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="LowerBound" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="UpperBound" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="BuydownPrice" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="BuydownQuantity" Type="System.Double" DbType="Float" CanBeNull="true" />
+      <Column Name="DBTimeStamp" Type="System.Data.Linq.Binary" DbType="rowversion NOT NULL" CanBeNull="false" />
+      <Column Name="SyncGuid" Type="System.Guid" DbType="UniqueIdentifier" CanBeNull="true" />
+      <Column Name="StoreAvailability" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
+      <Column Name="StoreID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="StoreName" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_WORKSHEET_DETAIL_320_GETALL" Method="UEP_WORKSHEET_DETAIL_320_GETALL">
+    <Parameter Name="STORES" Parameter="sTORES" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="TASKS" Parameter="tASKS" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="USER_ID" Parameter="uSER_ID" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="WORKSHEET_ID" Parameter="wORKSHEET_ID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_WORKSHEET_DETAIL_320_GETALLResult">
+      <Column Name="ItemLookupCode" Type="System.String" DbType="NVarChar(25) NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="NVarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="ExtendedDescription" Type="System.String" DbType="NText NOT NULL" CanBeNull="false" UpdateCheck="Never" />
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ItemID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="WorksheetID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="ItemTaxDescription" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="StoreAvailability" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
+      <Column Name="StoreID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="StoreName" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_WORKSHEET_DETAIL_261_GETALL" Method="UEP_WORKSHEET_DETAIL_261_GETALL">
+    <Parameter Name="STORES" Parameter="sTORES" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="TASKS" Parameter="tASKS" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="USER_ID" Parameter="uSER_ID" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="WORKSHEET_ID" Parameter="wORKSHEET_ID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_WORKSHEET_DETAIL_261_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="WorksheetID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="ItemID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="ItemLookupCode" Type="System.String" DbType="NVarChar(25) NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="NVarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="ExtendedDescription" Type="System.String" DbType="NText NOT NULL" CanBeNull="false" UpdateCheck="Never" />
+      <Column Name="StoreAvailability" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
+      <Column Name="StoreID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="StoreName" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_WORKSHEET_HISTORY_GETALL" Method="UEP_WORKSHEET_HISTORY_GETALL">
+    <Parameter Name="STORES" Parameter="sTORES" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="TASKS" Parameter="tASKS" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="USER_ID" Parameter="uSER_ID" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="WORKSHEET_ID" Parameter="wORKSHEET_ID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_WORKSHEET_HISTORY_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="WorksheetID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="Status" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="HistoryDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="HQEntry" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="StoreID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="Comment" Type="System.String" DbType="NVarChar(255)" CanBeNull="true" />
+      <Column Name="DBTimeStamp" Type="System.Data.Linq.Binary" DbType="rowversion" CanBeNull="true" />
+      <Column Name="SyncGuid" Type="System.Guid" DbType="UniqueIdentifier" CanBeNull="true" />
+      <Column Name="StoreName" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_WORKSHEET_STORE_GETALL" Method="UEP_WORKSHEET_STORE_GETALL">
+    <Parameter Name="STORES" Parameter="sTORES" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="TASKS" Parameter="tASKS" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="USER_ID" Parameter="uSER_ID" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="WORKSHEET_ID" Parameter="wORKSHEET_ID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_WORKSHEET_STORE_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="WorksheetID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="StoreID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="Status" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="DateProcessed" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="Originator" Type="System.Int16" DbType="SmallInt" CanBeNull="true" />
+      <Column Name="DBTimeStamp" Type="System.Data.Linq.Binary" DbType="rowversion" CanBeNull="true" />
+      <Column Name="SyncGuid" Type="System.Guid" DbType="UniqueIdentifier" CanBeNull="true" />
+      <Column Name="StoreName" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_WORKSHEET_CONTENT_GET" Method="UEP_WORKSHEET_CONTENT_GET">
+    <Parameter Name="WORKSHEETCONTENTID" Parameter="wORKSHEETCONTENTID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="WORKSHEETID" Parameter="wORKSHEETID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="STORES" Parameter="sTORES" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="TASKS" Parameter="tASKS" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="USERS" Parameter="uSERS" Type="System.String" DbType="VarChar(1000)" />
+    <ElementType Name="UEP_WORKSHEET_CONTENT_GETResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="HQUserID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="DateApplied" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="TaskCode" Type="System.String" DbType="VarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="FileName" Type="System.String" DbType="VarChar(500) NOT NULL" CanBeNull="false" />
+      <Column Name="ContentType" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="ContentLenght" Type="System.Int64" DbType="BigInt NOT NULL" CanBeNull="false" />
+      <Column Name="ContentData" Type="System.Data.Linq.Binary" DbType="VarBinary(MAX) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_WORKSHEET_CONTENT_INSERT" Method="UEP_WORKSHEET_CONTENT_INSERT">
+    <Parameter Name="HQUSERID" Parameter="hQUSERID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="TASKCODE" Parameter="tASKCODE" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="FILENAME" Parameter="fILENAME" Type="System.String" DbType="VarChar(500)" />
+    <Parameter Name="CONTENTTYPE" Parameter="cONTENTTYPE" Type="System.String" DbType="VarChar(50)" />
+    <Parameter Name="CONTENTLENGHT" Parameter="cONTENTLENGHT" Type="System.Int64" DbType="BigInt" />
+    <Parameter Name="CONTENTDATA" Parameter="cONTENTDATA" Type="System.Data.Linq.Binary" DbType="VarBinary(MAX)" />
+    <ElementType Name="UEP_WORKSHEET_CONTENT_INSERTResult">
+      <Column Name="SCOPE" Type="System.Int32" DbType="Int" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEM_CUSTOMPROPERTY_GETALL" Method="UEP_ITEM_CUSTOMPROPERTY_GETALL" IsComposable="true">
+    <Parameter Name="PROPERTIES_AVAILABLE" Parameter="pROPERTIES_AVAILABLE" Type="System.String" DbType="VarChar(100)" />
+    <ElementType Name="UEP_ITEM_CUSTOMPROPERTY_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="NVarChar(255) NOT NULL" CanBeNull="false" />
+      <Column Name="Type" Type="System.Int16" DbType="SmallInt NOT NULL" CanBeNull="false" />
+      <Column Name="Inactive" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="ListValue" Type="System.String" DbType="Text" CanBeNull="true" UpdateCheck="Never" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEMEXT_PROPERTY_GETALL" Method="UEP_ITEMEXT_PROPERTY_GETALL">
+    <Parameter Name="STORES_AVAILABLE" Parameter="sTORES_AVAILABLE" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="PROPERTIES_AVAILABLE" Parameter="pROPERTIES_AVAILABLE" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="SearchValue" Parameter="searchValue" Type="System.String" DbType="NVarChar(100)" />
+    <Parameter Name="OrderColumn" Parameter="orderColumn" Type="System.Int32" DbType="Int" />
+    <Parameter Name="OrderDirection" Parameter="orderDirection" Type="System.String" DbType="NVarChar(4)" />
+    <Parameter Name="Skip" Parameter="skip" Type="System.Int32" DbType="Int" />
+    <Parameter Name="Take" Parameter="take" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_ITEMEXT_PROPERTY_GETALLResult">
+      <Column Name="ItemID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ItemLookupCode" Type="System.String" DbType="VarChar(1) NOT NULL" CanBeNull="false" />
+      <Column Name="Description" Type="System.String" DbType="VarChar(1) NOT NULL" CanBeNull="false" />
+      <Column Name="ExtendedDescription" Type="System.String" DbType="VarChar(1) NOT NULL" CanBeNull="false" />
+      <Column Name="PropertyValue" Type="System.String" DbType="VarChar(1) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEMEXT_UPDATE" Method="UEP_ITEMEXT_UPDATE">
+    <Parameter Name="PROPERTIES" Parameter="pROPERTIES" Type="System.String" DbType="VarChar(MAX)" />
+    <Parameter Name="ITEMID" Parameter="iTEMID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="PROPERTIESAVAILABLE" Parameter="pROPERTIESAVAILABLE" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="STORES" Parameter="sTORES" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="HQ_USERID" Parameter="hQ_USERID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_ITEMEXT_UPDATEResult">
+      <Column Name="ERROR" Type="System.String" DbType="VarChar(MAX)" CanBeNull="true" />
+      <Column Name="RESPUESTA" Type="System.String" DbType="VarChar(MAX)" CanBeNull="true" />
+      <Column Name="STATUS" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEMEXT_PROPERTY_COUNT_RECORDS" Method="UEP_ITEMEXT_PROPERTY_COUNT_RECORDS">
+    <Parameter Name="STORES_AVAILABLE" Parameter="sTORES_AVAILABLE" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="SearchValue" Parameter="searchValue" Type="System.String" DbType="NVarChar(100)" />
+    <ElementType Name="UEP_ITEMEXT_PROPERTY_COUNT_RECORDSResult">
+      <Column Name="TOTAL_RECORDS" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="TOTAL_FILTERED" Type="System.Int32" DbType="Int" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEMEXT_PROPERTY_GET_BY_ITEMID" Method="UEP_ITEMEXT_PROPERTY_GET_BY_ITEMID" IsComposable="true">
+    <Parameter Name="ITEMID" Parameter="iTEMID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="STORES_AVAILABLE" Parameter="sTORES_AVAILABLE" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="PROPERTIES_AVAILABLE" Parameter="pROPERTIES_AVAILABLE" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="ALLOW_ALL" Parameter="aLLOW_ALL" Type="System.Boolean" DbType="Bit" />
+    <ElementType Name="UEP_ITEMEXT_PROPERTY_GET_BY_ITEMIDResult">
+      <Column Name="ItemID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="PropertyName" Type="System.String" DbType="VarChar(250)" CanBeNull="true" />
+      <Column Name="PropertyType" Type="System.Int16" DbType="SmallInt" CanBeNull="true" />
+      <Column Name="ItemPropertyID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="Value" Type="System.String" DbType="VarChar(1973)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEMEXT_PROPERTY_GET_BY_ARRAY" Method="UEP_ITEMEXT_PROPERTY_GET_BY_ARRAY" IsComposable="true">
+    <Parameter Name="ITEM_CODES" Parameter="iTEM_CODES" Type="System.String" DbType="VarChar(MAX)" />
+    <Parameter Name="STORES_AVAILABLE" Parameter="sTORES_AVAILABLE" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="PROPERTIES_AVAILABLE" Parameter="pROPERTIES_AVAILABLE" Type="System.String" DbType="VarChar(1000)" />
+    <ElementType Name="UEP_ITEMEXT_PROPERTY_GET_BY_ARRAYResult">
+      <Column Name="ItemID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="ItemLookupCode" Type="System.String" DbType="VarChar(25)" CanBeNull="true" />
+      <Column Name="Description" Type="System.String" DbType="VarChar(80)" CanBeNull="true" />
+      <Column Name="ExtendedDescription" Type="System.String" DbType="VarChar(500)" CanBeNull="true" />
+      <Column Name="Properties" Type="System.String" DbType="VarChar(MAX)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ANALITICA_GRAPHICS_GETALL" Method="UEP_ANALITICA_GRAPHICS_GETALL">
+    <Parameter Name="STORE_ID" Parameter="sTORE_ID" Type="System.String" DbType="VarChar(2)" />
+    <Parameter Name="COD_SUCURSAL" Parameter="cOD_SUCURSAL" Type="System.String" DbType="VarChar(3)" />
+    <Parameter Name="USERS_ID" Parameter="uSERS_ID" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="SearchValue" Parameter="searchValue" Type="System.String" DbType="NVarChar(100)" />
+    <Parameter Name="FROMDATE" Parameter="fROMDATE" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="TODATE" Parameter="tODATE" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="TIPO" Parameter="tIPO" Type="System.String" DbType="VarChar(30)" />
+    <ElementType Name="UEP_ANALITICA_GRAPHICS_GETALLResult">
+      <Column Name="Meses" Type="System.String" DbType="NVarChar(30)" CanBeNull="true" />
+      <Column Name="Num_Mes" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="Primer_Dia" Type="System.String" DbType="NVarChar(12) NOT NULL" CanBeNull="false" />
+      <Column Name="Ultimo_Dia" Type="System.DateTime" DbType="Date" CanBeNull="true" />
+      <Column Name="Doc_Aceptados" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="Doc_Rechazados" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="Tot_Doc_Aceptados" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Tot_Doc_Rechazados" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_DOCUMENTOSMH_GET_COUNT_RECORDS" Method="UEP_DOCUMENTOSMH_GET_COUNT_RECORDS">
+    <Parameter Name="STORES" Parameter="sTORES" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="USERS_ID" Parameter="uSERS_ID" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="SearchValue" Parameter="searchValue" Type="System.String" DbType="NVarChar(100)" />
+    <Parameter Name="ESTADO_HACIENDA" Parameter="eSTADO_HACIENDA" Type="System.String" DbType="VarChar(2)" />
+    <Parameter Name="FROMDATE" Parameter="fROMDATE" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="TODATE" Parameter="tODATE" Type="System.String" DbType="VarChar(30)" />
+    <ElementType Name="UEP_DOCUMENTOSMH_GET_COUNT_RECORDSResult">
+      <Column Name="TOTAL_RECORDS" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="TOTAL_FILTERED" Type="System.Int32" DbType="Int" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_DOCUMENTOSMH_GETALL" Method="UEP_DOCUMENTOSMH_GETALL">
+    <Parameter Name="STORES" Parameter="sTORES" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="USERS_ID" Parameter="uSERS_ID" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="SearchValue" Parameter="searchValue" Type="System.String" DbType="NVarChar(100)" />
+    <Parameter Name="ESTADO_HACIENDA" Parameter="eSTADO_HACIENDA" Type="System.String" DbType="VarChar(2)" />
+    <Parameter Name="OrderColumn" Parameter="orderColumn" Type="System.Int32" DbType="Int" />
+    <Parameter Name="OrderDirection" Parameter="orderDirection" Type="System.String" DbType="NVarChar(4)" />
+    <Parameter Name="Skip" Parameter="skip" Type="System.Int32" DbType="Int" />
+    <Parameter Name="Take" Parameter="take" Type="System.Int32" DbType="Int" />
+    <Parameter Name="FROMDATE" Parameter="fROMDATE" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="TODATE" Parameter="tODATE" Type="System.String" DbType="VarChar(30)" />
+    <ElementType Name="UEP_DOCUMENTOSMH_GETALLResult">
+      <Column Name="STORE_ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="TRANSACTIONNUMBER" Type="System.String" DbType="VarChar(12) NOT NULL" CanBeNull="false" />
+      <Column Name="CLAVE50" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="CLAVE20" Type="System.String" DbType="VarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="COD_CLIENTE" Type="System.String" DbType="VarChar(15)" CanBeNull="true" />
+      <Column Name="NOMBRE_CLIENTE" Type="System.String" DbType="VarChar(60)" CanBeNull="true" />
+      <Column Name="FECHA_TRANSAC" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="FECHA_HACIENDA" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="NC_REFERENCIA" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="NC_REFERENCIA_FECHA" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="Comprobante_Tipo" Type="System.String" DbType="VarChar(2) NOT NULL" CanBeNull="false" />
+      <Column Name="Estado_Hacienda" Type="System.String" DbType="VarChar(2) NOT NULL" CanBeNull="false" />
+      <Column Name="XML_RESPUESTA" Type="System.String" DbType="VarChar(MAX)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_AR_PaymentTerms_GETALL" Method="UEP_AR_PaymentTerms_GETALL">
+    <Parameter Name="ValorBusqueda" Parameter="valorBusqueda" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="Estado" Parameter="estado" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="ResultCount" Parameter="resultCount" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_AR_PaymentTerms_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="DBTimeStamp" Type="System.Data.Linq.Binary" DbType="rowversion" CanBeNull="true" />
+      <Column Name="Code" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="ExtCode" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Inactive" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="MLText" Type="System.String" DbType="NVarChar(MAX)" CanBeNull="true" />
+      <Column Name="DateDueType" Type="System.Byte" DbType="TinyInt NOT NULL" CanBeNull="false" />
+      <Column Name="GracePeriod" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="MinimumPayment" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="SyncGuid" Type="System.Guid" DbType="UniqueIdentifier" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_AR_PAYMENTTERMS_INSERT_UPDATE" Method="UEP_AR_PAYMENTTERMS_INSERT_UPDATE">
+    <Parameter Name="Code" Parameter="code" Type="System.String" DbType="NVarChar(20)" />
+    <Parameter Name="Name" Parameter="name" Type="System.String" DbType="NVarChar(50)" />
+    <Parameter Name="Inactive" Parameter="inactive" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="DateDueType" Parameter="dateDueType" Type="System.Byte" DbType="TinyInt" />
+    <Parameter Name="GracePeriod" Parameter="gracePeriod" Type="System.Int32" DbType="Int" />
+    <Parameter Name="MinimumPayment" Parameter="minimumPayment" Type="System.Decimal" DbType="Money" />
+    <ElementType Name="UEP_AR_PAYMENTTERMS_INSERT_UPDATEResult">
+      <Column Name="RESPUESTA" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_AR_ACCOUNTGROUP_GETALL" Method="UEP_AR_ACCOUNTGROUP_GETALL">
+    <Parameter Name="ValorBusqueda" Parameter="valorBusqueda" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="Estado" Parameter="estado" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="ResultCount" Parameter="resultCount" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_AR_ACCOUNTGROUP_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="DBTimeStamp" Type="System.Data.Linq.Binary" DbType="rowversion" CanBeNull="true" />
+      <Column Name="Code" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="ExtCode" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Inactive" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="MLText" Type="System.String" DbType="NVarChar(MAX)" CanBeNull="true" />
+      <Column Name="PayTermsID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="FinChargeID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CurrencyID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ManagerID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CountryID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="RegionID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="LocationID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CreditLimit" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="CreditLimitCheck" Type="System.Byte" DbType="TinyInt NOT NULL" CanBeNull="false" />
+      <Column Name="StatementType" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ApplicationMethod" Type="System.Byte" DbType="TinyInt NOT NULL" CanBeNull="false" />
+      <Column Name="NumberSeries" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="SyncGuid" Type="System.Guid" DbType="UniqueIdentifier" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_EXTCENTRAL_AR_ACCOUNTGROUP_GETALL" Method="UEP_EXTCENTRAL_AR_ACCOUNTGROUP_GETALL">
+    <ElementType Name="UEP_EXTCENTRAL_AR_ACCOUNTGROUP_GETALLResult">
+      <Column Name="AccountGroupID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="StoreID" Type="System.String" DbType="VarChar(500) NOT NULL" CanBeNull="false" />
+      <Column Name="Prefix" Type="System.String" DbType="VarChar(7) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_AR_FINANCECHARGE_GETALL" Method="UEP_AR_FINANCECHARGE_GETALL">
+    <Parameter Name="ValorBusqueda" Parameter="valorBusqueda" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="Estado" Parameter="estado" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="ResultCount" Parameter="resultCount" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_AR_FINANCECHARGE_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="DBTimeStamp" Type="System.Data.Linq.Binary" DbType="rowversion" CanBeNull="true" />
+      <Column Name="Code" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="ExtCode" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Inactive" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="MLText" Type="System.String" DbType="NVarChar(MAX)" CanBeNull="true" />
+      <Column Name="MinimumCharge" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="AnnualInterestRate" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="ApplyToFinCharge" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="SyncGuid" Type="System.Guid" DbType="UniqueIdentifier" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_AR_ACCOUNTMANAGER_GETALL" Method="UEP_AR_ACCOUNTMANAGER_GETALL">
+    <Parameter Name="ValorBusqueda" Parameter="valorBusqueda" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="Estado" Parameter="estado" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="ResultCount" Parameter="resultCount" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_AR_ACCOUNTMANAGER_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="DBTimeStamp" Type="System.Data.Linq.Binary" DbType="rowversion" CanBeNull="true" />
+      <Column Name="Code" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="ExtCode" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Inactive" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="Title" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="FirstName" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="MiddleName" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="LastName" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Suffix" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="PhoneNumber" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="MobileNumber" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="EMail" Type="System.String" DbType="NVarChar(255) NOT NULL" CanBeNull="false" />
+      <Column Name="LoginID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="SyncGuid" Type="System.Guid" DbType="UniqueIdentifier" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_AR_STATEMENTTYPE_GETALL" Method="UEP_AR_STATEMENTTYPE_GETALL">
+    <Parameter Name="ValorBusqueda" Parameter="valorBusqueda" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="Estado" Parameter="estado" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="ResultCount" Parameter="resultCount" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_AR_STATEMENTTYPE_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="DBTimeStamp" Type="System.Data.Linq.Binary" DbType="rowversion" CanBeNull="true" />
+      <Column Name="Code" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="ExtCode" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Inactive" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="MLText" Type="System.String" DbType="NVarChar(MAX)" CanBeNull="true" />
+      <Column Name="DataSet" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Template" Type="System.String" DbType="NVarChar(MAX)" CanBeNull="true" />
+      <Column Name="Options" Type="System.String" DbType="NVarChar(MAX)" CanBeNull="true" />
+      <Column Name="SyncGuid" Type="System.Guid" DbType="UniqueIdentifier" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_RR_NUMBERSERIES_GETALL" Method="UEP_RR_NUMBERSERIES_GETALL">
+    <Parameter Name="ValorBusqueda" Parameter="valorBusqueda" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="Estado" Parameter="estado" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="ResultCount" Parameter="resultCount" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_RR_NUMBERSERIES_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="DBTimeStamp" Type="System.Data.Linq.Binary" DbType="rowversion" CanBeNull="true" />
+      <Column Name="Code" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Inactive" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="Prefix" Type="System.String" DbType="NVarChar(5) NOT NULL" CanBeNull="false" />
+      <Column Name="NoOfDigit" Type="System.Byte" DbType="TinyInt NOT NULL" CanBeNull="false" />
+      <Column Name="LastUsed" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SyncGuid" Type="System.Guid" DbType="UniqueIdentifier" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_AR_ACCOUNTGROUP_INSERT_UPDATE" Method="UEP_AR_ACCOUNTGROUP_INSERT_UPDATE">
+    <Parameter Name="ID" Parameter="iD" Type="System.Int32" DbType="Int" />
+    <Parameter Name="Code" Parameter="code" Type="System.String" DbType="NVarChar(20)" />
+    <Parameter Name="Name" Parameter="name" Type="System.String" DbType="NVarChar(50)" />
+    <Parameter Name="Inactive" Parameter="inactive" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="PayTermsID" Parameter="payTermsID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="FinChargeID" Parameter="finChargeID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="CurrencyID" Parameter="currencyID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="ManagerID" Parameter="managerID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="CountryID" Parameter="countryID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="RegionID" Parameter="regionID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="LocationID" Parameter="locationID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="CreditLimit" Parameter="creditLimit" Type="System.Decimal" DbType="Money" />
+    <Parameter Name="CreditLimitCheck" Parameter="creditLimitCheck" Type="System.Int32" DbType="Int" />
+    <Parameter Name="StatementType" Parameter="statementType" Type="System.Int32" DbType="Int" />
+    <Parameter Name="ApplicationMethod" Parameter="applicationMethod" Type="System.Int32" DbType="Int" />
+    <Parameter Name="NumberSeries" Parameter="numberSeries" Type="System.Int32" DbType="Int" />
+    <Parameter Name="StoreID" Parameter="storeID" Type="System.String" DbType="NVarChar(50)" />
+    <Parameter Name="Prefix" Parameter="prefix" Type="System.String" DbType="NVarChar(20)" />
+    <ElementType Name="UEP_AR_ACCOUNTGROUP_INSERT_UPDATEResult">
+      <Column Name="RESPUESTA" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_CUSTOMER_GETALL" Method="UEP_CUSTOMER_GETALL">
+    <Parameter Name="ValorBusqueda" Parameter="valorBusqueda" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="Estado" Parameter="estado" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="ResultCount" Parameter="resultCount" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_CUSTOMER_GETALLResult">
+      <Column Name="AccountNumber" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="AccountTypeID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Address2" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="AssessFinanceCharges" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="Company" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Country" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomDate1" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="CustomDate2" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="CustomDate3" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="CustomDate4" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="CustomDate5" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="CustomNumber1" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="CustomNumber2" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="CustomNumber3" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="CustomNumber4" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="CustomNumber5" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="CustomText1" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomText2" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomText3" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomText4" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomText5" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="GlobalCustomer" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="HQID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="LastStartingDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="LastClosingDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="LastUpdated" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="LimitPurchase" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="LastClosingBalance" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PrimaryShipToID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="State" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="StoreID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="LayawayCustomer" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="Employee" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="FirstName" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="LastName" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Address" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="City" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Zip" Type="System.String" DbType="NVarChar(15) NOT NULL" CanBeNull="false" />
+      <Column Name="AccountBalance" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="CreditLimit" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="TotalSales" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="AccountOpened" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="LastVisit" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="TotalVisits" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="TotalSavings" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="CurrentDiscount" Type="System.Single" DbType="Real NOT NULL" CanBeNull="false" />
+      <Column Name="PriceLevel" Type="System.Int16" DbType="SmallInt NOT NULL" CanBeNull="false" />
+      <Column Name="TaxExempt" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="Notes" Type="System.String" DbType="NText" CanBeNull="true" UpdateCheck="Never" />
+      <Column Name="Title" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="EmailAddress" Type="System.String" DbType="NVarChar(255) NOT NULL" CanBeNull="false" />
+      <Column Name="TaxNumber" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="PictureName" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="DefaultShippingServiceID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="AutoID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="PhoneNumber" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="FaxNumber" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CashierID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SalesRepID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Vouchers" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="SyncGuid" Type="System.Guid" DbType="UniqueIdentifier" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_CUSTOMERACCOUNTGROUP_GETALL" Method="UEP_CUSTOMERACCOUNTGROUP_GETALL">
+    <Parameter Name="ValorBusqueda" Parameter="valorBusqueda" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="Estado" Parameter="estado" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="ResultCount" Parameter="resultCount" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_CUSTOMERACCOUNTGROUP_GETALLResult">
+      <Column Name="AccountNumber" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="AccountTypeID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Address2" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="AssessFinanceCharges" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="Company" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Country" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomDate1" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="CustomDate2" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="CustomDate3" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="CustomDate4" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="CustomDate5" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="CustomNumber1" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="CustomNumber2" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="CustomNumber3" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="CustomNumber4" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="CustomNumber5" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="CustomText1" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomText2" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomText3" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomText4" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomText5" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="GlobalCustomer" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="HQID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="LastStartingDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="LastClosingDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="LastUpdated" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="LimitPurchase" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="LastClosingBalance" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="PrimaryShipToID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="State" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="StoreID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="LayawayCustomer" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="Employee" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="FirstName" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="LastName" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Address" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="City" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Zip" Type="System.String" DbType="NVarChar(15) NOT NULL" CanBeNull="false" />
+      <Column Name="AccountBalance" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="CreditLimit" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="TotalSales" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="AccountOpened" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="LastVisit" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="TotalVisits" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="TotalSavings" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="CurrentDiscount" Type="System.Single" DbType="Real NOT NULL" CanBeNull="false" />
+      <Column Name="PriceLevel" Type="System.Int16" DbType="SmallInt NOT NULL" CanBeNull="false" />
+      <Column Name="TaxExempt" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="Notes" Type="System.String" DbType="NText" CanBeNull="true" UpdateCheck="Never" />
+      <Column Name="Title" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="EmailAddress" Type="System.String" DbType="NVarChar(255) NOT NULL" CanBeNull="false" />
+      <Column Name="DBTimeStamp" Type="System.Data.Linq.Binary" DbType="rowversion" CanBeNull="true" />
+      <Column Name="TaxNumber" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="PictureName" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="DefaultShippingServiceID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="AutoID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="PhoneNumber" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="FaxNumber" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CashierID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SalesRepID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Vouchers" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="SyncGuid" Type="System.Guid" DbType="UniqueIdentifier" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_EXTCENTRAL_CUSTOMER_GETALL" Method="UEP_EXTCENTRAL_CUSTOMER_GETALL">
+    <Parameter Name="ResultCount" Parameter="resultCount" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_EXTCENTRAL_CUSTOMER_GETALLResult">
+      <Column Name="CustomerID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="AccountGroupID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="Prefix" Type="System.String" DbType="NVarChar(2)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_CUSTOMCAPTION_GETALL" Method="UEP_CUSTOMCAPTION_GETALL">
+    <Parameter Name="ValorBusqueda" Parameter="valorBusqueda" Type="System.String" DbType="NVarChar(100)" />
+    <Parameter Name="Estado" Parameter="estado" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="ResultCount" Parameter="resultCount" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_CUSTOMCAPTION_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="HQID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Style" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Caption" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="DBTimeStamp" Type="System.Data.Linq.Binary" DbType="rowversion NOT NULL" CanBeNull="false" />
+      <Column Name="SyncGuid" Type="System.Guid" DbType="UniqueIdentifier" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_AR_ACCOUNT_GETALL" Method="UEP_AR_ACCOUNT_GETALL">
+    <Parameter Name="ValorBusqueda" Parameter="valorBusqueda" Type="System.String" DbType="NVarChar(100)" />
+    <Parameter Name="Estado" Parameter="estado" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="ResultCount" Parameter="resultCount" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_AR_ACCOUNT_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="LastUpdated" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="Number" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="ExtCode" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Title" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="FirstName" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="MiddleName" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="LastName" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Suffix" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Company" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="JobTitle" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Type" Type="System.Byte" DbType="TinyInt NOT NULL" CanBeNull="false" />
+      <Column Name="Role" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Status" Type="System.Byte" DbType="TinyInt NOT NULL" CanBeNull="false" />
+      <Column Name="BillingAccount" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="GroupID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="PayTermsID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="FinChargeID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CurrencyID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="ManagerID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CountryID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="RegionID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="LocationID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Address1" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Address2" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="City" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="State" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Zip" Type="System.String" DbType="NVarChar(20) NOT NULL" CanBeNull="false" />
+      <Column Name="Country" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="PhoneNumber" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="MobileNumber" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="FaxNumber" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="EMail" Type="System.String" DbType="NVarChar(255) NOT NULL" CanBeNull="false" />
+      <Column Name="HomePage" Type="System.String" DbType="NVarChar(255) NOT NULL" CanBeNull="false" />
+      <Column Name="IMAddress" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="CreditLimit" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="CreditLimitCheck" Type="System.Byte" DbType="TinyInt NOT NULL" CanBeNull="false" />
+      <Column Name="StatementType" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="StatementDelivery" Type="System.Byte" DbType="TinyInt NOT NULL" CanBeNull="false" />
+      <Column Name="StatementAddress" Type="System.String" DbType="NVarChar(255) NOT NULL" CanBeNull="false" />
+      <Column Name="ApplicationMethod" Type="System.Byte" DbType="TinyInt NOT NULL" CanBeNull="false" />
+      <Column Name="ClosingDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="ClosingBalance" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="LastStatement" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CustomCode1" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CustomCode2" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CustomCode3" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CustomCode4" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CustomCode5" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="CustomText1" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomText2" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomText3" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomText4" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomText5" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomNumber1" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="CustomNumber2" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="CustomNumber3" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="CustomNumber4" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="CustomNumber5" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="CustomDate1" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="CustomDate2" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="CustomDate3" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="CustomDate4" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="CustomDate5" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="Picture" Type="System.Data.Linq.Binary" DbType="VarBinary(MAX)" CanBeNull="true" />
+      <Column Name="Notes" Type="System.String" DbType="NVarChar(MAX)" CanBeNull="true" />
+      <Column Name="ExtData" Type="System.String" DbType="NVarChar(MAX)" CanBeNull="true" />
+      <Column Name="DateOpened" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="LastActivity" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="StoreID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SyncGuid" Type="System.Guid" DbType="UniqueIdentifier" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_AR_ACCOUNTBALANCE_GETALL" Method="UEP_AR_ACCOUNTBALANCE_GETALL">
+    <Parameter Name="ValorBusqueda" Parameter="valorBusqueda" Type="System.Int32" DbType="Int" />
+    <Parameter Name="Estado" Parameter="estado" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="ResultCount" Parameter="resultCount" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_AR_ACCOUNTBALANCE_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Number" Type="System.Int64" DbType="BigInt" CanBeNull="true" />
+      <Column Name="Amount" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="AmountLCY" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_AR_CUSTOMERBALANCE_GETALL" Method="UEP_AR_CUSTOMERBALANCE_GETALL">
+    <Parameter Name="ValorBusqueda" Parameter="valorBusqueda" Type="System.Int32" DbType="Int" />
+    <Parameter Name="Estado" Parameter="estado" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="ResultCount" Parameter="resultCount" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_AR_CUSTOMERBALANCE_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Number" Type="System.Int64" DbType="BigInt" CanBeNull="true" />
+      <Column Name="Amount" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="AmountLCY" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_EXTCENTRAL_AR_ACCOUNTDYNAMIC_GETALL" Method="UEP_EXTCENTRAL_AR_ACCOUNTDYNAMIC_GETALL">
+    <Parameter Name="ValorBusqueda" Parameter="valorBusqueda" Type="System.Int32" DbType="Int" />
+    <Parameter Name="Estado" Parameter="estado" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="ResultCount" Parameter="resultCount" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_EXTCENTRAL_AR_ACCOUNTDYNAMIC_GETALLResult">
+      <Column Name="AccountID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="StoreID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Status" Type="System.Byte" DbType="TinyInt NOT NULL" CanBeNull="false" />
+      <Column Name="CreditLimit" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="LastUpdated" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.fnAR_AccountStoreBalance" Method="fnAR_AccountStoreBalance" IsComposable="true">
+    <Parameter Name="AccountID" Parameter="accountID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="GroupID" Parameter="groupID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="fnAR_AccountStoreBalanceResult">
+      <Column Name="Balance" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+      <Column Name="Saldo_Vencido" Type="System.Decimal" DbType="Money" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ObtenerNuevoAccountNumber" Method="UEP_ObtenerNuevoAccountNumber">
+    <Parameter Name="parametro" Type="System.String" DbType="VarChar(2)" />
+    <Parameter Name="nuevoAccountNumber" Type="System.String" DbType="VarChar(10)" Direction="InOut" />
+    <Return Type="System.Int32" />
+  </Function>
+  <Function Name="dbo.UEP_AR_ACCOUNT_INSERT_UPDATE" Method="UEP_AR_ACCOUNT_INSERT_UPDATE">
+    <Parameter Name="LastUpdated" Parameter="lastUpdated" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="Number" Parameter="number" Type="System.String" DbType="NVarChar(20)" />
+    <Parameter Name="Name" Parameter="name" Type="System.String" DbType="NVarChar(50)" />
+    <Parameter Name="ExtCode" Parameter="extCode" Type="System.String" DbType="NVarChar(20)" />
+    <Parameter Name="Title" Parameter="title" Type="System.String" DbType="NVarChar(20)" />
+    <Parameter Name="FirstName" Parameter="firstName" Type="System.String" DbType="NVarChar(30)" />
+    <Parameter Name="MiddleName" Parameter="middleName" Type="System.String" DbType="NVarChar(30)" />
+    <Parameter Name="LastName" Parameter="lastName" Type="System.String" DbType="NVarChar(50)" />
+    <Parameter Name="Suffix" Parameter="suffix" Type="System.String" DbType="NVarChar(20)" />
+    <Parameter Name="Company" Parameter="company" Type="System.String" DbType="NVarChar(50)" />
+    <Parameter Name="JobTitle" Parameter="jobTitle" Type="System.String" DbType="NVarChar(50)" />
+    <Parameter Name="Type" Parameter="type" Type="System.Byte" DbType="TinyInt" />
+    <Parameter Name="Status" Parameter="status" Type="System.Byte" DbType="TinyInt" />
+    <Parameter Name="BillingAccount" Parameter="billingAccount" Type="System.Int32" DbType="Int" />
+    <Parameter Name="GroupID" Parameter="groupID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="PayTermsID" Parameter="payTermsID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="FinChargeID" Parameter="finChargeID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="CurrencyID" Parameter="currencyID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="ManagerID" Parameter="managerID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="CountryID" Parameter="countryID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="RegionID" Parameter="regionID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="LocationID" Parameter="locationID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="Address1" Parameter="address1" Type="System.String" DbType="NVarChar(50)" />
+    <Parameter Name="Address2" Parameter="address2" Type="System.String" DbType="NVarChar(50)" />
+    <Parameter Name="City" Parameter="city" Type="System.String" DbType="NVarChar(50)" />
+    <Parameter Name="State" Parameter="state" Type="System.String" DbType="NVarChar(20)" />
+    <Parameter Name="Zip" Parameter="zip" Type="System.String" DbType="NVarChar(20)" />
+    <Parameter Name="Country" Parameter="country" Type="System.String" DbType="NVarChar(30)" />
+    <Parameter Name="PhoneNumber" Parameter="phoneNumber" Type="System.String" DbType="NVarChar(30)" />
+    <Parameter Name="MobileNumber" Parameter="mobileNumber" Type="System.String" DbType="NVarChar(30)" />
+    <Parameter Name="FaxNumber" Parameter="faxNumber" Type="System.String" DbType="NVarChar(30)" />
+    <Parameter Name="EMail" Parameter="eMail" Type="System.String" DbType="NVarChar(255)" />
+    <Parameter Name="HomePage" Parameter="homePage" Type="System.String" DbType="NVarChar(255)" />
+    <Parameter Name="IMAddress" Parameter="iMAddress" Type="System.String" DbType="NVarChar(50)" />
+    <Parameter Name="CreditLimit" Parameter="creditLimit" Type="System.Decimal" DbType="Money" />
+    <Parameter Name="CreditLimitCheck" Parameter="creditLimitCheck" Type="System.Byte" DbType="TinyInt" />
+    <Parameter Name="StatementType" Parameter="statementType" Type="System.Int32" DbType="Int" />
+    <Parameter Name="StatementDelivery" Parameter="statementDelivery" Type="System.Byte" DbType="TinyInt" />
+    <Parameter Name="StatementAddress" Parameter="statementAddress" Type="System.String" DbType="NVarChar(255)" />
+    <Parameter Name="ApplicationMethod" Parameter="applicationMethod" Type="System.Byte" DbType="TinyInt" />
+    <Parameter Name="ClosingDate" Parameter="closingDate" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="ClosingBalance" Parameter="closingBalance" Type="System.Decimal" DbType="Money" />
+    <Parameter Name="LastStatement" Parameter="lastStatement" Type="System.Int32" DbType="Int" />
+    <Parameter Name="CustomCode1" Parameter="customCode1" Type="System.Int32" DbType="Int" />
+    <Parameter Name="CustomCode2" Parameter="customCode2" Type="System.Int32" DbType="Int" />
+    <Parameter Name="CustomCode3" Parameter="customCode3" Type="System.Int32" DbType="Int" />
+    <Parameter Name="CustomCode4" Parameter="customCode4" Type="System.Int32" DbType="Int" />
+    <Parameter Name="CustomCode5" Parameter="customCode5" Type="System.Int32" DbType="Int" />
+    <Parameter Name="CustomText1" Parameter="customText1" Type="System.String" DbType="NVarChar(30)" />
+    <Parameter Name="CustomText2" Parameter="customText2" Type="System.String" DbType="NVarChar(30)" />
+    <Parameter Name="CustomText3" Parameter="customText3" Type="System.String" DbType="NVarChar(30)" />
+    <Parameter Name="CustomText4" Parameter="customText4" Type="System.String" DbType="NVarChar(30)" />
+    <Parameter Name="CustomText5" Parameter="customText5" Type="System.String" DbType="NVarChar(30)" />
+    <Parameter Name="CustomNumber1" Parameter="customNumber1" Type="System.Double" DbType="Float" />
+    <Parameter Name="CustomNumber2" Parameter="customNumber2" Type="System.Double" DbType="Float" />
+    <Parameter Name="CustomNumber3" Parameter="customNumber3" Type="System.Double" DbType="Float" />
+    <Parameter Name="CustomNumber4" Parameter="customNumber4" Type="System.Double" DbType="Float" />
+    <Parameter Name="CustomNumber5" Parameter="customNumber5" Type="System.Double" DbType="Float" />
+    <Parameter Name="CustomDate1" Parameter="customDate1" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="CustomDate2" Parameter="customDate2" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="CustomDate3" Parameter="customDate3" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="CustomDate4" Parameter="customDate4" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="CustomDate5" Parameter="customDate5" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="Picture" Parameter="picture" Type="System.Data.Linq.Binary" DbType="VarBinary(MAX)" />
+    <Parameter Name="Notes" Parameter="notes" Type="System.String" DbType="NVarChar(MAX)" />
+    <Parameter Name="ExtData" Parameter="extData" Type="System.String" DbType="NVarChar(MAX)" />
+    <Parameter Name="DateOpened" Parameter="dateOpened" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="LastActivity" Parameter="lastActivity" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="StoreID" Parameter="storeID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="StoreIDAccountGroup" Parameter="storeIDAccountGroup" Type="System.Int32" DbType="Int" />
+    <Parameter Name="StatusStore" Parameter="statusStore" Type="System.Byte" DbType="TinyInt" />
+    <Parameter Name="CreditLimitStore" Parameter="creditLimitStore" Type="System.Decimal" DbType="Money" />
+    <Parameter Name="LastUpdatedStore" Parameter="lastUpdatedStore" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="CustomerAutoID" Parameter="customerAutoID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="UEP_AR_ACCOUNT_INSERT_UPDATEResult">
+      <Column Name="RESPUESTA" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.AVS_WS_HEADER" Method="AVS_WS_HEADER">
+    <Parameter Name="STYLE" Parameter="sTYLE" Type="System.Int32" DbType="Int" />
+    <Parameter Name="TASKCODE" Parameter="tASKCODE" Type="System.String" DbType="VarChar(50)" />
+    <Parameter Name="NOTES" Parameter="nOTES" Type="System.String" DbType="VarChar(255)" />
+    <Parameter Name="TITLE" Parameter="tITLE" Type="System.String" DbType="VarChar(50)" />
+    <Parameter Name="FROMDATE" Parameter="fROMDATE" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="STOREID" Parameter="sTOREID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="USER_ID" Parameter="uSER_ID" Type="System.String" DbType="VarChar(50)" />
+    <Parameter Name="WORKSHEETCONTENTID" Parameter="wORKSHEETCONTENTID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="DATA_CONTENT_ID" Parameter="dATA_CONTENT_ID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="PROPERTIES" Parameter="pROPERTIES" Type="System.String" DbType="VarChar(MAX)" />
+    <Parameter Name="QUANTITY_DISCOUNT_ID" Parameter="qUANTITY_DISCOUNT_ID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="EFFECTIVE_START_DATE" Parameter="eFFECTIVE_START_DATE" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="EFFECTIVE_END_DATE" Parameter="eFFECTIVE_END_DATE" Type="System.DateTime" DbType="DateTime" />
+    <ElementType Name="AVS_WS_HEADERResult">
+      <Column Name="WorksheetID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ITEMSTORE_GET_BY_ITEMID" Method="UEP_ITEMSTORE_GET_BY_ITEMID">
+    <Parameter Name="ItemID" Parameter="itemID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="STORES_ID" Parameter="sTORES_ID" Type="System.String" DbType="VarChar(1000)" />
+    <ElementType Name="UEP_ITEMSTORE_GET_BY_ITEMIDResult">
+      <Column Name="StoreID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="StoreName" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+      <Column Name="ItemID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Quantity" Type="System.Double" DbType="Float NOT NULL" CanBeNull="false" />
+      <Column Name="Cost" Type="System.Decimal" DbType="Money NOT NULL" CanBeNull="false" />
+      <Column Name="GrossCost" Type="System.String" DbType="VarChar(1) NOT NULL" CanBeNull="false" />
+      <Column Name="Utility" Type="System.String" DbType="VarChar(1) NOT NULL" CanBeNull="false" />
+      <Column Name="InvoiceDiscount" Type="System.String" DbType="VarChar(1) NOT NULL" CanBeNull="false" />
+      <Column Name="CustomerDiscount" Type="System.String" DbType="VarChar(1) NOT NULL" CanBeNull="false" />
+      <Column Name="SupplierID" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="SupplierName" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="LastReceived" Type="System.String" DbType="VarChar(23) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_CUSTOMER_INSERT_UPDATE" Method="UEP_CUSTOMER_INSERT_UPDATE">
+    <Parameter Name="parametro" Type="System.String" DbType="VarChar(2)" />
+    <Parameter Name="AccountGroupID" Parameter="accountGroupID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="AccountNumber" Parameter="accountNumber" Type="System.String" DbType="VarChar(20)" />
+    <Parameter Name="AccountTypeID" Parameter="accountTypeID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="Address2" Parameter="address2" Type="System.String" DbType="VarChar(50)" />
+    <Parameter Name="AssessFinanceCharges" Parameter="assessFinanceCharges" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="Company" Parameter="company" Type="System.String" DbType="VarChar(50)" />
+    <Parameter Name="Country" Parameter="country" Type="System.String" DbType="VarChar(20)" />
+    <Parameter Name="CustomDate1" Parameter="customDate1" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="CustomDate2" Parameter="customDate2" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="CustomDate3" Parameter="customDate3" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="CustomDate4" Parameter="customDate4" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="CustomDate5" Parameter="customDate5" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="CustomNumber1" Parameter="customNumber1" Type="System.Double" DbType="Float" />
+    <Parameter Name="CustomNumber2" Parameter="customNumber2" Type="System.Double" DbType="Float" />
+    <Parameter Name="CustomNumber3" Parameter="customNumber3" Type="System.Double" DbType="Float" />
+    <Parameter Name="CustomNumber4" Parameter="customNumber4" Type="System.Double" DbType="Float" />
+    <Parameter Name="CustomNumber5" Parameter="customNumber5" Type="System.Double" DbType="Float" />
+    <Parameter Name="CustomText1" Parameter="customText1" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="CustomText2" Parameter="customText2" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="CustomText3" Parameter="customText3" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="CustomText4" Parameter="customText4" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="CustomText5" Parameter="customText5" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="GlobalCustomer" Parameter="globalCustomer" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="HQID" Parameter="hQID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="LastStartingDate" Parameter="lastStartingDate" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="LastClosingDate" Parameter="lastClosingDate" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="LastUpdated" Parameter="lastUpdated" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="LimitPurchase" Parameter="limitPurchase" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="LastClosingBalance" Parameter="lastClosingBalance" Type="System.Decimal" DbType="Money" />
+    <Parameter Name="PrimaryShipToID" Parameter="primaryShipToID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="State" Parameter="state" Type="System.String" DbType="VarChar(20)" />
+    <Parameter Name="StoreID" Parameter="storeID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="ID" Parameter="iD" Type="System.Int32" DbType="Int" />
+    <Parameter Name="LayawayCustomer" Parameter="layawayCustomer" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="Employee" Parameter="employee" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="FirstName" Parameter="firstName" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="LastName" Parameter="lastName" Type="System.String" DbType="VarChar(50)" />
+    <Parameter Name="Address" Parameter="address" Type="System.String" DbType="VarChar(50)" />
+    <Parameter Name="City" Parameter="city" Type="System.String" DbType="VarChar(50)" />
+    <Parameter Name="Zip" Parameter="zip" Type="System.String" DbType="VarChar(15)" />
+    <Parameter Name="AccountBalance" Parameter="accountBalance" Type="System.Decimal" DbType="Money" />
+    <Parameter Name="CreditLimit" Parameter="creditLimit" Type="System.Decimal" DbType="Money" />
+    <Parameter Name="TotalSales" Parameter="totalSales" Type="System.Decimal" DbType="Money" />
+    <Parameter Name="AccountOpened" Parameter="accountOpened" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="LastVisit" Parameter="lastVisit" Type="System.DateTime" DbType="DateTime" />
+    <Parameter Name="TotalVisits" Parameter="totalVisits" Type="System.Int32" DbType="Int" />
+    <Parameter Name="TotalSavings" Parameter="totalSavings" Type="System.Decimal" DbType="Money" />
+    <Parameter Name="CurrentDiscount" Parameter="currentDiscount" Type="System.Single" DbType="Real" />
+    <Parameter Name="PriceLevel" Parameter="priceLevel" Type="System.Int32" DbType="Int" />
+    <Parameter Name="TaxExempt" Parameter="taxExempt" Type="System.Boolean" DbType="Bit" />
+    <Parameter Name="Notes" Parameter="notes" Type="System.String" DbType="NVarChar(MAX)" />
+    <Parameter Name="Title" Parameter="title" Type="System.String" DbType="VarChar(20)" />
+    <Parameter Name="EmailAddress" Parameter="emailAddress" Type="System.String" DbType="VarChar(255)" />
+    <Parameter Name="TaxNumber" Parameter="taxNumber" Type="System.String" DbType="VarChar(20)" />
+    <Parameter Name="PictureName" Parameter="pictureName" Type="System.String" DbType="VarChar(50)" />
+    <Parameter Name="DefaultShippingServiceID" Parameter="defaultShippingServiceID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="PhoneNumber" Parameter="phoneNumber" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="FaxNumber" Parameter="faxNumber" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="CashierID" Parameter="cashierID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="SalesRepID" Parameter="salesRepID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="Vouchers" Parameter="vouchers" Type="System.Decimal" DbType="Money" />
+    <ElementType Name="UEP_CUSTOMER_INSERT_UPDATEResult">
+      <Column Name="RESPUESTA" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_USER_GET_BY_ACCOUNT" Method="UEP_USER_GET_BY_ACCOUNT">
+    <Parameter Name="ACCOUNT" Parameter="aCCOUNT" Type="System.String" DbType="VarChar(30)" />
+    <ElementType Name="UEP_USER_GET_BY_ACCOUNTResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Account" Type="System.String" DbType="NVarChar(9) NOT NULL" CanBeNull="false" />
+      <Column Name="Password" Type="System.String" DbType="NVarChar(512)" CanBeNull="true" />
+      <Column Name="UserName" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="EmailAddress" Type="System.String" DbType="NVarChar(255) NOT NULL" CanBeNull="false" />
+      <Column Name="UserPrivileges" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SecurityLevel" Type="System.Int16" DbType="SmallInt NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_WORKSHEET_GETALL" Method="UEP_WORKSHEET_GETALL">
+    <Parameter Name="STORES" Parameter="sTORES" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="TASKS" Parameter="tASKS" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="USERS_ID" Parameter="uSERS_ID" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="SearchValue" Parameter="searchValue" Type="System.String" DbType="NVarChar(100)" />
+    <Parameter Name="OrderColumn" Parameter="orderColumn" Type="System.Int32" DbType="Int" />
+    <Parameter Name="OrderDirection" Parameter="orderDirection" Type="System.String" DbType="NVarChar(4)" />
+    <Parameter Name="Skip" Parameter="skip" Type="System.Int32" DbType="Int" />
+    <Parameter Name="Take" Parameter="take" Type="System.Int32" DbType="Int" />
+    <Parameter Name="FROMDATE" Parameter="fROMDATE" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="TODATE" Parameter="tODATE" Type="System.String" DbType="VarChar(30)" />
+    <ElementType Name="UEP_WORKSHEET_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Style" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="Status" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="Title" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+      <Column Name="DateApplied" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="EffectiveDate" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="TaskDescription" Type="System.String" DbType="VarChar(150) NOT NULL" CanBeNull="false" />
+      <Column Name="TaskCode" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+      <Column Name="StoresID" Type="System.String" DbType="NVarChar(4000)" CanBeNull="true" />
+      <Column Name="StoresName" Type="System.String" DbType="VarChar(8000)" CanBeNull="true" />
+      <Column Name="Notes" Type="System.String" DbType="NVarChar(255)" CanBeNull="true" />
+      <Column Name="UserName" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="UserID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="WorksheetContentID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+</Database>

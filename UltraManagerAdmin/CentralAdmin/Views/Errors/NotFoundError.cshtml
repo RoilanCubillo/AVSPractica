@@ -1,0 +1,37 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>NotFoundError</title>
+
+    <link href="~/Content/AdminLTE/plugins/avs/errors/not-found.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="cont_principal">
+        <div class="cont_error">
+            <h1>404 Oops!</h1>
+            <p>El recurso que intenta consultar no existe o no tiene los permisos para su visualización.</p>
+        </div>
+
+        <div class="cont_aura_1"></div>
+        <div class="cont_aura_2"></div>
+    </div>
+
+    <script>
+        
+        window.onload = function () {
+            document.querySelector('.cont_principal').className = "cont_principal cont_error_active";
+
+            var url = window.location.href;
+
+            window.locationbar.url = url.split('?')[0]
+        }
+    </script>
+</body>
+</html>

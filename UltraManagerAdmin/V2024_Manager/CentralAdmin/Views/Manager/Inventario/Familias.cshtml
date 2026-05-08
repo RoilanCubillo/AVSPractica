@@ -1,0 +1,339 @@
+﻿@{
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+    var Name = Resources.views.mant_familias;
+    var Title = Resources.views.familia;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+
+    @* < CSS > *@
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    @* < CSS / >*@
+
+    @* < SCRIPTS > *@
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+    @* < SCRIPTS / >*@
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <!-- Encabezado -->
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>@Name</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager", "Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">@Resources.views.inventario</li>
+                                <li class="breadcrumb-item active">@Resources.views.familias</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Encabezado -->
+            <!-- Muestra -->
+            <div class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="overlay-wrapper">
+                                        <!-- Spinner tbl -->
+                                        <div id="spn_tbl_family" class="overlay justify-content-center">
+                                            <i class="fas fa-3x fa-sync-alt fa-spin"></i>
+                                            <div class="text-bold pt-2">@Resources.views.cargando</div>
+                                        </div><!-- Spinner tbl -->
+                                        <!-- Boton agregar -->
+                                        <div class="col-md-12 mb-3" style="overflow: auto;">
+                                            <div class="row-cols-md-6">
+                                                <button type="button" class="btn btn-primary float-right fa-pull-right" onclick="onClickBtnAddFamily()"><i class="fa fa-plus"> </i> @Resources.views.agregar</button>
+                                            </div>
+                                        </div><!-- Boton agregar -->
+                                        <!-- Table schedule -->
+                                        <div id="tbl_content_family" class="dataTables_wrapper dt-bootstrap4">
+                                            <table class="table table-bordered table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>@Resources.views.cod</th>
+                                                        <th>@Resources.views.nom</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div><!-- Table schedule -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- Muestra -->
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal_family" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <form id="form_modal_family" class="modal-content">
+                <!-- Spinner Modal -->
+                <div id="spn_modal_family" class="overlay">
+                    <i class="fas fa-2x fa-sync fa-spin"></i>
+                </div><!-- Spinner Modal -->
+                <!-- Encabezado Modal -->
+                <div class="modal-header text-center">
+                    <h4 id="title_modal_family" class="modal-title"></h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div><!-- Encabezado Modal -->
+                <!-- Cuerpo Modal -->
+                <div class="modal-body" style="overflow: auto">
+                    <input type="hidden" id="famID" />
+                    <div class="form-group">
+                        <label for="famCode" class="col-sm-2 control-label">@Resources.views.cod</label>
+                        <input id="famCode" name="famCode" type="text" class="form-control" placeholder="@Resources.views.ingresar_cod" />
+                    </div>
+                    <div class="form-group">
+                        <label for="famName" class="col-sm-2 control-label">@Resources.views.nom</label>
+                        <input id="famName" name="famName" type="text" class="form-control" placeholder="@Resources.views.ingresar_nom" />
+                    </div>
+                </div><!-- Cuerpo Modal -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="onClickBtnNewFamily()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                    <button type="submit" class="btn btn-success"> <i class="fa fa-save"></i> @Resources.views.guardar</button>
+                    <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                </div>
+            </form><!-- Modal content-->
+        </div>
+    </div><!-- Modal -->
+    @* Variables *@
+    <script>
+        var url_getAllFamilies = '@Url.Action("GetAll", "Familias")'; // URL del evento obtener familias
+        var url_saveFamilies = '@Url.Action("Save", "Familias")'; // URL del evento guardar familias
+        var list_families = [];
+        var elements = { div_table: "tbl_content_family", spn_table: "spn_tbl_family", spn_modal: "spn_modal_family", modal: "modal_family", title_modal: "title_modal_family", form: "form_modal_family" };
+        var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4000 }); // Variable para mostrar los mensajes.
+        var rules = {
+            famCode: { required: true, maxlength: 17},
+            famName: { required: true, maxlength: 30}
+        }; // Roles que cumplirán los componentes del formulario
+        var messages = {
+            famCode: {
+                required: "@Resources.messages.validacion_cod_req",
+                maxlength: "@Resources.messages.validacion_cod_max",},
+            famName: {
+                required: "@Resources.messages.validacion_nom_req",
+                maxlength: "@Resources.messages.validacion_nom_max" }
+        }; // Ménsajes de error para el formulario
+    </script>
+
+    @* Funciones *@
+    <script>
+        /** Initialize */
+        $(function () {
+            $("#" + elements.spn_modal).hide();
+            fillMenuItemsLayout();
+            StartLoadTable(elements.div_table, true);
+            EndLoadTable("@Name", elements.div_table, true);
+            getAllFamilies();
+            setValidationForm();
+        });
+
+        /** Buscar una familia por id, dentro de la lista list_families */
+        function findFamily(ID) {
+            for (var i = 0; i < list_families.length; i++)
+                if (list_families[i].ID === ID)
+                    return list_families[i];
+            return null;
+        }
+
+        /** Marca los items del menú del MainLayout para que se muestre en qué parte del menú se encuentra*/
+        function fillMenuItemsLayout() {
+            openMenu(["#nav-item-inventarios"]);
+            activeItemMenu([".nav-item-inventarios", "#nav-link-inventarios-familias"])
+        }
+
+        /** Carga el DataTable con la lista de familias */
+        function fillTableFamilies() {
+            try {
+                StartLoadTable(elements.div_table, true);
+                $("#" + elements.spn_table).show();
+                if (list_families) {
+                    $("#" + elements.div_table + " > table > tbody").html("");
+                    list_families.forEach(function (d) {
+                        var row = $("<tr />");
+                        $("#" + elements.div_table + " > table").append(row);
+                        row.append($("<td> " + d.Code + "</td>"));
+                        row.append($("<td> " + d.Name + "</td>"));
+                        var title = "@Resources.views.editar @Resources.views.familia";
+                        row.append($("<td><button class='btn btn-primary' title='" + title + "' data-toggle='modal' data-target='' onClick='onClickBtnEditFamily(" + d.ID + ")'> <i class='fa fa-edit' aria-hidden='true'></i></button></td>"));
+                    });
+                } else Toast.fire({ icon: 'warning', title: '@Resources.messages.msj_lista_vacia' });
+                EndLoadTable("@ViewBag.Head", elements.div_table, true);
+                $("#" + elements.spn_table).hide();
+            } catch (e) { error(e, "@Resources.messages.error_llenar_registros"); }
+        }
+
+        /** Método encargado de consultar al servidor por la lista de familias */
+        async function getAllFamilies() {
+            try {
+                await $.get(url_getAllFamilies).done(async function (data) {
+                    if (data.Status) {
+                        list_families = data.Result;
+                        await fillTableFamilies();
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#" + elements.spn_table).hide();
+                    }
+                }).fail(function (data) { error(data, "@Resources.messages.error_obt_regs"); });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        function getFamilyFromModal() {
+            return {
+                ID: $("#famID").val(),
+                Code: $("#famCode").val(),
+                Name: $("#famName").val(),
+            }
+        }
+
+        /** Settea las configuraciones de validación al formulario */
+        function setValidationForm() {
+            $.validator.setDefaults({
+                submitHandler: function () {
+                    if (!validateCodeFamily()) onActionSaveFamily();
+                    else error("CODE DUPLICADO", "@Resources.messages.error_cod_igual");
+                }
+            });
+            $('#' + elements.form).validate({
+                rules: rules, messages: messages, errorElement: 'span',
+                errorPlacement: function (er, element) {
+                    er.addClass('invalid-feedback ml-2');
+                    element.closest('.form-group').append(er);
+                    error("Faltan campos", "@Resources.messages.validacion_campos_requeridos");
+                },
+                highlight: function (element, errorClass, validClass) { $(element).addClass('is-invalid'); },
+                unhighlight: function (element, errorClass, validClass) { $(element).removeClass('is-invalid'); }
+            });
+        }
+
+        function setFamilyInModal(fam) {
+            try {
+                $("#famID").val(fam.ID);
+                $("#famCode").val(fam.Code);
+                $("#famName").val(fam.Name);
+            } catch (e) {
+                error(e, "@Resources.messages.error_mostrar_reg_edit");
+            }
+        }
+
+        function onClickBtnAddFamily() {
+            if ($("#famID").val() !== "") openModal(false);
+            else openModal(true);
+        }
+
+        function onClickBtnEditFamily(ID) {
+            var fam = findFamily(ID);
+            if (fam) {
+                setFamilyInModal(fam);
+                openModal(false);
+            } else Toast.fire({ icon: "warning", title: "@Resources.messages.error_reg_edit_inval" });
+        }
+
+        function onClickBtnNewFamily() {
+            Swal.fire({
+                title: "@Resources.messages.msj_continuar", html: "@Resources.messages.msj_campos_limpiar", icon: 'warning', showCancelButton: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    CleanForm("form_modal_family");
+                    openModal(true);
+                }
+            });
+        }
+
+        async function onActionSaveFamily() {
+            $("#" + elements.spn_modal).show();
+            try {
+                var family = getFamilyFromModal();
+                if (family !== null) {
+                    await $.ajax({
+                        url: url_saveFamilies, type: 'post', dataType: 'json', contentType: 'application/json',
+                        data: JSON.stringify({ family: family }), cache: false,
+                        success: async function (data) {
+                            if (data.Status) {
+                                Toast.fire({ icon: 'success', title: data.Message });
+                                $("#" + elements.spn_table).show();
+                                await getAllFamilies();
+                                onClickBtnEditFamily(data.Result);
+                            } else error(data.InternalMessage, data.Message);
+                            $("#" + elements.spn_modal).hide();
+                        },
+                        error: function (xhr, ajaxOptions, thrownError) {
+                            error(thrownError, "@Resources.messages.error_guardar");
+                            $("#" + elements.spn_modal).hide();
+                        }
+                    });
+                } else {
+                    error("Descuento a guardar: NULL", "@Resources.messages.error_accion");
+                    $("#" + elements.spn_modal).hide();
+                }
+            } catch (e) {
+                error(e, "@Resources.messages.error_intento_guardar");
+                $("#" + elements.spn_modal).hide();
+            }
+        }
+
+        function validateCodeFamily() {
+            flag = null;
+            for (var i = 0; i < list_families.length; i++)
+                if (list_families[i].Code === $("#famCode").val())
+                    flag = list_families[i];
+            if (flag != null && $("#famID").val() != flag.ID) return true;
+            return false;
+        }
+
+        /** Abre la modal */
+        function openModal(is_new) {
+            $("#" + elements.title_modal).html((is_new ? "@Resources.views.agregar" : "@Resources.views.editar") + " @Resources.views.familia");
+            $('#' + elements.modal).modal({ backdrop: 'static', keyboard: false });
+        }
+
+        /** Muestra un error, recibe excepcion para mostrar en consola y el mensaje para el usuario. */
+        function error(e, msj) {
+            Toast.fire({ icon: 'error', title: msj });
+            console.error(e);
+        }
+    </script>
+</body>
+</html>

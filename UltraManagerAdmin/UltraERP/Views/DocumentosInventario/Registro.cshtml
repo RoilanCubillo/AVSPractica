@@ -1,0 +1,2054 @@
+@model UltraERP.Models.DocumentoInventarioRegistroViewModel
+@{
+    ViewBag.Title = "Registro de documento";
+    ViewBag.ActiveMenu = "Documentos";
+    Func<DateTime?, string> dateValue = value => value.HasValue ? value.Value.ToString("yyyy-MM-dd") : "";
+}
+
+<section class="document-topbar">
+    <div class="document-topbar-copy">
+        <span class="eyebrow">Documento de inventario</span>
+        <h1>Registro de Documento de Inventario</h1>
+        <p>Complete el encabezado, cargue soporte fiscal y construya el detalle del movimiento con trazabilidad para auditoria.</p>
+    </div>
+    <div class="topbar-actions">
+        <a class="btn btn-outline-secondary" href="@Url.Action("Inicio", "DocumentosInventario")">Cancelar</a>
+        <button id="btnGuardarBorrador" class="btn btn-outline-primary" type="button">Guardar Borrador</button>
+        <button id="btnEnviarDocumento" class="btn btn-primary" type="button">Enviar documento</button>
+        <button id="btnRecibirDocumento" class="btn btn-outline-success" type="button">Recibir / Aplicar</button>
+        <button id="btnCerrarDocumento" class="btn btn-outline-dark" type="button">Cerrar documento</button>
+    </div>
+</section>
+
+@using (Html.BeginForm("Registro", "DocumentosInventario", FormMethod.Post, new { id = "documentoForm", @class = "document-form" }))
+{
+    @Html.AntiForgeryToken()
+
+    <section class="form-panel">
+        <div class="section-title">
+            <span>1.</span>
+            <h2>Informacion General</h2>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-3">
+                @Html.LabelFor(m => m.TipoDocumento, new { @class = "form-label required" })
+                @Html.DropDownListFor(m => m.TipoDocumento, Model.TiposDocumento, new { @class = "form-select", id = "tipoDocumento" })
+                @Html.ValidationMessageFor(m => m.TipoDocumento, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-3">
+                @Html.LabelFor(m => m.NumeroDocumento, new { @class = "form-label" })
+                @Html.TextBoxFor(m => m.NumeroDocumento, new { @class = "form-control readonly-control", id = "numeroDocumento", @readonly = "readonly" })
+            </div>
+            <div class="col-12 col-md-3 offset-md-3">
+                <label class="form-label">Estado</label>
+                <div>
+                    <span id="estadoBadge" class="status-badge draft">@Model.Estado</span>
+                    @Html.HiddenFor(m => m.Estado, new { id = "estadoDocumento" })
+                </div>
+            </div>
+
+            <div class="col-12 col-md-3">
+                @Html.LabelFor(m => m.FechaSolicitud, new { @class = "form-label required" })
+                <input id="fechaSolicitud" name="FechaSolicitud" type="date" class="form-control" value="@Model.FechaSolicitud.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-12 col-md-3">
+                @Html.LabelFor(m => m.FechaEntrega, new { @class = "form-label" })
+                <input id="fechaEntrega" name="FechaEntrega" type="date" class="form-control" value="@dateValue(Model.FechaEntrega)" />
+            </div>
+            <div class="col-12 col-md-3">
+                @Html.LabelFor(m => m.FechaAplicacion, new { @class = "form-label required" })
+                <input id="fechaAplicacion" name="FechaAplicacion" type="date" class="form-control" value="@dateValue(Model.FechaAplicacion)" />
+            </div>
+
+            <div class="col-12 col-lg-5">
+                @Html.LabelFor(m => m.ProveedorBusqueda, new { @class = "form-label required" })
+                <div class="input-action">
+                    @Html.TextBoxFor(m => m.ProveedorBusqueda, new { @class = "form-control", id = "proveedorBusqueda", placeholder = "Buscar por codigo o nombre del proveedor..." })
+                    <button id="btnBuscarProveedor" class="btn btn-outline-secondary" type="button" title="Buscar proveedor">Buscar</button>
+                </div>
+                <div id="providerQuickPick" class="provider-quick-pick" style="display:none;"></div>
+                @Html.ValidationMessageFor(m => m.ProveedorBusqueda, "", new { @class = "text-danger small" })
+                <div class="provider-card">
+                    <div>
+                        <span>Codigo</span>
+                        @Html.TextBoxFor(m => m.CodigoProveedor, new { @class = "plain-input", id = "codigoProveedor", @readonly = "readonly", placeholder = "-" })
+                    </div>
+                    <div>
+                        <span>Nombre</span>
+                        @Html.TextBoxFor(m => m.NombreProveedor, new { @class = "plain-input strong", id = "nombreProveedor", @readonly = "readonly", placeholder = "-" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-2">
+                @Html.LabelFor(m => m.PlazoCredito, new { @class = "form-label" })
+                @Html.TextBoxFor(m => m.PlazoCredito, new { @class = "form-control", id = "plazoCredito", type = "number", min = "0" })
+            </div>
+
+            <div class="col-12 col-lg-5">
+                @Html.LabelFor(m => m.PersonaSolicita, new { @class = "form-label required" })
+                @Html.TextBoxFor(m => m.PersonaSolicita, new { @class = "form-control", id = "personaSolicita", placeholder = "Usuario o empleado que solicita" })
+                @Html.ValidationMessageFor(m => m.PersonaSolicita, "", new { @class = "text-danger small" })
+            </div>
+
+            <div class="col-12 col-md-4">
+                @Html.LabelFor(m => m.FacturaRef, new { @class = "form-label" })
+                @Html.TextBoxFor(m => m.FacturaRef, new { @class = "form-control", id = "facturaRef", placeholder = "Numero manual o tomado del XML" })
+            </div>
+            <div class="col-12 col-md-8">
+                @Html.LabelFor(m => m.Comentario, new { @class = "form-label" })
+                @Html.TextAreaFor(m => m.Comentario, new { @class = "form-control", id = "comentario", rows = "3", maxlength = "500", placeholder = "Observaciones del documento" })
+                <div class="field-counter"><span id="comentarioCount">0</span> / 500</div>
+            </div>
+        </div>
+    </section>
+
+    <div class="document-grid-two">
+        <section class="form-panel">
+            <div class="section-title">
+                <span>2.</span>
+                <h2>XML Hacienda Costa Rica <small>Opcional</small></h2>
+            </div>
+            <div class="section-help">Puede cargar el XML y luego ajustar los datos manualmente si necesita corregirlos.</div>
+
+            <div class="xml-zone">
+                <input id="xmlFile" type="file" accept=".xml,text/xml" />
+                <div>
+                    <strong>Arrastre el archivo XML aqui</strong>
+                    <span>o haga clic para buscar</span>
+                </div>
+                <button id="btnCargarXml" class="btn btn-outline-primary" type="button">Cargar XML</button>
+            </div>
+
+            <div class="xml-summary">
+                <label>
+                    <span>Clave Hacienda</span>
+                    @Html.TextBoxFor(m => m.ClaveHacienda, new { id = "claveHacienda" })
+                </label>
+                <label>
+                    <span>Consecutivo</span>
+                    @Html.TextBoxFor(m => m.Consecutivo, new { id = "consecutivo" })
+                </label>
+                <label>
+                    <span>Emisor</span>
+                    @Html.TextBoxFor(m => m.Emisor, new { id = "emisor" })
+                </label>
+                <label>
+                    <span>Fecha Emision</span>
+                    <input id="fechaEmision" name="FechaEmision" type="date" value="@dateValue(Model.FechaEmision)" />
+                </label>
+                <label>
+                    <span>Total Factura</span>
+                    <input id="totalFactura" name="TotalFactura" type="number" min="0" step="0.01" value="@Model.TotalFactura" />
+                </label>
+                <label>
+                    <span>Estado en FacturaMeCR</span>
+                    @Html.TextBoxFor(m => m.EstadoFacturaMeCR, new { id = "estadoFacturaMeCR" })
+                </label>
+            </div>
+        </section>
+
+        <section class="form-panel">
+            <div class="section-title">
+                <span>3.</span>
+                <h2>Informacion segun Tipo de Documento</h2>
+            </div>
+
+            <div id="tipoInfo" class="type-info">
+                <strong id="tipoInfoTitle">Compra</strong>
+                <p id="tipoInfoText">Este documento corresponde a una compra. No se requieren campos adicionales.</p>
+            </div>
+
+            <div class="conditional-grid">
+                <div id="salidaFields" class="conditional-box warning-box">
+                    <h3>Si es Salida de Inventario</h3>
+                    @Html.LabelFor(m => m.TipoSalida, new { @class = "form-label required" })
+                    @Html.DropDownListFor(m => m.TipoSalida, Model.TiposSalida, "Seleccione...", new { @class = "form-select", id = "tipoSalida" })
+                    @Html.LabelFor(m => m.JustificacionSalida, new { @class = "form-label required" })
+                    @Html.DropDownListFor(m => m.JustificacionSalida, Model.JustificacionesSalida, "Seleccione...", new { @class = "form-select", id = "justificacionSalida" })
+                </div>
+                <div id="entradaFields" class="conditional-box success-box">
+                    <h3>Si es Entrada de Inventario</h3>
+                    @Html.LabelFor(m => m.JustificacionEntrada, new { @class = "form-label required" })
+                    @Html.DropDownListFor(m => m.JustificacionEntrada, Model.JustificacionesEntrada, "Seleccione...", new { @class = "form-select", id = "justificacionEntrada" })
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <section class="form-panel">
+        <div class="section-title section-title-action">
+            <div class="section-title-copy">
+                <span>4.</span>
+                <h2>Detalle de productos</h2>
+            </div>
+            <div class="detail-toolbar">
+                <button id="btnAgregarLinea" class="btn btn-outline-primary" type="button" title="F7">Agregar <span class="btn-shortcut-inline">F7</span></button>
+                <button id="btnEliminarLinea" class="btn btn-outline-danger" type="button" title="Supr">Eliminar <span class="btn-shortcut-inline">Supr</span></button>
+                <button id="btnBuscarProducto" class="btn btn-outline-secondary" type="button">Buscar producto</button>
+                <button id="btnAbrirRegalias" class="btn btn-outline-warning" type="button">Regal&iacute;as</button>
+                <button id="btnAplicarDescuento" class="btn btn-outline-secondary" type="button">Aplicar descuento</button>
+                <button id="btnImportarDesdeXml" class="btn btn-outline-secondary" type="button">Importar desde XML</button>
+            </div>
+        </div>
+        <div class="detail-shortcuts-note">
+            Atajos: <strong>F7</strong> agrega, <strong>Supr</strong> elimina la linea actual, <strong>Tab</strong> avanza y <strong>Enter</strong> confirma producto.
+        </div>
+
+        @Html.HiddenFor(m => m.DetalleLineasJson, new { id = "detalleLineasJson" })
+        @Html.HiddenFor(m => m.LineasEspecialesJson, new { id = "lineasEspecialesJson" })
+
+        <div class="detail-summary-grid">
+            <article>
+                <span>Lineas</span>
+                <strong id="detailLineCount">0</strong>
+            </article>
+            <article>
+                <span>Total documento</span>
+                <strong id="detailDocumentTotal">0.00</strong>
+            </article>
+            <article>
+                <span>Regal&iacute;as</span>
+                <strong id="detailRegaliaCount">0</strong>
+            </article>
+        </div>
+
+        <datalist id="productosCodigoList"></datalist>
+        <datalist id="productosDescripcionList"></datalist>
+        <div id="productQuickPick" class="product-quick-pick" style="display:none;"></div>
+
+        <div class="table-responsive">
+            <table class="table align-middle detail-grid-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Codigo</th>
+                        <th>Nombre / Descripcion</th>
+                        <th>Unidad</th>
+                        <th>Cantidad</th>
+                        <th>Costo Unitario</th>
+                        <th>Descuento %</th>
+                        <th>Descuento Monto</th>
+                        <th>Impuesto %</th>
+                        <th>Total Linea</th>
+                        <th>Regalia</th>
+                        <th>Observacion</th>
+                    </tr>
+                </thead>
+                <tbody id="detalleGridBody"></tbody>
+            </table>
+        </div>
+
+        <div class="detail-bottom-grid">
+            <div>
+                <label for="detalleObservaciones" class="form-label">Observaciones Generales del Detalle</label>
+                <textarea id="detalleObservaciones" class="form-control" rows="3" maxlength="1000" placeholder="Escriba observaciones generales sobre los productos del documento..."></textarea>
+                <div class="field-counter"><span id="detalleObservacionesCount">0</span> / 1000</div>
+            </div>
+            <div class="detail-total-card">
+                <div>
+                    <span>Subtotal</span>
+                    <strong id="detailSubtotal">0.00</strong>
+                </div>
+                <div>
+                    <span>Descuento Total</span>
+                    <strong id="detailDiscountTotal">0.00</strong>
+                </div>
+                <div>
+                    <span>Impuesto Total</span>
+                    <strong id="detailTaxTotal">0.00</strong>
+                </div>
+                <div class="detail-total-row">
+                    <span>Total del Documento</span>
+                    <strong id="detailGrandTotal">0.00</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-extra-grid">
+            <div class="detail-tax-table">
+                <h3>Totales por Impuesto</h3>
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Impuesto</th>
+                            <th>%</th>
+                            <th>Base Imponible</th>
+                            <th>Monto Impuesto</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="taxSummaryBody"></tbody>
+                </table>
+            </div>
+            <div class="detail-quantity-card">
+                <h3>Resumen de Cantidades</h3>
+                <div>
+                    <span>L&iacute;neas</span>
+                    <strong id="quantityLineCount">0</strong>
+                </div>
+                <div>
+                    <span>Cantidad Total</span>
+                    <strong id="quantityTotal">0.00</strong>
+                </div>
+                <div>
+                    <span>L&iacute;neas con Regal&iacute;a</span>
+                    <strong id="quantityRegaliaCount">0</strong>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="form-note">Los campos marcados con * son obligatorios.</div>
+}
+
+<div class="modal fade" id="productoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Buscar producto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12 col-md-4">
+                        <input id="productoSearch" type="search" class="form-control" placeholder="Buscar por codigo o descripcion" />
+                    </div>
+                </div>
+                <div class="table-responsive mt-3">
+                    <table class="table align-middle mb-0 product-search-table">
+                        <thead>
+                            <tr>
+                                <th>Codigo</th>
+                                <th>Descripcion</th>
+                                <th>Unidad</th>
+                                <th>Costo</th>
+                                <th>IVA %</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="productoSearchBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="regaliasModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Agregar l&iacute;nea de Regal&iacute;as</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12 col-md-4">
+                        <label for="regaliaCodigo" class="form-label required">Codigo producto</label>
+                        <input id="regaliaCodigo" type="text" class="form-control" />
+                    </div>
+                    <div class="col-12 col-md-8">
+                        <label for="regaliaDescripcion" class="form-label required">Descripcion</label>
+                        <input id="regaliaDescripcion" type="text" class="form-control" />
+                    </div>
+                    <div class="col-12">
+                        <div id="regaliaQuickPick" class="product-quick-pick regalia-quick-pick" style="display:none;"></div>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label for="regaliaUnidad" class="form-label">Unidad</label>
+                        <input id="regaliaUnidad" type="text" class="form-control" value="UND" />
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label for="regaliaCantidad" class="form-label required">Cantidad</label>
+                        <input id="regaliaCantidad" type="number" min="0.01" step="0.01" class="form-control" value="1" />
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label for="regaliaCosto" class="form-label required">Costo Unitario</label>
+                        <input id="regaliaCosto" type="number" min="0" step="0.01" class="form-control" value="0" />
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label for="regaliaObservacion" class="form-label">Observacion</label>
+                        <input id="regaliaObservacion" type="text" class="form-control" value="Linea de regalia auditada" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button id="btnAgregarRegalia" type="button" class="btn btn-primary">Agregar linea</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="descuentoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Aplicar descuento a la linea seleccionada</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label for="descuentoPorcentajeModal" class="form-label">Descuento %</label>
+                        <input id="descuentoPorcentajeModal" type="number" min="0" step="0.01" class="form-control" value="0" />
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label for="descuentoMontoModal" class="form-label">Descuento Monto</label>
+                        <input id="descuentoMontoModal" type="number" min="0" step="0.01" class="form-control" value="0" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button id="btnConfirmarDescuento" type="button" class="btn btn-primary">Aplicar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="recuperarDocumentoModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-md modal-dialog-centered">
+        <div class="modal-content local-recovery-modal">
+            <div class="modal-header">
+                <h5 class="modal-title">Recuperar documento</h5>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2">Encontramos informacion guardada en este equipo mientras se creaba un documento.</p>
+                <p class="text-muted mb-0">Puede recuperar lo que estaba digitando o comenzar un documento nuevo.</p>
+                <div id="recuperarDocumentoResumen" class="local-recovery-summary"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="btnDescartarDocumentoLocal" type="button" class="btn btn-outline-secondary">Comenzar de nuevo</button>
+                <button id="btnRecuperarDocumentoLocal" type="button" class="btn btn-primary">Recuperar informacion</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        var urls = {
+            guardarEncabezado: '@Url.Action("GuardarEncabezado", "DocumentosInventario")',
+            inicio: '@Url.Action("Inicio", "DocumentosInventario")'
+        };
+        var numerosPorTipo = {
+            "Compra": "PO00040337",
+            "Entrada de Inventario": "EN00000125",
+            "Salida de Inventario": "SA00000125"
+        };
+        var proveedores = [
+            { key: "00129 - CONEJO DORADO S.R.L.", codigo: "00129", nombre: "CONEJO DORADO S.R.L.", plazo: 30 },
+            { key: "00210 - Distribuidora Central", codigo: "00210", nombre: "Distribuidora Central", plazo: 15 },
+            { key: "00345 - Comercial La Union", codigo: "00345", nombre: "Comercial La Union", plazo: 45 }
+        ];
+        var productos = [
+            { codigo: "ACE-015", descripcion: "Aceite vegetal", unidad: "UND", costo: 2590, impuesto: 13 },
+            { codigo: "ARR-220", descripcion: "Arroz precocido", unidad: "KG", costo: 2750, impuesto: 1 },
+            { codigo: "CAF-009", descripcion: "Cafe molido", unidad: "BQ", costo: 4521, impuesto: 13 },
+            { codigo: "EMP-001", descripcion: "Insumos de empaque", unidad: "CJ", costo: 4520.50, impuesto: 13 },
+            { codigo: "FIL-014", descripcion: "Film termico", unidad: "UND", costo: 1295.75, impuesto: 13 },
+            { codigo: "HAR-112", descripcion: "Harina preparada", unidad: "QQ", costo: 10900, impuesto: 1 },
+            { codigo: "PROMO-1", descripcion: "Producto de cortesia", unidad: "UND", costo: 0, impuesto: 0 },
+            { codigo: "SAL-441", descripcion: "Salsa base", unidad: "GAL", costo: 74850, impuesto: 13 }
+        ];
+        var detalleLineas = [];
+        var selectedRowIndex = -1;
+        var regaliasModal;
+        var productoModal;
+        var descuentoModal;
+        var ultimoXmlTexto = "";
+        var importarDetallePendiente = false;
+        var activeProductInput = null;
+        var activeProductMatches = [];
+        var activeProductMatchIndex = -1;
+        var activeProductSearchResults = [];
+        var activeProductSearchIndex = -1;
+        var addLineHotkey = "F7";
+        var localDraftKey = "UltraERP.DocumentosInventario.Registro.LocalDraft.v1";
+        var localDraftSaveTimer = null;
+        var suppressLocalDraftSave = true;
+        var disableLocalDraftPersistence = false;
+        var pendingLocalDraft = null;
+        var recuperarDocumentoModal;
+        var activeProviderMatches = [];
+        var activeProviderMatchIndex = -1;
+        var activeRegaliaMatches = [];
+        var activeRegaliaMatchIndex = -1;
+        var activeRegaliaField = null;
+
+        $(function () {
+            regaliasModal = new bootstrap.Modal(document.getElementById("regaliasModal"));
+            productoModal = new bootstrap.Modal(document.getElementById("productoModal"));
+            descuentoModal = new bootstrap.Modal(document.getElementById("descuentoModal"));
+            recuperarDocumentoModal = new bootstrap.Modal(document.getElementById("recuperarDocumentoModal"));
+
+            seedProductDatalists();
+            bindEvents();
+            refreshTipoDocumento();
+            updateComentarioCount();
+            updateDetalleObservacionesCount();
+            initializeProveedorState();
+            ensureAtLeastOneLine();
+            renderDetalleGrid();
+            renderProductSearchResults(productos);
+            checkLocalDraftRecovery();
+        });
+
+        function bindEvents() {
+            $("#tipoDocumento").on("change", refreshTipoDocumento);
+            $("#proveedorBusqueda").on("input", updateProviderQuickPick);
+            $("#proveedorBusqueda").on("change", fillProveedor);
+            $("#proveedorBusqueda").on("focus", updateProviderQuickPick);
+            $("#proveedorBusqueda").on("keydown", onProveedorBusquedaKeyDown);
+            $("#proveedorBusqueda").on("blur", scheduleHideProviderQuickPick);
+            $("#btnBuscarProveedor").on("click", fillProveedor);
+            $("#btnCargarXml").on("click", function () { $("#xmlFile").trigger("click"); });
+            $("#xmlFile").on("change", readXmlFile);
+            $("#comentario").on("input", updateComentarioCount);
+            $("#detalleObservaciones").on("input", updateDetalleObservacionesCount);
+            $("#btnAgregarLinea").on("click", addEmptyLine);
+            $("#btnEliminarLinea").on("click", requestRemoveSelectedLine);
+            $("#btnBuscarProducto").on("click", openProductModal);
+            $("#btnAbrirRegalias").on("click", openRegaliasModal);
+            $("#btnAgregarRegalia").on("click", addRegaliaLine);
+            $("#btnAplicarDescuento").on("click", openDiscountModal);
+            $("#btnConfirmarDescuento").on("click", applyDiscountToSelectedLine);
+            $("#btnImportarDesdeXml").on("click", importFromXml);
+            $("#btnGuardarBorrador").on("click", function () { guardarEncabezado("Borrador"); });
+            $("#btnEnviarDocumento").on("click", function () { guardarEncabezado("Enviar"); });
+            $("#btnRecibirDocumento").on("click", function () { guardarEncabezado("Recibir"); });
+            $("#btnCerrarDocumento").on("click", function () { guardarEncabezado("Cerrar"); });
+            $("#regaliaCodigo, #regaliaDescripcion")
+                .on("input focus", updateRegaliaQuickPick)
+                .on("keydown", onRegaliaInputKeyDown)
+                .on("blur", scheduleHideRegaliaQuickPick);
+            $("#documentoForm").on("input change", "input, select, textarea", function () {
+                if ($(this).attr("type") === "file") return;
+                scheduleLocalDraftSave();
+            });
+            $("#btnRecuperarDocumentoLocal").on("click", recoverLocalDraft);
+            $("#btnDescartarDocumentoLocal").on("click", discardLocalDraft);
+            $(window).on("beforeunload", saveLocalDraftNow);
+            $("#productoSearch").on("input", function () {
+                filterProductSearchResults();
+            });
+            $("#productoSearch").on("keydown", onProductoSearchKeyDown);
+            $("#productoSearchBody")
+                .on("click", ".product-search-row", function () {
+                    setActiveProductSearchResult(Number($(this).data("index")));
+                    applySelectedProductSearchResult();
+                })
+                .on("dblclick", ".product-search-row", function () {
+                    setActiveProductSearchResult(Number($(this).data("index")));
+                    applySelectedProductSearchResult();
+                })
+                .on("keydown", ".product-search-row", function (e) {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setActiveProductSearchResult(Number($(this).data("index")));
+                        applySelectedProductSearchResult();
+                    }
+                })
+                .on("click", ".btn-product-use", function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveProductSearchResult(Number($(this).closest("tr").data("index")));
+                    applySelectedProductSearchResult();
+                });
+
+            $("#detalleGridBody")
+                .on("click", "tr", function () {
+                    setSelectedRow(Number($(this).data("index")));
+                })
+                .on("input change", ".detalle-input", onDetalleInputChange)
+                .on("keydown", ".detalle-input", onDetalleInputKeyDown)
+                .on("focusin", ".detalle-input", onDetalleInputFocus)
+                .on("blur", ".detalle-input[data-field='Codigo'], .detalle-input[data-field='Descripcion']", scheduleHideProductQuickPick)
+                .on("wheel", "input[type='number'].detalle-input", onDetalleNumberWheel)
+                .on("click", ".btn-row-product", function (e) {
+                    e.stopPropagation();
+                    setSelectedRow(Number($(this).closest("tr").data("index")));
+                    productoModal.show();
+                });
+
+            $("#productQuickPick").on("mousedown", ".product-quick-pick-option", function (e) {
+                e.preventDefault();
+                applyQuickPickSelection(Number($(this).data("index")));
+            });
+
+            $("#providerQuickPick").on("mousedown", ".provider-quick-pick-option", function (e) {
+                e.preventDefault();
+                applyProviderQuickPickSelection(Number($(this).data("index")));
+            });
+
+            $("#regaliaQuickPick").on("mousedown", ".product-quick-pick-option", function (e) {
+                e.preventDefault();
+                applyRegaliaQuickPickSelection(Number($(this).data("index")));
+            });
+
+            $(window).on("resize scroll", function () {
+                if ($("#productQuickPick").is(":visible")) {
+                    renderProductQuickPick();
+                }
+            });
+
+            $(document).on("keydown", handleDetalleHotkeys);
+        }
+
+        function seedProductDatalists() {
+            $("#productosCodigoList").html(productos.map(function (producto) {
+                return "<option value='" + escapeHtml(producto.codigo) + "'></option>";
+            }).join(""));
+
+            $("#productosDescripcionList").html(productos.map(function (producto) {
+                return "<option value='" + escapeHtml(producto.descripcion) + "'></option>";
+            }).join(""));
+        }
+
+        function guardarEncabezado(accion) {
+            syncDetalleLineas();
+            if (detalleLineas.length === 0) {
+                showToast("Agregue al menos una linea de producto.");
+                return;
+            }
+
+            var payload = $("#documentoForm").serializeArray();
+            payload.push({ name: "accion", value: accion });
+
+            $.post(urls.guardarEncabezado, payload)
+                .done(function (data) {
+                    if (!data.Status) {
+                        showToast(data.Message || "No se pudo guardar el documento.");
+                        return;
+                    }
+
+                    showToast(data.Message || "Documento guardado.");
+                    disableLocalDraftPersistence = true;
+                    clearLocalDraft();
+                    setTimeout(function () { window.location.href = urls.inicio; }, 700);
+                })
+                .fail(function () {
+                    showToast("No se pudo guardar el documento.");
+                });
+        }
+
+        function refreshTipoDocumento() {
+            var tipo = $("#tipoDocumento").val();
+            $("#numeroDocumento").val(numerosPorTipo[tipo] || numerosPorTipo.Compra);
+            $("#tipoInfoTitle").text(tipo);
+            $("#salidaFields").toggle(tipo === "Salida de Inventario");
+            $("#entradaFields").toggle(tipo === "Entrada de Inventario");
+
+            if (tipo === "Salida de Inventario") {
+                $("#tipoInfoText").text("Este documento reduce inventario y requiere tipo de salida y justificacion.");
+            } else if (tipo === "Entrada de Inventario") {
+                $("#tipoInfoText").text("Este documento aumenta inventario y requiere una justificacion de entrada.");
+            } else {
+                $("#tipoInfoText").text("Este documento corresponde a una compra. No se requieren campos adicionales.");
+            }
+        }
+
+        function fillProveedor() {
+            var rawValue = $("#proveedorBusqueda").val();
+            var value = normalizeLookup(rawValue);
+            if (!value) {
+                clearProveedorSelection();
+                return;
+            }
+
+            var selected = proveedores.find(function (item) {
+                return normalizeLookup(item.key) === value ||
+                    normalizeLookup(item.codigo) === value ||
+                    normalizeLookup(item.nombre) === value;
+            });
+
+            if (!selected) {
+                var matches = findProviderMatches($("#proveedorBusqueda").val());
+                if (matches.length === 1) {
+                    selected = matches[0];
+                } else {
+                    updateProviderQuickPick();
+                    return;
+                }
+            }
+
+            applyProveedorSelection(selected);
+        }
+
+        function applyProveedorSelection(selected) {
+            if (!selected) return;
+            $("#codigoProveedor").val(selected.codigo);
+            $("#nombreProveedor").val(selected.nombre);
+            $("#plazoCredito").val(selected.plazo);
+            $("#proveedorBusqueda").val(selected.key);
+            hideProviderQuickPick();
+            scheduleLocalDraftSave();
+        }
+
+        function clearProveedorSelection() {
+            $("#codigoProveedor").val("");
+            $("#nombreProveedor").val("");
+            $("#plazoCredito").val("");
+            hideProviderQuickPick();
+            scheduleLocalDraftSave();
+        }
+
+        function initializeProveedorState() {
+            var hasProveedor = String($("#proveedorBusqueda").val() || "").trim() ||
+                String($("#codigoProveedor").val() || "").trim() ||
+                String($("#nombreProveedor").val() || "").trim();
+
+            if (!hasProveedor) {
+                clearProveedorSelection();
+                return;
+            }
+
+            fillProveedor();
+        }
+
+        function findProviderMatches(query) {
+            var lookup = normalizeLookup(query);
+            if (!lookup) return proveedores.slice(0, 6);
+
+            return proveedores.filter(function (item) {
+                return normalizeLookup(item.key).indexOf(lookup) >= 0 ||
+                    normalizeLookup(item.codigo).indexOf(lookup) >= 0 ||
+                    normalizeLookup(item.nombre).indexOf(lookup) >= 0;
+            }).slice(0, 6);
+        }
+
+        function updateProviderQuickPick() {
+            var query = $("#proveedorBusqueda").val();
+            if (!String(query || "").trim()) {
+                clearProveedorSelection();
+                hideProviderQuickPick();
+                return;
+            }
+
+            activeProviderMatches = findProviderMatches(query);
+            activeProviderMatchIndex = activeProviderMatches.length ? 0 : -1;
+            renderProviderQuickPick();
+        }
+
+        function renderProviderQuickPick() {
+            if (!activeProviderMatches.length) {
+                hideProviderQuickPick();
+                return;
+            }
+
+            $("#providerQuickPick").html(activeProviderMatches.map(function (item, index) {
+                return "<button type='button' class='provider-quick-pick-option" + (index === activeProviderMatchIndex ? " active" : "") + "' data-index='" + index + "'>" +
+                    "<strong>" + escapeHtml(item.codigo) + "</strong>" +
+                    "<span>" + escapeHtml(item.nombre) + "</span>" +
+                    "<small>" + escapeHtml(item.key) + "</small>" +
+                    "</button>";
+            }).join("")).show();
+        }
+
+        function moveProviderQuickPickSelection(direction) {
+            if (!activeProviderMatches.length) return;
+            activeProviderMatchIndex = (activeProviderMatchIndex + direction + activeProviderMatches.length) % activeProviderMatches.length;
+            renderProviderQuickPick();
+        }
+
+        function applyProviderQuickPickSelection(index) {
+            if (index < 0 || index >= activeProviderMatches.length) return;
+            applyProveedorSelection(activeProviderMatches[index]);
+        }
+
+        function onProveedorBusquedaKeyDown(e) {
+            if (!activeProviderMatches.length) return;
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                moveProviderQuickPickSelection(1);
+                return;
+            }
+
+            if (e.key === "ArrowUp") {
+                e.preventDefault();
+                moveProviderQuickPickSelection(-1);
+                return;
+            }
+
+            if (e.key === "Enter") {
+                e.preventDefault();
+                applyProviderQuickPickSelection(activeProviderMatchIndex >= 0 ? activeProviderMatchIndex : 0);
+            }
+        }
+
+        function scheduleHideProviderQuickPick() {
+            window.setTimeout(function () {
+                if ($("#providerQuickPick").is(":hover")) return;
+                hideProviderQuickPick();
+            }, 140);
+        }
+
+        function hideProviderQuickPick() {
+            activeProviderMatches = [];
+            activeProviderMatchIndex = -1;
+            $("#providerQuickPick").hide().empty();
+        }
+
+        function readXmlFile() {
+            var file = this.files && this.files[0];
+            if (!file) return;
+
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                ultimoXmlTexto = e.target.result || "";
+                var xml = new DOMParser().parseFromString(ultimoXmlTexto, "text/xml");
+                var clave = getXmlText(xml, "Clave");
+                var consecutivo = getXmlText(xml, "NumeroConsecutivo");
+                var emisor = getXmlText(xml, "Nombre");
+                var fecha = getXmlText(xml, "FechaEmision");
+                var total = getXmlText(xml, "TotalComprobante");
+
+                $("#claveHacienda").val(clave || "-");
+                $("#consecutivo").val(consecutivo || "-");
+                $("#emisor").val(emisor || "-");
+                $("#fechaEmision").val(fecha ? fecha.substring(0, 10) : "-");
+                $("#totalFactura").val(total || "-");
+                $("#estadoFacturaMeCR").val("Pendiente de validacion");
+                if (consecutivo) $("#facturaRef").val(consecutivo);
+
+                if (importarDetallePendiente) {
+                    importarDetallePendiente = false;
+                    importXmlDetailLines(xml);
+                } else {
+                    showToast("XML cargado en el encabezado.");
+                    scheduleLocalDraftSave();
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function getXmlText(xml, tagName) {
+            var nodes = xml.getElementsByTagName(tagName);
+            if (!nodes || !nodes.length) return "";
+            return nodes[0].textContent || "";
+        }
+
+        function updateComentarioCount() {
+            $("#comentarioCount").text(($("#comentario").val() || "").length);
+        }
+
+        function updateDetalleObservacionesCount() {
+            $("#detalleObservacionesCount").text(($("#detalleObservaciones").val() || "").length);
+        }
+
+        function ensureAtLeastOneLine() {
+            if (!detalleLineas.length) {
+                detalleLineas.push(createEmptyLine());
+                selectedRowIndex = 0;
+            }
+        }
+
+        function createEmptyLine() {
+            return {
+                Codigo: "",
+                Descripcion: "",
+                Unidad: "UND",
+                Cantidad: 1,
+                CostoUnitario: 0,
+                DescuentoPorcentaje: 0,
+                DescuentoMonto: 0,
+                ImpuestoPorcentaje: 13,
+                TotalLinea: 0,
+                Regalia: false,
+                Observacion: ""
+            };
+        }
+
+        function addEmptyLine() {
+            detalleLineas.push(createEmptyLine());
+            selectedRowIndex = detalleLineas.length - 1;
+            renderDetalleGrid({ index: selectedRowIndex, field: "Codigo", selectText: true });
+            scheduleLocalDraftSave();
+        }
+
+        function removeSelectedLine() {
+            if (selectedRowIndex < 0 || selectedRowIndex >= detalleLineas.length) {
+                showToast("Seleccione una linea para eliminar.");
+                return;
+            }
+
+            detalleLineas.splice(selectedRowIndex, 1);
+            if (!detalleLineas.length) {
+                detalleLineas.push(createEmptyLine());
+            }
+
+            selectedRowIndex = Math.min(selectedRowIndex, detalleLineas.length - 1);
+            renderDetalleGrid({ index: selectedRowIndex, field: "Codigo", selectText: true });
+            scheduleLocalDraftSave();
+        }
+
+        function requestRemoveSelectedLine() {
+            if (selectedRowIndex < 0 || selectedRowIndex >= detalleLineas.length) {
+                showToast("Seleccione una linea para eliminar.");
+                return;
+            }
+
+            var linea = detalleLineas[selectedRowIndex];
+            var descripcion = linea.Descripcion || linea.Codigo || ("linea " + (selectedRowIndex + 1));
+            if (!confirm("Quiere eliminar " + descripcion + "?")) {
+                return;
+            }
+
+            removeSelectedLine();
+        }
+
+        function renderDetalleGrid(focusTarget) {
+            if (!detalleLineas.length) ensureAtLeastOneLine();
+
+            var html = detalleLineas.map(function (linea, index) {
+                var selectedClass = index === selectedRowIndex ? " grid-row-selected" : "";
+                return "<tr data-index='" + index + "' class='" + selectedClass.trim() + "'>" +
+                    "<td>" + (index + 1) + "</td>" +
+                    "<td><div class='grid-inline-action'><input class='form-control form-control-sm detalle-input' data-field='Codigo' data-index='" + index + "' list='productosCodigoList' autocomplete='off' placeholder='Codigo o prefijo' value='" + escapeHtml(linea.Codigo) + "' /><button class='btn btn-sm btn-outline-secondary btn-row-product' type='button'>...</button></div></td>" +
+                    "<td><input class='form-control form-control-sm detalle-input' data-field='Descripcion' data-index='" + index + "' list='productosDescripcionList' autocomplete='off' placeholder='Nombre del producto' value='" + escapeHtml(linea.Descripcion) + "' /></td>" +
+                    "<td><input class='form-control form-control-sm detalle-input' data-field='Unidad' data-index='" + index + "' placeholder='UND' value='" + escapeHtml(linea.Unidad) + "' /></td>" +
+                    "<td><input type='number' min='0.01' step='0.01' class='form-control form-control-sm detalle-input' data-field='Cantidad' data-index='" + index + "' value='" + escapeHtml(linea.Cantidad) + "' /></td>" +
+                    "<td><input type='number' min='0' step='0.01' class='form-control form-control-sm detalle-input' data-field='CostoUnitario' data-index='" + index + "' value='" + escapeHtml(linea.CostoUnitario) + "' /></td>" +
+                    "<td><input type='number' min='0' step='0.01' class='form-control form-control-sm detalle-input' data-field='DescuentoPorcentaje' data-index='" + index + "' value='" + escapeHtml(linea.DescuentoPorcentaje) + "' /></td>" +
+                    "<td><input type='number' min='0' step='0.01' class='form-control form-control-sm detalle-input' data-field='DescuentoMonto' data-index='" + index + "' value='" + escapeHtml(linea.DescuentoMonto) + "' /></td>" +
+                    "<td><input type='number' min='0' step='0.01' class='form-control form-control-sm detalle-input' data-field='ImpuestoPorcentaje' data-index='" + index + "' value='" + escapeHtml(linea.ImpuestoPorcentaje) + "' /></td>" +
+                    "<td><input class='form-control form-control-sm readonly-control' readonly='readonly' value='" + formatMoney(linea.TotalLinea) + "' /></td>" +
+                    "<td class='text-center'><input type='checkbox' class='form-check-input detalle-input' data-field='Regalia' data-index='" + index + "' " + (linea.Regalia ? "checked='checked'" : "") + " /></td>" +
+                    "<td><input class='form-control form-control-sm detalle-input' data-field='Observacion' data-index='" + index + "' placeholder='Comentario por linea' value='" + escapeHtml(linea.Observacion) + "' /></td>" +
+                    "</tr>";
+            }).join("");
+
+            $("#detalleGridBody").html(html);
+            syncDetalleLineas();
+            scheduleLocalDraftSave();
+            if (focusTarget) {
+                focusDetalleField(focusTarget.index, focusTarget.field, focusTarget.selectText);
+            }
+        }
+
+        function onDetalleInputFocus() {
+            setSelectedRow(Number($(this).data("index")));
+
+            if ($(this).data("field") === "Codigo" || $(this).data("field") === "Descripcion") {
+                updateProductQuickPick(this);
+            } else {
+                hideProductQuickPick();
+            }
+        }
+
+        function onDetalleInputChange(e) {
+            var index = Number($(this).data("index"));
+            var field = $(this).data("field");
+            if (index < 0 || index >= detalleLineas.length) return;
+
+            setSelectedRow(index);
+            var linea = detalleLineas[index];
+            linea[field] = field === "Regalia" ? $(this).is(":checked") : $(this).val();
+
+            normalizeLine(linea);
+            syncLineDiscounts(linea, field);
+            if (field === "Codigo" || field === "Descripcion") {
+                updateProductQuickPick(this);
+                if (e.type === "change") {
+                    tryApplyBestProductMatch(index, field);
+                }
+            } else {
+                hideProductQuickPick();
+            }
+
+            linea.TotalLinea = calculateLineTotal(linea);
+            updateDetalleRowDiscounts(index, field);
+            updateDetalleRowTotal(index);
+            syncDetalleLineas();
+            scheduleLocalDraftSave();
+        }
+
+        function normalizeLine(linea) {
+            linea.Cantidad = toNumber(linea.Cantidad, 1);
+            linea.CostoUnitario = toNumber(linea.CostoUnitario, 0);
+            linea.DescuentoPorcentaje = toNumber(linea.DescuentoPorcentaje, 0);
+            linea.DescuentoMonto = toNumber(linea.DescuentoMonto, 0);
+            linea.ImpuestoPorcentaje = toNumber(linea.ImpuestoPorcentaje, 0);
+            linea.Unidad = linea.Unidad || "UND";
+            linea.Codigo = linea.Codigo || "";
+            linea.Descripcion = linea.Descripcion || "";
+            linea.Observacion = linea.Observacion || "";
+        }
+
+        function syncLineDiscounts(linea, triggerField) {
+            var subtotal = round2(toNumber(linea.Cantidad, 1) * toNumber(linea.CostoUnitario, 0));
+            if (subtotal <= 0) {
+                linea.DescuentoPorcentaje = 0;
+                linea.DescuentoMonto = 0;
+                return;
+            }
+
+            if (triggerField === "DescuentoMonto") {
+                linea.DescuentoMonto = clamp(round2(linea.DescuentoMonto), 0, subtotal);
+                linea.DescuentoPorcentaje = round2((linea.DescuentoMonto / subtotal) * 100);
+                return;
+            }
+
+            linea.DescuentoPorcentaje = clamp(round2(linea.DescuentoPorcentaje), 0, 100);
+            linea.DescuentoMonto = round2(subtotal * (linea.DescuentoPorcentaje / 100));
+        }
+
+        function hydrateProductFromInput(linea, sourceField) {
+            var lookup = normalizeLookup(sourceField === "Codigo" ? linea.Codigo : linea.Descripcion || "");
+            var producto = productos.find(function (item) {
+                return sourceField === "Codigo"
+                    ? normalizeLookup(item.codigo) === lookup
+                    : normalizeLookup(item.descripcion) === lookup;
+            });
+
+            if (!producto) return;
+
+            linea.Codigo = producto.codigo;
+            linea.Descripcion = producto.descripcion;
+            linea.Unidad = producto.unidad;
+            linea.CostoUnitario = producto.costo;
+            linea.ImpuestoPorcentaje = producto.impuesto;
+        }
+
+        function onDetalleInputKeyDown(e) {
+            var $input = $(this);
+            var index = Number($input.data("index"));
+            var field = $input.data("field");
+
+            if ((field === "Codigo" || field === "Descripcion") && $("#productQuickPick").is(":visible")) {
+                if (e.key === "ArrowDown") {
+                    e.preventDefault();
+                    moveQuickPickSelection(1);
+                    return;
+                }
+
+                if (e.key === "ArrowUp") {
+                    e.preventDefault();
+                    moveQuickPickSelection(-1);
+                    return;
+                }
+
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    applyQuickPickSelection(activeProductMatchIndex >= 0 ? activeProductMatchIndex : 0);
+                    return;
+                }
+            }
+
+            if (e.key === "Enter") {
+                e.preventDefault();
+
+                if ((field === "Codigo" || field === "Descripcion") && tryApplyBestProductMatch(index, field)) {
+                    moveFocusAfterProduct(index);
+                    return;
+                }
+
+                moveToNextDetalleField($input);
+                return;
+            }
+
+            if (e.key === "Tab" && !e.shiftKey) {
+                if ((field === "Codigo" || field === "Descripcion") && activeProductMatches.length) {
+                    e.preventDefault();
+                    applyQuickPickSelection(activeProductMatchIndex >= 0 ? activeProductMatchIndex : 0);
+                    return;
+                }
+
+                if ((field === "Codigo" || field === "Descripcion") && tryApplyBestProductMatch(index, field)) {
+                    e.preventDefault();
+                    moveFocusAfterProduct(index);
+                    return;
+                }
+
+                if (field === "Observacion") {
+                    e.preventDefault();
+                    detalleLineas[index].Observacion = $input.val();
+                    moveToNextDetalleRow(index);
+                }
+            }
+        }
+
+        function handleDetalleHotkeys(e) {
+            if ($("#productoModal.show, #regaliasModal.show, #descuentoModal.show").length) return;
+
+            if (e.key === addLineHotkey) {
+                e.preventDefault();
+                addEmptyLine();
+                return;
+            }
+
+            if (e.key === "Delete" && isFocusInsideDetalleGrid()) {
+                e.preventDefault();
+                requestRemoveSelectedLine();
+            }
+        }
+
+        function isFocusInsideDetalleGrid() {
+            return $(document.activeElement).closest("#detalleGridBody").length > 0;
+        }
+
+        function setSelectedRow(index) {
+            selectedRowIndex = index;
+            $("#detalleGridBody tr").removeClass("grid-row-selected");
+            $("#detalleGridBody tr[data-index='" + index + "']").addClass("grid-row-selected");
+        }
+
+        function updateDetalleRowTotal(index) {
+            $("#detalleGridBody tr[data-index='" + index + "'] input.readonly-control").val(formatMoney(detalleLineas[index].TotalLinea));
+        }
+
+        function updateDetalleRowDiscounts(index, activeField) {
+            var row = $("#detalleGridBody tr[data-index='" + index + "']");
+            if (!row.length) return;
+
+            if (activeField !== "DescuentoPorcentaje") {
+                row.find(".detalle-input[data-field='DescuentoPorcentaje']").val(detalleLineas[index].DescuentoPorcentaje);
+            }
+
+            if (activeField !== "DescuentoMonto") {
+                row.find(".detalle-input[data-field='DescuentoMonto']").val(detalleLineas[index].DescuentoMonto);
+            }
+        }
+
+        function focusDetalleField(index, field, selectText) {
+            window.setTimeout(function () {
+                var input = $("#detalleGridBody .detalle-input[data-index='" + index + "'][data-field='" + field + "']");
+                if (!input.length) return;
+                input.trigger("focus");
+                if (selectText && input.is("input[type='text'], input[type='number']")) {
+                    input[0].select();
+                }
+            }, 0);
+        }
+
+        function moveFocusAfterProduct(index) {
+            focusDetalleField(index, "Cantidad", true);
+        }
+
+        function moveToNextDetalleField($input) {
+            var $row = $input.closest("tr");
+            var focusable = $row.find(".detalle-input");
+            var currentPosition = focusable.index($input);
+
+            if (currentPosition >= 0 && currentPosition < focusable.length - 1) {
+                var next = focusable.eq(currentPosition + 1);
+                next.trigger("focus");
+                if (next.is("input[type='text'], input[type='number']")) {
+                    next[0].select();
+                }
+                return;
+            }
+
+            moveToNextDetalleRow(Number($input.data("index")));
+        }
+
+        function moveToNextDetalleRow(index) {
+            if (index < detalleLineas.length - 1) {
+                focusDetalleField(index + 1, "Codigo", true);
+                return;
+            }
+
+            addEmptyLine();
+        }
+
+        function onDetalleNumberWheel(e) {
+            if (document.activeElement !== this) return;
+
+            e.preventDefault();
+            var input = $(this);
+            var step = toNumber(input.attr("step"), 1) || 1;
+            var min = input.attr("min");
+            var current = toNumber(input.val(), 0);
+            var next = current + (e.originalEvent.deltaY < 0 ? step : -step);
+
+            if (min !== undefined && min !== null && min !== "") {
+                next = Math.max(toNumber(min, 0), next);
+            }
+
+            input.val(round2(next)).trigger("input").trigger("change");
+        }
+
+        function tryApplyBestProductMatch(index, field) {
+            var query = detalleLineas[index][field] || "";
+            var matches = findProductMatches(query);
+            if (!matches.length) return false;
+
+            var exactMatch = matches.find(function (item) {
+                return normalizeLookup(item.codigo) === normalizeLookup(query) ||
+                    normalizeLookup(item.descripcion) === normalizeLookup(query);
+            });
+
+            if (!exactMatch && matches.length !== 1) return false;
+
+            applyProductToLine(index, exactMatch || matches[0]);
+            hideProductQuickPick();
+            return true;
+        }
+
+        function applyProductToLine(index, producto) {
+            if (index < 0 || index >= detalleLineas.length || !producto) return;
+
+            var linea = detalleLineas[index];
+            linea.Codigo = producto.codigo;
+            linea.Descripcion = producto.descripcion;
+            linea.Unidad = producto.unidad;
+            linea.CostoUnitario = producto.costo;
+            linea.ImpuestoPorcentaje = producto.impuesto;
+            linea.TotalLinea = calculateLineTotal(linea);
+            renderDetalleGrid({ index: index, field: "Cantidad", selectText: true });
+            scheduleLocalDraftSave();
+        }
+
+        function updateProductQuickPick(inputElement) {
+            var input = $(inputElement);
+            var field = input.data("field");
+            if (field !== "Codigo" && field !== "Descripcion") {
+                hideProductQuickPick();
+                return;
+            }
+
+            var query = (input.val() || "").trim();
+            if (!query) {
+                hideProductQuickPick();
+                return;
+            }
+
+            activeProductInput = input;
+            activeProductMatches = findProductMatches(query).slice(0, 8);
+            activeProductMatchIndex = activeProductMatches.length ? 0 : -1;
+
+            if (!activeProductMatches.length) {
+                hideProductQuickPick();
+                return;
+            }
+
+            renderProductQuickPick();
+        }
+
+        function renderProductQuickPick() {
+            if (!activeProductInput || !activeProductMatches.length) {
+                hideProductQuickPick();
+                return;
+            }
+
+            var popup = $("#productQuickPick");
+            var offset = activeProductInput.offset();
+            if (!offset) return;
+
+            popup.html(activeProductMatches.map(function (producto, index) {
+                return "<button type='button' class='product-quick-pick-option" + (index === activeProductMatchIndex ? " active" : "") + "' data-index='" + index + "'>" +
+                    "<strong>" + escapeHtml(producto.codigo) + "</strong>" +
+                    "<span>" + escapeHtml(producto.descripcion) + "</span>" +
+                    "<small>" + escapeHtml(producto.unidad) + " | " + formatMoney(producto.costo) + "</small>" +
+                    "</button>";
+            }).join(""));
+
+            popup.css({
+                top: offset.top + activeProductInput.outerHeight() + 4,
+                left: offset.left,
+                width: Math.max(activeProductInput.outerWidth(), 360)
+            }).show();
+        }
+
+        function moveQuickPickSelection(direction) {
+            if (!activeProductMatches.length) return;
+            activeProductMatchIndex = (activeProductMatchIndex + direction + activeProductMatches.length) % activeProductMatches.length;
+            renderProductQuickPick();
+        }
+
+        function applyQuickPickSelection(index) {
+            if (index < 0 || index >= activeProductMatches.length || !activeProductInput) return;
+
+            var rowIndex = Number(activeProductInput.data("index"));
+            applyProductToLine(rowIndex, activeProductMatches[index]);
+        }
+
+        function scheduleHideProductQuickPick() {
+            window.setTimeout(function () {
+                if ($("#productQuickPick").is(":hover")) return;
+                hideProductQuickPick();
+            }, 140);
+        }
+
+        function hideProductQuickPick() {
+            activeProductInput = null;
+            activeProductMatches = [];
+            activeProductMatchIndex = -1;
+            $("#productQuickPick").hide().empty();
+        }
+
+        function findProductMatches(query) {
+            var lookup = normalizeLookup(query);
+            if (!lookup) return [];
+            var compactQuery = compactLookup(query);
+            var tokens = lookup.split(/\s+/).filter(Boolean);
+
+            return productos.filter(function (producto) {
+                var codigo = normalizeLookup(producto.codigo);
+                var descripcion = normalizeLookup(producto.descripcion);
+                var compactCodigo = compactLookup(producto.codigo);
+                var compactDescripcion = compactLookup(producto.descripcion);
+
+                if (codigo.indexOf(lookup) >= 0 || descripcion.indexOf(lookup) >= 0) {
+                    return true;
+                }
+
+                if (compactQuery && (compactCodigo.indexOf(compactQuery) >= 0 || compactDescripcion.indexOf(compactQuery) >= 0)) {
+                    return true;
+                }
+
+                return tokens.length && tokens.every(function (token) {
+                    return codigo.indexOf(token) >= 0 || descripcion.indexOf(token) >= 0;
+                });
+            }).sort(function (a, b) {
+                return getProductMatchScore(b, lookup) - getProductMatchScore(a, lookup);
+            });
+        }
+
+        function getProductMatchScore(producto, lookup) {
+            var codigo = normalizeLookup(producto.codigo);
+            var descripcion = normalizeLookup(producto.descripcion);
+            var compactCodigo = compactLookup(producto.codigo);
+            var compactDescripcion = compactLookup(producto.descripcion);
+            var compactQuery = compactLookup(lookup);
+            var tokens = lookup.split(/\s+/).filter(Boolean);
+            var score = 0;
+
+            if (codigo === lookup || descripcion === lookup) score += 10;
+            if (codigo.indexOf(lookup) === 0) score += 6;
+            if (descripcion.indexOf(lookup) === 0) score += 5;
+            if (codigo.indexOf(lookup) > 0) score += 3;
+            if (descripcion.indexOf(lookup) > 0) score += 2;
+            if (compactQuery && compactCodigo === compactQuery) score += 8;
+            if (compactQuery && compactDescripcion === compactQuery) score += 7;
+            if (compactQuery && compactCodigo.indexOf(compactQuery) === 0) score += 5;
+            if (compactQuery && compactDescripcion.indexOf(compactQuery) === 0) score += 4;
+            if (tokens.length > 1) {
+                score += tokens.filter(function (token) {
+                    return codigo.indexOf(token) >= 0 || descripcion.indexOf(token) >= 0;
+                }).length;
+            }
+            return score;
+        }
+
+        function normalizeLookup(value) {
+            var text = String(value || "").toLowerCase();
+            if (text.normalize) {
+                text = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            }
+            return text.trim();
+        }
+
+        function compactLookup(value) {
+            return normalizeLookup(value).replace(/[^a-z0-9]/g, "");
+        }
+
+        function openProductModal() {
+            if (selectedRowIndex < 0 || selectedRowIndex >= detalleLineas.length) {
+                showToast("Seleccione una linea para buscar producto.");
+                return;
+            }
+
+            $("#productoSearch").val("");
+            renderProductSearchResults(productos);
+            productoModal.show();
+            window.setTimeout(function () {
+                $("#productoSearch").trigger("focus");
+            }, 180);
+        }
+
+        function renderProductSearchResults(list) {
+            activeProductSearchResults = list.slice();
+            activeProductSearchIndex = activeProductSearchResults.length ? 0 : -1;
+
+            var html = list.map(function (producto, index) {
+                return "<tr class='product-search-row" + (activeProductSearchIndex === index ? " active" : "") + "' data-index='" + index + "' tabindex='0'>" +
+                    "<td>" + escapeHtml(producto.codigo) + "</td>" +
+                    "<td>" + escapeHtml(producto.descripcion) + "</td>" +
+                    "<td>" + escapeHtml(producto.unidad) + "</td>" +
+                    "<td>" + formatMoney(producto.costo) + "</td>" +
+                    "<td>" + escapeHtml(producto.impuesto) + "</td>" +
+                    "<td><button class='btn btn-sm btn-primary btn-product-use' type='button'>Usar</button></td>" +
+                    "</tr>";
+            }).join("");
+
+            $("#productoSearchBody").html(html || "<tr><td colspan='6' class='empty-state'>Sin productos para la busqueda actual.</td></tr>");
+        }
+
+        function filterProductSearchResults() {
+            var text = normalizeLookup($("#productoSearch").val());
+            renderProductSearchResults(productos.filter(function (producto) {
+                return !text ||
+                    normalizeLookup(producto.codigo).indexOf(text) >= 0 ||
+                    normalizeLookup(producto.descripcion).indexOf(text) >= 0;
+            }));
+        }
+
+        function setActiveProductSearchResult(index) {
+            activeProductSearchIndex = index;
+            $("#productoSearchBody .product-search-row").removeClass("active");
+            $("#productoSearchBody .product-search-row[data-index='" + index + "']").addClass("active");
+        }
+
+        function moveProductSearchSelection(direction) {
+            if (!activeProductSearchResults.length) return;
+            activeProductSearchIndex = (activeProductSearchIndex + direction + activeProductSearchResults.length) % activeProductSearchResults.length;
+
+            var row = $("#productoSearchBody .product-search-row[data-index='" + activeProductSearchIndex + "']");
+            $("#productoSearchBody .product-search-row").removeClass("active");
+            row.addClass("active");
+
+            if (row.length) {
+                row[0].scrollIntoView({ block: "nearest" });
+            }
+        }
+
+        function onProductoSearchKeyDown(e) {
+            if (!activeProductSearchResults.length) return;
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                moveProductSearchSelection(1);
+                return;
+            }
+
+            if (e.key === "ArrowUp") {
+                e.preventDefault();
+                moveProductSearchSelection(-1);
+                return;
+            }
+
+            if (e.key === "Enter") {
+                e.preventDefault();
+                applySelectedProductSearchResult();
+            }
+        }
+
+        function applySelectedProductSearchResult() {
+            if (activeProductSearchIndex < 0 || activeProductSearchIndex >= activeProductSearchResults.length) return;
+            selectProduct(activeProductSearchResults[activeProductSearchIndex].codigo);
+        }
+
+        function selectProduct(codigo) {
+            var producto = productos.find(function (item) { return item.codigo === codigo; });
+            if (!producto || selectedRowIndex < 0 || selectedRowIndex >= detalleLineas.length) return;
+
+            applyProductToLine(selectedRowIndex, producto);
+            productoModal.hide();
+        }
+
+        function openRegaliasModal() {
+            $("#regaliaCodigo").val("");
+            $("#regaliaDescripcion").val("");
+            $("#regaliaUnidad").val("UND");
+            $("#regaliaCantidad").val("1");
+            $("#regaliaCosto").val("0");
+            $("#regaliaObservacion").val("Linea de regalia auditada");
+            regaliasModal.show();
+            hideRegaliaQuickPick();
+            window.setTimeout(function () {
+                $("#regaliaCodigo").trigger("focus");
+            }, 180);
+        }
+
+        function addRegaliaLine() {
+            var codigo = ($("#regaliaCodigo").val() || "").trim();
+            var descripcion = ($("#regaliaDescripcion").val() || "").trim();
+            var unidad = ($("#regaliaUnidad").val() || "UND").trim();
+            var cantidad = toNumber($("#regaliaCantidad").val(), 1);
+            var costo = toNumber($("#regaliaCosto").val(), 0);
+            var observacion = ($("#regaliaObservacion").val() || "").trim();
+
+            if (!codigo || !descripcion || cantidad <= 0 || costo < 0) {
+                showToast("Complete codigo, descripcion, cantidad y costo validos.");
+                return;
+            }
+
+            detalleLineas.push({
+                Codigo: codigo,
+                Descripcion: descripcion,
+                Unidad: unidad,
+                Cantidad: cantidad,
+                CostoUnitario: costo,
+                DescuentoPorcentaje: 0,
+                DescuentoMonto: 0,
+                ImpuestoPorcentaje: 0,
+                TotalLinea: calculateLineTotal({ Cantidad: cantidad, CostoUnitario: costo, DescuentoPorcentaje: 0, DescuentoMonto: 0, ImpuestoPorcentaje: 0 }),
+                Regalia: true,
+                Observacion: observacion
+            });
+
+            selectedRowIndex = detalleLineas.length - 1;
+            regaliasModal.hide();
+            renderDetalleGrid({ index: selectedRowIndex, field: "Cantidad", selectText: true });
+            scheduleLocalDraftSave();
+        }
+
+        function updateRegaliaQuickPick() {
+            var input = $(document.activeElement);
+            if (input.attr("id") !== "regaliaCodigo" && input.attr("id") !== "regaliaDescripcion") {
+                input = $("#regaliaCodigo").is(":focus") ? $("#regaliaCodigo") : $("#regaliaDescripcion");
+            }
+
+            var query = (input.val() || "").trim();
+            activeRegaliaField = input.attr("id") || "regaliaCodigo";
+
+            if (!query) {
+                hideRegaliaQuickPick();
+                return;
+            }
+
+            activeRegaliaMatches = findProductMatches(query).slice(0, 8);
+            activeRegaliaMatchIndex = activeRegaliaMatches.length ? 0 : -1;
+
+            if (!activeRegaliaMatches.length) {
+                hideRegaliaQuickPick();
+                return;
+            }
+
+            renderRegaliaQuickPick();
+        }
+
+        function renderRegaliaQuickPick() {
+            if (!activeRegaliaMatches.length) {
+                hideRegaliaQuickPick();
+                return;
+            }
+
+            $("#regaliaQuickPick").html(activeRegaliaMatches.map(function (producto, index) {
+                return "<button type='button' class='product-quick-pick-option" + (index === activeRegaliaMatchIndex ? " active" : "") + "' data-index='" + index + "'>" +
+                    "<strong>" + escapeHtml(producto.codigo) + "</strong>" +
+                    "<span>" + escapeHtml(producto.descripcion) + "</span>" +
+                    "<small>" + escapeHtml(producto.unidad) + " | " + formatMoney(producto.costo) + "</small>" +
+                    "</button>";
+            }).join("")).show();
+        }
+
+        function moveRegaliaQuickPickSelection(direction) {
+            if (!activeRegaliaMatches.length) return;
+            activeRegaliaMatchIndex = (activeRegaliaMatchIndex + direction + activeRegaliaMatches.length) % activeRegaliaMatches.length;
+            renderRegaliaQuickPick();
+        }
+
+        function applyRegaliaQuickPickSelection(index) {
+            if (index < 0 || index >= activeRegaliaMatches.length) return;
+
+            var producto = activeRegaliaMatches[index];
+            $("#regaliaCodigo").val(producto.codigo);
+            $("#regaliaDescripcion").val(producto.descripcion);
+            $("#regaliaUnidad").val(producto.unidad || "UND");
+            $("#regaliaCosto").val(producto.costo);
+            hideRegaliaQuickPick();
+            window.setTimeout(function () {
+                $("#regaliaCantidad").trigger("focus")[0].select();
+            }, 0);
+        }
+
+        function onRegaliaInputKeyDown(e) {
+            if (!activeRegaliaMatches.length) return;
+
+            if (e.key === "ArrowDown") {
+                e.preventDefault();
+                moveRegaliaQuickPickSelection(1);
+                return;
+            }
+
+            if (e.key === "ArrowUp") {
+                e.preventDefault();
+                moveRegaliaQuickPickSelection(-1);
+                return;
+            }
+
+            if (e.key === "Enter" || e.key === "Tab") {
+                e.preventDefault();
+                applyRegaliaQuickPickSelection(activeRegaliaMatchIndex >= 0 ? activeRegaliaMatchIndex : 0);
+            }
+        }
+
+        function scheduleHideRegaliaQuickPick() {
+            window.setTimeout(function () {
+                if ($("#regaliaQuickPick").is(":hover")) return;
+                hideRegaliaQuickPick();
+            }, 140);
+        }
+
+        function hideRegaliaQuickPick() {
+            activeRegaliaMatches = [];
+            activeRegaliaMatchIndex = -1;
+            activeRegaliaField = null;
+            $("#regaliaQuickPick").hide().empty();
+        }
+
+        function openDiscountModal() {
+            if (selectedRowIndex < 0 || selectedRowIndex >= detalleLineas.length) {
+                showToast("Seleccione una linea para aplicar descuento.");
+                return;
+            }
+
+            var linea = detalleLineas[selectedRowIndex];
+            $("#descuentoPorcentajeModal").val(linea.DescuentoPorcentaje || 0);
+            $("#descuentoMontoModal").val(linea.DescuentoMonto || 0);
+            descuentoModal.show();
+        }
+
+        function applyDiscountToSelectedLine() {
+            if (selectedRowIndex < 0 || selectedRowIndex >= detalleLineas.length) {
+                showToast("Seleccione una linea valida.");
+                return;
+            }
+
+            var linea = detalleLineas[selectedRowIndex];
+            linea.DescuentoPorcentaje = toNumber($("#descuentoPorcentajeModal").val(), 0);
+            linea.DescuentoMonto = toNumber($("#descuentoMontoModal").val(), 0);
+            syncLineDiscounts(linea, linea.DescuentoPorcentaje > 0 ? "DescuentoPorcentaje" : "DescuentoMonto");
+            linea.TotalLinea = calculateLineTotal(linea);
+            descuentoModal.hide();
+            renderDetalleGrid({ index: selectedRowIndex, field: "DescuentoPorcentaje", selectText: true });
+            scheduleLocalDraftSave();
+        }
+
+        function importFromXml() {
+            if (ultimoXmlTexto) {
+                importXmlDetailLines(new DOMParser().parseFromString(ultimoXmlTexto, "text/xml"));
+                return;
+            }
+
+            importarDetallePendiente = true;
+            $("#xmlFile").trigger("click");
+        }
+
+        function importXmlDetailLines(xml) {
+            var nodes = xml.getElementsByTagName("LineaDetalle");
+            if (!nodes || !nodes.length) {
+                showToast("El XML no contiene lineas de detalle reconocibles.");
+                return;
+            }
+
+            var imported = [];
+            for (var i = 0; i < nodes.length; i++) {
+                var node = nodes[i];
+                var codigo = getXmlChildText(node, "Codigo");
+                var descripcion = getXmlChildText(node, "Detalle");
+                var unidad = getXmlChildText(node, "UnidadMedida") || "UND";
+                var cantidad = parseXmlNumber(getXmlChildText(node, "Cantidad"), 1);
+                var costo = parseXmlNumber(getXmlChildText(node, "PrecioUnitario"), 0);
+                var descuentoMonto = parseXmlNumber(getXmlChildText(node, "MontoDescuento"), 0);
+                var impuesto = 0;
+                var impuestoNodes = node.getElementsByTagName("Tarifa");
+                if (impuestoNodes && impuestoNodes.length) {
+                    impuesto = parseXmlNumber(impuestoNodes[0].textContent, 0);
+                }
+
+                if (!codigo && !descripcion) continue;
+
+                imported.push({
+                    Codigo: codigo || ("XML-" + (i + 1)),
+                    Descripcion: descripcion || "Linea importada desde XML",
+                    Unidad: unidad,
+                    Cantidad: cantidad,
+                    CostoUnitario: costo,
+                    DescuentoPorcentaje: 0,
+                    DescuentoMonto: descuentoMonto,
+                    ImpuestoPorcentaje: impuesto,
+                    TotalLinea: calculateLineTotal({ Cantidad: cantidad, CostoUnitario: costo, DescuentoPorcentaje: 0, DescuentoMonto: descuentoMonto, ImpuestoPorcentaje: impuesto }),
+                    Regalia: false,
+                    Observacion: "Importada desde XML"
+                });
+            }
+
+            if (!imported.length) {
+                showToast("No se pudieron mapear lineas del XML.");
+                return;
+            }
+
+            detalleLineas = imported;
+            selectedRowIndex = 0;
+            renderDetalleGrid({ index: 0, field: "Codigo", selectText: true });
+            showToast(imported.length + " lineas importadas desde XML.");
+            scheduleLocalDraftSave();
+        }
+
+        function getXmlChildText(parentNode, tagName) {
+            var nodes = parentNode.getElementsByTagName(tagName);
+            if (!nodes || !nodes.length) return "";
+            return nodes[0].textContent || "";
+        }
+
+        function parseXmlNumber(value, fallback) {
+            var normalized = (value || "").replace(",", ".");
+            var parsed = Number(normalized);
+            return isNaN(parsed) ? fallback : parsed;
+        }
+
+        function syncDetalleLineas() {
+            detalleLineas.forEach(function (linea) {
+                normalizeLine(linea);
+                linea.TotalLinea = calculateLineTotal(linea);
+            });
+
+            var lineasEspeciales = detalleLineas.filter(function (linea) { return !!linea.Regalia; }).map(function (linea) {
+                return {
+                    CodigoProducto: linea.Codigo,
+                    Descripcion: linea.Descripcion,
+                    Cantidad: linea.Cantidad,
+                    Costo: linea.CostoUnitario,
+                    TipoLinea: "Regalia",
+                    RequiereAuditoria: true
+                };
+            });
+
+            var totals = calculateDocumentTotals();
+
+            $("#detalleLineasJson").val(JSON.stringify(detalleLineas));
+            $("#lineasEspecialesJson").val(JSON.stringify(lineasEspeciales));
+            $("#detailLineCount").text(detalleLineas.length);
+            $("#detailRegaliaCount").text(lineasEspeciales.length);
+            $("#detailDocumentTotal").text(formatMoney(totals.grandTotal));
+            $("#detailSubtotal").text(formatMoney(totals.subtotal));
+            $("#detailDiscountTotal").text(formatMoney(totals.discount));
+            $("#detailTaxTotal").text(formatMoney(totals.tax));
+            $("#detailGrandTotal").text(formatMoney(totals.grandTotal));
+            $("#quantityLineCount").text(detalleLineas.length);
+            $("#quantityTotal").text(formatNumber(totals.quantity));
+            $("#quantityRegaliaCount").text(lineasEspeciales.length);
+            $("#totalFactura").val(totals.grandTotal.toFixed(2));
+            renderTaxSummary(totals.taxes);
+        }
+
+        function calculateLineTotal(linea) {
+            var cantidad = toNumber(linea.Cantidad, 1);
+            var costoUnitario = toNumber(linea.CostoUnitario, 0);
+            var descuentoPorcentaje = toNumber(linea.DescuentoPorcentaje, 0);
+            var descuentoMonto = toNumber(linea.DescuentoMonto, 0);
+            var impuestoPorcentaje = toNumber(linea.ImpuestoPorcentaje, 0);
+            var subtotal = cantidad * costoUnitario;
+            var descuentoCalculado = subtotal * (descuentoPorcentaje / 100);
+            var baseImponible = Math.max(0, subtotal - descuentoCalculado - descuentoMonto);
+            var impuesto = baseImponible * (impuestoPorcentaje / 100);
+            return round2(baseImponible + impuesto);
+        }
+
+        function calculateDocumentTotals() {
+            var totals = {
+                subtotal: 0,
+                discount: 0,
+                tax: 0,
+                grandTotal: 0,
+                quantity: 0,
+                taxes: {}
+            };
+
+            detalleLineas.forEach(function (linea) {
+                var cantidad = toNumber(linea.Cantidad, 1);
+                var costoUnitario = toNumber(linea.CostoUnitario, 0);
+                var descuentoPorcentaje = toNumber(linea.DescuentoPorcentaje, 0);
+                var descuentoMonto = toNumber(linea.DescuentoMonto, 0);
+                var impuestoPorcentaje = toNumber(linea.ImpuestoPorcentaje, 0);
+                var subtotalLinea = round2(cantidad * costoUnitario);
+                var descuentoLinea = round2((subtotalLinea * (descuentoPorcentaje / 100)) + descuentoMonto);
+                var baseImponible = round2(Math.max(0, subtotalLinea - descuentoLinea));
+                var impuestoLinea = round2(baseImponible * (impuestoPorcentaje / 100));
+                var totalLinea = round2(baseImponible + impuestoLinea);
+                var taxKey = impuestoPorcentaje.toFixed(2);
+
+                totals.subtotal += subtotalLinea;
+                totals.discount += descuentoLinea;
+                totals.tax += impuestoLinea;
+                totals.grandTotal += totalLinea;
+                totals.quantity += cantidad;
+
+                if (!totals.taxes[taxKey]) {
+                    totals.taxes[taxKey] = {
+                        porcentaje: impuestoPorcentaje,
+                        base: 0,
+                        impuesto: 0,
+                        total: 0
+                    };
+                }
+
+                totals.taxes[taxKey].base += baseImponible;
+                totals.taxes[taxKey].impuesto += impuestoLinea;
+                totals.taxes[taxKey].total += totalLinea;
+            });
+
+            totals.subtotal = round2(totals.subtotal);
+            totals.discount = round2(totals.discount);
+            totals.tax = round2(totals.tax);
+            totals.grandTotal = round2(totals.grandTotal);
+            totals.quantity = round2(totals.quantity);
+            return totals;
+        }
+
+        function renderTaxSummary(taxes) {
+            var rows = Object.keys(taxes).sort(function (a, b) { return Number(a) - Number(b); }).map(function (key) {
+                var item = taxes[key];
+                return "<tr>" +
+                    "<td>IVA</td>" +
+                    "<td>" + formatNumber(item.porcentaje) + "</td>" +
+                    "<td>" + formatMoney(item.base) + "</td>" +
+                    "<td>" + formatMoney(item.impuesto) + "</td>" +
+                    "<td>" + formatMoney(item.total) + "</td>" +
+                    "</tr>";
+            });
+
+            $("#taxSummaryBody").html(rows.join("") || "<tr><td colspan='5' class='empty-state'>Sin impuestos calculados.</td></tr>");
+        }
+
+        function checkLocalDraftRecovery() {
+            pendingLocalDraft = readLocalDraft();
+
+            if (!pendingLocalDraft || !hasMeaningfulLocalDraft(pendingLocalDraft)) {
+                suppressLocalDraftSave = false;
+                return;
+            }
+
+            $("#recuperarDocumentoResumen").html(
+                "<div><span>Documento</span><strong>" + escapeHtml(pendingLocalDraft.numeroDocumento || "-") + "</strong></div>" +
+                "<div><span>Tipo</span><strong>" + escapeHtml(pendingLocalDraft.tipoDocumento || "-") + "</strong></div>" +
+                "<div><span>Lineas</span><strong>" + escapeHtml((pendingLocalDraft.detalleLineas || []).length) + "</strong></div>" +
+                "<div><span>Guardado local</span><strong>" + escapeHtml(formatLocalDraftDate(pendingLocalDraft.savedAt)) + "</strong></div>"
+            );
+
+            recuperarDocumentoModal.show();
+        }
+
+        function recoverLocalDraft() {
+            if (!pendingLocalDraft) {
+                recuperarDocumentoModal.hide();
+                suppressLocalDraftSave = false;
+                disableLocalDraftPersistence = false;
+                return;
+            }
+
+            suppressLocalDraftSave = true;
+            applyLocalDraft(pendingLocalDraft);
+            suppressLocalDraftSave = false;
+            disableLocalDraftPersistence = false;
+            saveLocalDraftNow();
+            recuperarDocumentoModal.hide();
+            showToast("Informacion recuperada desde este equipo.");
+        }
+
+        function discardLocalDraft() {
+            clearLocalDraft();
+            pendingLocalDraft = null;
+            suppressLocalDraftSave = false;
+            disableLocalDraftPersistence = false;
+            recuperarDocumentoModal.hide();
+            showToast("Se inicio un documento nuevo.");
+        }
+
+        function readLocalDraft() {
+            try {
+                var raw = localStorage.getItem(localDraftKey);
+                return raw ? JSON.parse(raw) : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function scheduleLocalDraftSave() {
+            if (suppressLocalDraftSave || disableLocalDraftPersistence) return;
+            window.clearTimeout(localDraftSaveTimer);
+            localDraftSaveTimer = window.setTimeout(saveLocalDraftNow, 350);
+        }
+
+        function saveLocalDraftNow() {
+            if (suppressLocalDraftSave || disableLocalDraftPersistence) return;
+            window.clearTimeout(localDraftSaveTimer);
+
+            var draft = buildLocalDraft();
+            try {
+                if (!hasMeaningfulLocalDraft(draft)) {
+                    localStorage.removeItem(localDraftKey);
+                    return;
+                }
+
+                localStorage.setItem(localDraftKey, JSON.stringify(draft));
+            } catch (e) {
+                showToast("No se pudo guardar el respaldo local del documento.");
+            }
+        }
+
+        function clearLocalDraft() {
+            window.clearTimeout(localDraftSaveTimer);
+            try {
+                localStorage.removeItem(localDraftKey);
+            } catch (e) {
+                return;
+            }
+        }
+
+        function buildLocalDraft() {
+            syncDetalleLineas();
+
+            return {
+                savedAt: new Date().toISOString(),
+                tipoDocumento: $("#tipoDocumento").val(),
+                numeroDocumento: $("#numeroDocumento").val(),
+                estado: $("#estadoDocumento").val(),
+                fechaSolicitud: $("#fechaSolicitud").val(),
+                fechaEntrega: $("#fechaEntrega").val(),
+                fechaAplicacion: $("#fechaAplicacion").val(),
+                proveedorBusqueda: $("#proveedorBusqueda").val(),
+                codigoProveedor: $("#codigoProveedor").val(),
+                nombreProveedor: $("#nombreProveedor").val(),
+                plazoCredito: $("#plazoCredito").val(),
+                personaSolicita: $("#personaSolicita").val(),
+                facturaRef: $("#facturaRef").val(),
+                comentario: $("#comentario").val(),
+                claveHacienda: $("#claveHacienda").val(),
+                consecutivo: $("#consecutivo").val(),
+                emisor: $("#emisor").val(),
+                fechaEmision: $("#fechaEmision").val(),
+                totalFactura: $("#totalFactura").val(),
+                estadoFacturaMeCR: $("#estadoFacturaMeCR").val(),
+                tipoSalida: $("#tipoSalida").val(),
+                justificacionSalida: $("#justificacionSalida").val(),
+                justificacionEntrada: $("#justificacionEntrada").val(),
+                detalleObservaciones: $("#detalleObservaciones").val(),
+                detalleLineas: detalleLineas.map(function (linea) {
+                    return $.extend({}, linea);
+                }),
+                selectedRowIndex: selectedRowIndex,
+                ultimoXmlTexto: ultimoXmlTexto
+            };
+        }
+
+        function applyLocalDraft(draft) {
+            $("#tipoDocumento").val(draft.tipoDocumento || $("#tipoDocumento").val());
+            $("#numeroDocumento").val(draft.numeroDocumento || $("#numeroDocumento").val());
+            $("#estadoDocumento").val(draft.estado || $("#estadoDocumento").val());
+            $("#fechaSolicitud").val(draft.fechaSolicitud || $("#fechaSolicitud").val());
+            $("#fechaEntrega").val(draft.fechaEntrega || "");
+            $("#fechaAplicacion").val(draft.fechaAplicacion || "");
+            $("#proveedorBusqueda").val(draft.proveedorBusqueda || "");
+            $("#codigoProveedor").val(draft.codigoProveedor || "");
+            $("#nombreProveedor").val(draft.nombreProveedor || "");
+            $("#plazoCredito").val(draft.plazoCredito || "");
+            $("#personaSolicita").val(draft.personaSolicita || "");
+            $("#facturaRef").val(draft.facturaRef || "");
+            $("#comentario").val(draft.comentario || "");
+            $("#claveHacienda").val(draft.claveHacienda || "");
+            $("#consecutivo").val(draft.consecutivo || "");
+            $("#emisor").val(draft.emisor || "");
+            $("#fechaEmision").val(draft.fechaEmision || "");
+            $("#totalFactura").val(draft.totalFactura || "");
+            $("#estadoFacturaMeCR").val(draft.estadoFacturaMeCR || "");
+            $("#tipoSalida").val(draft.tipoSalida || "");
+            $("#justificacionSalida").val(draft.justificacionSalida || "");
+            $("#justificacionEntrada").val(draft.justificacionEntrada || "");
+            $("#detalleObservaciones").val(draft.detalleObservaciones || "");
+            ultimoXmlTexto = draft.ultimoXmlTexto || "";
+
+            detalleLineas = Array.isArray(draft.detalleLineas) && draft.detalleLineas.length
+                ? draft.detalleLineas
+                : [createEmptyLine()];
+            selectedRowIndex = Math.max(0, Math.min(Number(draft.selectedRowIndex || 0), detalleLineas.length - 1));
+
+            refreshTipoDocumento();
+            initializeProveedorState();
+            $("#numeroDocumento").val(draft.numeroDocumento || $("#numeroDocumento").val());
+            $("#estadoBadge").text(draft.estado || $("#estadoBadge").text());
+            updateComentarioCount();
+            updateDetalleObservacionesCount();
+            renderDetalleGrid({ index: selectedRowIndex, field: "Codigo", selectText: false });
+        }
+
+        function hasMeaningfulLocalDraft(draft) {
+            if (!draft) return false;
+
+            var textFields = [
+                draft.proveedorBusqueda,
+                draft.codigoProveedor,
+                draft.nombreProveedor,
+                draft.personaSolicita,
+                draft.facturaRef,
+                draft.comentario,
+                draft.claveHacienda,
+                draft.consecutivo,
+                draft.emisor,
+                draft.estadoFacturaMeCR,
+                draft.tipoSalida,
+                draft.justificacionSalida,
+                draft.justificacionEntrada,
+                draft.detalleObservaciones,
+                draft.ultimoXmlTexto
+            ];
+
+            var hasText = textFields.some(function (value) {
+                return !!String(value || "").trim();
+            });
+
+            var hasLines = (draft.detalleLineas || []).some(function (linea) {
+                return !!String(linea.Codigo || "").trim() ||
+                    !!String(linea.Descripcion || "").trim() ||
+                    !!String(linea.Observacion || "").trim() ||
+                    !!linea.Regalia ||
+                    toNumber(linea.CostoUnitario, 0) > 0 ||
+                    toNumber(linea.DescuentoPorcentaje, 0) > 0 ||
+                    toNumber(linea.DescuentoMonto, 0) > 0 ||
+                    toNumber(linea.ImpuestoPorcentaje, 13) !== 13 ||
+                    toNumber(linea.Cantidad, 1) !== 1;
+            });
+
+            return hasText || hasLines;
+        }
+
+        function formatLocalDraftDate(value) {
+            if (!value) return "-";
+            var date = new Date(value);
+            if (isNaN(date.getTime())) return "-";
+            return date.toLocaleString("es-CR", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        }
+
+        function toNumber(value, fallback) {
+            var parsed = Number(value);
+            return isNaN(parsed) ? fallback : parsed;
+        }
+
+        function round2(value) {
+            return Math.round(Number(value || 0) * 100) / 100;
+        }
+
+        function clamp(value, min, max) {
+            return Math.min(Math.max(Number(value || 0), min), max);
+        }
+
+        function showToast(message) {
+            var toast = $("<div class='local-toast'></div>").text(message);
+            $("body").append(toast);
+            setTimeout(function () { toast.addClass("show"); }, 10);
+            setTimeout(function () {
+                toast.removeClass("show");
+                setTimeout(function () { toast.remove(); }, 250);
+            }, 2600);
+        }
+
+        function formatMoney(value) {
+            return Number(value || 0).toLocaleString("es-CR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatNumber(value) {
+            return Number(value || 0).toLocaleString("es-CR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function escapeHtml(value) {
+            return $("<div />").text(value == null ? "" : value).html();
+        }
+
+        function jsEscape(value) {
+            return String(value || "").replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
+        }
+    </script>
+}

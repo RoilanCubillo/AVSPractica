@@ -1,0 +1,1165 @@
+﻿@{
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+    var Name = Resources.views.mant_cabeceras;
+    var Title = Resources.views.cabecera;
+    var culture = System.Threading.Thread.CurrentThread.CurrentCulture;
+    var CurrencySymbol = culture.NumberFormat.CurrencySymbol;
+    var CurrencyDecimalSeparator = culture.Name.ToUpper() == "ES-CR" ? "." : culture.NumberFormat.CurrencyDecimalSeparator;
+    var CurrencyThousandSeparator = culture.Name.ToUpper() == "ES-CR" ? "," : culture.NumberFormat.NumberGroupSeparator;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+
+    @* < CSS > *@
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    <!-- Tempusdominus Bootstrap 4 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
+    <!-- Select2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+    @* < CSS / >*@
+
+    @* < SCRIPTS > *@
+    <!-- moment.js -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- Select2 -->
+    <script src="~/Content/AdminLTE/plugins/select2/js/select2.full.min.js"></script>
+    <!-- Tempusdominus Bootstrap 4 -->
+    <script src="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+    <!-- InputMask -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/inputmask/jquery.inputmask.min.js"></script>
+    @* < SCRIPTS / >*@
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <!-- Encabezado -->
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>@Name</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager", "Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">@Resources.views.espacios</li>
+                                <li class="breadcrumb-item active">@Resources.views.cabecera</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Encabezado -->
+            <!-- Muestra -->
+            <div class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="overlay-wrapper">
+                                        <!-- Spinner tbl -->
+                                        <div id="spn_tbl_cabeceras" class="overlay justify-content-center">
+                                            <i class="fas fa-3x fa-sync-alt fa-spin"></i>
+                                            <div class="text-bold pt-2">@Resources.views.cargando</div>
+                                        </div>
+                                        <!-- Spinner tbl -->
+                                        <!-- Boton agregar -->
+                                        <div class="col-12 d-flex justify-content-end mb-2">
+                                            <button type="button" class="btn btn-primary float-right fa-pull-right" onclick="onClickBtnAddCabecera()"><i class="fa fa-plus"> </i> @Resources.views.agregar</button>
+                                        </div><!-- Boton agregar -->
+
+                                        <div class="card card-primary card-tabs">
+                                            <!-- Tap Panel - Header -->
+                                            <div class="card-header p-0 pt-1">
+                                                <ul class="nav nav-tabs" role="tablist">
+                                                    <li class="nav-item"><a class="nav-link active" id="nav_tab_tblCab" data-toggle="pill" role="tab" href="#tab_tblCab" aria-controls="tab_tblCab" aria-selected="true">@Resources.views.cabecera</a></li>
+                                                    <li class="nav-item"><a class="nav-link" id="nav_tab_tbl_asig_prov" data-toggle="pill" role="tab" href="#tab_tbl_asig_prov" aria-controls="tab_tbl_asig_prov" aria-selected="false">@Resources.views.asig_prov</a></li>
+                                                </ul>
+                                            </div><!-- Tap Panel - Header -->
+
+                                            <div class="card-body">
+                                                <div class="tab-content">
+                                                    <!-- Panel de formulario de descuentos -->
+                                                    <div class="tab-pane fade show active" id="tab_tblCab" role="tabpanel" aria-labelledby="nav_tab_tblCab">
+                                                        <div id="tbl_content_cabeceras" class="dataTables_wrapper dt-bootstrap4">
+                                                            <table class="table table-bordered table-striped">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>@Resources.views.tienda</th>
+                                                                        <th>@Resources.views.cabecera</th>
+                                                                        <th>@Resources.views.familia</th>
+                                                                        <th>@Resources.views.monto</th>
+                                                                        <th>@Resources.views.ubicacion</th>
+                                                                        <th>@Resources.views.electricidad</th>
+                                                                        <th>@Resources.views.accion</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody></tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                    <div class="tab-pane fade" id="tab_tbl_asig_prov" role="tabpanel" aria-labelledby="nav_tab_tbl_asig_prov">
+                                                        <div id="tbl_content_cab_prov" class="col-12 dataTables_wrapper dt-bootstrap4">
+                                                            <table class="table table-bordered table-striped table-responsive">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>@Resources.views.tienda</th>
+                                                                        <th>@Resources.views.cabecera</th>
+                                                                        <th>@Resources.views.proveedor</th>
+                                                                        <th>@Resources.views.dinamica</th>
+                                                                        <th>@Resources.views.monto</th>
+                                                                        <th>@Resources.views.IVA</th>
+                                                                        <th>@Resources.views.monto_total</th>
+                                                                        <th>@Resources.views.fecha_ini</th>
+                                                                        <th>@Resources.views.fecha_fin</th>
+                                                                        <th>Esatdo</th>
+                                                                        <th>@Resources.views.accion</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody></tbody>
+                                                            </table>
+                                                        </div><!-- Table -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- Muestra -->
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal_cabecera" class="modal fade" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <!-- Modal content-->
+
+            <div class="modal-content">
+                <!-- Spinner Modal -->
+                <!-- Spinner Modal -->
+                <div id="spn_modal_cabeceras" class="overlay">
+                    <i class="fas fa-2x fa-sync fa-spin"></i>
+                </div><!-- Spinner Modal -->
+                <!-- Spinner Modal -->
+                <!-- Encabezado Modal -->
+                <div class="modal-header text-center">
+                    <h4 id="title_modal_cabecera" class="modal-title"></h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div><!-- Encabezado Modal -->
+                <!-- Cuerpo Modal -->
+
+                <div class="modal-body">
+                    <div class="card card-primary card-tabs">
+                        <div class="card-header p-0 pt-1">
+                            <ul class="nav nav-tabs" role="tablist">
+                                <li class="nav-item"><a class="nav-link active" id="nav_tab_cabeceras" data-toggle="pill" role="tab" href="#tab_cabeceras" aria-controls="tab_cabeceras" aria-selected="true">@Resources.views.cabecera</a></li>
+                                <li class="nav-item"><a class="nav-link" id="nav_tab_asig_prov" data-toggle="pill" role="tab" href="#tab_asig_prov" aria-controls="tab_asig_prov" aria-selected="false">@Resources.views.asig_prov</a></li>
+                            </ul>
+                        </div><!-- Tap Panel - Header -->
+                        <div class="card-body">
+                            <div class="tab-content" id="custom-content-below-tabContent">
+                                <!-- Panel de formulario de descuentos -->
+                                <div class="tab-pane fade show active" id="tab_cabeceras" role="tabpanel" aria-labelledby="nav_tab_cabeceras">
+                                    <div id="datos_cabecera">
+                                        <form id="form_datos_cabecera">
+                                            <div class="row">
+                                                <!-- checkbox -->
+                                                <div class="form-group col-12  clearfix ">
+
+                                                    <div class="checkbox icheck-turquoise d-inline">
+                                                        <input type="checkbox" id="ck_electricidad">
+                                                        <label for="ck_electricidad">
+                                                            @Resources.views.electricidad
+                                                        </label>
+                                                    </div>
+
+                                                </div>
+
+                                                <div class="form-group col-sm-6">
+                                                    <label class="control-label">@Resources.views.tienda</label>
+                                                    <select id="select_tienda" name="select_tienda" class="form-control select2bs4" data-placeholder="@Resources.views.buscar" style="width: 100%;">
+                                                    </select>
+                                                </div>
+
+
+                                                <div class="form-group col-sm-6">
+                                                    <label for="input_code" class="control-label">@Resources.views.cod</label>
+                                                    <input id="input_code" name="input_code" type="text" class="form-control " placeholder="Ingrese el numero de cabecera" />
+                                                    <input type="hidden" id="hfID" />
+                                                </div>
+                                                <div class="form-group col-sm-6">
+                                                    <label class="control-label">@Resources.views.familia</label>
+                                                    <select id="select_tipo" name="select_tipo" class="form-control select2bs4" data-placeholder="@Resources.views.buscar" style="width: 100%;">
+                                                    </select>
+                                                </div>
+
+                                                <div class="form-group col-sm-6">
+                                                    <label for="input_ub" class="control-label">@Resources.views.ubicacion</label>
+                                                    <input id="input_ub" name="input_ub" type="text" class="form-control " placeholder="Ubicación de cabecera en Tienda" />
+                                                </div>
+
+                                                <div class="form-group  col-sm-6">
+                                                    <label>Monto</label>
+                                                    <div class="input-group">
+                                                        <div class="input-group-prepend">
+                                                            <span class="input-group-text"><i class="fas">@CurrencySymbol</i></span>
+                                                        </div>
+                                                        <input id="input_monto" type="text" name="input_monto" class="form-control" data-inputmask="'alias' : 'currency', 'groupSeparator':'@CurrencyThousandSeparator', 'radixPoint':'@CurrencyDecimalSeparator'" data-mask />
+                                                    </div>
+                                                    <!-- /.input group -->
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-primary" onclick="onClickBtnNewCabecera()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                                                <button id="btnSaveCabecera" type="submit" class="btn btn-success">
+                                                    <i class="fa fa-save"></i> @Resources.views.guardar
+                                                </button>
+                                                <button type="button" class="btn btn-danger" data-dismiss="modal">
+                                                    <i class="fa fa-ban"></i> @Resources.views.cerrar
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="tab_asig_prov" role="tabpanel" aria-labelledby="nav_tab_asig_prov">
+                                    <form id="form_content_asignacion">
+                                        <div class="col-12 d-flex justify-content-end">
+                                            <div id="div_editar" class="checkbox icheck-turquoise">
+                                                <input type="checkbox" id="ck_editar">
+                                                <label for="ck_editar">
+                                                    Editar
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <!--cabecera-->
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="card card-outline card-primary">
+                                                    <input type="hidden" id="CTID" />
+                                                    <div class="card-header">
+                                                        <h3 class="card-title">Asignación de Cabecera</h3>
+                                                        <div class="card-tools">
+                                                            <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div id="actions" class="row">
+                                                            <div class="col-sm-6 col-md-4">
+                                                                <div class="form-group w-100">
+                                                                    <label class="control-label">@Resources.views.tienda</label>
+                                                                    <select id="select2_tienda" name="select2_tienda" class="form-control select2bs4" data-placeholder="@Resources.views.buscar" style="width: 100%;">
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-sm-6 col-md-4">
+                                                                <div class="d-inline-flex w-100 mb-0 mr-2">
+                                                                    <div class="form-group w-100">
+                                                                        <label>@Resources.views.cabecera</label>
+                                                                        <select id="select_cabecera" name="select_cabecera" class="form-control select2bs4" data-placeholder="@Resources.views.buscar" style="width: 100%;"></select>
+                                                                        <input type="hidden" id="monto_cabecera" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-sm-6 col-md-4 form-group">
+                                                                <label>@Resources.views.proveedor</label>
+                                                                <select id="select_proveedor" name="select_proveedor" class="form-control select2bs4" data-placeholder="@Resources.views.buscar" style="width: 100%;"></select>
+                                                            </div>
+                                                            <div class="col-sm-4 form-group w-100">
+                                                                <label class="control-label">@Resources.views.dinamica</label>
+                                                                <select id="select2_dinamica" name="select2_dinamica" class="form-control select2bs4" data-placeholder="@Resources.views.buscar" style="width: 100%;">
+                                                                </select>
+                                                            </div>
+                                                            @* Input detalle dinámica *@
+                                                            <div class="col-sm-4 form-group">
+                                                                <label for="input_detalle" class="control-label">Detalle de Dinámica</label>
+                                                                <input id="input_detalle" name="input_detalle" type="text" class="form-control" placeholder="Detalle de Dinámica" />
+                                                            </div>@* Input detalle dinámica *@
+                                                            <div class="col-sm-4 form-group">
+                                                                <label class="control-label">@Resources.views.IVA</label>
+                                                                <select id="select2_iva" name="select2_iva" class="form-control select2bs4" data-placeholder="@Resources.views.buscar" style="width: 100%;">
+                                                                </select>
+                                                                <input type="hidden" id="porcentaje" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- /.card-body -->
+                                                </div>
+                                                <!-- /.card -->
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="card card-outline card-primary">
+                                                    <input type="hidden" id="CTID" />
+                                                    <div class="card-header">
+                                                        <h3 class="card-title">Categorías y Articulos</h3>
+                                                        <div class="card-tools">
+                                                            <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div id="actions" class="row">
+                                                            <div class="col-sm-6 form-group w-100">
+                                                                <label>@Resources.views.categs</label>
+                                                                <select id="select_categs" name="select_categs" class="form-control select2" multiple="multiple" data-placeholder="@Resources.views.buscar" style="width: 100%;"></select>
+                                                            </div>
+                                                            <div class="col-sm-6 form-group w-100">
+                                                                <label>@Resources.views.articulos</label>
+                                                                <select id="select_prod" name="select_prod" class="form-control select2" multiple="multiple" data-placeholder="@Resources.views.buscar" style="width: 100%;"></select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- /.card-body -->
+                                                </div>
+                                                <!-- /.card -->
+                                            </div>
+                                        </div>
+                                        <!-- /agregar fechas-->
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="card card-outline card-primary">
+                                                    <div class="card-header">
+                                                        <h3 class="card-title">Vigencia</h3>
+                                                        <div class="card-tools">
+                                                            <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div id="actions" class="row">
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Fecha Inicio</label>
+                                                                    <div class="input-group date" id="fecha_ini" data-target-input="nearest">
+                                                                        <input id="fecha_ini" type="text" class="form-control datetimepicker-input" data-target="#fecha_ini" style="width:60%;" name="fecha_ini" />
+                                                                        <div class="input-group-append" data-target="#fecha_ini" data-toggle="datetimepicker">
+                                                                            <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Fecha Final</label>
+                                                                    <div class="input-group date" id="fecha_final" data-target-input="nearest">
+                                                                        <input id="fecha_final" type="text" class="form-control datetimepicker-input" data-target="#fecha_final" style="width:60%;" name="fecha_final" />
+                                                                        <div class="input-group-append" data-target="#fecha_final" data-toggle="datetimepicker">
+                                                                            <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <script type="text/javascript">
+                                                                $(function () { $('#fecha_ini').datetimepicker({ format: 'DD/MM/YYYY', }); });
+                                                                $(function () { $('#fecha_final').datetimepicker({ format: 'DD/MM/YYYY', }); });
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <!-- /.card-body -->
+                                                </div>
+                                                <!-- /.card -->
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-primary" onclick="onClickBtnNewCabeceraTienda()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                                            <button id="btnSaveCabecera" type="submit" class="btn btn-success"><i class="fa fa-save"></i> @Resources.views.guardar</button>
+                                            <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- Cuerpo Modal -->
+            </div><!-- Modal content-->
+        </div>
+    </div><!-- Modal -->
+    @* Variables *@
+    <script>
+        var elements = { div_table1: "tbl_content_cabeceras", spn_table: "spn_tbl_cabeceras", spn_modal: "spn_modal_cabeceras" };
+        var url_getAllStore = '@Url.Action("GetAllStore", "Cabeceras")'; // URL del evento obtener las tiendas
+        var urls_data2 = { initial:'@Url.Action("GetInitialData", "Cabeceras")', store:'@Url.Action("GetListStore", "Cabeceras")', supplier: '@Url.Action("GetListSupplier", "Cabeceras")',categorias : '@Url.Action("GetAll", "Categorias")'};
+        var url_SaveCabecera = '@Url.Action("SaveCabecera", "Cabeceras")';
+        var url_SaveCabeceraTienda = '@Url.Action("SaveCabeceraTienda", "Cabeceras")';
+        var url_Items = '@Url.Action("GetListItem", "Cabeceras")';
+        var url_Cabecera = '@Url.Action("GetListCabeceras", "Cabeceras")';
+        var url_getAllCabecera = '@Url.Action("GetAllCabeceras", "Cabeceras")';
+        var url_getAllCabeceraTienda = '@Url.Action("GetAllCabecerasXTienda", "Cabeceras")';
+        var url_Categs = '@Url.Action("GetAll_BY_Supplier", "Cabeceras")';
+        var url_CategoriasAll = '@Url.Action("GetAll", "Cabeceras")';
+
+        var list_Store = []; // Almacena las tiendas obtenidas
+        var list_Supplier = [];
+        var list_tax = [];
+        var list_cabeceras = [];
+        var list_cabecerasXtienda = [];
+        var list_cabecerasTienda = [];
+        var list_categAll = [];
+        var list_families = [];
+        var list_productos = [];
+        var list_categorias = [];
+        var list_dinamicas = [{ id: "1", text: "Descuento" }, { id: "2", text: "Bandeo" }];
+        var list_tipos = [{ id: "1", text: "Condimentos" }, { id: "2", text: "Cereales y Leche" }, { id: "3", text: "Enlatados" }
+            , { id: "4", text: "Higiene personal" }, { id: "5", text: "Congelados" }, { id: "6", text: "Refrescos" }];
+        var select_departments; // Componente Select
+        var select_store; // Componente Select
+        var select_store2;
+        var select_cabecerasXtienda;
+        var select_proveedor;
+        var select_catgAll;
+
+        var select_tax; // Componente Select
+        var select_cabeceras; // Componente Select
+        var select_productos;
+        var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4000 }); // Variable para mostrar los mensajes.
+        var rules = {
+            select_tienda: { required: true },
+            select_tipo: { required: true },
+            input_code: { required: true, maxlength: 17 },
+            input_ub: { required: true, maxlength: 15 },
+            input_monto: { required: true, maxlength: 15 },
+        }; // Roles que cumplirán los componentes del formulario
+        var rulesAsigTienda = {
+            fecha_ini: { required: true},
+            fecha_final: { required: true},
+            select2_iva: { required: true },
+            select2_dinamica: { required: true },
+            select2_tienda: { required: true },
+            select_cabecera: { required: true },
+            select_proveedor: { required: true },
+            select_categs: {
+                required: function (element) {
+                    return $("#select_prod").val().length === 0;
+                }
+            },
+            select_prod: {
+                required: function(element) {
+                    return $("#select_categs").val().length === 0;
+                }
+            },
+            input_detalle: { required: true, maxlength: 50 }
+        };
+        var messages = {
+            select_tienda: { required: "@Resources.messages.validacion_cod_req"},
+            select_tipo: { required: "@Resources.messages.validacion_cod_req"},
+            input_code: { required: "@Resources.messages.validacion_cod_req", maxlength: "@Resources.messages.validacion_cod_max" },
+            input_ub: { required: "@Resources.messages.validacion_desc_req", maxlength: "@Resources.messages.validacion_desc_maxLen" },
+            input_monto: { required: "@Resources.messages.validacion_desc_req", maxlength: "@Resources.messages.validacion_desc_maxLen" }
+        }; // Ménsajes de error para el formulario
+        var messagesAsigTienda = {
+            fecha_ini: { required: "@Resources.messages.validacion_req", date: "@Resources.messages.validacion_fecha" },
+            fecha_final: { required: "@Resources.messages.validacion_req", date: "@Resources.messages.validacion_fecha" },
+            select2_iva: { required: "@Resources.messages.validacion_req" },
+            select2_dinamica: { required: "@Resources.messages.validacion_req" },
+            select2_tienda: { required: "@Resources.messages.validacion_req" },
+            select_cabecera: { required: "@Resources.messages.validacion_req" },
+            select_proveedor: { required: "@Resources.messages.validacion_req" },
+            select_categs: { required: "@Resources.messages.validacion_req" },
+            select_prod: { required: "@Resources.messages.validacion_req" },
+            input_detalle: { required: "@Resources.messages.validacion_req", maxlength: "@Resources.messages.validacion_max" }
+        }
+
+        var idCabeceraThread = null, idsCategsThread = "", idsProdsThread = "";
+
+        var estados = { 0: 'NO INICIADO', 1: 'ACTIVO', 2: 'FINALIZADO'};
+        var estadosColor = { 0: 'primary', 1: 'success', 2: 'secondary'};
+    </script>
+
+    @* Funciones *@
+    <script>
+      /** Función initialize */
+        $(async function () {
+            fillFormCabeceras();
+            fillFormCabecerasTienda();
+            $("#spn_modal_cabeceras").hide
+            fillMenuItemsLayout();
+            $('[data-mask]').inputmask();
+
+            $(".select2").select2();
+            $('.select2bs4').select2({ theme: 'bootstrap4', });
+            fillSelectDinamica();
+            fillSelectTipos();
+            StartLoadTable(elements.div_table1, true);
+            EndLoadTable("@Name", elements.div_table1, true);
+
+            await getAll();
+            await getAllItems();
+
+            $('a[data-toggle="pill"]').on('shown.bs.tab', function (e) {
+                $($.fn.dataTable.tables(true)).DataTable()
+                    .columns.adjust()
+                    .responsive.recalc();
+            });
+        });
+
+        /**
+        * Busca y retorna la categoría a buscar dentro de la lista
+        *
+        * category_id = ID de la categoría
+        */
+        function findStore(store_id) {
+            if (store_id && store_id > 0 && list_Store)
+                return list_Store.find(s => s.IDS === store_id);
+            else return null;
+        }
+
+        function findDinamica(id) {
+            return list_dinamicas.find(d => d.id === id);
+        }
+
+        function findTipo(id) {
+            return list_tipos.find(d => d.id === id);
+        }
+
+        function findTax(id) {
+            if (id && id > 0 && list_tax)
+                return list_tax.find(t => t.ID === id);
+            else return null;
+        }
+
+        function findCabecera(id) {
+            if (id && id > 0 && list_cabeceras)
+                return list_cabeceras.find(t => t.ID === id);
+            else return null;
+        }
+
+        function findCabeceraTienda(id) {
+            if (id && id > 0 && list_cabecerasTienda)
+                return list_cabecerasTienda.find(t => t.ID === id);
+            else return null;
+        }
+
+        function findSupplier(id) {
+            if (id && id > 0 && list_Supplier)
+                return list_Supplier.find(t => t.ID === id);
+            else return null;
+        }
+
+        function findCategoria(ID) {
+            for (var i = 0; i < list_categAll.length; i++)
+                if (list_categAll[i].ID === ID)
+                    return list_categAll[i];
+            return null;
+        }
+
+        function findFamily(ID) {
+            for (var i = 0; i < list_families.length; i++)
+                if (list_families[i].ID === ID)
+                    return list_families[i];
+            return null;
+        }
+
+        function findInList(list, fieldName, value) {
+            if (value && value > 0 && list)
+                return list.find(x => t[fieldName] === id);
+            else return null;
+        }
+
+        /** Clona la lista de categorias a otra lista data con elementos de {id, text} para el select2bs4*/
+        function storeToData() {
+            return list_Store.map(d => { return { 'id': d.IDS, 'text': d.NameS} });
+        }
+
+        function supplierToData() {
+            return list_Supplier.map(d => { return { 'id': d.ID, 'text': d.Name } });
+        }
+
+        function taxToData() {
+            return list_tax.map(d => { return { 'id': d.ID, 'text': d.Name, 'porcentaje': d.Percentage } });
+        }
+
+        function cabeceraToData() {
+            return list_cabeceras.map(d => { return { 'id': d.ID, 'text': d.NumCab ,'monto': d.Monto } });
+        }
+
+        function categoriasToData() {
+            return list_categorias.map(d => { return { 'id': d.ID, 'text': d.Name } });
+        }
+
+        function categoriasAllToData() {
+            return list_categAll.map(d => { return { 'id': d.ID, 'text': d.Name } });
+        }
+
+        function familiesToData() {
+            return list_families.map(d => { return { 'id': d.ID, 'text': d.Name } });
+        }
+
+        function productosToData() {
+            return list_productos.map(d => { return { 'id': d.ID, 'text': d.Description } });
+        }
+
+        function cabeceraXtiendaToData() {
+            var data = list_cabecerasXtienda.map(c => { return { 'id': c.ID, 'text': c.Num } });
+            return data;
+        }
+
+        async function fillCabecerasTable() {
+            try {
+                StartLoadTable(elements.div_table1, true);
+                $("#" + elements.spn_table).show();
+                if (list_cabeceras) {
+                    $("#tbl_content_cabeceras > table > tbody").html("");
+                    await list_cabeceras.forEach(function (d) {
+                        var row = $("<tr />"), store = findStore(d.IDTienda),
+                            tipo = findTipo(d.Tipo),
+                            categoria = findFamily(d.IDCategoria);
+                        electricidad = d.Electricidad == 1 ? "Sí" : "No";
+                        $("#tbl_content_cabeceras > table").append(row);
+                        row.append($("<td> " + (store ? store.NameS : "-@Resources.views.no_def-") + "</td>"));
+                        row.append($("<td> " + d.NumCab + "</td>"));
+                        row.append($("<td> " + categoria.Name + " </td>"));
+                        row.append($("<td> @CurrencySymbol" + numberWithCommas(d.Monto) + "</td>"));
+                        row.append($("<td> " + d.Ubicacion + " </td>"));
+                        row.append($("<td> " + electricidad + " </td>"));
+                        var title = "@Resources.views.editar @Resources.views.cabecera";
+                        row.append($("<td><button class='btn btn-primary' title='" + title + "' data-toggle='modal' data-target='' onClick='onClickBtnEditCabecera(" + d.ID + ")'> <i class='fa fa-edit' aria-hidden='true'></i></button></td>"));
+                    });
+                } else Toast.fire({ icon: 'warning', title: '@Resources.messages.msj_lista_vacia' });
+                EndLoadTable("@Name", elements.div_table1, true);
+                $("#" + elements.spn_table).hide();
+            } catch (e) { error(e, "@Resources.messages.error_llenar_registros"); }
+        }
+
+        function fillCabecerasTiendaTable() {
+            try {
+                StartLoadTable("tbl_content_cab_prov", true);
+                $("#" + elements.spn_table).show();
+                if (list_cabecerasTienda) {
+                    $("#tbl_content_cab_prov > table > tbody").html("");
+                    list_cabecerasTienda.forEach(function (d) {
+                        var row = $("<tr />"),
+
+                            supp = findSupplier(d.IDSupplier),
+                            cabc = findCabecera(d.IDCabecera),
+                            store = findStore(cabc.IDTienda),
+                            tax = findTax(d.IDTax),
+                            din = findDinamica(d.Dinamica);
+                        $("#tbl_content_cab_prov > table").append(row);
+                        row.append($("<td> " + store.NameS + "</td>"));
+                        row.append($("<td> " + cabc.NumCab + "</td>"));
+                        row.append($("<td> " + supp.Name + "</td>"));
+                        row.append($("<td> " + din.text + "</td>"));
+                        row.append($("<td> @CurrencySymbol" + numberWithCommas(cabc.Monto) + "</td>"));
+                        row.append($("<td> " + tax.Name + "</td>"));
+                        row.append($("<td> @CurrencySymbol" + numberWithCommas(d.Monto) + "</td>"));
+                        row.append($("<td> " + d.FechaIniAux + "</td>"));
+                        row.append($("<td> " + d.FechaFinAux + "</td>"));
+
+                        var dateIni = new Date(moment(d.FechaIniAux, "DD/MM/YYYY")),
+                            dateFin = new Date(moment(d.FechaFinAux, "DD/MM/YYYY")),
+                            dateActual = new Date();
+
+                        dateActual.setHours(0);
+                        dateActual.setMinutes(0);
+                        dateActual.setSeconds(0);
+                        dateActual.setMilliseconds(0);
+
+                        var estado = (dateActual > dateFin) ? 2 : (dateActual < dateIni) ? 0 : 1;
+
+                        row.append($("<td><span class='badge bg-" + estadosColor[estado] + "'>" + estados[estado] + "</span></td>"));
+
+                        var title = "@Resources.views.editar CabeceraTienda";
+                        row.append($("<td><button class='btn btn-primary' title='" + title + "' data-toggle='modal' data-target='' onClick='onClickBtnEditCabeceraTienda(" + d.ID + ")'> <i class='fa fa-edit' aria-hidden='true'></i></button></td>"));
+                    });
+                } else Toast.fire({ icon: 'warning', title: '@Resources.messages.msj_lista_vacia' });
+                EndLoadTable("@Name", "tbl_content_cab_prov", true);
+                $("#" + elements.spn_table).hide();
+            } catch (e) { error(e, "@Resources.messages.error_llenar_registros"); }
+        }
+
+        async function getAll() {
+            try {
+                $("#" + elements.spn_modal).show();
+                await $.get(urls_data2.initial).done(async function (data) {
+                    list_Store = data.store;
+                    list_Supplier = data.supplier;
+                    list_cabeceras = data.cabeceras;
+                    list_tax = data.tax;
+                    list_cabecerasTienda = data.cabS;
+                    list_categAll = data.cats;
+                    list_families = data.fams;
+
+                    fillSelectStore();
+                    fillSelectStore2();
+                    fillSelectSupplier();
+                    fillSelectTax();
+                    fillSelectCabecera();
+                    fillSelectTipos();
+
+                    await fillCabecerasTable();
+                    await fillCabecerasTiendaTable();
+
+                });
+              $("#" + elements.spn_modal).hide();
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        async function getAllCatList() {
+            try {
+                await $.get(url_CategoriasAll).done(async function (data) {
+                    list_categAll = data.Result.categories;
+                    await fillSelectTipos();
+
+                });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        async function getAllItems() {
+            try {
+                var val = $("#select_proveedor").val();
+                await $.get(url_Items + "?id=" + (val!==null ? val : '0')).done(async function (data) {
+                    list_productos = data.items;
+                    await fillSelectCatProd();
+                    if (idsProdsThread) {
+                        $("#select_prod").val(idsProdsThread.split(',')).trigger("change");
+                        idsProdsThread = null;
+                    }
+                });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        async function getAllCabeceras() {
+             try {
+                 var val = $("#select2_tienda").val();
+                 await $.get(url_Cabecera + "?id=" + (val!==null ? val : '0')).done(function (data) {
+                     list_cabecerasXtienda = data.cabeceras;
+                     console.log(data);
+                     fillSelectCabecera();
+                     if (idCabeceraThread !== null) {
+                         $("#select_cabecera").val(idCabeceraThread).trigger('change');
+                         idCabeceraThread = null;
+                     }
+                    });
+             } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+
+        async function getCategories() {
+            try {
+                var val = $("#select_proveedor").val();
+                await $.get(url_Categs + "?supplierID=" + (val!==null ? val : '0')).done(async function (data) {
+                    console.log(data);
+                    if (data.Status) {
+                        list_categorias = data.Result;
+                        await fillSelectCategories();
+                        if (idsCategsThread) {
+                            $("#select_categs").val(idsCategsThread.split(',')).trigger("change");
+                            idsCategsThread = null;
+                        }
+                    }
+                });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        async function getCabeceras() {
+            try {
+                await $.get(url_getAllCabecera).done(async function (data) {
+                    list_cabeceras = data.cabeceras;
+                    await fillCabecerasTable();
+                });
+             } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        async function getCabecerasXTienda() {
+            try {
+                await $.get(url_getAllCabeceraTienda).done(async function (data) {
+                    list_cabecerasTienda = data.cabeceras;
+                    await fillCabecerasTiendaTable();
+                });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        function setCabeceraInModal(cab) {
+            $('#ck_electricidad').prop("checked", cab.Electricidad === 1);
+            $("#select_tienda").val(cab.IDTienda).trigger("change");
+            $("#select_tipo").val(cab.Tipo).trigger("change");
+            $('#hfID').val(cab.ID);
+            $('#input_monto').val(cab.Monto);
+            $('#input_code').val(cab.NumCab);
+            $('#input_ub').val(cab.Ubicacion);
+        }
+
+        function setCabeceraTiendaInModal(ct) {
+            $("#CTID").val(ct.ID);
+            $("#input_detalle").val(ct.DetalleDinamica);
+            $("#select2_dinamica").val(ct.Dinamica).trigger('change');
+            $("#select2_iva").val(ct.IDTax).trigger('change');
+
+            $('#fecha_ini').datetimepicker('date', moment(ct.FechaIniAux, "DD/MM/YYYY"));
+            $('#fecha_final').datetimepicker('date', moment(ct.FechaFinAux, "DD/MM/YYYY"));
+
+            if ($("#select2_tienda").val() !== ct.StoreId) {
+                idCabeceraThread = ct.IDCabecera;
+                $("#select2_tienda").val(ct.StoreId).trigger('change');
+            } else $("#select_cabecera").val(ct.IDCabecera).trigger('change');
+
+            if ($("#select_proveedor").val() !== ct.IDSupplier) {
+                idsProdsThread = ct.ListaProd;
+                idsCategsThread = ct.ListaCategorias;
+                $("#select_proveedor").val(ct.IDSupplier).trigger("change");
+            } else {
+                $("#select_prod").val(ct.ListaProd.split(',')).trigger("change");
+                $("#select_categs").val(ct.ListaCategorias.split(',')).trigger("change");
+            }
+        }
+
+        /**
+        * Se encarga de cargar el componente select con el plugin select2bs4
+        */
+        function fillSelectDinamica() {
+            $("#select2_dinamica").select2("destroy");
+            $("#select2_dinamica").select2({ data: list_dinamicas, theme: 'bootstrap4' });
+            $("#select2_dinamica").val(null).trigger("change");
+        }
+
+        function fillSelectTipos() {
+            $("#select_tipo").select2("destroy");
+            $("#select_tipo").select2({ data: familiesToData(), theme: 'bootstrap4' });
+            $("#select_tipo").val(null).trigger("change");
+        }
+
+        function fillSelectStore() {
+            var data = list_Store.map(d => { return { 'id': d.IDS, 'text': d.NameS } });
+            $("#select_tienda").select2("destroy");
+            select_store = $("#select_tienda").select2({
+                data: storeToData(), theme: 'bootstrap4'
+            });
+            $("#select_tienda").val(null).trigger("change");
+        }
+
+        function fillSelectStore2() {
+            select_store2 = $("#select2_tienda").select2({
+                data: storeToData(), theme: 'bootstrap4'
+            });
+            select_store2.on('change', function (e) { onChangeSelectStore(); });
+
+            $("#select2_tienda").select2("destroy");
+            select_store = $("#select2_tienda").select2({
+                 data: storeToData(), theme: 'bootstrap4'
+            });
+            $("#select2_tienda").val(null).trigger("change");
+        }
+
+        function fillSelectSupplier() {
+            $("#select_proveedor").select2("destroy");
+            select_proveedor = $("#select_proveedor").select2({
+                 data: supplierToData(), theme: 'bootstrap4'
+            });
+            select_proveedor.on('change', function (e) { onChangeSelectSupplier(); });
+            $("#select_proveedor").val(null).trigger("change");
+        }
+
+
+        function fillSelectTax() {
+            var data = taxToData();
+            $("#select2_iva").select2("destroy");
+            select_tax = $("#select2_iva").select2({
+                 data: data, language: "@ViewBag.Lang", theme: 'bootstrap4'
+            });
+            $("#select2_iva").val(null).trigger("change");
+        }
+
+        function fillSelectCatProd() {
+
+            $("#select_prod").val(null).trigger("change");
+            $("#select_prod").html(null).trigger("change");
+            $("#select_prod").select2("destroy");
+            select_productos = $("#select_prod").select2({
+                data: productosToData(), theme: 'bootstrap4', allowClear: true
+            });
+
+        }
+
+        function fillSelectCabecera(data) {
+            $("#select_cabecera").val('').trigger("change");
+            $("#select_cabecera").html(null).trigger("change");
+            $("#select_cabecera").select2("destroy");
+            select_cabecerasXtienda = $("#select_cabecera").select2({
+                data: cabeceraXtiendaToData(), theme: 'bootstrap4'
+            });
+        }
+
+        function fillSelectCatProd() {
+
+            $("#select_prod").val(null).trigger("change");
+            $("#select_prod").html(null).trigger("change");
+            $("#select_prod").select2("destroy");
+            select_productos = $("#select_prod").select2({
+                data: productosToData(), allowClear: true, closeOnSelect: false
+            });
+        }
+
+        function fillSelectCategories () {
+            $("#select_categs").val(null).trigger("change");
+            $("#select_categs").html(null).trigger("change");
+            $("#select_categs").select2("destroy");
+            $("#select_categs").select2({
+                data: categoriasToData(), allowClear: true, closeOnSelect: false
+            });
+        }
+
+        /** Marca los items del menú del MainLayout para que se muestre en qué parte del menú se encuentra*/
+        function fillMenuItemsLayout() {
+            openMenu(["#nav-item-espacios"]);
+            activeItemMenu([".nav-item-espacios", "#nav-link-espacios-cabeceras"])
+        }
+
+        function fillFormCabeceras() {
+            $.validator.setDefaults({
+                submitHandler: function () {
+                    GuardarCabecera();
+                }
+            });
+            $('#form_datos_cabecera').validate({
+                rules: rules, messages: messages, errorElement: 'span',
+                errorPlacement: function (err, element) {
+                    err.addClass('invalid-feedback ml-2');
+                    element.closest('.form-group').append(err);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        }
+
+        function fillFormCabecerasTienda() {
+            $.validator.setDefaults({ submitHandler: function () { GuardarAsignaProveedor(); } });
+            $('#form_content_asignacion').validate({
+                rules: rulesAsigTienda, messages: messagesAsigTienda, errorElement: 'span',
+                errorPlacement: function (err, element) {
+                    err.addClass('invalid-feedback ml-2');
+                    element.closest('.form-group').append(err);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        }
+
+        async function GuardarCabecera() {
+            $("#spn_modal_cabeceras").show();
+            try {
+                var estaSeleccionado = $('#ck_electricidad').is(":checked") ? 1 : 0;
+                var monto = $("#input_monto").val();
+                monto = (monto ? monto.replaceAll("@CurrencyThousandSeparator", "") : monto);
+
+                var cabecera_model = {
+                    ID: $("#hfID").val(),
+                    IDTienda: +$("#select_tienda").val(),
+                    IDCategoria: +$("#select_tipo").val(),
+                    NumCab: $("#input_code").val(),
+                    Tipo: $("#select_tipo").val(),
+                    Ubicacion: $("#input_ub").val(),
+                    Monto: Number(monto),
+                    Electricidad: estaSeleccionado
+                };
+
+                await $.ajax({
+                    url: url_SaveCabecera, type: 'post', dataType: 'json', contentType: 'application/json',
+                    data: JSON.stringify({ cabecera : cabecera_model}), cache: false,
+                    success: async function (result) {
+                        if (result.Status) {
+                            await getCabeceras();
+                            $("#spn_modal_cabeceras").hide();
+                            Toast.fire({ icon: 'success', title: result.Message });
+
+                            $("#hfID").val(result.Result);
+                        }
+                        else {
+                            $("#spn_modal_cabeceras").hide();
+                            error(result.InternalMessage, result.Message);
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        $("#spn_modal_cabeceras").hide();
+                        console.log("error al guardar");
+                        error(thrownError, "@Resources.messages.error_guardar");
+                    }
+                });
+            }
+            catch (e) {
+                $("#spn_modal_cabeceras").hide();
+                error(e, "@Resources.messages.error_intento_guardar");
+            }
+        }
+
+        function getCabeceraTiendaFromModal() {
+            var monto = findCabecera(+$("#select_cabecera").val()).Monto,
+                porcentaje = findTax(+$("#select2_iva").val()).Percentage,
+                montoTotal = (monto * (1 + (porcentaje / 100))),
+                fechaini = $('#fecha_ini').datetimepicker('date').toDate(),
+                fechafin = $('#fecha_final').datetimepicker('date').toDate(),
+                dataProds = "", dataCategs = "",
+                id = $('#ck_editar').is(":checked") ? $("#CTID").val() : 0;
+
+            $("#select_prod").select2('data').forEach(x => dataProds += (',' + x.id));
+            $("#select_categs").select2('data').forEach(x => dataCategs += (',' + x.id));
+
+            return {
+                ID: id,
+                IDSupplier: $("#select_proveedor").val(),
+                IDCabecera: $("#select_cabecera").val(),
+                StoreId: $("#select2_tienda").val(),
+                Dinamica: $("#select2_dinamica").val(),
+                DetalleDinamica: $("#input_detalle").val(),
+                ListaProd: dataProds,
+                Listacategorias: dataCategs,
+                FechaIni: fechaini,
+                FechaFin: fechafin,
+                IDTax: $("#select2_iva").val(),
+                Monto: montoTotal
+            };
+        }
+
+        function numberWithCommas(x) {
+            return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, "@CurrencyThousandSeparator");
+        }
+
+        async function GuardarAsignaProveedor() {
+            $("#spn_modal_cabeceras").show();
+            try {
+                var ct = getCabeceraTiendaFromModal();
+                await $.ajax({
+                    url: url_SaveCabeceraTienda, type: 'post', dataType: 'json', contentType: 'application/json',
+                    data: JSON.stringify({ cabecera: ct }), cache: false,
+                    success: async function (result) {
+                        if (result.Status) {
+                            $("#spn_modal_cabeceras").hide();
+                            $("#CTID").val(result.Result);
+                            $("#ck_editar").prop("checked", true);
+                            Toast.fire({ icon: 'success', title: result.Message });
+                            await getCabecerasXTienda();
+                        }
+                        else {
+                            $("#spn_modal_cabeceras").hide();
+                            error(result.InternalMessage, result.Message);
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        $("#spn_modal_cabeceras").hide();
+                        console.log("error al guardar");
+                        error(thrownError, "@Resources.messages.error_guardar");
+                    }
+                });
+            } catch (e) {
+                $("#spn_modal_cabeceras").hide();
+                error(e, "@Resources.messages.error_intento_guardar");
+            }
+        }
+
+        function newModalCabecera() {
+            $("#form_datos_cabecera input").val("");
+            $("#select_tienda").val("").trigger('change');
+            $("#select_tipo").val("").trigger('change');
+        }
+
+        async function newModalCabeceraTienda() {
+            $("#form_content_asignacion input").val("");
+            list_categorias = []; ListaProd = [];
+            $("#select2_tienda").val("").trigger('change');
+            $("#select_proveedor").val("").trigger('change');
+            $("#select2_dinamica").val("").trigger('change');
+            $("#select2_iva").val("").trigger('change');
+        }
+
+        function onClickBtnAddCabecera() {
+        $('#modal_cabecera').modal({ backdrop: 'static', keyboard: false });
+            // id_edit = 0;
+            $("#title_modal_cabecera").html('@Resources.views.agregar ' + '@Resources.views.cabecera');
+        }
+
+        function onClickBtnEditCabecera(id) {
+            var auxCab = findCabecera(id);
+            if (auxCab) {
+                newModalCabecera();
+                setCabeceraInModal(auxCab);
+                $("#nav_tab_cabeceras").tab('show');
+                $('#modal_cabecera').modal({ backdrop: 'static', keyboard: false });
+            } else Toast.fire({ icon: "warning", title: "@Resources.messages.error_reg_edit_inval" });
+        }
+
+        function onClickBtnEditCabeceraTienda(id) {
+            var auxCT = findCabeceraTienda(id);
+            if (auxCT) {
+                setCabeceraTiendaInModal(auxCT);
+
+                $("#nav_tab_asig_prov").tab('show');
+                $("#ck_editar").prop("checked", true);
+                $('#modal_cabecera').modal({ backdrop: 'static', keyboard: false });
+
+            } else Toast.fire({ icon: "warning", title: "@Resources.messages.error_reg_edit_inval" });
+        }
+
+        function onClickBtnNewCabecera() {
+            Swal.fire({
+                title: "@Resources.messages.msj_continuar", html: "@Resources.messages.msj_campos_limpiar", icon: 'warning', showCancelButton: true,
+            }).then((result) => {
+                if (result.isConfirmed) newModalCabecera();
+            });
+        }
+
+        function onClickBtnNewCabeceraTienda() {
+            Swal.fire({
+                title: "@Resources.messages.msj_continuar", html: "@Resources.messages.msj_campos_limpiar", icon: 'warning', showCancelButton: true,
+            }).then((result) => {
+                if (result.isConfirmed) newModalCabeceraTienda();
+            });
+        }
+
+        /** Muestra un error, recibe excepcion para mostrar en consola y el mensaje para el usuario. */
+        function error(e, msg) {
+            Toast.fire({ icon: 'error', title: msg });
+            console.error(e);
+        }
+
+        async function onChangeSelectSupplier() {
+            $("#spn_modal_cabeceras").show();
+            await getAllItems();
+            await getCategories();
+            $("#spn_modal_cabeceras").hide();
+        }
+
+        function onChangeSelectStore() {
+            getAllCabeceras();
+        }
+    </script>
+</body>
+</html>

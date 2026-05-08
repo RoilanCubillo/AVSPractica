@@ -1,0 +1,769 @@
+﻿@using Security.Entities;
+
+@{
+    EN_SC_Module[] modules = (EN_SC_Module[])Session["USER_MODULES"];
+    EN_SC_View[] views = (EN_SC_View[])Session["USER_VIEWS"];
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+    <title>AVS | Central Manager</title>
+    <link href="~/Content/AdminLTE/Local/favicon2.ico" rel="shortcut icon" type="image/x-icon" />
+    <!-- Google Font: Source Sans Pro -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&amp;display=fallback">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/fontawesome-free/css/fontawesome.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/fontawesome-free/css/solid.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/fontawesome-free/css/regular.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/fontawesome-free/css/v4-shims.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/fontawesome-free/css/svg-with-js.min.css">
+    <!-- icheck bootstrap -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/dist/css/adminlte.min.css">
+
+    <script src="~/Content/AdminLTE/plugins/jquery/jquery.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-ui/jquery-ui.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/Content/AdminLTE/dist/js/adminlte.min.js"></script>
+
+    <script>
+
+        var dtable_i18n = {
+            search: '@Resources.views.buscar',
+            info: '@Resources.views.dtable_info',
+            infoEmpty: '@Resources.views.dtable_infoEmpty',
+            lengthMenu: '@Resources.views.dtable_lengthMenu',
+            zeroRecords: '@Resources.views.dtable_zeroRecords',
+            infoFiltered: '@Resources.views.dtable_infoFiltered',
+            paginate: {
+                first: '@Resources.views.dtable_first',
+                last: '@Resources.views.dtable_last',
+                next: '@Resources.views.dtable_sig',
+                previous: '@Resources.views.dtable_previa'
+            },
+            buttons: {
+                copySuccess: {
+                    1: '@Resources.views.dtable_copy1',
+                    _: '@Resources.views.dtable_copyMore'
+                },
+                copyTitle: '@Resources.views.dtable_copyTitle',
+                colvis: '@Resources.views.column_visib',
+                print: '@Resources.views.imprimir',
+                copy: '@Resources.views.copiar',
+            },
+            processing: '<div class="justify-content-center">' +
+                            '<i class="fas fa-3x fa-sync-alt fa-spin"></i>' +
+                            '<div class="text-bold pt-2">@Resources.views.cargando</div>' +
+                        '</div>',
+        };
+
+    </script>
+
+    <!-- Scripts general-->
+    <script src="~/Scripts/Custom/plugins-init.js"></script>
+    <script src="~/Scripts/Custom/java-script-general.js"></script>
+    <script src="~/Scripts/Custom/views-tools.js"></script>
+
+    <!-- jQuery Cookies -->
+    <script src="~/Content/AdminLTE/plugins/jquery-cookie/jquery.cookie.js"></script>
+
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+
+</head>
+
+<!-- the fixed layout is not compatible with sidebar-mini -->
+<body id="main_body" class="hold-transition skin-blue fixed sidebar-mini layout-fixed layout-navbar-fixed">
+    <form id="frmMain">
+        <div class="wrapper">
+            <div class="preloader flex-column justify-content-center align-items-center">
+                <img class="animation__shake" src="~/Content/AdminLTE/dist/img/avs-media/avs_logo.png" alt="AdminLTELogo" height="60" width="60">
+            </div>
+            @* Menú superior *@
+            <!-- Navbar -->
+            <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+                    </li>
+                    <li class="nav-item d-none d-sm-inline-block">
+                        <a href="#" class="nav-link">Inicio</a>
+                    </li>
+                    <li class="nav-item d-none d-sm-inline-block">
+                        <a href="#" class="nav-link">Soporte a TI - HelpDesk</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" data-widget="fullscreen" href="#" role="button">
+                            <i class="fas fa-expand-arrows-alt"></i>
+                        </a>
+                    </li>
+                    @* Cambio de idioma *@
+                    <li class="nav-item dropdown">
+                        <a class="nav-link" href="" data-toggle="dropdown" title="@Resources.views.idioma">
+                            <img id="img-lang" class="img-size-32 img-rounded">
+                            <span class="badge badge-dark navbar-badge"><i class="fa fa-language"></i></span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right">
+                            <a href="" class="dropdown-item uerp-lang" lang="es-CR">
+                                <div class="media">
+                                    <img src="~/Content/AdminLTE/dist/img/flags/es-CR.png" alt="Flag CR" class="img-size-32 img-rounded mr-3">
+                                    <div class="media-body">
+                                        <h3 class="dropdown-item-title">Español - Costa Rica</h3>
+                                    </div>
+                                </div>
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="" class="dropdown-item uerp-lang" lang="en-US">
+                                <div class="media">
+                                    <img src="~/Content/AdminLTE/dist/img/flags/en-US.png" alt="Flag CR" class="img-size-32 img-rounded mr-3">
+                                    <div class="media-body">
+                                        <h3 class="dropdown-item-title">English - United States</h3>
+                                    </div>
+                                </div>
+                            </a>
+                            <div class="dropdown-divider"></div>
+
+                            <a id="opcLangDefault" href="" class="dropdown-item dropdown-footer">@Resources.views.idioma_x_def</a>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+            @* Menú Izquierdo *@
+            <aside class="main-sidebar sidebar-dark-primary elevation-4">
+                <a href="@Url.Action("Manager", "Inicio")" class="brand-link">
+                    <img src="~/Content/AdminLTE/dist/img/avs-media/avs_logo.png" alt="AdminLTE Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
+                    <span class="brand-text font-weight-light">AVS Central Manager</span>
+                </a>
+                <div class="sidebar">
+                    @* Información de usuario *@
+                    <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+                        <div class="image">
+                            <img src="~/Content/AdminLTE/dist/img/avatar5.png" class="img-circle elevation-2" alt="User Image">
+                        </div>
+                        <div class="info">
+                            <a href="#" class="d-block">@Session["USER_NAME"]</a>
+                        </div>
+                    </div>
+                    @* Buscador *@
+                    <div class="form-inline">
+                        <div class="input-group" data-widget="sidebar-search">
+                            <input class="form-control form-control-sidebar" type="search" placeholder="@Resources.views.buscar" aria-label="Search">
+                            <div class="input-group-append">
+                                <button class="btn btn-sidebar"><i class="fas fa-search fa-fw"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    @* Opciones del menú *@
+                    <nav class="mt-2" style="border-bottom: 1px solid #4f5962;">
+                        <ul class="nav nav-pills nav-sidebar flex-column nav-child-indent" data-widget="treeview" role="menu" data-accordion="false">
+                            <!-- Add icons to the links using the .nav-icon class with font-awesome or any other icon font library -->
+                            <li class="nav-header">@Resources.views.operaciones.ToUpper()</li>
+                            @if (Array.Exists(modules, x => x.Code == "uerp-inventario"))
+                            {
+                                @*INVENTARIOS*@
+                                <li id="nav-item-inventarios" class="nav-item">
+                                    <a href="#" class="nav-link nav-item-inventarios">
+                                        <i class="nav-icon fa fa-boxes"></i>
+                                        <p>
+                                            @Resources.views.inventario
+                                            <i class="fas fa-angle-left right"></i>
+                                        </p>
+                                    </a>
+                                    @* Opciones de inventario *@
+                                    <ul class="nav nav-treeview">
+                                        @if (Array.Exists(views, x => x.Code == "inv-articulos"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-inventarios-articulos" href="@Url.Action("Inicio", "Articulos")" class="nav-link">
+                                                    <i class="fa fa-clipboard-list nav-icon"></i>
+                                                    <p>@Resources.views.articulos</p>
+                                                </a>
+                                            </li>
+                                        }
+                                        @if (Array.Exists(views, x => x.Code == "inv-msj-articulos"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-inventarios-mensajes" href="@Url.Action("Inicio", "MensajesArticulos")" class="nav-link">
+                                                    <i class="fa fa-comment-dots nav-icon"></i>
+                                                    <p>@Resources.views.msj_articulos</p>
+                                                </a>
+                                            </li>
+                                        }
+
+                                        @if (Array.Exists(views, x => x.Code == "inv-familias"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-inventarios-familias" href="@Url.Action("Inicio", "Familias")" class="nav-link">
+                                                    <i class="fa fa-cube nav-icon"></i>
+                                                    <p>@Resources.views.familias</p>
+                                                </a>
+                                            </li>
+                                        }
+                                        @if (Array.Exists(views, x => x.Code == "inv-depart"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-inventarios-departamentos" href="@Url.Action("Inicio", "Departamentos")" class="nav-link">
+                                                    <i class="fa fa-cubes nav-icon"></i>
+                                                    <p>@Resources.views.departs</p>
+                                                </a>
+                                            </li>
+                                        }
+
+                                        @if (Array.Exists(views, x => x.Code == "inv-categs"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-inventarios-categorias" href="@Url.Action("Inicio", "Categorias")" class="nav-link">
+                                                    <i class="fa fa-network-wired nav-icon"></i>
+                                                    <p>@Resources.views.categs</p>
+                                                </a>
+                                            </li>
+                                        }
+                                        @if (Array.Exists(views, x => x.Code == "inv-subcategs"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-inventarios-subcategorias" href="@Url.Action("Inicio", "SubCategorias")" class="nav-link">
+                                                    <i class="fa fa-project-diagram nav-icon"></i>
+                                                    <p>@Resources.views.subCategorias</p>
+                                                </a>
+                                            </li>
+                                        }
+
+                                        @if (Array.Exists(views, x => x.Code == "inv-segs"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-inventarios-segmentos" href="@Url.Action("Inicio", "Segmentos")" class="nav-link">
+                                                    <i class="fa fa-asterisk nav-icon"></i>
+                                                    <p>@Resources.views.segmentos</p>
+                                                </a>
+                                            </li>
+                                        }
+
+                                        @if (Array.Exists(views, x => x.Code == "inv-marcas"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-inventarios-brands" href="@Url.Action("Inicio", "Marcas")" class="nav-link">
+                                                    <i class="fa fa-asterisk nav-icon"></i>
+                                                    <p>Marcas</p>
+                                                </a>
+                                            </li>
+                                        }
+
+                                        @if (Array.Exists(views, x => x.Code == "inv-fabricantes"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-inventarios-manufacturers" href="@Url.Action("Inicio", "Fabricantes")" class="nav-link">
+                                                    <i class="fa fa-asterisk nav-icon"></i>
+                                                    <p>Fabricantes</p>
+                                                </a>
+                                            </li>
+                                        }
+
+                                        @if (Array.Exists(views, x => x.Code == "inv-desc"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-inventarios-descuentos" href="@Url.Action("Inicio", "Descuentos")" class="nav-link">
+                                                    <i class="fa fa-percent nav-icon"></i>
+                                                    <p>@Resources.views.descuentos</p>
+                                                </a>
+                                            </li>
+                                        }
+
+                                        @* Horarios aún no finalizado ... Aún no se guardan los detalles del horario
+                    <li class="nav-item">
+                        <a id="nav-link-inventarios-horarios" href="@Url.Action("Inicio", "Horarios")" class="nav-link">
+                            <i class="fa fa-calendar-week nav-icon"></i>
+                            <p>@Resources.views.horarios</p>
+                        </a>
+                    </li>
+                                        *@
+                                    </ul>
+                                </li>
+                            }
+
+                            @if (Array.Exists(modules, x => x.Code == "uerp-propiedades"))
+                            {
+                                @*compras*@
+                                <li id="nav-prop-ext" class="nav-item">
+                                    <a href="#" class="nav-link nav-prop-ext">
+                                        <i class="nav-icon fa fa-tag"></i>
+                                        <p>
+                                            Propiedades Ext.
+                                            <i class="fas fa-angle-left right"></i>
+                                        </p>
+                                    </a>
+                                    <ul class="nav nav-treeview">
+                                        @if (Array.Exists(views, x => x.Code == "prop-articulos"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-prop-ext-items" href="@Url.Action("Inicio", "PropiedadesArticulos")" class="nav-link">
+                                                    <i class="nav-icon fas fa-shipping-fast"></i>
+                                                    <p>Propiedades de artículos</p>
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </li>
+                            }
+
+
+                            @if (Array.Exists(modules, x => x.Code == "uerp-clientes"))
+                            {
+                                @*paymentterms*@
+                        <li id="nav-prop-ext" class="nav-item">
+                            <a href="#" class="nav-link nav-prop-ext">
+                                <i class="nav-icon fa fa-tag"></i>
+                                <p>
+                                    Clientes
+                                    <i class="fas fa-angle-left right"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                @if (Array.Exists(views, x => x.Code == "cli-arpaymentterms"))
+                                {
+                                    <li class="nav-item">
+                                        <a id="nav-link-prop-ext-items" href="@Url.Action("Inicio", "ARPaymentTerms")" class="nav-link">
+                                            <i class="nav-icon fas fa-shipping-fast"></i>
+                                            <p>Payment Terms</p>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                            <ul class="nav nav-treeview">
+                                @if (Array.Exists(views, x => x.Code == "cli-araccountgroup"))
+                                {
+                                    <li class="nav-item">
+                                        <a id="nav-link-prop-ext-items" href="@Url.Action("Inicio", "ARAccountGroup")" class="nav-link">
+                                            <i class="nav-icon fas fa-shipping-fast"></i>
+                                            <p>Grupo de Cuentas</p>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                            <ul class="nav nav-treeview">
+                                @if (Array.Exists(views, x => x.Code == "cli-customer"))
+                                {
+                                    <li class="nav-item">
+                                        <a id="nav-link-prop-ext-items" href="@Url.Action("Inicio", "Customer")" class="nav-link">
+                                            <i class="nav-icon fas fa-shipping-fast"></i>
+                                            <p>Información de Clientes</p>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </li>
+                            }
+
+                            @if (Array.Exists(modules, x => x.Code == "uerp-compras"))
+                            {
+                                <li id="nav-item-compras" class="nav-item">
+                                    <a href="#" class="nav-link nav-item-compras">
+                                        <i class="nav-icon fa fa-tag"></i>
+                                        <p>
+                                            Compras
+                                            <i class="fas fa-angle-left right"></i>
+                                        </p>
+                                    </a>
+                                    <ul class="nav nav-treeview">
+                                        @if (Array.Exists(views, x => x.Code == "comp-casasc"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-compras-casas" href="@Url.Action("Inicio", "CasasComerciales")" class="nav-link">
+                                                    <i class="nav-icon fas fa-shipping-fast"></i>
+                                                    <p>Casas Comerciales</p>
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </li>
+                            }
+
+                            @if (Array.Exists(modules, x => x.Code == "uerp-camb-masivos"))
+                            {
+                                @*Cambios masivos*@
+                                <li id="nav-item-camb-masivos" class="nav-item">
+                                    <a href="#" class="nav-link nav-item-camb-masivos">
+                                        <i class="nav-icon fa fa-cloud-meatball"></i>
+                                        <p>
+                                            Cambios Masivos
+                                            <i class="fas fa-angle-left right"></i>
+                                        </p>
+                                    </a>
+                                    <ul class="nav nav-treeview">
+                                        @if (Array.Exists(views, x => x.Code == "camb-masivos-worksheet"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-camb-masivos-worksheet" href="@Url.Action("Inicio", "HojasTrabajo")" class="nav-link">
+                                                    <i class="fa fa-file-download nav-icon"></i>
+                                                    <p>Hojas de Trabajo</p>
+                                                </a>
+                                            </li>
+                                        }
+                                        @if (Array.Exists(views, x => x.Code == "camb-masivos-wizard"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-camb-masivos-wizard" href="@Url.Action("Inicio", "Wizard")" class="nav-link">
+                                                    <i class="fa fa-cloud-upload-alt nav-icon"></i>
+                                                    <p>Wizard</p>
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </li>
+                            }
+
+                            @if (Array.Exists(modules, x => x.Code == "uerp-analitica"))
+                            {
+                                @*compras*@
+                                <li id="nav-analitica" class="nav-item">
+                                    <a href="#" class="nav-link nav-analitica">
+                                        <i class="nav-icon fa fa-chart-line"></i>
+                                        <p>
+                                            Analítica de Datos
+                                            <i class="fas fa-angle-left right"></i>
+                                        </p>
+                                    </a>
+                                    <ul class="nav nav-treeview">
+                                        @if (Array.Exists(views, x => x.Code == "conta-analitica"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-analitica-monitoreo" href="@Url.Action("Inicio", "MonitoreoDatos")" class="nav-link">
+                                                    <i class="nav-icon fas fa-bezier-curve"></i>
+                                                    <p>Monitoreo de Datos</p>
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </li>
+                            }
+
+                            @if (Array.Exists(modules, x => x.Code == "uerp-configuracion"))
+                            {
+                                @*CONFIGURACIÓN*@
+                                <li class="nav-item">
+                                    <a href="#" class="nav-link">
+                                        <i class="nav-icon fa fa-cogs"></i>
+                                        <p>@Resources.views.config<i class="fas fa-angle-left right"></i></p>
+                                    </a>
+                                    <ul class="nav nav-treeview">
+                                        @if (Array.Exists(modules, x => x.Code == "uerp-conf-tienda"))
+                                        {
+                                            <li class="nav-item">
+
+
+                                                <a href="#" class="nav-link">
+                                                    <i class="nav-icon fa fa-store-alt"></i>
+                                                    <p>@Resources.views.tienda<i class="fas fa-angle-left right"></i></p>
+                                                </a>
+                                                <ul class="nav nav-treeview">
+                                                    <li class="nav-item">
+                                                        <a href="#" class="nav-link">
+                                                            <i class="fa fa-store nav-icon"></i>
+                                                            <p>@Resources.views.tiendas</p>
+                                                        </a>
+                                                    </li>
+                                                    <li class="nav-item">
+                                                        <a href="#" class="nav-link">
+                                                            <i class="fa fa-warehouse nav-icon"></i>
+                                                            <p>@Resources.views.grupos_tiendas</p>
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                        }
+
+                                        @if (Array.Exists(modules, x => x.Code == "uerp-conf-inventario"))
+                                        {
+                                            @*INVENTARIO 2*@
+                                            <li class="nav-item">
+                                                <a href="#" class="nav-link">
+                                                    <i class="nav-icon fa fa-boxes"></i>
+                                                    <p> @Resources.views.inventario<i class="fas fa-angle-left right"></i></p>
+                                                </a>
+                                                <ul class="nav nav-treeview">
+                                                    <li class="nav-item">
+                                                        <a href="#" class="nav-link">
+                                                            <i class="fa fa-list-ol nav-icon"></i>
+                                                            <p>@Resources.views.cods_razon</p>
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                        }
+
+                                        @if (Array.Exists(modules, x => x.Code == "uerp-conf-security"))
+                                        {
+                                            @*SEGURIDAD*@
+                                            <li class="nav-item">
+                                                <a href="#" class="nav-link">
+                                                    <i class="nav-icon fa fa-user-shield"></i>
+                                                    <p>@Resources.views.pers_seguridad<i class="fas fa-angle-left right"></i></p>
+                                                </a>
+                                                <ul class="nav nav-treeview">
+                                                    <li class="nav-item">
+                                                        <a href="#" class="nav-link">
+                                                            <i class="fa fa-user-cog nav-icon"></i>
+                                                            <p>@Resources.views.usu_central</p>
+                                                        </a>
+                                                    </li>
+                                                    <li class="nav-item">
+                                                        <a href="#" class="nav-link">
+                                                            <i class="fa fa-user-lock nav-icon"></i>
+                                                            <p>@Resources.views.usu_tienda</p>
+                                                        </a>
+                                                    </li>
+                                                    <li class="nav-item">
+                                                        <a href="#" class="nav-link">
+                                                            <i class="fa fa-user-tie nav-icon"></i>
+                                                            <p>@Resources.views.rep_ventas</p>
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                        }
+
+                                        @if (Array.Exists(modules, x => x.Code == "uerp-conf-compras"))
+                                        {
+                                            @*INVENTARIO/COMPRAS*@
+                                            <li class="nav-item">
+                                                <a href="#" class="nav-link">
+                                                    <i class="nav-icon fa fa-shopping-cart"></i>
+                                                    <p>@Resources.views.inventario/@Resources.views.compras<i class="fas fa-angle-left right"></i></p>
+                                                </a>
+                                                <ul class="nav nav-treeview">
+                                                    <li class="nav-item">
+                                                        <a href="#" class="nav-link">
+                                                            <i class="fa fa-truck-loading nav-icon"></i>
+                                                            <p>@Resources.views.met_envio</p>
+                                                        </a>
+                                                    </li>
+                                                    <li class="nav-item">
+                                                        <a href="#" class="nav-link">
+                                                            <i class="fa fa-truck nav-icon"></i>
+                                                            <p>@Resources.views.trans_envio</p>
+                                                        </a>
+                                                    </li>
+                                                    <li class="nav-item">
+                                                        <a href="#" class="nav-link">
+                                                            <i class="fa fa-calculator nav-icon"></i>
+                                                            <p>@Resources.views.conds_pago</p>
+                                                        </a>
+                                                    </li>
+                                                    <li class="nav-item">
+                                                        <a href="#" class="nav-link">
+                                                            <i class="fa fa-users nav-icon"></i>
+                                                            <p>@Resources.views.compradores</p>
+                                                        </a>
+                                                    </li>
+                                                    <li class="nav-item">
+                                                        <a href="#" class="nav-link">
+                                                            <i class="fa fa-tags nav-icon"></i>
+                                                            <p>@Resources.views.cargos</p>
+                                                        </a>
+                                                    </li>
+                                                    <li class="nav-item">
+                                                        <a href="#" class="nav-link">
+                                                            <i class="fa fa-ruler nav-icon"></i>
+                                                            <p>@Resources.views.unids_medidas</p>
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </li>
+                                        }
+                                    </ul>
+                                </li>
+                            }
+
+                            <li class="nav-header">@Resources.views.comercial.ToUpper()</li>
+
+                            @if (Array.Exists(modules, x => x.Code == "uerp-cobros"))
+                            {
+                                @*PROVEEDORES*@
+                                <li id="nav-item-proveedores" class="nav-item">
+                                    <a href="#" class="nav-link nav-item-proveedores">
+                                        <i class="nav-icon fas fa-coins"></i>
+                                        <p>@Resources.views.cobros<i class="fas fa-angle-left right"></i></p>
+                                    </a>
+
+                                    <ul class="nav nav-treeview">
+                                        @if (Array.Exists(views, x => x.Code == "cxc-cobs-proveedores"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-cobros-proveedor" href="@Url.Action("Inicio", "CobroProveedores")" class="nav-link">
+                                                    <i class="nav-icon fas fa-shipping-fast"></i>
+                                                    <p>@Resources.views.proveedores</p>
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </li>
+                            }
+
+                            @if (Array.Exists(modules, x => x.Code == "uerp-espacios"))
+                            {
+                                @*Espacios*@
+                                <li id="nav-item-espacios" class="nav-item">
+                                    <a href="#" class="nav-link nav-item-espacios">
+                                        <i class="nav-icon fas fa-store"></i>
+                                        <p>@Resources.views.espacios<i class="fas fa-angle-left right"></i></p>
+                                    </a>
+                                    <ul class="nav nav-treeview">
+                                        @if (Array.Exists(views, x => x.Code == "cxc-esps-cabeceras"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-espacios-cabeceras" href="@Url.Action("Inicio", "Cabeceras")" class="nav-link">
+                                                    <i class="nav-icon fa fa-boxes"></i>
+                                                    <p>@Resources.views.cabecera</p>
+                                                </a>
+                                            </li>
+                                        }
+
+                                        @if (Array.Exists(views, x => x.Code == "cxc-esps-isla-side"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-espacios-islas" href="@Url.Action("Inicio", "IslaSide")" class="nav-link">
+                                                    <i class="nav-icon fa fa-boxes"></i>
+                                                    <p>@Resources.views.isla @Resources.views.y @Resources.views.side</p>
+                                                </a>
+                                            </li>
+                                        }
+
+                                        @if (Array.Exists(views, x => x.Code == "cxc-esps-frios"))
+                                        {
+                                            <li class="nav-item">
+                                                <a id="nav-link-espacios-frios" href="@Url.Action("Inicio", "Espaciosfrios")" class="nav-link">
+                                                    <i class="nav-icon fas fa-icicles"></i>
+                                                    <p>@Resources.views.espacio_frio</p>
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                    @* Cerrar sesión *@
+                    <nav class="mt-2">
+                        <ul class="nav nav-pills nav-sidebar flex-column nav-child-indent">
+                            <li class="nav-item">
+                                <a class="nav-link" href="@Url.Action("Logout", "Inicio")">
+                                    <i class="nav-icon fa fa-arrow-left text-danger"></i>
+                                    <p class="text">Cerrar sesión</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </aside>
+        </div>
+    </form>
+
+    <!-- =============================================== -->
+
+    <script>
+        var asking = false;
+
+        $(function () {
+            $(".uerp-lang").click(function () { onClickLang($(this)); })
+            $("#img-lang").attr("src", "../Content/AdminLTE/dist/img/flags/" + "@System.Threading.Thread.CurrentThread.CurrentCulture.Name" + ".png")
+            $("#opcLangDefault").click(function () { onClickOpcLangDefault(); });
+
+            $(this).mousemove(function (e) {
+                validateSession();
+            });
+
+            $(this).click(function (e) {
+                validateSession();
+            });
+
+            $(this).keydown(function (e) {
+                validateSession();
+            });
+        });
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function validateSession() {
+            if (!asking) {
+                asking = true;
+
+                $.post('@Url.Action("ValidateSession", "Inicio")').done(async function (data, x, y) {
+                    if (data != 1) {
+                        await sleep(1);
+                        await alert(`La sesión se cerrará por: ${data === 0 ? "Solucitud del administrador" : "Inactividad"}`);
+
+                        location.reload();
+                    } else {
+                        await sleep(1000);
+                        asking = false;
+                    }
+                }).fail(function (jqXHR, textStatus, errorThrown) {
+                    asking = false;
+                });
+            }
+        }
+
+        function openMenu(menus) {
+            menus.forEach((m) => { $(m).addClass("menu-open") })
+        }
+
+        /** Método para activar los menú del page principal */
+        function activeItemMenu(items) {
+            items.forEach((i) => { $(i).addClass("active") });
+        }
+
+        function onClickLang(item) {
+            $.cookie("ultraerp-language", item.attr("lang"), { expires: 365, path: '/' });
+        }
+
+        function onClickOpcLangDefault() {
+            $.removeCookie("ultraerp-language", { path: '/' });
+        }
+
+        /** Muestra un error, recibe excepcion para mostrar en consola y el mensaje para el usuario. */
+        function error(e, msj) {
+            Toast.fire({ icon: 'error', title: msj });
+            console.error(e);
+        }
+
+
+    </script>
+    @*
+        @if (@Session["CLIENTE_ESTADO"].ToString() != "1")
+        {
+            <script>
+
+                        var CURRENT_URL = window.location.href.replace(/^.*\/\/[^\/]+/, '');
+                        var TARGET_URL = '@Url.Action("Principal", "Inicio")';
+                        var mensajes = [
+                                    "Usted no está activo en la plataforma",
+                                    "Usted se encuentra activo",
+                                    "No se ha realizado el pago del servicio",
+                                    "Usted no ha renovado el contrato del servicio"
+                        ];
+                        CURRENT_URL == TARGET_URL ? swal("Estimado cliente", mensajes['@Session["CLIENTE_ESTADO"].ToString()'], "warning") : window.location.href = TARGET_URL;
+
+
+            </script>
+        }
+    *@
+    @RenderBody()
+    <footer class="main-footer">
+        <div class="pull-right hidden-xs">
+            <b>Version</b> @ViewContext.Controller.GetType().Assembly.GetName().Version.ToString()
+        </div>
+        <strong>Copyright &copy; 2014-2020 <a href="http://facturamecr.com">AVS Central Manager Administration</a>.</strong> All rights
+        reserved.
+    </footer>
+    @*//======================I============================*@
+
+    @Scripts.Render("~/bundles/jquery")
+</body>
+</html>

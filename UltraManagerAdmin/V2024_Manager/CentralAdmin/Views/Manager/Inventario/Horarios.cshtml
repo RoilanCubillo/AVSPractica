@@ -1,0 +1,729 @@
+﻿
+@{
+    ViewBag.Title = Resources.views.horarios;
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+    ViewBag.Head = Resources.views.mant_horario;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewBag.Title</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    <!-- iCheck for checkboxes and radio inputs -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <!-- Encabezado -->
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>@ViewBag.Head</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager", "Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">@Resources.views.inventario</li>
+                                <li class="breadcrumb-item active">@Resources.views.horarios</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Encabezado -->
+            <!-- Muestra -->
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="overlay-wrapper">
+                                        <!-- Spinner tbl -->
+                                        <div id="spn_tbl_schedule" class="overlay justify-content-center">
+                                            <i class="fas fa-3x fa-sync-alt fa-spin"></i>
+                                            <div class="text-bold pt-2">@Resources.views.cargando</div>
+                                        </div><!-- Spinner tbl -->
+                                        <!-- Boton agregar -->
+                                        <div class="col-md-12 mb-3" style="overflow: auto;">
+                                            <div class="row-cols-md-6">
+                                                <button type="button" class="btn btn-primary float-right fa-pull-right" onclick="onClickBtnAddSchedule()"><i class="fa fa-plus"> </i> @Resources.views.agregar</button>
+                                            </div>
+                                        </div><!-- Boton agregar -->
+                                        <!-- Table schedule -->
+                                        <div id="tbl_content_schedule" class="dataTables_wrapper dt-bootstrap4">
+                                            <table class="table table-bordered table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>@Resources.views.descripcion</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div><!-- Table schedule -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Muestra -->
+            <!-- Modal -->
+            <div class="modal fade" id="modal_schedule">
+                <div class="modal-dialog modal-lg">
+                    <form id="form_modal_schedule" class="modal-content">
+                        <!-- Spinner Modal -->
+                        <div id="spn_modal_schedule" class="overlay">
+                            <i class="fas fa-2x fa-sync fa-spin"></i>
+                        </div><!-- Spinner Modal -->
+                        <!-- Encabezado Modal -->
+                        <div class="modal-header">
+                            <h4 id="title_modal_schedule" class="modal-title"></h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                        </div><!-- Encabezado Modal -->
+                        <!-- Cuerpo Modal -->
+                        <div class="modal-body">
+                            <!-- Tap Panel -->
+                            <div class="card card-primary card-tabs">
+                                <!-- Tap Panel - Header -->
+                                <div class="card-header p-0 pt-1">
+                                    <ul class="nav nav-tabs" role="tablist">
+                                        <li class="nav-item"><a class="nav-link active" id="nav_tab_schedule" data-toggle="pill" role="tab" href="#tab_schedule" aria-controls="tab_schedule" aria-selected="true">@Resources.views.horario</a></li>
+                                        <li class="nav-item"><a class="nav-link" id="nav_tab_stores" data-toggle="pill" role="tab" href="#tab_stores" aria-controls="tab_stores" aria-selected="false">@Resources.views.grupos_tiendas</a></li>
+                                    </ul>
+                                </div><!-- Tap Panel - Header -->
+                                <!-- Tap Panel - Body -->
+                                <div class="card-body">
+                                    <div class="tab-content">
+                                        <!-- Panel de formulario -->
+                                        <div class="tab-pane fade show active" id="tab_schedule" role="tabpanel" aria-labelledby="nav_tab_schedule">
+                                            <input id="input_schedule_id" type="hidden" /><input id="input_schedule_hqid" type="hidden" />
+                                            <div class="row">
+                                                <!-- Título -->
+                                                <div class="form-group col-sm-6">
+                                                    <label for="input_schedule_desc">@Resources.views.titulo</label>
+                                                    <input type="text" class="form-control" name="input_schedule_desc" id="input_schedule_desc" placeholder="@Resources.views.ingresar_titulo">
+                                                </div><!-- Título -->
+                                                <!-- Incremento de tiempo -->
+                                                <div class="form-group col-sm-6">
+                                                    <label for="chk_schedule_time">@Resources.views.incre_tiempo</label>
+                                                    <select id="chk_schedule_time" class="form-control" onchange="setSegmentSchedulesTable()">
+                                                        <option value="15">15 @Resources.views.mins</option>
+                                                        <option value="30">30 @Resources.views.mins</option>
+                                                        <option value="60">1 @Resources.views.hora</option>
+                                                    </select>
+                                                </div><!-- Límite de edad de mensaje de artículo -->
+                                            </div>
+                                            <div class="card">
+                                                <div class="card-body table-responsive p-0" style="height:40vh;">
+                                                    <table id="tbl_schedule_segments" class="table table-striped table-head-fixed table-sm text-sm text-center">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>@Resources.views.hora<i class="fa fa-clock"></i></th>
+                                                                <th>
+                                                                    @Resources.views.domingo
+                                                                    <div class="custom-control custom-checkbox">
+                                                                        <input type="checkbox" id="day-1" day="1" class="custom-control-input day-all" />
+                                                                        <label for="day-1" class="custom-control-label"></label>
+                                                                    </div>
+                                                                </th>
+                                                                <th>
+                                                                    @Resources.views.lunes
+                                                                    <div class="custom-control custom-checkbox">
+                                                                        <input type="checkbox" id="day-2" day="2" class="custom-control-input day-all" />
+                                                                        <label for="day-2" class="custom-control-label"></label>
+                                                                    </div>
+                                                                </th>
+                                                                <th>
+                                                                    @Resources.views.martes
+                                                                    <div class="custom-control custom-checkbox">
+                                                                        <input type="checkbox" id="day-3" day="3" class="custom-control-input day-all" />
+                                                                        <label for="day-3" class="custom-control-label"></label>
+                                                                    </div>
+                                                                </th>
+                                                                <th>
+                                                                    @Resources.views.miercoles
+                                                                    <div class="custom-control custom-checkbox">
+                                                                        <input type="checkbox" id="day-4" day="4" class="custom-control-input day-all" />
+                                                                        <label for="day-4" class="custom-control-label"></label>
+                                                                    </div>
+                                                                </th>
+                                                                <th>
+                                                                    @Resources.views.jueves
+                                                                    <div class="custom-control custom-checkbox">
+                                                                        <input type="checkbox" id="day-5" day="5" class="custom-control-input day-all" />
+                                                                        <label for="day-5" class="custom-control-label"></label>
+                                                                    </div>
+                                                                </th>
+                                                                <th>
+                                                                    @Resources.views.viernes
+                                                                    <div class="custom-control custom-checkbox">
+                                                                        <input type="checkbox" id="day-6" day="6" class="custom-control-input day-all" />
+                                                                        <label for="day-6" class="custom-control-label"></label>
+                                                                    </div>
+                                                                </th>
+                                                                <th>
+                                                                    @Resources.views.sabado
+                                                                    <div class="custom-control custom-checkbox">
+                                                                        <input type="checkbox" id="day-7" day="7" class="custom-control-input day-all" />
+                                                                        <label for="day-7" class="custom-control-label"></label>
+                                                                    </div>
+                                                                </th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Panel de Grupos de tiendas -->   @* Esto es una prueba *@
+                                        <div class="tab-pane fade" id="tab_stores" role="tabpanel" aria-labelledby="nav_tab_stores">
+                                            <!-- Table store groups -->
+                                            <table id="tbl_content_str_grps" class="table table-bordered table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_all_groups" indeterminate="true" />
+                                                                <label for="chk_all_groups"></label>
+                                                            </div>
+                                                        </th>
+                                                        <th>@Resources.views.cod</th>
+                                                        <th>@Resources.views.descripcion</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr data-widget="expandable-table" aria-expanded="false">
+                                                        <td>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_store_groupid1" />
+                                                                <label for="chk_store_groupid1"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>200000-200000</td>
+                                                        <td>Ferreterías BM</td>
+                                                    </tr>
+                                                    <tr class="expandable-body">
+                                                        <td colspan="3">
+                                                            <div>
+                                                                <table class="table table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>@Resources.views.id_tienda</th>
+                                                                            <th>@Resources.views.nom</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td>1</td>
+                                                                            <td>BM Pacífico</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>2</td>
+                                                                            <td>BM Buenos Aires</td>
+                                                                        </tr>
+
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr data-widget="expandable-table" aria-expanded="false">
+                                                        <td>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_store_groupid2" />
+                                                                <label for="chk_store_groupid2"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>200000-200000</td>
+                                                        <td>Ferreterías BM</td>
+                                                    </tr>
+                                                    <tr class="expandable-body">
+                                                        <td colspan="3">
+                                                            <div>
+                                                                <table class="table table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>@Resources.views.id_tienda</th>
+                                                                            <th>@Resources.views.nom</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td>1</td>
+                                                                            <td>BM Pacífico</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>2</td>
+                                                                            <td>BM Buenos Aires</td>
+                                                                        </tr>
+
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr data-widget="expandable-table" aria-expanded="false">
+                                                        <td>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_store_groupid3" />
+                                                                <label for="chk_store_groupid3"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>200000-200000</td>
+                                                        <td>Ferreterías BM</td>
+                                                    </tr>
+                                                    <tr class="expandable-body">
+                                                        <td colspan="3">
+                                                            <div>
+                                                                <table class="table table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>@Resources.views.id_tienda</th>
+                                                                            <th>@Resources.views.nom</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td>1</td>
+                                                                            <td>BM Pacífico</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>2</td>
+                                                                            <td>BM Buenos Aires</td>
+                                                                        </tr>
+
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr data-widget="expandable-table" aria-expanded="false">
+                                                        <td>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_store_groupid4" />
+                                                                <label for="chk_store_groupid4"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>200000-200000</td>
+                                                        <td>Ferreterías BM</td>
+                                                    </tr>
+                                                    <tr class="expandable-body">
+                                                        <td colspan="3">
+                                                            <div>
+                                                                <table class="table table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>@Resources.views.id_tienda</th>
+                                                                            <th>@Resources.views.nom</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td>1</td>
+                                                                            <td>BM Pacífico</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>2</td>
+                                                                            <td>BM Buenos Aires</td>
+                                                                        </tr>
+
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr data-widget="expandable-table" aria-expanded="false">
+                                                        <td>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_store_groupid5" />
+                                                                <label for="chk_store_groupid5"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>200000-200000</td>
+                                                        <td>Ferreterías BM</td>
+                                                    </tr>
+                                                    <tr class="expandable-body">
+                                                        <td colspan="3">
+                                                            <div>
+                                                                <table class="table table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>@Resources.views.id_tienda</th>
+                                                                            <th>@Resources.views.nom</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td>1</td>
+                                                                            <td>BM Pacífico</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>2</td>
+                                                                            <td>BM Buenos Aires</td>
+                                                                        </tr>
+
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+
+                                                </tbody>
+                                            </table><!-- Table store groups -->
+                                        </div><!-- Panel de Grupos de tiendas -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div><!-- Cuerpo Modal -->
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="onClickBtnNewSchedule()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                            <button type="submit" class="btn btn-success"> <i class="fa fa-save"></i> @Resources.views.guardar</button>
+                            <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Variables *@
+    <script>
+        var url_getAllSchedules = '@Url.Action("GetAll", "Horarios")'; // URL del evento obtener horarios y todos los segmentos de los horarios
+        var url_saveSchedule = '@Url.Action("Save", "Horarios")'; // URL del evento guardar Horario
+        var list_schedules = [], list_segments = []; // Listas en donde se almacenarán la lista de horarios y la lista de todos los segmentos de horarios.
+        var elements = { div_table: "tbl_content_schedule", spn_table: "spn_tbl_schedule", spn_modal: "spn_modal_schedule" };
+        var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4000 }); // Variable para mostrar los mensajes.
+        var rules = {
+            input_schedule_desc: { required: true, maxlength: 50 },
+            chk_schedule_time: { required: true, number:true, min: 15, max: 60 },
+        }; // Roles que cumplirán los componentes del formulario
+        var messages = {
+            input_schedule_desc: { required: "@Resources.messages.validacion_desc_req", maxlength: "@Resources.messages.validacion_desc_maxLen" },
+            chk_schedule_time: { required: "@Resources.messages.validacion_time_sche_req", min: "@Resources.messages.validacion_time_sche_inval", number: "@Resources.messages.validacion_time_sche_inval", max: "@Resources.messages.validacion_time_sche_inval" },
+        }; // Ménsajes de error para el formulario
+    </script>
+
+    @* Funciones *@
+<script>
+
+        /** Initialize */
+        $(function () {
+            $("#" + elements.spn_modal).hide();
+            fillMenuItemsLayout();
+            StartLoadTable(elements.div_table, true);
+            EndLoadTable("@ViewBag.Head", elements.div_table, true);
+            setOnChangeChkAllGroups();
+            setOnChangeChkGroup();
+            getAllSchedules();
+            setSegmentSchedulesTable();
+            setValidationForm();
+        });
+
+        /** Buscar un horario por id dentro de la lista obtenida */
+        function findSchedule(id) {
+            for (var i = 0; i < list_schedules.length; i++)
+                if (list_schedules[i].ID === id)
+                    return list_schedules[i];
+            return null;
+        }
+
+        /** Busca todos los segmentos de un horario en específico y devuelve una lista */
+        function findSegments(id) {
+            var segs = [];
+            for (var i = 0; i < list_segments.length; i++)
+                if (list_segments[i].ScheduleID === id)
+                    segs.push(list_segments[i]);
+            return segs;
+        }
+
+        /** Marca los items del menú del MainLayout para que se muestre en qué parte del menú se encuentra*/
+        function fillMenuItemsLayout() {
+            openMenu(["#nav-item-inventarios"]);
+            activeItemMenu([".nav-item-inventarios", "#nav-link-inventarios-horarios"])
+        }
+
+        /** Carga el DataTable con la lista de horarios */
+        function fillTableSchedules() {
+            try {
+                StartLoadTable(elements.div_table, true);
+                $("#" + elements.spn_table).show();
+                if (list_schedules) {
+                    $("#" + elements.div_table + " > table > tbody").html("");
+                    list_schedules.forEach(function (d) {
+                        var row = $("<tr />");
+                        $("#" + elements.div_table + " > table").append(row);
+                        row.append($("<td> " + d.Description + "</td>"));
+                        var title = "@Resources.views.editar @Resources.views.horario";
+                        row.append($("<td><button class='btn btn-primary' title='" + title + "' data-toggle='modal' data-target='' onClick='onClickBtnEditSchedule(" + d.ID + ")'> <i class='fa fa-edit' aria-hidden='true'></i></button></td>"));
+                    });
+                } else Toast.fire({ icon: 'warning', title: '@Resources.messages.msj_lista_vacia' });
+                EndLoadTable("@ViewBag.Head", elements.div_table, true);
+                $("#" + elements.spn_table).hide();
+            } catch (e) { error(e, "@Resources.messages.error_llenar_registros"); }
+        }
+
+        /** Método encargado de consultar al servidor por la lista de horarios y los segmentos*/
+        async function getAllSchedules() {
+            try {
+                await $.get(url_getAllSchedules).done(async function (data) {
+                    if (data.Status) {
+                        list_schedules = data.Result.schedules;
+                        list_segments = data.Result.segments;
+                        await fillTableSchedules();
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#" + elements.spn_table).hide();
+                    }
+                }).fail(function (data) { error(data, "@Resources.messages.error_obt_regs"); });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        /** Devuelve un objeto Schedule con los datos que tenga la modal */
+        function getScheduleFromModal() {
+            return {
+                'ID': $("#input_schedule_id").val(),
+                'HQID': $("#input_schedule_hqid").val(),
+                'Description': $("#input_schedule_desc").val(),
+                'Increment': $("#chk_schedule_time").val()
+            };
+        }
+
+        /** Devuelve lista de objetos de segmentos de horarios de la modal */
+        function getListSchedulesSegmentFromModal() {
+            var sgmts = [];
+            var data = $(".chk-day:checked");
+            for (var i = 0; i < data.length; i++) {
+                var eT = new Date(), sT = new Date();
+                eT.setHours($(data[i]).attr('endhour')); eT.setMinutes($(data[i]).attr('endminute'));
+                sT.setHours($(data[i]).attr('starthour')); sT.setMinutes($(data[i]).attr('startminute'));
+                var sg = { 'ScheduleID': $("#input_schedule_id").val(), 'StartDay': $(data[i]).attr('day'), 'EndDay': $(data[i]).attr('day'), 'StartTime': sT, 'EndTime': eT };
+                sgmts.push(sg);
+            }
+            return sgmts;
+        }
+
+        /** Settea las configuraciones de validación del al formulario */
+        function setValidationForm() {
+            $.validator.setDefaults({ submitHandler: function () { onActionSaveSchedule(); } });
+            $('#form_modal_schedule').validate({
+                rules: rules, messages: messages, errorElement: 'span',
+                errorPlacement: function (er, element) {
+                    er.addClass('invalid-feedback ml-2');
+                    element.closest('.form-group').append(er);
+                    error("Faltan campos", "@Resources.messages.validacion_campos_requeridos");
+                },
+                highlight: function (element, errorClass, validClass) { $(element).addClass('is-invalid'); },
+                unhighlight: function (element, errorClass, validClass) { $(element).removeClass('is-invalid'); }
+            });
+        }
+
+        /** Settea cada uno de los checkbox a la tabla de la modal, según el tiempo de incremento seleccionado */
+        function setSegmentSchedulesTable() {
+            try {
+                $("#tbl_schedule_segments > tbody").html("");
+                $(".day-all").prop("checked", false);
+                var time = +$("#chk_schedule_time").val();
+                for (var hour = 0; hour < 24; hour++) {
+                    var typeH = hour >= 12 ? " p.m." : " a.m.";
+                    var to12Hrs = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+                    for (var minutes = 0; minutes < 60; minutes += time) {
+                        var tr = $("<tr id='" + hour + ":" + minutes + "'/>")
+                        var startTime = (to12Hrs < 10 ? ("0" + to12Hrs) : to12Hrs) + ":" + (minutes < 10 ? ("0" + minutes) : minutes) + typeH, endTime;
+                        if ((minutes + time) === 60)
+                            endTime = ((to12Hrs + 1) === 13 ? "01" : ((to12Hrs + 1) < 10 ? ("0") : "") + (to12Hrs + 1)) + ":00" + ((hour === 0 || hour === 23) ? " a.m." : " p.m.");
+                        else endTime = ((to12Hrs < 10 ? "0" : "") + to12Hrs) + ":" + (minutes + time) + typeH;
+                        tr.append($("<td>" + startTime + " - " + endTime + "</td>"))
+                        for (var day = 1; day <= 7; day++) {
+                            var td = $("<td/>");
+                            var hourEnd = ((minutes + time) === 60) ? (hour + 1) : hour, minuteEnd = ((minutes + time) === 60) ? 0 : (minutes + time);
+                            td.append($("<div class='custom-control custom-checkbox'> "
+                                + "<input type='checkbox' id='chk_day_" + day + "_" + hour + "_" + minutes
+                                + "' class='custom-control-input chk-day' day='" + day + "' starthour='" + hour + "' startminute='" + minutes + "' endhour='" + hourEnd + "' endminute='" + minuteEnd +"'/> "
+                                + "<label for='chk_day_" + day + "_" + hour + "_" + minutes + "' class='custom-control-label'/> </div>"));
+                            tr.append(td);
+                        }
+                        $("#tbl_schedule_segments").append(tr);
+                    }
+                }
+                setOnClickChkAllDays();
+                setOnClickChkDay();
+            } catch (e) {
+                error(e, "@Resources.messages.error_inicializar_horario");
+            }
+        }
+
+        /** Activa los checkbox de la modal según la lista de segmentos recibida */
+        function setSegmentsSchedulesToModal(segmts) {
+            setSegmentSchedulesTable();
+            for (var i = 0; i < segmts.length; i++) {
+                $("#chk_day_" + segmts[i].StartDay + "_" + segmts[i].Hour + "_" + segmts[i].Minute).click();
+            }
+        }
+
+        /** Settea el objeto Horario a la modal */
+        function setScheduleToModal(sche) {
+            cleanModal();
+            $("#input_schedule_id").val(sche.ID);
+            $("#input_schedule_hqid").val(sche.HQID);
+            $("#input_schedule_desc").val(sche.Description);
+            $("#chk_schedule_time").val(sche.Increment);
+        }
+
+        /** Asigna funcionalida para cuando se selecciona o no el checkbox de todos los grupos de tiendas */
+        function setOnChangeChkAllGroups() {
+            $('#chk_all_groups').click(function () {
+                var status = $('#chk_all_groups').is(":checked");
+                $("#tbl_content_str_grps tbody input:checkbox" + (status ? ":not(:checked)" : ":checked")).prop("checked", status);
+            });
+        }
+
+        /** Asigna funcionalida para cuando se selecciona o no el checkbox un grupo de tiendas */
+        function setOnChangeChkGroup() {
+            $("#tbl_content_str_grps tbody input:checkbox").click(function () {
+                if ($('#tbl_content_str_grps tbody input:checkbox:checked').length === $("#tbl_content_str_grps tbody input:checkbox").length)
+                    $('#chk_all_groups').prop("checked", true);
+                else $('#chk_all_groups').prop("checked", false);
+            });
+        }
+
+        /**
+         * Asigna el evento click a los checkbox principales de cada día,
+         * para que si se activa, que se activen o se desactiven todos los demás checkbos de ese mismo día
+         */
+        function setOnClickChkAllDays() {
+            $(".day-all").click(function () {
+                var status = $(this).is(":checked");
+                $(".chk-day" + (status ? ":not(:checked)" : ":checked") + "[day='" + $(this).attr("day") + "']").prop("checked", status);
+            });
+        }
+
+        /**
+         * Asignación del evento click a cada uno de los checkbox de cada uno de los segmentos del horario
+         * el cual se encarga de que si todos los segmentos de un día están activados, que también se active
+         * el check de la cabecera de ese día
+         */
+        function setOnClickChkDay() {
+            $(".chk-day").click(function () {
+                if ($(".chk-day:checked[day='" + $(this).attr("day") + "']").length === $(".chk-day[day='" + $(this).attr("day") + "']").length)
+                    $("#day-" + $(this).attr("day")).prop("checked", true);
+                else $("#day-" + $(this).attr("day")).prop("checked", false);
+            });
+        }
+
+        /** Funcionalidad para mandar a guardar (crear o editar) un horario */
+        async function onActionSaveSchedule() {
+            $("#" + elements.spn_modal).show();
+            try {
+                var sche = getScheduleFromModal();
+                var sgmts = getListSchedulesSegmentFromModal();
+                await $.ajax({
+                    url: url_saveSchedule, type: 'post', dataType: 'json', contentType: 'application/json', data: JSON.stringify({ schedule: sche, segments: sgmts }), cache: false,
+                    success: async function (data) {
+                        if (data.Status) {
+                            Toast.fire({ icon: 'success', title: data.Message });
+                            $("#" + elements.spn_table).show();
+                            await getAllSchedules();
+                            onClickBtnEditSchedule(data.Result);
+                        } else error(data.InternalMessage, data.Message);
+                        $("#" + elements.spn_modal).hide();
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        error(thrownError, "@Resources.messages.error_guardar");
+                        $("#" + elements.spn_modal).hide();
+                    }
+                });
+            } catch (e) {
+                error(e, "@Resources.messages.error_intento_guardar");
+                $("#" + elements.spn_modal).hide();
+            }
+        }
+
+        /** Evento ejecutado al dar click a editar a un horario, settea el horario en la modal... */
+        function onClickBtnEditSchedule(id) {
+            try {
+                var sche = findSchedule(id), segs = findSegments(id);
+                if (sche) {
+                    setScheduleToModal(sche);
+                    setSegmentsSchedulesToModal(segs);
+                    openModal(false);
+                }
+            } catch (e) {
+                error(e, "@Resources.messages.error_intento_editar");
+            }
+        }
+
+        /** Evento ejecutado al dar click al botón de crear horario */
+        function onClickBtnAddSchedule() {
+            if ($("#input_schedule_id").val() !== "") openModal(false);
+            else openModal(true);
+        }
+
+        /** Evento ejecutado al dar click al botón de "Nuevo" en la modal para limpiar dicha modal */
+        function onClickBtnNewSchedule() {
+            Swal.fire({
+                title: "@Resources.messages.msj_continuar", html: "@Resources.messages.msj_campos_limpiar", icon: 'warning', showCancelButton: true,
+            }).then((result) => { if (result.isConfirmed) newModal(true); });
+        }
+
+        /** Limpia la modal. is_new ? "Agregar Registro" : "Editar Registro" */
+        function newModal(is_new) {
+            cleanModal();
+            openModal(is_new);
+        }
+
+        /** Abre la modal */
+        function openModal(is_new) {
+            $("#title_modal_schedule").text(is_new ? "@Resources.views.agregar @Resources.views.horario" : "@Resources.views.editar @Resources.views.horario");
+            $('#modal_schedule').modal({ backdrop: 'static', keyboard: false });
+        }
+
+        /** Limpia la modal */
+        function cleanModal() {
+            $("#input_schedule_id").val("");
+            $("#input_schedule_hqid").val("");
+            $("#input_schedule_desc").val("");
+            $("#chk_schedule_time").val(15);
+            setSegmentSchedulesTable();
+        }
+
+        /** Muestra un error, recibe excepcion para mostrar en consola y el mensaje para el usuario. */
+        function error(e, schedule) {
+            Toast.fire({ icon: 'error', title: schedule });
+            console.error(e);
+        }
+</script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+﻿/*#region Bootstrap 4*/
+.form-control-plaintext {
+    display: block;
+    width: 100%;
+    padding-top: .375rem;
+    padding-bottom: .375rem;
+    margin-bottom: 0;
+    line-height: 1.5;
+    background-color: transparent;
+    border: solid transparent;
+    border-width: 1px 0;
+}
+/*#endregion*/
+
+/*#region Spinner input small*/
+.spinner-input-sm {
+    width: 20px;
+    height: 20px;
+    border: 2px solid transparent;
+    border-radius: 5px;
+    margin: 10px;
+}
+
+    .spinner-input-sm:before {
+        content: '';
+        box-sizing: border-box;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin-top: -10px;
+        margin-left: -15px;
+        border-radius: 50%;
+        border: 1px solid #ccc;
+        border-top-color: #07d;
+        animation: spinner-input-sm .6s linear infinite;
+    }
+
+@keyframes spinner-input-sm {
+    to {
+        transform: rotate(360deg);
+    }
+}
+/*#endregion*/
+
+/*#region Spinner input big*/
+.spinner-input {
+    width: 40px;
+    height: 40px;
+    border: 2px solid transparent;
+    border-radius: 5px;
+    margin: 40px;
+}
+
+    .spinner-input:before {
+        content: '';
+        box-sizing: border-box;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 40px;
+        height: 40px;
+        margin-top: -10px;
+        margin-left: -15px;
+        border-radius: 50%;
+        border: 1px solid #ccc;
+        border-top-color: #07d;
+        animation: spinner-input .6s linear infinite;
+    }
+
+@keyframes spinner-input {
+    to {
+        transform: rotate(360deg);
+    }
+}
+/*#endregion*/
+
+/*#region Datatable*/
+table.dataTable thead .sorting,
+table.dataTable thead .sorting_asc:after,
+table.dataTable thead .sorting_desc,
+table.dataTable thead .sorting_asc_disabled,
+table.dataTable thead .sorting_desc_disabled {
+    background: transparent;
+}
+
+.dataTables_wrapper {
+    padding-bottom: 30px;
+}
+
+.dataTables_length {
+    float: left;
+}
+
+.dataTables_filter label {
+    margin-right: 5px;
+}
+
+.html5buttons {
+    float: right;
+}
+
+    .html5buttons a {
+        border: 1px solid #e7eaec;
+        background: #fff;
+        color: #676a6c;
+        box-shadow: none;
+        padding: 6px 8px;
+        font-size: 12px;
+    }
+
+        .html5buttons a:hover,
+        .html5buttons a:focus:active {
+            background-color: #eee;
+            color: inherit;
+            border-color: #d2d2d2;
+        }
+
+div.dt-button-info {
+    z-index: 100;
+}
+
+@media (max-width: 768px) {
+    .html5buttons {
+        float: none;
+        margin-top: 10px;
+    }
+
+    .dataTables_length {
+        float: none;
+    }
+}
+/*#endregion*/
+
+/*#region Select2*/
+.select2-container--default .select2-selection--single {
+    border: 1px solid #d2d6de !important;
+    border-radius: 0px !important;
+}
+
+.select2-container .select2-selection--single {
+    height: 34px !important;
+}
+/*#endregion*/

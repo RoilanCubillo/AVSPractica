@@ -1,0 +1,2011 @@
+﻿
+@{
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+    var culture = System.Threading.Thread.CurrentThread.CurrentCulture;
+    var CurrencySymbol = culture.NumberFormat.CurrencySymbol;
+    var CurrencyDecimalSeparator = culture.Name.ToUpper() == "ES-CR" ? "." : culture.NumberFormat.CurrencyDecimalSeparator;
+    var CurrencyThousandSeparator = culture.Name.ToUpper() == "ES-CR" ? "," : culture.NumberFormat.NumberGroupSeparator;
+    var Name = Resources.views.mant_arts;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    <!-- Tempusdominus Bootstrap 4 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
+    <!-- Select2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+    <!-- iCheck for checkboxes and radio inputs -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/dist/css/adminlte.min.css">
+
+    <!-- moment.js -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- Select2 -->
+    <script src="~/Content/AdminLTE/plugins/select2/js/select2.full.min.js"></script>
+    <!-- Tempusdominus Bootstrap 4 -->
+    <script src="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+    <!-- InputMask -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/inputmask/jquery.inputmask.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6"><h1>Información de Clientes</h1></div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager", "Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">@Resources.views.cuentas</li>
+                                <li class="breadcrumb-item active">@Resources.views.infClientes</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="col-md-12 mb-3" style="overflow: auto;">
+                                        <div class="row-cols-md-6">
+                                            <button type="button" class="btn btn-primary float-right fa-pull-right" onclick="onClickBtnAddMsgItem()"><i class="fa fa-plus"> </i> @Resources.views.agregar</button>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div id="tbl_customer" class="dataTables_wrapper dt-bootstrap4 col-12">
+                                            <table id="TableCustomer" class="table table-bordered table-striped">
+                                            </table>
+                                        </div><!-- Table msg -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Modal -->
+            <div class="modal fade" id="modal_customer">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                    <form id="form_customer" class="modal-content">
+                        <!-- Encabezado Modal -->
+                        <div class="modal-header">
+                            <h4 id="title_modal_customer" class="modal-title"></h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                        </div><!-- Cierre del Encabezado Modal -->
+                        <div class="modal-body">
+                            <input type="hidden" id="CustomerID" />
+                            <div class="card card-info card-tabs">
+                                <div class="card-header p-0 pt-2 px-1 overflow-auto">
+                                    <ul class="nav nav-tabs" id="customerTabs" role="tablist">
+                                        <li class="nav-item">
+                                            <a class="nav-link active" id="general-tab" data-toggle="tab" href="#tab_general" role="tab" aria-controls="tab_general" aria-selected="true">Información del Cliente</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="aditionalinformation-tab" data-toggle="tab" href="#tab_aditionalinformation" role="tab" aria-controls="tab_aditionalinformation" aria-selected="false">Información Adicional</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="customeroptions-tab" data-toggle="tab" href="#tab_customeroptions" role="tab" aria-controls="tab_customeroptions" aria-selected="false">Opciones de Cliente</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="tab-content">
+                                    <div class="tab-pane fade show active" id="tab_general" role="tabpanel" aria-labelledby="nav_tab_general">
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="card card-teal">
+                                                    <div class="card-header pb-1">
+                                                        <h3 class="card-title">Información del Cliente</h3>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="row">
+                                                            <!-- Primera Columna -->
+                                                            <div class="col-md-6">
+                                                                <div class="form-group">
+                                                                    <label for="CustomAccountGroupId">@Resources.views.accountgroup</label>
+                                                                    <select id="CustomAccountGroupId" name="CustomAccountGroupId" class="form-control select2bs4" style="width: 100%;">
+                                                                    </select>
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="AccountNumber">@Resources.views.numCuenta</label>
+                                                                    <input id="AccountNumber" name="AccountNumber" type="text" class="form-control" placeholder="@Resources.views.ingresar_numcuenta" disabled />
+                                                                </div>
+                                                                <!--<div class="form-group">
+                                                                    <label for="CustomTax">@Resources.views.imp</label>
+                                                                    <input id="CustomTax" name="CustomTax" type="text" class="form-control" placeholder="@Resources.views.ingresar_imp" />
+                                                                </div>
+                                                                <div class="icheck-primary ml-3">
+                                                                    <label for="chk_accg_createARAccount">@Resources.views.cuentaACredito</label>
+                                                                    <input type="checkbox" id="chk_accg_createARAccount" name="chk_accg_createARAccount">
+                                                                </div>-->
+                                                                <!-- Contenido de la primera columna -->
+                                                            </div><!-- Cierre de la primera columna -->
+                                                            <!-- Segunda Columna -->
+                                                            <div class="col-md-6">
+                                                                <div class="form-group">
+                                                                    <label for="CustomerTitle">@Resources.views.titulo</label>
+                                                                    <input id="CustomerTitle" name="CustomerTitle" type="text" class="form-control" placeholder="@Resources.views.ingresar_titulo" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="CustomerFirtName">@Resources.views.nomCliente</label>
+                                                                    <input id="CustomerFirtName" name="CustomerFirtName" type="text" class="form-control" placeholder="@Resources.views.ingresar_nom" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="CustomerLastName">@Resources.views.apeCliente</label>
+                                                                    <input id="CustomerLastName" name="CustomerLastName" type="text" class="form-control" placeholder="@Resources.views.ingresar_ape" />
+                                                                </div>
+                                                            </div><!-- Cierre de la segunda columna -->
+                                                        </div><!-- Cierre de la fila interna -->
+                                                    </div><!-- Cierre del cuerpo de la tarjeta -->
+                                                </div><!-- Cierre de la tarjeta -->
+                                            </div><!-- Cierre de la columna -->
+
+
+
+                                            <div class="col-md-12">
+                                                <div class="card card-teal">
+                                                    <div class="card-header pb-1">
+                                                        <h3 class="card-title">Información de Facturación</h3>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="row">
+                                                            <!-- Primera Columna -->
+                                                            <div class="col-md-6">
+                                                                <div class="form-group">
+                                                                    <label for="CompanyCustomer">@Resources.views.empCliente</label>
+                                                                    <input id="CompanyCustomer" name="CompanyCustomer" type="text" class="form-control" placeholder="@Resources.views.ingresar_empresa" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="CustomerAddress">@Resources.views.add</label>
+                                                                    <input id="CustomerAddress" name="CustomerAddress" type="text" class="form-control" placeholder="@Resources.views.ingresar_direc" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <input id="CustomerAddress2" name="CustomerAddress2" type="text" class="form-control" placeholder="@Resources.views.ingresar_direc" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="CustomerCity">@Resources.views.ciudad</label>
+                                                                    <input id="CustomerCity" name="CustomerCity" type="text" class="form-control" placeholder="@Resources.views.ingresar_cuidad" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="CustomerState">@Resources.views.estadoCliente</label>
+                                                                    <input id="CustomerState" name="CustomerState" type="text" class="form-control" placeholder="@Resources.views.ingresar_est" />
+                                                                </div><!-- Contenido de la primera columna -->
+                                                            </div><!-- Cierre de la primera columna -->
+                                                            <!-- Segunda Columna -->
+                                                            <div class="col-md-6">
+                                                                <div class="form-group">
+                                                                    <label for="CustomerZipCode">@Resources.views.zip</label>
+                                                                    <input id="CustomerZipCode" name="CustomerZipCode" type="text" class="form-control" placeholder="@Resources.views.ingresar_zip" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="CustomerCountry">@Resources.views.pais</label>
+                                                                    <input id="CustomerCountry" name="CustomerCountry" type="text" class="form-control" placeholder="@Resources.views.ingresar_pais" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="CustomerTelefono">@Resources.views.tel</label>
+                                                                    <input id="CustomerTelefono" name="CustomerTelefono" type="text" class="form-control" placeholder="@Resources.views.ingresar_tel" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="CustomerFax">@Resources.views.numFax</label>
+                                                                    <input id="CustomerFax" name="CustomerFax" type="text" class="form-control" placeholder="@Resources.views.ingresar_fax" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label for="CustomerEmail">@Resources.views.email</label>
+                                                                    <input id="CustomerEmail" name="CustomerEmail" type="text" class="form-control" placeholder="@Resources.views.ingresar_email" />
+                                                                </div>
+                                                            </div><!-- Cierre de la segunda columna -->
+                                                        </div><!-- Cierre de la fila interna -->
+                                                    </div><!-- Cierre del cuerpo de la tarjeta -->
+                                                </div><!-- Cierre de la tarjeta -->
+                                            </div><!-- Cierre de la columna -->
+                                        </div><!-- Cierre de la fila -->
+                                    </div>
+
+
+                                    <div class="tab-pane fade show" id="tab_aditionalinformation" role="tabpanel" aria-labelledby="nav_tab_aditionalinformation">
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="card card-teal">
+                                                    <div class="card-header pb-1">
+                                                        <h3 class="card-title">Adicional</h3>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="row">
+                                                            <!-- Contenido de la tarjeta -->
+                                                            <div class="col-md-6">
+                                                                <!-- Contenido de la primera columna aquí -->
+                                                                <div class="card card-teal">
+                                                                    <div class="card-header pb-1">
+                                                                        <h3 class="card-title">Textos Adicionales</h3>
+                                                                    </div>
+                                                                    <div class="card-body">
+                                                                        <div class="form-group">
+                                                                            <label for="CustomText1"></label>
+                                                                            <input id="CustomText1" name="CustomText1" type="text" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label for="CustomText2"></label>
+                                                                            <input id="CustomText2" name="CustomText2" type="text" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label for="CustomText3"></label>
+                                                                            <input id="CustomText3" name="CustomText3" type="text" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label for="CustomText4"></label>
+                                                                            <input id="CustomText4" name="CustomText4" type="text" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label for="Custommoney"></label>
+                                                                            <input id="Custommoney" name="Custommoney" type="text" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="card card-teal">
+                                                                    <div class="card-header pb-1">
+                                                                        <h3 class="card-title">Fechas Adicionales</h3>
+                                                                    </div>
+                                                                    <div class="card-body">
+                                                                        <div class="form-group">
+                                                                            <label for="Customdate1"></label>
+                                                                            <input id="Customdate1" name="Customdate1" type="date" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label for="Customdate2"></label>
+                                                                            <input id="Customdate2" name="Customdate2" type="date" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label for="Customdate3"></label>
+                                                                            <input id="Customdate3" name="Customdate3" type="date" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label for="Customdate4"></label>
+                                                                            <input id="Customdate4" name="Customdate4" type="date" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label for="Customdate5"></label>
+                                                                            <input id="Customdate5" name="Customdate5" type="date" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div><!-- Fin de la primera columna -->
+
+                                                            <div class="col-md-6">
+                                                                <div class="card card-teal">
+                                                                    <div class="card-header pb-1">
+                                                                        <h3 class="card-title">Teléfonos Adicionales</h3>
+                                                                    </div>
+                                                                    <div class="card-body">
+                                                                        <!-- Contenido de la primera columna aquí -->
+                                                                        <div class="form-group">
+                                                                            <label for="CustomTelf1"></label>
+                                                                            <input id="CustomTelf1" name="CustomTelf1" type="text" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label for="CustomTelf2"></label>
+                                                                            <input id="CustomTelf2" name="CustomTelf2" type="text" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label for="CustomTelf3"></label>
+                                                                            <input id="CustomTelf3" name="CustomTelf3" type="text" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label for="CustomTelf4"></label>
+                                                                            <input id="CustomTelf4" name="CustomTelf4" type="text" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label for="CustomTelf5"></label>
+                                                                            <input id="CustomTelf5" name="CustomTelf5" type="text" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="card card-teal">
+                                                                    <div class="card-header pb-1">
+                                                                        <h3 class="card-title">Sección de Notas</h3>
+                                                                    </div>
+                                                                    <div class="card-body">
+                                                                        <div class="form-group">
+                                                                            <label for="CustomNotes">@Resources.views.notes</label>
+                                                                            <textarea id="CustomNotes" name="CustomNotes" class="form-control" placeholder="@Resources.views.notes"></textarea>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div><!-- Fin de la primera columna -->
+                                                        </div><!-- Cierre de la fila interna -->
+                                                    </div><!-- Cierre del cuerpo de la tarjeta -->
+                                                </div><!-- Cierre de la tarjeta -->
+                                            </div><!-- Cierre de la columna -->
+                                        </div><!-- Cierre de la fila externa -->
+                                    </div><!-- Cierre del contenido del tab general -->
+
+
+
+
+                                    <div class="tab-pane fade show" id="tab_customeroptions" role="tabpanel" aria-labelledby="nav_tab_customeroptions">
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="card card-teal">
+                                                    <div class="card-header pb-1">
+                                                        <h3 class="card-title">Opciones del Cliente</h3>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div class="row">
+                                                            <!-- Contenido de la tarjeta -->
+                                                            <div class="col-md-6">
+                                                                <div class="card card-teal">
+                                                                    <div class="card-header pb-1">
+                                                                        <h3 class="card-title"></h3>
+                                                                    </div>
+                                                                    <div class="card-body">
+                                                                        <div class="icheck-primary ml-3">
+                                                                            <label for="chk_accg_exempttax">@Resources.views.exempttax</label>
+                                                                            <input type="checkbox" id="chk_accg_exempttax" name="chk_accg_exempttax">
+                                                                        </div>
+                                                                        <div class="icheck-primary ml-3">
+                                                                            <label for="chk_accg_isemployee">@Resources.views.customerisemployee</label>
+                                                                            <input type="checkbox" id="chk_accg_isemployee" name="chk_accg_isemployee">
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="card card-teal">
+                                                                    <div class="card-header pb-1">
+                                                                        <h3 class="card-title"></h3>
+                                                                    </div>
+                                                                    <div class="card-body">
+                                                                        <div class="form-group">
+                                                                            <label for="Custompricelevel">@Resources.views.levelprice</label>
+                                                                            <select id="Custompricelevel" name="Custompricelevel" class="form-control select2bs4" style="width: 100%;">
+                                                                                <option value="0">Standard</option>
+                                                                                <option value="1">LevelA</option>
+                                                                                <option value="2">LevelB</option>
+                                                                                <option value="3">LevelC</option>
+                                                                            </select>
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label for="CustomDisccount" class="col-12 text-truncate">@Resources.views.descuento</label>
+                                                                            <div class="input-group">
+                                                                                <input id="CustomDisccount" type="number" name="CustomDisccount" class="form-control" data-inputmask="'alias': 'decimal', 'digits':'2'" placeholder="0~99" data-mask />
+                                                                                <div class="input-group-append"><span class="input-group-text"><i class="fas">%</i></span></div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="form-group">
+                                                                            <label for="CustomTaxIdNum">@Resources.views.taxidnum</label>
+                                                                            <input id="CustomTaxIdNum" name="CustomTaxIdNum" type="text" class="form-control" placeholder="@Resources.views.ingrese_taxidnum" />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div><!-- Cierre de la fila interna -->
+                                                    </div><!-- Cierre del cuerpo de la tarjeta -->
+                                                </div><!-- Cierre de la tarjeta -->
+                                            </div><!-- Cierre de la columna -->
+                                        </div><!-- Cierre de la fila externa -->
+                                    </div><!-- Cierre del contenido del tab general -->
+
+                                </div>
+                            </div>
+                        </div><!-- Cierre del cuerpo del modal -->
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="onClickBtnNewMsgItem()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                            <button type="submit" class="btn btn-success" onclick="SaveCustomer()"> <i class="fa fa-save"></i> @Resources.views.guardar</button>
+                            <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                        </div>
+                    </form><!-- Cierre del Formulario Modal -->
+                </div><!-- Cierre del Contenedor del Modal -->
+            </div><!-- Cierre del Modal -->
+            <!-- Modal de Cuentas -->
+            <div class="modal fade" id="modal_account">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                    <form id="form_account" class="modal-content">
+                        <!-- Encabezado Modal -->
+                        <div class="modal-header">
+                            <h4 id="title_modal_account" class="modal-title"></h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                        </div><!-- Cierre del Encabezado Modal -->
+                        <div class="modal-body">
+                            <input type="hidden" id="AccountID">
+                            <div class="card card-info card-tabs">
+                                <div class="card-header p-0 pt-2 px-1 overflow-auto">
+                                    <ul class="nav nav-tabs" id="accountTabs" role="tablist">
+                                        <li class="nav-item">
+                                            <a class="nav-link active" id="generalaccount-tab" data-toggle="tab" href="#tab_generalaccount" role="tab" aria-controls="tab_generalaccount" aria-selected="true">Información de la Cuenta</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="statusxstore-tab" data-toggle="tab" href="#tab_statusxstore" role="tab" aria-controls="tab_statusxstore" aria-selected="false">Estado por Tienda</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="comunicacion-tab" data-toggle="tab" href="#tab_comunicacion" role="tab" aria-controls="tab_comunicacion" aria-selected="false">Comunicación</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="facturacion-tab" data-toggle="tab" href="#tab_facturacion" role="tab" aria-controls="tab_facturacion" aria-selected="false">Facturación</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="opciones-tab" data-toggle="tab" href="#tab_opciones" role="tab" aria-controls="tab_opciones" aria-selected="false">Opciones</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a class="nav-link" id="adicional-tab" data-toggle="tab" href="#tab_adicional" role="tab" aria-controls="tab_adicional" aria-selected="false">Adicional</a>
+                                        </li>
+                                    </ul>
+                            </div>
+                            <div class="tab-content">
+                                <div class="tab-pane fade show active" id="tab_generalaccount" role="tabpanel" aria-labelledby="generalaccount-tab">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="card card-teal">
+                                                <div class="card-header pb-1">
+                                                    <h3 class="card-title">Información Básica</h3>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <!-- Primera Columna en una tarjeta (card) -->
+                                                        <div class="col-md-6">
+                                                            <div class="card card-teal">
+                                                                <div class="card-header pb-1">
+                                                                    <h3 class="card-title"></h3>
+                                                                </div>
+                                                                <div class="card-body">
+                                                                    <!-- Contenido de la pestaña "Información del Cliente" -->
+                                                                    <div class="form-group">
+                                                                        <label for="AccountNumberAccount">@Resources.views.numCuenta</label>
+                                                                        <input id="AccountNumberAccount" name="AccountNumberAccount" type="text" class="form-control" placeholder="" disabled />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="tipoCuenta">@Resources.views.tipo</label>
+                                                                        <select id="tipoCuenta" name="tipoCuenta" class="form-control select2bs4" style="width: 100%;">
+                                                                            <option value="0">Persona</option>
+                                                                            <option value="1">Compañía</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountTitle">@Resources.views.titulo</label>
+                                                                        <input id="AccountTitle" name="AccountTitle" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountPNombre">@Resources.views.pnombre</label>
+                                                                        <input id="AccountPNombre" name="AccountPNombre" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountSNombre">@Resources.views.snombre</label>
+                                                                        <input id="AccountSNombre" name="AccountSNombre" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountApellido">@Resources.views.apeCliente</label>
+                                                                        <input id="AccountApellido" name="AccountApellido" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <!-- Segunda Columna en una tarjeta (card) -->
+                                                        <div class="col-md-6">
+                                                            <div class="card card-teal">
+                                                                <div class="card-header pb-1">
+                                                                    <h3 class="card-title"></h3>
+                                                                </div>
+                                                                <div class="card-body">
+                                                                    <!-- Contenido de la pestaña "Información del Cliente" -->
+                                                                    <div class="form-group">
+                                                                        <label for="AccountSufijo">@Resources.views.sufcuenta</label>
+                                                                        <input id="AccountSufijo" name="AccountSufijo" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountEmp">@Resources.views.empCliente</label>
+                                                                        <input id="AccountEmp" name="AccountEmp" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountNom">@Resources.views.nom</label>
+                                                                        <input id="AccountNom" name="AccountNom" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountRol">@Resources.views.rolcuenta</label>
+                                                                        <select id="AccountRol" name="AccountRol" class="form-control select2bs4" style="width: 100%;" disabled>
+                                                                            <option value="0">Cuenta</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountGrupo">@Resources.views.accountgroup</label>
+                                                                        <select id="AccountGrupo" name="AccountGrupo" class="form-control select2bs4" style="width: 100%;">
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountGestor">@Resources.views.gestcuenta</label>
+                                                                        <select id="AccountGestor" name="AccountGestor" class="form-control select2bs4" style="width: 100%;">
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </div>
+
+
+                                        <div class="col-md-12">
+                                            <div class="card card-teal">
+                                                <div class="card-header pb-1">
+                                                    <h3 class="card-title">Información Financiera</h3>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <!-- Primera Columna en una tarjeta (card) -->
+                                                        <div class="col-md-6">
+                                                            <div class="card card-teal">
+                                                                <div class="card-header pb-1">
+                                                                    <h3 class="card-title"></h3>
+                                                                </div>
+                                                                <div class="card-body">
+                                                                    <!-- Contenido de la pestaña "Información del Cliente" -->
+                                                                    <div class="form-group">
+                                                                        <label for="AccountEstado">@Resources.views.estadoCliente</label>
+                                                                        <select id="AccountEstado" name="AccountEstado" class="form-control select2bs4" style="width: 100%;">
+                                                                            <option value="0">Activo</option>
+                                                                            <option value="1">Parado</option>
+                                                                            <option value="2">Bloqueado</option>
+                                                                            <option value="3">Inactivo</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountBalan" class="col-sm-7 col-form-label text-truncate">@Resources.views.balcuenta:</label>
+                                                                        <div class="input-group col-sm-5">
+                                                                            <div class="input-group-prepend"><span class="input-group-text"><i class="fas">@CurrencySymbol</i></span></div>
+                                                                            <input id="AccountBalan" name="AccountBalan" type="text" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountSalVen" class="col-sm-7 col-form-label text-truncate">@Resources.views.salvencuenta:</label>
+                                                                        <div class="input-group col-sm-5">
+                                                                            <div class="input-group-prepend"><span class="input-group-text"><i class="fas">@CurrencySymbol</i></span></div>
+                                                                            <input id="AccountSalVen" name="AccountSalVen" type="text" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountLimCre" class="col-sm-7 col-form-label text-truncate">@Resources.views.limcredcuenta:</label>
+                                                                        <div class="input-group col-sm-5">
+                                                                            <div class="input-group-prepend"><span class="input-group-text"><i class="fas">@CurrencySymbol</i></span></div>
+                                                                            <input id="AccountLimCre" name="AccountLimCre" type="text" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Segunda Columna en una tarjeta (card) -->
+                                                        <div class="col-md-6">
+                                                            <div class="card card-teal">
+                                                                <div class="card-header pb-1">
+                                                                    <h3 class="card-title"></h3>
+                                                                </div>
+                                                                <div class="card-body">
+                                                                    <!-- Contenido de la pestaña "Información del Cliente" -->
+                                                                    <div class="form-group">
+                                                                        <label for="AccountFechCierre">@Resources.views.fechcierrcuenta</label>
+                                                                        <input id="AccountFechCierre" name="AccountFechCierre" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountBalanCierre" class="col-sm-7 col-form-label text-truncate">@Resources.views.balcierrcuenta:</label>
+                                                                        <div class="input-group col-sm-5">
+                                                                            <div class="input-group-prepend"><span class="input-group-text"><i class="fas">@CurrencySymbol</i></span></div>
+                                                                            <input id="AccountBalanCierre" name="AccountBalanCierre" type="text" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountFechAper">@Resources.views.fechapecuenta</label>
+                                                                        <input id="AccountFechAper" name="AccountFechAper" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountFechLastUp">@Resources.views.ultactcuenta</label>
+                                                                        <input id="AccountFechLastUp" name="AccountFechLastUp" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <div class="tab-pane fade show" id="tab_statusxstore" role="tabpanel" aria-labelledby="statusxstore-tab">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <!-- Inicio de la tarjeta principal con clase "card-teal" -->
+                                            <div class="card card-teal">
+                                                <div class="card-header pb-1">
+                                                    <h3 class="card-title">Estado por Tienda</h3>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <!-- Primera Columna en una tarjeta (card) -->
+                                                        <div class="col-md-6">
+                                                            <!-- Inicio de la tarjeta secundaria con clase "card-teal" -->
+                                                            <div class="card card-teal">
+                                                                <div class="card-header pb-1">
+                                                                    <h3 class="card-title"></h3>
+                                                                </div>
+                                                                <div class="card-body">
+                                                                    <!-- Contenido de la tarjeta secundaria va aquí -->
+                                                                    <div class="form-group">
+                                                                        <label for="AccountIdTienda">@Resources.views.tienda</label>
+                                                                        <select id="AccountIdTienda" name="AccountIdTienda" class="form-control select2bs4" style="width: 100%;">
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountEstTienda">@Resources.views.estadoCliente</label>
+                                                                        <select id="AccountEstTienda" name="AccountEstTienda" class="form-control select2bs4" style="width: 100%;">
+                                                                            <option value=0>Activo</option>
+                                                                            <option value=1>Parado</option>
+                                                                            <option value=2>Bloqueado</option>
+                                                                            <option value=3>Inactivo</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountLimCreTienda" class="col-sm-7 col-form-label text-truncate">@Resources.views.limcredcuenta:</label>
+                                                                        <div class="input-group col-sm-5">
+                                                                            <div class="input-group-prepend"><span class="input-group-text"><i class="fas">@CurrencySymbol</i></span></div>
+                                                                            <input id="AccountLimCreTienda" name="AccountLimCreTienda" type="text" class="form-control" placeholder="" />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountBalanXTienda" class="col-sm-7 col-form-label text-truncate">@Resources.views.balcuenta:</label>
+                                                                        <div class="input-group col-sm-5">
+                                                                            <div class="input-group-prepend"><span class="input-group-text"><i class="fas">@CurrencySymbol</i></span></div>
+                                                                            <input id="AccountBalanXTienda" name="AccountBalanXTienda" type="text" class="form-control" placeholder="" disabled />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountBalanDueXTienda" class="col-sm-7 col-form-label text-truncate">@Resources.views.salvencuenta:</label>
+                                                                        <div class="input-group col-sm-5">
+                                                                            <div class="input-group-prepend"><span class="input-group-text"><i class="fas">@CurrencySymbol</i></span></div>
+                                                                            <input id="AccountBalanDueXTienda" name="AccountBalanDueXTienda" type="text" class="form-control" placeholder="" disabled />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountUltActTienda">@Resources.views.ultactcuenta</label>
+                                                                        <input id="AccountUltActTienda" name="AccountUltActTienda" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div> <!-- Cierre de la tarjeta secundaria con clase "card-teal" -->
+                                                        </div> <!-- Cierre de la columna "col-md-6" -->
+                                                    </div> <!-- Cierre de la fila dentro del cuerpo de la tarjeta principal -->
+                                                </div> <!-- Cierre del cuerpo de la tarjeta principal -->
+                                            </div> <!-- Cierre de la tarjeta principal con clase "card-teal" -->
+                                        </div> <!-- Cierre de la columna "col-md-12" -->
+                                    </div> <!-- Cierre de la fila -->
+                                </div> <!-- Cierre de la pestaña "tab_comunicacion" -->
+
+
+
+                                <div class="tab-pane fade show" id="tab_comunicacion" role="tabpanel" aria-labelledby="comunicacion-tab">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <!-- Inicio de la tarjeta principal con clase "card-teal" -->
+                                            <div class="card card-teal">
+                                                <div class="card-header pb-1">
+                                                    <h3 class="card-title">Comunicación e Información</h3>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <!-- Primera Columna en una tarjeta (card) -->
+                                                        <div class="col-md-6">
+                                                            <!-- Inicio de la tarjeta secundaria con clase "card-teal" -->
+                                                            <div class="card card-teal">
+                                                                <div class="card-header pb-1">
+                                                                    <h3 class="card-title"></h3>
+                                                                </div>
+                                                                <div class="card-body">
+                                                                    <div class="form-group">
+                                                                        <label for="AccountDirecc1">@Resources.views.add</label>
+                                                                        <input id="AccountDirecc1" name="AccountDirecc1" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountDirecc2">@Resources.views.add</label>
+                                                                        <input id="AccountDirecc2" name="AccountDirecc2" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountCiudad">@Resources.views.ciudad</label>
+                                                                        <input id="AccountCiudad" name="AccountCiudad" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountEstadoLugar">@Resources.views.estadoCliente</label>
+                                                                        <input id="AccountEstadoLugar" name="AccountEstadoLugar" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="Accountzip">@Resources.views.zip</label>
+                                                                        <input id="Accountzip" name="Accountzip" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountPais">@Resources.views.pais</label>
+                                                                        <select id="AccountPais" name="AccountPais" class="form-control select2bs4" style="width: 100%;">
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                            </div> <!-- Cierre de la tarjeta secundaria -->
+                                                        </div> <!-- Cierre de la columna "col-md-6" -->
+
+
+                                                        <div class="col-md-6">
+                                                            <!-- Inicio de la tarjeta secundaria con clase "card-teal" -->
+                                                            <div class="card card-teal">
+                                                                <div class="card-header pb-1">
+                                                                    <h3 class="card-title"></h3>
+                                                                </div>
+                                                                <div class="card-body">
+                                                                    <div class="form-group">
+                                                                        <label for="AccountNumTel">@Resources.views.tel</label>
+                                                                        <input id="AccountNumTel" name="AccountNumTel" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountNumMov">@Resources.views.nummovil</label>
+                                                                        <input id="AccountNumMov" name="AccountNumMov" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountNumFax">@Resources.views.numFax</label>
+                                                                        <input id="AccountNumFax" name="AccountNumFax" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountEmail">@Resources.views.email</label>
+                                                                        <input id="AccountEmail" name="AccountEmail" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountPagIni">@Resources.views.paginicio</label>
+                                                                        <input id="AccountPagIni" name="AccountPagIni" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div> <!-- Cierre de la tarjeta secundaria con clase "card-teal" -->
+                                                        </div> <!-- Cierre de la columna "col-md-6" -->
+
+                                                    </div> <!-- Cierre de la fila dentro del cuerpo de la tarjeta principal -->
+                                                </div> <!-- Cierre del cuerpo de la tarjeta principal -->
+                                            </div> <!-- Cierre de la tarjeta principal con clase "card-teal" -->
+                                        </div> <!-- Cierre de la columna "col-md-12" -->
+                                    </div> <!-- Cierre de la fila -->
+                                </div>
+
+                                <div class="tab-pane fade show" id="tab_facturacion" role="tabpanel" aria-labelledby="facturacion-tab">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <!-- Inicio de la tarjeta principal con clase "card-teal" -->
+                                            <div class="card card-teal">
+                                                <div class="card-header pb-1">
+                                                    <h3 class="card-title">Facturación</h3>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <!-- Primera Columna en una tarjeta (card) -->
+                                                        <div class="col-md-6">
+                                                            <!-- Inicio de la tarjeta secundaria con clase "card-teal" -->
+                                                            <div class="card card-teal">
+                                                                <div class="card-header pb-1">
+                                                                    <h3 class="card-title"></h3>
+                                                                </div>
+                                                                <div class="card-body">
+                                                                    <div class="form-group">
+                                                                        <label for="AccountCuentaFac">@Resources.views.cuenFac</label>
+                                                                        <input id="AccountCuentaFac" name="AccountCuentaFac" type="text" class="form-control" placeholder="" disabled />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountRevLimCre">@Resources.views.revLimCre</label>
+                                                                        <select id="AccountRevLimCre" name="AccountRevLimCre" class="form-control select2bs4" style="width: 100%;" disabled>
+                                                                            <option value=0>Cuenta</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountTermPag">@Resources.views.paymentTerms</label>
+                                                                        <select id="AccountTermPag" name="AccountTermPag" class="form-control select2bs4" style="width: 100%;">
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                            </div> <!-- Cierre de la tarjeta secundaria con clase "card-teal" -->
+                                                        </div> <!-- Cierre de la columna "col-md-6" -->
+
+
+                                                        <div class="col-md-6">
+                                                            <!-- Inicio de la tarjeta secundaria con clase "card-teal" -->
+                                                            <div class="card card-teal">
+                                                                <div class="card-header pb-1">
+                                                                    <h3 class="card-title"></h3>
+                                                                </div>
+                                                                <div class="card-body">
+                                                                    <div class="form-group">
+                                                                        <label for="AccountCarFin">@Resources.views.cargoFi</label>
+                                                                        <select id="AccountCarFin" name="AccountCarFin" class="form-control select2bs4" style="width: 100%;">
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountUltEst">@Resources.views.ultEst</label>
+                                                                        <input id="AccountUltEst" name="AccountUltEst" type="text" class="form-control" placeholder="0" value="0" disabled />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountBalCli" class="col-sm-7 col-form-label text-truncate">@Resources.views.balClien:</label>
+                                                                        <div class="input-group col-sm-5">
+                                                                            <div class="input-group-prepend"><span class="input-group-text"><i class="fas">@CurrencySymbol</i></span></div>
+                                                                            <input id="AccountBalCli" name="AccountBalCli" type="text" class="form-control" placeholder="" disabled />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div> <!-- Cierre de la tarjeta secundaria con clase "card-teal" -->
+                                                        </div> <!-- Cierre de la columna "col-md-6" -->
+
+                                                    </div> <!-- Cierre de la fila dentro del cuerpo de la tarjeta principal -->
+                                                </div> <!-- Cierre del cuerpo de la tarjeta principal -->
+                                            </div> <!-- Cierre de la tarjeta principal con clase "card-teal" -->
+                                        </div> <!-- Cierre de la columna "col-md-12" -->
+                                    </div> <!-- Cierre de la fila -->
+                                </div> <!-- Cierre de la pestaña "tab_comunicacion" -->
+
+
+                                <div class="tab-pane fade show" id="tab_opciones" role="tabpanel" aria-labelledby="opciones-tab">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <!-- Inicio de la tarjeta principal con clase "card-teal" -->
+                                            <div class="card card-teal">
+                                                <div class="card-header pb-1">
+                                                    <h3 class="card-title">Opciones</h3>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <!-- Primera Columna en una tarjeta (card) -->
+                                                        <div class="col-md-6">
+                                                            <!-- Inicio de la tarjeta secundaria con clase "card-teal" -->
+                                                            <div class="form-group">
+                                                                <label for="AccountMetApli">@Resources.views.metAplicacion</label>
+                                                                <select id="AccountMetApli" name="AccountMetApli" class="form-control select2bs4" style="width: 100%;">
+                                                                    <option value=0>Manual</option>
+                                                                    <option value=1>Aplicar al más antiguo</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="card card-teal">
+                                                                <div class="card-header pb-1">
+                                                                    <h3 class="card-title">Estado de Cuenta</h3>
+                                                                </div>
+                                                                <div class="card-body">
+                                                                    <div class="form-group">
+                                                                        <label for="AccountTip">@Resources.views.tipo</label>
+                                                                        <select id="AccountTip" name="AccountTip" class="form-control select2bs4" style="width: 100%;">
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountEnt">@Resources.views.entrega</label>
+                                                                        <select id="AccountEnt" name="AccountEnt" class="form-control select2bs4" style="width: 100%;">
+                                                                            <option value=0></option>
+                                                                            <option value=1>Imprimir</option>
+                                                                            <option value=2>E-Mail</option>
+                                                                        </select>
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountEmail2">@Resources.views.email</label>
+                                                                        <input id="AccountEmail2" name="AccountEmail2" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div> <!-- Cierre de la tarjeta secundaria con clase "card-teal" -->
+                                                        </div> <!-- Cierre de la columna "col-md-6" -->
+                                                    </div> <!-- Cierre de la fila dentro del cuerpo de la tarjeta principal -->
+                                                </div> <!-- Cierre del cuerpo de la tarjeta principal -->
+                                            </div> <!-- Cierre de la tarjeta principal con clase "card-teal" -->
+                                        </div> <!-- Cierre de la columna "col-md-12" -->
+                                    </div> <!-- Cierre de la fila -->
+                                </div> <!-- Cierre de la pestaña "tab_comunicacion" -->
+
+
+
+                                <div class="tab-pane fade show" id="tab_adicional" role="tabpanel" aria-labelledby="adicional-tab">
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="card card-teal">
+                                                <div class="card-header pb-1">
+                                                    <h3 class="card-title">Adicional</h3>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <!-- Contenido de la tarjeta -->
+                                                        <div class="col-md-6">
+                                                            <!-- Contenido de la primera columna aquí -->
+                                                            <div class="card card-teal">
+                                                                <div class="card-header pb-1">
+                                                                    <h3 class="card-title">Textos Adicionales</h3>
+                                                                </div>
+                                                                <div class="card-body">
+                                                                    <div class="form-group">
+                                                                        <label for="AccountText1"></label>
+                                                                        <input id="AccountText1" name="AccountText1" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountText2"></label>
+                                                                        <input id="AccountText2" name="AccountText2" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountText3"></label>
+                                                                        <input id="AccountText3" name="AccountText3" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountText4"></label>
+                                                                        <input id="AccountText4" name="AccountText4" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountText5"></label>
+                                                                        <input id="AccountText5" name="AccountText5" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="card card-teal">
+                                                                <div class="card-header pb-1">
+                                                                    <h3 class="card-title">Fechas Adicionales</h3>
+                                                                </div>
+                                                                <div class="card-body">
+                                                                    <div class="form-group">
+                                                                        <label for="Accountdate1"></label>
+                                                                        <input id="Accountdate1" name="Accountdate1" type="date" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="Accountdate2"></label>
+                                                                        <input id="Accountdate2" name="Accountdate2" type="date" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="Accountdate3"></label>
+                                                                        <input id="Accountdate3" name="Accountdate3" type="date" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="Accountdate4"></label>
+                                                                        <input id="Accountdate4" name="Accountdate4" type="date" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="Accountdate5"></label>
+                                                                        <input id="Accountdate5" name="Accountdate5" type="date" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div><!-- Fin de la primera columna -->
+
+                                                        <div class="col-md-6">
+                                                            <div class="card card-teal">
+                                                                <div class="card-header pb-1">
+                                                                    <h3 class="card-title">Teléfonos Adicionales</h3>
+                                                                </div>
+                                                                <div class="card-body">
+                                                                    <!-- Contenido de la primera columna aquí -->
+                                                                    <div class="form-group">
+                                                                        <label for="AccountTelf1"></label>
+                                                                        <input id="AccountTelf1" name="AccountTelf1" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountTelf2"></label>
+                                                                        <input id="AccountTelf2" name="AccountTelf2" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountTelf3"></label>
+                                                                        <input id="AccountTelf3" name="AccountTelf3" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountTelf4"></label>
+                                                                        <input id="AccountTelf4" name="AccountTelf4" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                    <div class="form-group">
+                                                                        <label for="AccountTelf5"></label>
+                                                                        <input id="AccountTelf5" name="AccountTelf5" type="text" class="form-control" placeholder="" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="card card-teal">
+                                                                <div class="card-header pb-1">
+                                                                    <h3 class="card-title">Sección de Notas</h3>
+                                                                </div>
+                                                                <div class="card-body">
+                                                                    <div class="form-group">
+                                                                        <label for="AccountNotes">@Resources.views.notes</label>
+                                                                        <textarea id="AccountNotes" name="AccountNotes" class="form-control" placeholder="@Resources.views.notes"></textarea>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div><!-- Fin de la primera columna -->
+                                                    </div><!-- Cierre de la fila interna -->
+                                                </div><!-- Cierre del cuerpo de la tarjeta -->
+                                            </div><!-- Cierre de la tarjeta -->
+                                        </div><!-- Cierre de la columna -->
+                                    </div><!-- Cierre de la fila externa -->
+                                </div><!-- Cierre del contenido del tab general -->
+
+                            </div><!-- Cierre de tab-content -->
+                        </div>
+                        </div><!-- Cierre del modal-body -->
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="onClickBtnNewCuenta()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                            <button type="submit" class="btn btn-success" onclick="SaveAccount()"> <i class="fa fa-save"></i> @Resources.views.guardar</button>
+                            <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                        </div>
+                    </form> <!-- Cierre del formulario modal -->
+                </div> <!-- Cierre del diálogo modal -->
+            </div> <!-- Cierre del modal principal -->
+
+
+        </div>
+    </div>
+</body>
+</html>
+@* Variables *@
+<script>
+    var DataCustomers = null;
+    var url_getAllCustomers = '@Url.Action("GetAll", "Customer")';
+    var url_saveCustomer = '@Url.Action("Save", "Customer")';
+    var url_saveAccount = '@Url.Action("SaveAccount", "Customer")';
+    var url_getAccountStoreBalance = '@Url.Action("GetAccountStoreBalance", "Customer")';
+    var list_customers = [];
+    var listExtCentralAccountGroup = [];
+    var listExtCentralCustomer = [];
+    var listCustomCaption = [];
+    var listAccounts = [];
+    var listCustomerBalance = [];
+    var listAccountBalance = [];
+    var listAccountGroups = [];
+    var listAccountManager = [];
+    var listPaymentTerms = [];
+    var listFinanceCharge = [];
+    var listStatementType = [];
+    var listStores = [];
+    var listAccountDynamic = [];
+    var AccountStoreBalance = [];
+    var IDCli = null;
+    var autoCustomerID = null;
+    var isFirstIteration = false;
+    var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4000 }); // Variable para mostrar los mensajes.
+
+</script>
+@* Funciones *@
+<script>
+    $(function () {
+        initDataTable();
+        getAllCustomers();
+    });
+
+    function onClickBtnAddMsgItem() {
+        newModal(true);
+    }
+    function onClickBtnAddCuenta() {
+        newModalAccount(true);
+    }
+    function onClickBtnNewMsgItem() {
+            Swal.fire({
+                title: '@Resources.messages.msj_continuar', html: "@Resources.messages.msj_campos_limpiar", icon: 'warning', showCancelButton: true,
+            }).then((result) => { if (result.isConfirmed) newModal(true); });
+    }
+
+    function onClickBtnNewCuenta() {
+            Swal.fire({
+                title: '@Resources.messages.msj_continuar', html: "@Resources.messages.msj_campos_limpiar", icon: 'warning', showCancelButton: true,
+            }).then((result) => { if (result.isConfirmed) newModalAccount(true); });
+    }
+    function newModal(is_new) {
+        CleanForm("form_customer");
+        $("#title_modal_customer").html((is_new ? "@Resources.views.agregar " : "@Resources.views.editar ") + "@ViewBag.Title");
+        $('#modal_customer').modal({ backdrop: 'static', keyboard: false });
+    }
+
+    function newModalAccount(is_new) {
+        CleanForm("form_account");
+        $("#title_modal_account").html((is_new ? "@Resources.views.agregar " : "@Resources.views.editar ") + "@ViewBag.Title");
+        $('#modal_account').modal({ backdrop: 'static', keyboard: false });
+    }
+
+    function initDataTable() {
+
+        DataCustomers = $("#TableCustomer").DataTable({
+            columns: [
+                { title: "Número de Cuenta", data: "AccountNumber" },
+                { title: "Nombre", data: "FirstName" },
+                { title: "Apellido", data: "LastName" },
+                { title: "Compañía", data: "Company" },
+                { title: "Número de Teléfono", data: "PhoneNumber" },
+                { title: "Dirección", data: "Address" },
+                { title: "Correo Electrónico", data: "EmailAddress" },
+                { title: "Número de Fax", data: "FaxNumber" },
+                { title: "Descuento", data: "CurrentDiscount" },
+                {
+                    orderable: false, // Para que no se pueda ordenar esta columna
+                    data: "ID", // La propiedad de tus datos que se utilizará para esta columna
+                    render: function (data, type, row, meta) {
+                        var title = "Editar";
+                        return type === 'display' ?
+                            `<button class='btn btn-primary' title="${title}" onClick='onClickBtnEditCustomer(${data})'>
+                            <i class='fa fa-pencil' aria-hidden='true'></i>
+                            </button>` : data;
+                    }
+                },
+                {
+                    orderable: false, // Para que no se pueda ordenar esta columna
+                    data: "AccountNumber", // La propiedad de tus datos que se utilizará para esta columna
+                    render: function (data, type, row, meta) {
+                        var title = "Cuenta";
+                        var hasAccount = tieneCuenta(data);
+
+                        if (type === 'display') {
+                            if (hasAccount) {
+                                // Si tiene cuenta, crea un botón para crear una cuenta
+                                return `<button class='btn btn-success' title="${title}" onClick='onClickBtnCrearCuenta("${data}")'>
+                                Crear Cuenta
+                                </button>`;
+                            } else {
+                                // Si no tiene cuenta, crea un botón para la acción normal
+                                return `<button class='btn btn-primary' title="${title}" onClick='onClickBtnCuenta("${data}")'>
+                                Editar Cuenta
+                                </button>`;
+                            }
+                        } else {
+                            return data;
+                        }
+                    }
+                }
+            ],
+            language: dtable_i18n, paging: true, lengthChange: true,
+            autoWidth: false, ordering: true,
+            responsive: true, buttons: ['colvis', 'pdf', 'excel'],
+            data: []
+        })
+    }
+
+    /** Método encargado de consultar al servidor por la lista de Payment Terms */
+    async function getAllCustomers() {
+        try {
+            await $.get(url_getAllCustomers).done(async function (data) {
+                    if (data.Status) {
+                        list_customers = data.Result.list_customers;
+                        listExtCentralAccountGroup = data.Result.listExtCentralAccountGroup;
+                        listExtCentralCustomer = data.Result.listExtCentralCustomer;
+                        listCustomCaption = data.Result.listCustomCaption;
+                        listAccounts = data.Result.listAccounts;
+                        listAccountGroups = data.Result.listAccountGroups;
+                        listAccountManager = data.Result.listAccountManager;
+                        listPaymentTerms = data.Result.listPaymentTerms;
+                        listFinanceCharge = data.Result.listFinanceCharge;
+                        listStatementType = data.Result.listStatementType;
+                        listAccountBalance = data.Result.listAccountBalance;
+                        listCustomerBalance = data.Result.listCustomerBalance;
+                        listStores = data.Result.listStores;
+                        listAccountDynamic = data.Result.listAccountDynamic;
+                        await DataCustomers.clear().rows.add(list_customers).draw();
+                        await fillSelect2ExtCentralAccountGroup();
+                        await fillCustomTextInputLabel();
+                        await fillCustomDateInputLabel();
+                        await fillCustomTelfInputLabel();
+                        await fillSelect2AccountGroups();
+                        await fillSelect2ManagerAccount();
+                        await fillSelect2Payterms();
+                        await fillSelect2FinanceCharge();
+                        await fillSelect2StatementType();
+                        await fillSelect2Stores();
+                        $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#" + elements.spn_table).hide();
+                    }
+                }).fail(function (data) { error(data, "@Resources.messages.error_obt_regs"); });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+    }
+
+    function getAccountStoreBalance(accountID, groupID) {
+        return $.get(url_getAccountStoreBalance, { accountID: accountID, groupID: groupID })
+            .then(function (data) {
+                AccountStoreBalance = data.Result.AccountStoreBalance;
+                return AccountStoreBalance; // Resolvemos la promesa con el valor deseado
+            })
+            .fail(function (error) {
+                // Handle errors here, for example, display an error message.
+                handleError(error);
+                throw error; // Rechazamos la promesa en caso de error
+            });
+    }
+
+
+    /** Se encarga de cargar el componente select con el plugin select2bs4 y trae los PaymentTerms */
+    function fillSelect2ExtCentralAccountGroup() {
+         var aux = $("<p/>")
+         aux.html('@Resources.views.accountgroup');
+         select_categs = $('#CustomAccountGroupId').select2({
+              placeholder: aux.text(),
+              data: getExtCentralAccountGroupToDataSelect2(),
+              theme: 'bootstrap4'
+         });
+    }
+
+    function fillCustomTextInputLabel() {
+        var inputIds = ['CustomText1', 'CustomText2', 'CustomText3', 'CustomText4', 'Custommoney'];
+        var inputIds1 = ['AccountText1', 'AccountText2', 'AccountText3', 'AccountText4', 'AccountText5'];
+
+        for (var i = 0; i < inputIds.length; i++) {
+            var inputId = inputIds[i];
+            var labelElement = $('label[for="' + inputId + '"]');
+
+            if (labelElement.length && listCustomCaption[i + 3]) {
+                labelElement.text(listCustomCaption[i + 3].Caption);
+            }
+        }
+
+        for (var i = 0; i < inputIds1.length; i++) {
+            var inputId1 = inputIds1[i];
+            var labelElement = $('label[for="' + inputId1 + '"]');
+
+            if (labelElement.length && listCustomCaption[i + 3]) {
+                labelElement.text(listCustomCaption[i + 3].Caption);
+            }
+        }
+    }
+    function fillCustomDateInputLabel() {
+        var inputIds = ['Customdate1', 'Customdate2', 'Customdate3', 'Customdate4', 'Customdate5'];
+        var inputIds1 = ['Accountdate1', 'Accountdate2', 'Accountdate3', 'Accountdate4', 'Accountdate5'];
+
+        for (var i = 0; i < inputIds.length; i++) {
+            var inputId = inputIds[i];
+            var labelElement = $('label[for="' + inputId + '"]');
+
+            if (labelElement.length && listCustomCaption[i + 13]) {
+                labelElement.text(listCustomCaption[i + 13].Caption);
+            }
+        }
+
+        for (var i = 0; i < inputIds1.length; i++) {
+            var inputId1 = inputIds1[i];
+            var labelElement = $('label[for="' + inputId1 + '"]');
+
+            if (labelElement.length && listCustomCaption[i + 13]) {
+                labelElement.text(listCustomCaption[i + 13].Caption);
+            }
+        }
+    }
+    function fillCustomTelfInputLabel() {
+        var inputIds = ['CustomTelf1', 'CustomTelf2', 'CustomTelf3', 'CustomTelf4', 'CustomTelf5'];
+        var inputIds1 = ['AccountTelf1', 'AccountTelf2', 'AccountTelf3', 'AccountTelf4', 'AccountTelf5'];
+
+        for (var i = 0; i < inputIds.length; i++) {
+            var inputId = inputIds[i];
+            var labelElement = $('label[for="' + inputId + '"]');
+
+            if (labelElement.length && listCustomCaption[i + 8]) {
+                labelElement.text(listCustomCaption[i + 8].Caption);
+            }
+        }
+
+        for (var i = 0; i < inputIds1.length; i++) {
+            var inputId1 = inputIds1[i];
+            var labelElement = $('label[for="' + inputId1 + '"]');
+
+            if (labelElement.length && listCustomCaption[i + 8]) {
+                labelElement.text(listCustomCaption[i + 8].Caption);
+            }
+        }
+    }
+        /** Clona la lista de categorías a otra lista data con elementos de {id, text} para el select2bs4*/
+    function getExtCentralAccountGroupToDataSelect2() {
+        return listExtCentralAccountGroup.map(d => { return { 'id': d.AccountGroupID, 'text': "Tienda: " + d.StoreID + " | " + "Prefijo: " + d.Prefix, 'value': d.Prefix, 'value1': d.StoreID} });
+    }
+    function getAccountGroupIDFromSelect() {
+        var accountGroupID = $("#CustomAccountGroupId").val(); // Obtener el valor como cadena
+        var accountGroupIDInt = parseInt(accountGroupID, 10); // Convertir a entero
+        return accountGroupIDInt;
+    }
+    function getPrefixFromSelect() {
+        var selectedData = $('#CustomAccountGroupId').select2('data'); // Get the selected data from the select2 dropdown
+        var prefix = selectedData[0].value;
+        return prefix;
+    }
+    function getStoreIDFromSelect() {
+        var selectedData = $('#CustomAccountGroupId').select2('data'); // Obtén los datos seleccionados del dropdown select2
+        var storeID = selectedData[0].value1;
+        var storeIDInt = parseInt(storeID, 10);
+
+        return storeIDInt;
+    }
+
+
+    function getFormattedDate() {
+        var now = new Date();
+        var year = now.getFullYear();
+        var month = String(now.getMonth() + 1).padStart(2, '0'); // Añade ceros a la izquierda si es necesario
+        var day = String(now.getDate()).padStart(2, '0');
+        var hours = String(now.getHours()).padStart(2, '0');
+        var minutes = String(now.getMinutes()).padStart(2, '0');
+        var seconds = String(now.getSeconds()).padStart(2, '0');
+        var milliseconds = String(now.getMilliseconds()).padStart(3, '0');
+
+        var formattedDate = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}.${milliseconds}`;
+        return formattedDate;
+    }
+
+    function getCustomerFromModal() {
+        var data = {
+            AccountNumber: $("#AccountNumber").val(),
+            AccountTypeID:1,
+            Address2: ($("#CustomerAddress2").val() !== "") ? $("#CustomerAddress2").val() : " ",
+            AssessFinanceCharges: 0,
+            Company: ($("#CompanyCustomer").val() !== "") ? $("#CompanyCustomer").val() : " ",
+            Country: ($("#CustomerCountry").val() !== "") ? $("#CustomerCountry").val() : " ",
+            CustomDate1: null,
+            CustomDate2: null,
+            CustomDate3: null,
+            CustomDate4: null,
+            CustomDate5: null,
+            CustomNumber1: 0,
+            CustomNumber2: 0,
+            CustomNumber3: 0,
+            CustomNumber4: 0,
+            CustomNumber5: 0,
+            CustomText1: ($("#CustomText1").val() !== "") ? $("#CustomText1").val() : " ",
+            CustomText2: ($("#CustomText2").val() !== "") ? $("#CustomText2").val() : " ",
+            CustomText3: ($("#CustomText3").val() !== "") ? $("#CustomText3").val() : " ",
+            CustomText4: ($("#CustomText4").val() !== "") ? $("#CustomText4").val() : " ",
+            CustomText5: ($("#Custommoney").val() !== "") ? $("#Custommoney").val() : " ",
+            GlobalCustomer: true,
+            HQID:0,
+            LastStartingDate: null,
+            LastClosingDate: null,
+            LastUpdated: getFormattedDate(),
+            LimitPurchase:0,
+            LastClosingBalance:0.00,
+            PrimaryShipToID: 0,
+            State: ($("#CustomerState").val() !== "") ? $("#CustomerState").val() : " ",
+            StoreID: getStoreIDFromSelect(),
+            ID: 0,
+            LayawayCustomer:0,
+            Employee: $("#chk_accg_isemployee").is(":checked"),
+            FirstName: ($("#CustomerFirtName").val() !== "") ? $("#CustomerFirtName").val() : " ",
+            LastName: ($("#CustomerLastName").val() !== "") ? $("#CustomerLastName").val() : " ",
+            Address: ($("#CustomerAddress").val() !== "") ? $("#CustomerAddress").val() : " ",
+            City: ($("#CustomerCity").val() !== "") ? $("#CustomerCity").val() : " ",
+            Zip: ($("#CustomerZipCode").val() !== "") ? $("#CustomerZipCode").val() : " ",
+            AccountBalance:0.00,
+            CreditLimit:0.00,
+            TotalSales:0.00,
+            AccountOpened: getFormattedDate(),
+            LastVisit: getFormattedDate(),
+            TotalVisits:0,
+            TotalSavings:0.00,
+            CurrentDiscount: parseFloat($("#CustomDisccount").val()),
+            PriceLevel: parseInt($("#Custompricelevel").val()),
+            TaxExempt: $("#chk_accg_exempttax").is(":checked"),
+            Notes: ($("#CustomNotes").val() !== "") ? $("#CustomNotes").val() : " ",
+            Title: ($("#CustomerTitle").val() !== "") ? $("#CustomerTitle").val() : " ",
+            EmailAddress: ($("#CustomerEmail").val() !== "") ? $("#CustomerEmail").val() : " ",
+            TaxNumber: ($("#CustomTaxIdNum").val() !== "") ? $("#CustomTaxIdNum").val() : " ",
+            PictureName: 'NR',
+            DefaultShippingServiceID:0,
+            PhoneNumber: ($("#CustomerTelefono").val() !== "") ? $("#CustomerTelefono").val() : " ",
+            FaxNumber: ($("#CustomerFax").val() !== "") ? $("#CustomerFax").val() : " ",
+            CashierID:0,
+            SalesRepID:0,
+            Vouchers:0.00
+        }
+
+        return data;
+
+    }
+
+    function tieneCuenta(num) {
+        var cuentaEncontrada = listAccounts.find(x => x.Number === num);
+        return cuentaEncontrada ? false : true;
+    }
+
+     function findCustomer(id) {
+         return list_customers.find(x => x.ID === id);
+    }
+
+    function findCustomerAccountNumber(accountNumber) {
+        return list_customers.find(x => x.AccountNumber === accountNumber);
+    }
+
+    function findExtCentralCustomer(id) {
+        return listExtCentralCustomer.find(x => x.CustomerID === id);
+    }
+    function findAccount(accountNumber) {
+        return listAccounts.find(x => x.Number === accountNumber);
+    }
+
+    function findBalCuenta(accountid) {
+        return listAccountBalance.find(x => x.ID === accountid);
+    }
+
+    function findBalCliente(accountid) {
+        return listCustomerBalance.find(x => x.ID === accountid);
+    }
+
+    function findStoreAccount(accountGroupID) {
+        return listExtCentralAccountGroup.find(x => x.AccountGroupID === accountGroupID)
+    }
+    function findStore(storeId) {
+        if (storeId.includes(',')) {
+            const storeIdsArray = storeId.split(',').map(id => id.trim());
+            return listStores.filter(x => storeIdsArray.includes(x.CodeS));
+        } else {
+            return listStores.find(x => x.CodeS === storeId);
+        }
+    }
+    function findAccountGroup(accountGroupID) {
+        return listAccountGroups.find(x => x.ID === accountGroupID)
+    }
+
+    function findEstadoTienda(accountID) {
+        return listAccountDynamic.find(x => x.AccountID === accountID)
+    }
+
+    function onClickBtnEditCustomer(id) {
+        var customer = findCustomer(id);
+        var extcentralCustomer = findExtCentralCustomer(id);
+        if (customer) {
+            newModal(false);
+            setCustomerInModal(extcentralCustomer, customer);
+        } else Toast.fire({ icon: "warning", title: "@Resources.messages.error_reg_edit_inval" });
+    }
+
+    function onClickBtnCuenta(accountNumber) {
+        var account = findAccount(accountNumber);
+        var AutoId = findCustomerAccountNumber(accountNumber);
+        var balCuenta = findBalCuenta(account.ID);
+        var balCliente = findBalCliente(account.ID);
+        var estadoTienda = findEstadoTienda(account.ID);
+        var storesGroupID = findStoreAccount(account.GroupID);
+        var accountGroup = findAccountGroup(account.GroupID);
+        var stores = findStore(storesGroupID.StoreID);
+
+        // Llamamos a getAccountStoreBalance y manejamos la promesa
+        getAccountStoreBalance(account.ID, account.GroupID)
+            .then(function (balances) {
+                if (account) {
+                    newModalAccount(true);
+                    setAccountInModal(account, balCuenta, balCliente, stores, accountGroup, balances, AutoId, estadoTienda);
+                } else {
+                    Toast.fire({ icon: "warning", title: "@Resources.messages.error_reg_edit_inval" });
+                }
+            })
+            .catch(function (error) {
+                // Manejar el error, por ejemplo, mostrar un mensaje de error.
+                console.error(error);
+                Toast.fire({ icon: "error", title: "Error al obtener el saldo de la cuenta" });
+            });
+    }
+
+
+    function setCustomerInModal(extcentralCustomer,customer) {
+        try {
+            $("#CustomAccountGroupId").val(extcentralCustomer.AccountGroupID).trigger('change');
+            $("#AccountNumber").val(customer.AccountNumber);
+            $("#CustomerAddress2").val(customer.Address2);
+            $("#CompanyCustomer").val(customer.Company);
+            $("#CustomerCountry").val(customer.Country);
+            $("#CustomText1").val(customer.CustomText1);
+            $("#CustomText2").val(customer.CustomText2);
+            $("#CustomText3").val(customer.CustomText3);
+            $("#CustomText4").val(customer.CustomText4);
+            $("#CustomText5").val(customer.CustomText5);
+            $("#CustomerState").val(customer.State);
+            $("#chk_accg_isemployee").prop("checked", customer.Employee);
+            $("#CustomerFirtName").val(customer.FirstName);
+            $("#CustomerLastName").val(customer.LastName);
+            $("#CustomerAddress").val(customer.Address);
+            $("#CustomerCity").val(customer.City);
+            $("#CustomerZipCode").val(customer.Zip);
+            parseFloat($("#CustomDisccount").val(customer.CurrentDiscount));
+            parseInt($("#Custompricelevel").val(customer.PriceLevel));
+            $("#chk_accg_exempttax").prop("checked", customer.TaxExempt);
+            $("#CustomNotes").val(customer.Notes);
+            $("#CustomerTitle").val(customer.Title);
+            $("#CustomerEmail").val(customer.EmailAddress);
+            $("#CustomTaxIdNum").val(customer.TaxNumber);
+            $("#CustomerTelefono").val(customer.PhoneNumber);
+            $("#CustomerFax").val(customer.FaxNumber);
+        }
+        catch (e) {
+            error(e, "@Resources.messages.error_mostrar_reg_edit");
+        }
+    }
+
+    function setAccountInModal(account, balCuenta, balCliente, stores, accountGroup, balances, AutoId, estadoTienda) {
+        try {
+            autoCustomerID = AutoId.AutoID;
+            $("#AccountNumberAccount").val(account.Number);
+            $("#tipoCuenta").val(account.Type).trigger('change');
+            $("#AccountTitle").val(account.Title);
+            $("#AccountPNombre").val(account.FirstName);
+            $("#AccountSNombre").val(account.MiddleName);
+            $("#AccountApellido").val(account.LastName);
+            $("#AccountSufijo").val(account.Suffix);
+            $("#AccountEmp").val(account.Company);
+            $("#AccountNom").val(account.Name);
+            $("#AccountRol").val(account.Role).trigger('change');
+            $("#AccountGrupo").prop("disabled", true).val(account.GroupID).trigger('change');
+            $("#AccountGestor").val(account.ManagerID).trigger('change');
+            $("#AccountEstado").val(account.Status).trigger('change');
+            if (balCuenta && balCuenta.Amount !== undefined) {
+                $("#AccountBalan").val(balCuenta.Amount);
+            } else {
+                $("#AccountBalan").val(0);
+            }
+
+            if (balCuenta && balCuenta.AmountLCY !== undefined) {
+                $("#AccountSalVen").val(balCuenta.AmountLCY);
+            } else {
+                $("#AccountSalVen").val(0);
+            }
+            $("#AccountLimCre").val(account.CreditLimit);
+            $("#AccountFechCierre").prop("disabled", true).val(convertirFormatoFecha(account.ClosingDate));
+            $("#AccountBalanCierre").val(account.ClosingBalance);
+            $("#AccountFechAper").prop("disabled", true).val(convertirFormatoFecha(account.DateOpened));
+            $("#AccountFechLastUp").prop("disabled", true).val(convertirFormatoFecha(account.LastActivity));
+            selectAndRemoveOptions(stores.IDS, true);
+            if (estadoTienda && estadoTienda.Status !== undefined) {
+                $("#AccountEstTienda").val(estadoTienda.Status);
+            } else {
+                $("#AccountEstTienda").val(0);
+            }
+            $("#AccountLimCreTienda").val(accountGroup.CreditLimit);
+            $("#AccountBalanXTienda").val(balances[0].Balance);
+            $("#AccountBalanDueXTienda").val(balances[0].BalanceDue);
+            $("#AccountUltActTienda").prop("disabled", true).val(getFormattedDate());
+            $("#AccountDirecc1").val(account.Address1);
+            $("#AccountDirecc2").val(account.Address2);
+            $("#AccountCiudad").val(account.City);
+            $("#AccountEstadoLugar").val(account.State);
+            $("#Accountzip").val(account.Zip);
+            $("#AccountPais").val(account.Country).trigger('change');
+            $("#AccountNumTel").val(account.PhoneNumber);
+            $("#AccountNumMov").val(account.MovileNumber);
+            $("#AccountNumFax").val(account.FaxNumber);
+            $("#AccountEmail").val(account.EMail);
+            $("#AccountPagIni").val(account.HomePage);
+            $("#AccountTermPag").val(account.PayTermsID).trigger('change');
+            $("#AccountCarFin").val(account.FinChargeID).trigger('change');
+            $("#AccountUltEst").val(account.LastStatement);
+            if (balCliente && balCliente.Amount !== undefined) {
+                $("#AccountBalCli").val(balCliente.Amount);
+            } else {
+                $("#AccountBalCli").val(0);
+            }
+            $("#AccountMetApli").val(account.ApplicationMethod).trigger('change');
+            $("#AccountTip").val(account.StatementType).trigger('change');
+            $("#AccountEnt").val(account.StatementDelivery).trigger('change');
+            $("#AccountEmail2").val(account.EMail);
+            $("#AccountText1").val(account.CustomText1);
+            $("#AccountText2").val(account.CustomText2);
+            $("#AccountText3").val(account.CustomText3);
+            $("#AccountText4").val(account.CustomText4);
+            $("#AccountText5").val(account.CustomText5);
+            $("#Accountdate1").val(account.CustomDate1);
+            $("#Accountdate2").val(account.CustomDate2);
+            $("#Accountdate3").val(account.CustomDate3);
+            $("#Accountdate4").val(account.CustomDate4);
+            $("#Accountdate5").val(account.CustomDate5);
+            $("#AccountTelf1").val(account.CustomNumber1);
+            $("#AccountTelf2").val(account.CustomNumber2);
+            $("#AccountTelf3").val(account.CustomNumber3);
+            $("#AccountTelf4").val(account.CustomNumber4);
+            $("#AccountTelf5").val(account.CustomNumber5);
+            $("#AccountNotes").val(account.Notes);
+        }
+        catch (e) {
+            error(e, "@Resources.messages.error_mostrar_reg_edit");
+        }
+    }
+
+    async function SaveCustomer() {
+        try {
+            var prefijo = getPrefixFromSelect();
+            var accountGroupID = getAccountGroupIDFromSelect();
+            var customer = getCustomerFromModal();
+            await $.post(url_saveCustomer, { prefijo, accountGroupID, customer }, "json")
+            .done(function (data) {
+                if (data.Status) {
+                    Toast.fire({ icon: 'success', title: data.Message });
+                    $('#modal_customer').modal('hide');
+                    getAllCustomers();
+                } else {
+                    Toast.fire({ icon: 'error', title: data.Message });
+                }
+            })
+            .fail(function () {
+                error("ERROR AL GUARDAR", "@Resources.messages.error_intento_guardar");
+            })
+            .always(function () {
+            });
+        } catch (e) { error(e, "@Resources.messages.error_intento_guardar"); }
+    }
+    // CUENTAS
+    function fillSelect2AccountGroups() {
+            var aux = $("<p/>")
+            aux.html('@Resources.views.accountgroup');
+            select_categs = $('#AccountGrupo').select2({
+                placeholder: aux.text(),
+                data: getAccountGroupsToDataSelect2(),
+                theme: 'bootstrap4'
+            });
+    }
+
+        /** Clona la lista de categorías a otra lista data con elementos de {id, text} para el select2bs4*/
+    function getAccountGroupsToDataSelect2() {
+        return listAccountGroups.map(d => { return { 'id': d.ID, 'text': "Código: " + d.Code + " | " + "Nombre: " + d.Name, 'value': d.ID } });
+    }
+
+    function fillSelect2ManagerAccount() {
+            var aux = $("<p/>")
+            aux.html('@Resources.views.gerenteCuentas');
+            select_categs = $('#AccountGestor').select2({
+                placeholder: aux.text(),
+                data: getManagerAccountToDataSelect2(),
+                theme: 'bootstrap4'
+            });
+    }
+
+        /** Clona la lista de categorías a otra lista data con elementos de {id, text} para el select2bs4*/
+    function getManagerAccountToDataSelect2() {
+        return listAccountManager.map(d => { return { 'id': d.ID, 'text': "Código: " + d.Code + " | " + "Nombre: " + d.Name, 'value': d.ID } });
+    }
+
+    function fillSelect2Payterms() {
+            var aux = $("<p/>")
+            aux.html('@Resources.views.paymentTerms');
+            select_categs = $('#AccountTermPag').select2({
+                placeholder: aux.text(),
+                data: getPaytermsToDataSelect2(),
+                theme: 'bootstrap4'
+            });
+    }
+
+        /** Clona la lista de categorías a otra lista data con elementos de {id, text} para el select2bs4*/
+    function getPaytermsToDataSelect2() {
+        return listPaymentTerms.map(d => { return { 'id': d.ID, 'text': "Código: " + d.Code + " | " + "Nombre: " + d.Name, 'value': d.ID } });
+    }
+
+    function fillSelect2FinanceCharge() {
+            var aux = $("<p/>")
+            aux.html('@Resources.views.cargoFi');
+        select_categs = $('#AccountCarFin').select2({
+                placeholder: aux.text(),
+                data: getFinanceChargeToDataSelect2(),
+                theme: 'bootstrap4'
+            });
+    }
+
+        /** Clona la lista de categorías a otra lista data con elementos de {id, text} para el select2bs4*/
+    function getFinanceChargeToDataSelect2() {
+        return listFinanceCharge.map(d => { return { 'id': d.ID, 'text': "Código: " + d.Code + " | " + "Nombre: " + d.Name, 'value': d.ID } });
+    }
+
+    function fillSelect2StatementType() {
+            var aux = $("<p/>")
+            aux.html('@Resources.views.select_statementtype');
+        select_categs = $('#AccountTip').select2({
+                placeholder: aux.text(),
+                data: getStatementTypeToDataSelect2(),
+                theme: 'bootstrap4'
+            });
+    }
+
+        /** Clona la lista de categorías a otra lista data con elementos de {id, text} para el select2bs4*/
+    function getStatementTypeToDataSelect2() {
+        return listStatementType.map(d => { return { 'id': d.ID, 'text': "Código: " + d.Code + " | " + "Nombre: " + d.Name, 'value': d.ID } });
+    }
+
+    function fillSelect2Stores() {
+            var aux = $("<p/>")
+            aux.html('@Resources.views.accountgroup');
+            select_categs = $('#AccountIdTienda').select2({
+                placeholder: aux.text(),
+                data: getStoresToDataSelect2(),
+                theme: 'bootstrap4'
+            });
+    }
+
+        /** Clona la lista de categorías a otra lista data con elementos de {id, text} para el select2bs4*/
+    function getStoresToDataSelect2() {
+        return listStores.map(d => { return { 'id': d.IDS, 'text': "Código: " + d.CodeS + " | " + "Nombre: " + d.NameS, 'value': d.ID } });
+    }
+
+
+    function selectAndRemoveOptions(optionIds, isFirstIteration) {
+        var select_categs = $('#AccountIdTienda');
+        var data = getStoresToDataSelect2();
+
+        // Asegúrate de que optionIds sea un array de cadenas
+        if (!Array.isArray(optionIds)) {
+            optionIds = [optionIds.toString()];
+        }
+
+        if (isFirstIteration === true) {
+            select_categs.empty();
+        }
+
+        var selectedStores = data.filter(function (item) {
+            return optionIds.includes(item.id.toString());
+        });
+
+        // Limpia la selección anterior
+        select_categs.val(null).trigger('change');
+
+        // Agrega las tiendas correspondientes
+        select_categs.select2({
+            data: selectedStores,
+            theme: 'bootstrap4'
+        });
+
+        select_categs.val(optionIds).trigger('change');
+    }
+
+
+    function convertirFormatoFecha(cadenaFecha) {
+        // Verificar si la cadena de fecha es null o indefinida
+        if (cadenaFecha === null || cadenaFecha === undefined) {
+            return "No hay fecha";
+        }
+
+        // Verificar si la cadena de fecha contiene un número de milisegundos
+        var match = cadenaFecha.match(/\d+/);
+        if (match) {
+            var fechaEnMilisegundos = parseInt(match[0], 10);
+            var fechaObjeto = new Date(fechaEnMilisegundos);
+            var dia = fechaObjeto.getDate();
+            var mes = fechaObjeto.getMonth() + 1; // Sumar 1 al mes (comienza desde 0)
+            var año = fechaObjeto.getFullYear();
+            return `${dia < 10 ? '0' : ''}${dia}-${mes < 10 ? '0' : ''}${mes}-${año}`;
+        } else {
+            // Si la cadena no contiene milisegundos, asumimos que es una fecha válida
+            var fechaObjeto = new Date(cadenaFecha);
+            if (!isNaN(fechaObjeto.getTime())) {
+                var dia = fechaObjeto.getDate();
+                var mes = fechaObjeto.getMonth() + 1; // Sumar 1 al mes (comienza desde 0)
+                var año = fechaObjeto.getFullYear();
+                return `${dia < 10 ? '0' : ''}${dia}-${mes < 10 ? '0' : ''}${mes}-${año}`;
+            }
+        }
+
+        return "Fecha inválida";
+    }
+
+    function findCustomerAccountNumber(accountNumber) {
+        return list_customers.find(x => x.AccountNumber === accountNumber);
+    }
+
+    function onClickBtnCrearCuenta(accountNumber) {
+        var customer = findCustomerAccountNumber(accountNumber);
+         if (customer) {
+             newModalAccount(true);
+             $("#AccountGrupo").prop("disabled", false);
+             setCustomerAccountInModal(customer);
+             $("#AccountGrupo").on("change", function () {
+                 var selectedValue = $(this).val();
+                 var intSelectedValue = +selectedValue;
+                 var accountGroup = findAccountGroup(intSelectedValue);
+                 var extCentralAccountGroup = findStoreAccount(intSelectedValue);
+                 var accountGroupStores = findStore(extCentralAccountGroup.StoreID);
+                 selectAndRemoveOptions(accountGroupStores, true);
+                 setAccountGroupInModal(accountGroup, extCentralAccountGroup, accountGroupStores);
+
+             });
+        }else Toast.fire({ icon: "warning", title: "@Resources.messages.error_reg_edit_inval" });
+
+    }
+    function setCustomerAccountInModal(customer) {
+        try {
+            autoCustomerID = customer.AutoID;
+            $("#AccountNumberAccount").val(customer.AccountNumber);
+            $("#AccountTitle").val(customer.Title);
+            $("#AccountNom").val(customer.FirstName);
+            $("#AccountEstadoLugar").val(customer.State);
+            $("#Accountzip").val(customer.Zip);
+            $("#AccountPais").val(customer.Country).trigger('change');
+            $("#AccountNumTel").val(customer.PhoneNumber);
+            $("#AccountNumFax").val(customer.FaxNumber);
+            $("#AccountEmail").val(customer.EmailAddress);
+            $("#AccountEmail2").val(customer.EmailAddress);
+            $("#AccountDirecc1").val(customer.Address);
+            $("#AccountEmp").val(customer.Company);
+            $("#AccountApellido").val(customer.LastName);
+            $("#AccountDirecc2").val(customer.Address2);
+            $("#AccountText1").val(customer.CustomText1);
+            $("#AccountText2").val(customer.CustomText2);
+            $("#AccountText3").val(customer.CustomText3);
+            $("#AccountText4").val(customer.CustomText4);
+            $("#AccountText5").val(customer.CustomText5);
+            $("#Accountdate1").val(customer.CustomDate1);
+            $("#Accountdate2").val(customer.CustomDate2);
+            $("#Accountdate3").val(customer.CustomDate3);
+            $("#Accountdate4").val(customer.CustomDate4);
+            $("#Accountdate5").val(customer.CustomDate5);
+            $("#AccountTelf1").val(customer.CustomNumber1);
+            $("#AccountTelf2").val(customer.CustomNumber2);
+            $("#AccountTelf3").val(customer.CustomNumber3);
+            $("#AccountTelf4").val(customer.CustomNumber4);
+            $("#AccountTelf5").val(customer.CustomNumber5);
+            $("#AccountNotes").val(customer.Notes);
+            $("#AccountBalan").val(0);
+            $("#AccountSalVen").val(0);
+            $("#AccountBalanCierre").val(0);
+            $("#AccountBalanXTienda").val(0);
+            $("#AccountBalanDueXTienda").val(0);
+            $("#AccountBalCli").val(0);
+            $("#AccountFechAper").val(getFormattedDate());
+            $("#AccountFechLastUp").val(getFormattedDate());
+            }
+        catch (e) {
+            error(e, "@Resources.messages.error_mostrar_reg_edit");
+        }
+    }
+
+    function setAccountGroupInModal(accountGroup, extCentralAccountGroup, accountGroupStores) {
+        try {
+            $("#AccountSufijo").prop("disabled", true).val(extCentralAccountGroup.Prefix);
+            $("#AccountTermPag").prop("disabled", true).val(accountGroup.PayTermsId).trigger('change');
+            $("#AccountCarFin").prop("disabled", true).val(accountGroup.FinChargeID).trigger('change');
+            $("#AccountGestor").prop("disabled", true).val(accountGroup.ManagerID).trigger('change');
+            $("#AccountLimCre").prop("disabled", true).val(accountGroup.CreditLimit);
+            $("#AccountLimCreTienda").prop("disabled", true).val(accountGroup.CreditLimit);
+            $("#AccountTip").prop("disabled", true).val(accountGroup.StatementType).trigger('change');
+            $("#AccountMetApli").prop("disabled", true).val(accountGroup.ApplicationMethod).trigger('change');
+
+            // Divide extCentralAccountGroup.StoreID en un array de IDs
+            var storeIds = extCentralAccountGroup.StoreID.split(',');
+
+            // Llama a selectAndRemoveOptions con los IDs de tiendas correspondientes
+            selectAndRemoveOptions(storeIds, isFirstIteration);
+
+            $("#AccountUltActTienda").prop("disabled", true).val(getFormattedDate());
+        } catch (e) {
+            error(e, "@Resources.messages.error_mostrar_reg_edit");
+        }
+    }
+
+
+
+    function getAccountFromModal() {
+        var data = {
+            LastUpdated: getFormattedDate(),
+            Number: $("#AccountNumberAccount").val(),
+            Name: ($("#AccountNom").val() !== "") ? $("#AccountNom").val() : " ",
+            ExtCode:" ",
+            Title: ($("#AccountTitle").val() !== "") ? $("#AccountTitle").val() : " ",
+            FirstName: ($("#AccountPNombre").val() !== "") ? $("#AccountPNombre").val() : " ",
+            MiddleName: ($("#AccountSNombre").val() !== "") ? $("#AccountSNombre").val() : " ",
+            LastName: ($("#AccountApellido").val() !== "") ? $("#AccountApellido").val() : " ",
+            Suffix: ($("#AccountSufijo").val() !== "") ? $("#AccountSufijo").val() : " ",
+            Company: ($("#AccountEmp").val() !== "") ? $("#AccountEmp").val() : " ",
+            JobTitle: " ",
+            Type: $("#tipoCuenta").val(),
+            Role: $("#AccountRol").val(),
+            Status: $("#AccountEstado").val(),
+            BillingAccount: 0,
+            GroupID: ($("#AccountGrupo").val() !== null) ? $("#AccountGrupo").val() : 0,
+            PayTermsID: ($("#AccountTermPag").val() !== null) ? $("#AccountTermPag").val() : 0,
+            FinChargeID: ($("#AccountCarFin").val() !== null) ? $("#AccountCarFin").val() : 0,
+            CurrencyID:0,
+            ManagerID: ($("#AccountGestor").val() !== null) ? $("#AccountGestor").val() : 0,
+            CountryID: 0,
+            RegionID: 0,
+            LocationID: 0,
+            Address1: ($("#AccountDirecc1").val() !== "") ? $("#AccountDirecc1").val() : " ",
+            Address2: ($("#AccountDirecc2").val() !== "") ? $("#AccountDirecc2").val() : " ",
+            City: ($("#AccountCiudad").val() !== "") ? $("#AccountCiudad").val() : " ",
+            State: ($("#AccountEstadoLugar").val() !== "") ? $("#AccountEstadoLugar").val() : " ",
+            Zip: ($("#Accountzip").val() !== "") ? $("#Accountzip").val() : " ",
+            Country: " ",
+            PhoneNumber: ($("#AccountNumTel").val() !== "") ? $("#AccountNumTel").val() : " ",
+            MovileNumber: ($("#AccountNumMov").val() !== "") ? $("#AccountNumMov").val() : " ",
+            FaxNumber: ($("#AccountNumFax").val() !== "") ? $("#AccountNumFax").val() : " ",
+            Email: ($("#AccountEmail").val() !== "") ? $("#AccountEmail").val() : " ",
+            HomePage: ($("#AccountPagIni").val() !== "") ? $("#AccountPagIni").val() : " ",
+            IMAddress: " ",
+            CreditLimit: $("#AccountLimCre").val(),
+            CreditLimitCheck: $("#AccountRevLimCre").val(),
+            StatementType: ($("#AccountTip").val() !== null) ? $("#AccountTip").val() : 0,
+            StatementDelivery: $("#AccountEnt").val(),
+            StatementAddress: $("#AccountEmail2").val(),
+            ApplicationMethod: ($("#AccountMetApli").val() !== null) ? $("#AccountMetApli").val() : 0,
+            ClosingDate: null,
+            ClosingBalance: $("#AccountBalanCierre").val(),
+            LastStatement: $("#AccountUltEst").val(),
+            CustomCode1:0,
+            CustomCode2:0,
+            CustomCode3:0,
+            CustomCode4:0,
+            CustomCode5:0,
+            CustomText1: ($("#AccountText1").val() !== "") ? $("#AccountText1").val() : " ",
+            CustomText2: ($("#AccountText2").val() !== "") ? $("#AccountText2").val() : " ",
+            CustomText3: ($("#AccountText3").val() !== "") ? $("#AccountText3").val() : " ",
+            CustomText4: ($("#AccountText4").val() !== "") ? $("#AccountText4").val() : " ",
+            CustomText5: ($("#AccountText5").val() !== "") ? $("#AccountText5").val() : " ",
+            CustomNumber1: $("#AccountTelf1").val(),
+            CustomNumber2: $("#AccountTelf2").val(),
+            CustomNumber3: $("#AccountTelf3").val(),
+            CustomNumber4: $("#AccountTelf4").val(),
+            CustomNumber5: $("#AccountTelf5").val(),
+            CustomDate1: $("#Accountdate1").val(),
+            CustomDate2: $("#Accountdate2").val(),
+            CustomDate3: $("#Accountdate3").val(),
+            CustomDate4: $("#Accountdate4").val(),
+            CustomDate5: $("#Accountdate5").val(),
+            Picture: null,
+            Notes: $("#AccountNotes").val(),
+            ExtData: null,
+            DateOpened: getFormattedDate(),
+            LastActivity: getFormattedDate(),
+            StoreID:1,
+        }
+
+        return data;
+
+    }
+
+    function getAccountDynamicFromModal() {
+        var data1 = {
+            StoreID: $("#AccountIdTienda").val(),
+            Status: $("#AccountEstTienda").val(),
+            CreditLimit: $("#AccountLimCreTienda").val(),
+            LastUpdated: getFormattedDate()
+        }
+        return data1;
+    }
+
+    function getAutoID() {
+        var data2 = {
+            LinkID: autoCustomerID
+        }
+        return data2;
+    }
+
+    async function SaveAccount() {
+        try {
+            var account = getAccountFromModal();
+            var accountDynamic = getAccountDynamicFromModal();
+            var accountLink = getAutoID();
+            await $.post(url_saveAccount, { account, accountDynamic, accountLink }, "json")
+            .done(function (data) {
+                if (data.Status) {
+                    Toast.fire({ icon: 'success', title: data.Message });
+                    $('#modal_account').modal('hide');
+                    getAllCustomers();
+                } else {
+                    Toast.fire({ icon: 'error', title: data.Message });
+                }
+            })
+            .fail(function () {
+                error("ERROR AL GUARDAR", "@Resources.messages.error_intento_guardar");
+            })
+            .always(function () {
+            });
+        } catch (e) { error(e, "@Resources.messages.error_intento_guardar"); }
+    }
+</script>
+

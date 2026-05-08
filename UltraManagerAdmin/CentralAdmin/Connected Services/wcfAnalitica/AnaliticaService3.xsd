@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="http://tempuri.org/" elementFormDefault="qualified" targetNamespace="http://tempuri.org/" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="http://192.168.137.219:7580/UltraERP_Service/AnaliticaService.svc?xsd=xsd2" namespace="http://schemas.datacontract.org/2004/07/Analitic.Entities" />
+  <xs:import schemaLocation="http://192.168.137.219:7580/UltraERP_Service/AnaliticaService.svc?xsd=xsd3" namespace="http://schemas.microsoft.com/2003/10/Serialization/Arrays" />
+  <xs:element name="GetAllGraphics">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storeID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="codSucursal" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="usersID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="busqueda" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="fromDate" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="toDate" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="tipo" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllGraphicsResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q1="http://schemas.datacontract.org/2004/07/Analitic.Entities" minOccurs="0" name="GetAllGraphicsResult" nillable="true" type="q1:ArrayOfEN_Graphics" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllAsientos">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="hqUsersID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="searchValue" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="estadoAsiento" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="orderColumn" type="xs:int" />
+        <xs:element minOccurs="0" name="orderDirection" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="skip" type="xs:int" />
+        <xs:element minOccurs="0" name="take" type="xs:int" />
+        <xs:element minOccurs="0" name="fromDate" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="toDate" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllAsientosResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q2="http://schemas.datacontract.org/2004/07/Analitic.Entities" minOccurs="0" name="GetAllAsientosResult" nillable="true" type="q2:ArrayOfEN_Asientos" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetCountRecordAsientosERP">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="hqUsersID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="searchValue" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="estadoAsiento" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="fromDate" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="toDate" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetCountRecordAsientosERPResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q3="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="GetCountRecordAsientosERPResult" nillable="true" type="q3:ArrayOfKeyValueOfstringint" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllDocsERP">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="hqUsersID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="searchValue" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="tipoDocumento" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="orderColumn" type="xs:int" />
+        <xs:element minOccurs="0" name="orderDirection" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="skip" type="xs:int" />
+        <xs:element minOccurs="0" name="take" type="xs:int" />
+        <xs:element minOccurs="0" name="fromDate" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="toDate" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllDocsERPResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q4="http://schemas.datacontract.org/2004/07/Analitic.Entities" minOccurs="0" name="GetAllDocsERPResult" nillable="true" type="q4:ArrayOfEN_DocumentosERP" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetCountRecordDocsERP">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="hqUsersID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="searchValue" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="tipoDocumento" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="fromDate" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="toDate" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetCountRecordDocsERPResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q5="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="GetCountRecordDocsERPResult" nillable="true" type="q5:ArrayOfKeyValueOfstringint" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

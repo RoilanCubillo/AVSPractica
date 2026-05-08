@@ -1,0 +1,91 @@
+﻿<?xml version="1.0" encoding="utf-8"?><Database Name="AVS_ANALITICA" Class="AnaliticDBDataContext" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
+  <Connection Mode="AppSettings" ConnectionString="Data Source=186.15.40.104,1762\ARES;Initial Catalog=AVS_ANALITICA;Persist Security Info=True;User ID=sa" SettingsObjectName="Analitic.DataAccess.Properties.Settings" SettingsPropertyName="AVS_ANALITICAConnectionString" Provider="System.Data.SqlClient" />
+  <Function Name="dbo.UEP_ANALITICA_GRAPHICS_GETALL" Method="UEP_ANALITICA_GRAPHICS_GETALL">
+    <Parameter Name="STORE_ID" Parameter="sTORE_ID" Type="System.String" DbType="VarChar(2)" />
+    <Parameter Name="COD_SUCURSAL" Parameter="cOD_SUCURSAL" Type="System.String" DbType="VarChar(3)" />
+    <Parameter Name="USERS_ID" Parameter="uSERS_ID" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="SearchValue" Parameter="searchValue" Type="System.String" DbType="NVarChar(100)" />
+    <Parameter Name="FROMDATE" Parameter="fROMDATE" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="TODATE" Parameter="tODATE" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="TIPO" Parameter="tIPO" Type="System.String" DbType="VarChar(30)" />
+    <ElementType Name="UEP_ANALITICA_GRAPHICS_GETALLResult">
+      <Column Name="Meses" Type="System.String" DbType="NVarChar(30)" CanBeNull="true" />
+      <Column Name="Num_Mes" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="Primer_Dia" Type="System.String" DbType="NVarChar(12) NOT NULL" CanBeNull="false" />
+      <Column Name="Ultimo_Dia" Type="System.DateTime" DbType="Date" CanBeNull="true" />
+      <Column Name="Doc_Aceptados" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="Doc_Rechazados" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="Tot_Doc_Aceptados" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Tot_Doc_Rechazados" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ASIENTOS_ERP_GETALL" Method="UEP_ASIENTOS_ERP_GETALL">
+    <Parameter Name="STORES" Parameter="sTORES" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="USERS_ID" Parameter="uSERS_ID" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="SearchValue" Parameter="searchValue" Type="System.String" DbType="NVarChar(100)" />
+    <Parameter Name="EstadoAsiento" Parameter="estadoAsiento" Type="System.String" DbType="NVarChar(10)" />
+    <Parameter Name="OrderColumn" Parameter="orderColumn" Type="System.Int32" DbType="Int" />
+    <Parameter Name="OrderDirection" Parameter="orderDirection" Type="System.String" DbType="NVarChar(4)" />
+    <Parameter Name="Skip" Parameter="skip" Type="System.Int32" DbType="Int" />
+    <Parameter Name="Take" Parameter="take" Type="System.Int32" DbType="Int" />
+    <Parameter Name="FROMDATE" Parameter="fROMDATE" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="TODATE" Parameter="tODATE" Type="System.String" DbType="VarChar(30)" />
+    <ElementType Name="UEP_ASIENTOS_ERP_GETALLResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Codigo_negocio" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Nombre_negocio" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+      <Column Name="Descripcion" Type="System.String" DbType="VarChar(80)" CanBeNull="true" />
+      <Column Name="Referencia" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+      <Column Name="Fecha_asiento" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="Fecha_Sync" Type="System.DateTime" DbType="DateTime" CanBeNull="true" />
+      <Column Name="Detalle_Sync" Type="System.String" DbType="VarChar(80)" CanBeNull="true" />
+      <Column Name="Estado_Sync" Type="System.Int32" DbType="Int" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_ASIENTOS_ERP_GET_COUNT_RECORDS" Method="UEP_ASIENTOS_ERP_GET_COUNT_RECORDS">
+    <Parameter Name="STORES" Parameter="sTORES" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="USERS_ID" Parameter="uSERS_ID" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="SearchValue" Parameter="searchValue" Type="System.String" DbType="NVarChar(100)" />
+    <Parameter Name="EstadoAsiento" Parameter="estadoAsiento" Type="System.String" DbType="NVarChar(10)" />
+    <Parameter Name="FROMDATE" Parameter="fROMDATE" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="TODATE" Parameter="tODATE" Type="System.String" DbType="VarChar(30)" />
+    <ElementType Name="UEP_ASIENTOS_ERP_GET_COUNT_RECORDSResult">
+      <Column Name="TOTAL_RECORDS" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="TOTAL_FILTERED" Type="System.Int32" DbType="Int" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_DOCUMENTOSERP_GET_COUNT_RECORDS" Method="UEP_DOCUMENTOSERP_GET_COUNT_RECORDS">
+    <Parameter Name="STORES" Parameter="sTORES" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="USERS_ID" Parameter="uSERS_ID" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="SearchValue" Parameter="searchValue" Type="System.String" DbType="NVarChar(100)" />
+    <Parameter Name="TIPO_DOCUMENTO" Parameter="tIPO_DOCUMENTO" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="FROMDATE" Parameter="fROMDATE" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="TODATE" Parameter="tODATE" Type="System.String" DbType="VarChar(30)" />
+    <ElementType Name="UEP_DOCUMENTOSERP_GET_COUNT_RECORDSResult">
+      <Column Name="TOTAL_RECORDS" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="TOTAL_FILTERED" Type="System.Int32" DbType="Int" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.UEP_DOCUMENTOSERP_GETALL" Method="UEP_DOCUMENTOSERP_GETALL">
+    <Parameter Name="STORES" Parameter="sTORES" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="USERS_ID" Parameter="uSERS_ID" Type="System.String" DbType="VarChar(1000)" />
+    <Parameter Name="SearchValue" Parameter="searchValue" Type="System.String" DbType="NVarChar(100)" />
+    <Parameter Name="TIPO_DOCUMENTO" Parameter="tIPO_DOCUMENTO" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="OrderColumn" Parameter="orderColumn" Type="System.Int32" DbType="Int" />
+    <Parameter Name="OrderDirection" Parameter="orderDirection" Type="System.String" DbType="NVarChar(4)" />
+    <Parameter Name="Skip" Parameter="skip" Type="System.Int32" DbType="Int" />
+    <Parameter Name="Take" Parameter="take" Type="System.Int32" DbType="Int" />
+    <Parameter Name="FROMDATE" Parameter="fROMDATE" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="TODATE" Parameter="tODATE" Type="System.String" DbType="VarChar(30)" />
+    <ElementType Name="UEP_DOCUMENTOSERP_GETALLResult">
+      <Column Name="StoreID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Documento" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="FechaEnvio" Type="System.DateTime" DbType="DateTime NOT NULL" CanBeNull="false" />
+      <Column Name="RespuestaEnvio" Type="System.String" DbType="NVarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="DetallesEnvio" Type="System.String" DbType="NVarChar(800) NOT NULL" CanBeNull="false" />
+      <Column Name="Status" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Tipo" Type="System.String" DbType="NVarChar(50) NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+</Database>

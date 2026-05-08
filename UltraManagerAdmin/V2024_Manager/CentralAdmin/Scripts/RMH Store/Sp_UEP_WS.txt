@@ -1,0 +1,2150 @@
+﻿
+/****** Object:  StoredProcedure [dbo].[UEP_WS_CHANGE_ITEM_ACTIVATE_STORE]    Script Date: 11/06/2024 10:35:48 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[UEP_WS_CHANGE_ITEM_ACTIVATE_STORE] (@STORES VARCHAR(MAX), @TITLE VARCHAR(50), @NOTES VARCHAR(225), @EFFECTIVEDATE DATETIME, @USER_ID VARCHAR(30), @WORKSHEETCONTENTID INT)
+
+AS
+
+BEGIN
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- PARA RESULTADOS DEL PROCEDIMIENTO --
+	DECLARE @RESPUESTA VARCHAR(MAX) = ''
+	DECLARE @ERROR VARCHAR(MAX) = ''
+	DECLARE @LASTACTION VARCHAR(50) = ''
+	DECLARE @EXISTS_SUPPLIERLIST INT = 0
+	DECLARE @EXISTS_ITEMEXT INT = 0
+	DECLARE @STATUS BIT = 1
+	DECLARE @ERROR_NUMBER INT = 0
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- PARA ALBERGAR LA INFO AL RECORRER LOS ITEMS DEL BULKCOPY --
+	DECLARE @ID INT
+	DECLARE @SUPPLIERID INT
+	DECLARE @SUPPLIERCODE VARCHAR(30)
+	DECLARE @ITEMTAXID INT
+	DECLARE @ITEMLOOKUPCODE VARCHAR(25)
+	DECLARE @GROSSCOST VARCHAR(30)
+	DECLARE @UTILITY VARCHAR(30)
+	DECLARE @INVOICEDISCOUNT VARCHAR(30)
+	DECLARE @CUSTOMERDISCOUNT VARCHAR(30)
+	DECLARE @TAXRATE FLOAT
+	DECLARE @TAXRATENAME VARCHAR (50)
+	DECLARE @COSTDISCOUNT MONEY = 0
+	DECLARE @MSRP MONEY = 0
+	DECLARE @SYNCGUID UNIQUEIDENTIFIER
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	DECLARE @USER_NAME VARCHAR(50) = (SELECT UserName FROM HQUser WHERE ID = @USER_ID)
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- PARA ALMACENAR LOS ITEMS EN UNA VARIABLE Y RECORRERLOS --
+	DECLARE @TBL_ITEMS TABLE (ID INT, SupplierID INT, SupplierCode VARCHAR(30), ItemLookupCode VARCHAR(25), GrossCost VARCHAR(30), Utility VARCHAR(30), InvoiceDiscount VARCHAR(30), CustomerDiscount VARCHAR(30))
+	INSERT INTO @TBL_ITEMS (ID, SupplierID, SupplierCode, ItemLookupCode, GrossCost, Utility, InvoiceDiscount, CustomerDiscount)
+	SELECT [ID], SupplierID, [SupplierCode], [ItemLookupCode], GrossCost, [Utility], [InvoiceDiscount], [CustomerDiscount] FROM ##TablaItemActivate
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- PARA RECORRER LOS ITEMS DEL BULKCOPY --
+	DECLARE LIST_ITEMS_BULKCOPY CURSOR
+	FOR SELECT [ID], [SupplierID], [SupplierCode], [ItemLookupCode], [GrossCost], [Utility], [InvoiceDiscount], [CustomerDiscount] FROM @TBL_ITEMS
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- PARA RECORRER LAS TIENDAS Y GENERAR SUS HOJAS DE TRABAJO --
+	DECLARE @STOREID INT
+	DECLARE @WORKSHEETID INT
+	DECLARE @TBL_WORKSHEETSTORES TABLE (WORKSHEET_ID INT, STORE_ID INT)
+	DECLARE LIST_STORES CURSOR FOR
+	SELECT DISTINCT CONVERT(INT, VALUE) FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> ''
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- ABRIR CURSOR DE LAS TIENDAS --
+	OPEN LIST_STORES
+	FETCH NEXT FROM LIST_STORES INTO @STOREID
+
+	-- RECORRER CURSOR DE TIENDAS --
+	WHILE @@FETCH_STATUS = 0 BEGIN
+		-- CREAR WORKSHEET --
+		INSERT [Worksheet] (Style, EffectiveDate, [Status], Notes, Title, FromDate)
+		VALUES (261, @EFFECTIVEDATE, 1, @NOTES, @TITLE, GETDATE())
+		SET @WORKSHEETID = CONVERT(INT, SCOPE_IDENTITY())
+		SET @LASTACTION = 'CREAR HOJA DE TRABAJO'
+
+		-- ASIGNAR TIENDA A HOJA DE TRABAJO --
+		INSERT [WorksheetStore] (WorksheetID, StoreID, [Status], Originator, DateProcessed)
+		VALUES (@WORKSHEETID, @STOREID, 1, 0, NULL)
+		SET @LASTACTION = 'ASIGNAR TIENDAS A HOJA DE TRABAJO'
+
+		-- ASIGNAR HISTORICO POR TIENDA A LA HOJA --
+		INSERT INTO WorksheetHistory (WorksheetID, [Status], HistoryDate, HQEntry, StoreID, Comment)
+		VALUES (@WORKSHEETID, 1, GETDATE(), 1, @STOREID, CONCAT('Creado por ', @USER_NAME, ' desde Central Wizard.'))
+		SET @LASTACTION = 'ASIGNAR HISTORICO DE REGISTRO DE TIENDAS A HOJA DE TRABAJO'
+
+		-- GUARDAR ESTADO DE INSERCIÓN --
+		INSERT INTO @TBL_WORKSHEETSTORES (WORKSHEET_ID, STORE_ID)
+		VALUES (@WORKSHEETID, @STOREID)
+
+		-- GUARDAR BITÁCORA DE USUARIO Y HOJA DE TRABAJO --
+		EXEC [UEP_ExtCentral_Worksheet_INSERT] @USER_ID, @WORKSHEETID, 261, '131', @TITLE, @STOREID, @WORKSHEETCONTENTID
+
+		-- SIGUIENTE TIENDA --
+		FETCH NEXT FROM LIST_STORES INTO @STOREID
+	END
+
+	-- CERRAR CURSOR --
+	CLOSE LIST_STORES
+	DEALLOCATE LIST_STORES
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- ABRIR CURSOR DE ITEMS --
+	OPEN LIST_ITEMS_BULKCOPY
+	FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ID, @SUPPLIERID, @SUPPLIERCODE, @ITEMLOOKUPCODE, @GROSSCOST, @UTILITY, @INVOICEDISCOUNT, @CUSTOMERDISCOUNT
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- EJECUCIÓN DE PROCEDIMIENTO --
+	BEGIN TRY
+		WHILE @@FETCH_STATUS = 0 BEGIN
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- OBTENER DATOS ACTUALES DEL PRODUCTO --
+			SELECT @TAXRATE = CAST(T.[Percentage] AS FLOAT),
+				@TAXRATENAME = CAST(T.[Description] AS varchar(50)),
+				@MSRP = [MSRP],
+				@ITEMTAXID = I.TaxID,
+				@SYNCGUID = I.SyncGuid
+			FROM [Tax] AS T 
+				INNER JOIN [ItemTax] IT ON IT.TaxID01 = T.ID
+				INNER JOIN [Item] I ON I.TaxID = IT.ID
+			WHERE I.ID = @ID AND IT.[Description] NOT LIKE '%Bonifica%'
+			SET @LASTACTION = 'OBTENER IMPUESTO ACTUAL DEL PRODUCTO '
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- EN CASO DE EXISTIR DESCUENTO DE FACTURA --
+			SET @COSTDISCOUNT = (CAST(@GROSSCOST AS MONEY) - (CAST(@GROSSCOST AS MONEY) * (CAST(@INVOICEDISCOUNT AS DECIMAL(10,2)) / 100)))
+			SET @LASTACTION = CONCAT('OBTENER DECUENTO EN FACTURA. ',@INVOICEDISCOUNT, '. ', @COSTDISCOUNT)
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- PARA ACTUALIZAR NÚMEROS EN ITEMS --
+			DECLARE @_UTILITY FLOAT = CONVERT(FLOAT, @UTILITY)
+			DECLARE @_INVDISCOUNT FLOAT = CONVERT(FLOAT, @INVOICEDISCOUNT)
+			DECLARE @_CUSDISCOUNT FLOAT = CONVERT(FLOAT, @CUSTOMERDISCOUNT)
+			DECLARE @_COST MONEY = CONVERT(MONEY, @GROSSCOST)
+			DECLARE @FINAL_PRICE MONEY = (@_COST - (@_COST * (@_CUSDISCOUNT / 100)) + @MSRP)
+			DECLARE @FINAL_PRICE_UTILITY MONEY = (@FINAL_PRICE * (1 + (@_UTILITY / 100)))
+			DECLARE @FINAL_PRICE_IVA MONEY = (@FINAL_PRICE_UTILITY * (1 + (@TAXRATE / 100)))
+			SET @LASTACTION = 'OBTENER DEMÁS NÚMEROS'
+
+			-- OBTENER #S REALES --
+			DECLARE @FINAL_PRICE_ROUND MONEY = [dbo].[UEP_GET_PRICE_ROUND] (@FINAL_PRICE_IVA)
+			DECLARE @UTILITY_REAL DECIMAL(18,8) = [dbo].[UEP_GET_UTILITY_REAL] (@FINAL_PRICE_ROUND, @FINAL_PRICE_UTILITY, @FINAL_PRICE, @TAXRATE)
+			SET @LASTACTION = 'CALCULAR NÚMERO FINALES'
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- ACTUALIZAR ITEM --
+			UPDATE I SET I.[SupplierID] = @SUPPLIERID,
+				I.LastUpdated = GETDATE(),
+				I.[Cost] = @COSTDISCOUNT,
+				I.[Price] = @FINAL_PRICE_ROUND,
+				I.[ReplacementCost] = @_COST,
+				I.[Notes] = CONCAT(N'Costo Bruto: ', @_COST, N'. ', '	IVA: ', @TAXRATE, '% (', @TAXRATENAME, '). ', CHAR(10),
+					'Imp. Específico: ', @MSRP, '. ', '	Costo Final: ', @COSTDISCOUNT, '. ', CHAR(10),
+					'Desc. Factura: ', @_INVDISCOUNT, '%. ', '	Costo C/Desc. Cliente: ', @FINAL_PRICE, '. ', CHAR(10),
+					'Desc. Cliente: ', @_CUSDISCOUNT, '%. ', '	Precio Final (SIN IVA): ', @FINAL_PRICE_UTILITY, '. ', CHAR(10),
+					'Utilidad: ', @_UTILITY, '%. ', '		Precio Final (CON IVA): ', @FINAL_PRICE_IVA, '.', CHAR(10), CHAR(10),
+					'Utilidad Real: ', @UTILITY_REAL, '%. ', CHAR(10),
+					'Precio Redondeado: ', @FINAL_PRICE_ROUND, '.', CHAR(10),
+					'Tiendas: [', (SELECT STRING_AGG([Name], ', ') FROM Store WHERE ID IN (SELECT STORE_ID FROM @TBL_WORKSHEETSTORES)), ']')
+			FROM [Item] I
+			WHERE I.[ID] = @ID
+			SET @LASTACTION = 'ACTUALIZAR ITEM'
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			INSERT INTO ExtCentral_ItemHistory(
+				ItemID, StoreID, SupplierID, ItemTaxID,
+				MSRP, Utility, InvoiceDiscount, CustomerDiscount,
+				GrossCost, Cost, Price,
+				DateApplied, TaskApplied, Aditional)
+			SELECT
+				@ID, TBL.STORE_ID, @SUPPLIERID, @ITEMTAXID,
+				@MSRP, @_UTILITY, CONVERT(DECIMAL(18,2), @INVOICEDISCOUNT), @_CUSDISCOUNT,
+				CAST(@GROSSCOST AS MONEY), @COSTDISCOUNT, @FINAL_PRICE_ROUND,
+				GETDATE(), @TITLE, @NOTES
+			FROM @TBL_WORKSHEETSTORES TBL
+			SET @LASTACTION = 'INGRESAR BITÁCORA DE COSTOS DE PRODUCTOS'
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- OBTENER SUPPLIERLIST DEL ITEM --
+			SELECT @EXISTS_SUPPLIERLIST = COUNT(S.[ID])
+			FROM [SupplierList] AS S
+			WHERE S.[SupplierID] = @SUPPLIERID AND S.[ItemID] = @ID
+			SET @LASTACTION = 'VER SI EXISTE EL SUPPLIER LIST'
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			IF (@EXISTS_SUPPLIERLIST = 0) BEGIN
+				-- INSERTAR SUPPLIERLIST --
+				INSERT INTO [SupplierList] ([ItemID], [SupplierID], [Cost], [ReorderNumber], [MasterPackQuantity], [TaxRate])
+				VALUES (@ID, @SUPPLIERID, @COSTDISCOUNT, 0, 0, @TAXRATE)
+				SET @LASTACTION = CONCAT('INSERTAR SUPPLIERLIST SUPPLIER=', @SUPPLIERID)
+			END ELSE BEGIN
+				-- ACTUALIZAR SUPPLIERLIST --
+				UPDATE [SupplierList]
+				SET [Cost] = @COSTDISCOUNT, [TaxRate] = @TAXRATE
+				WHERE [SupplierID] = @SUPPLIERID AND [ItemID] = @ID
+				SET @LASTACTION = 'ACTUALIZAR SUPPLIERLIST'
+			END
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			/*
+				-- QUITAR HISTORICO DE COSTO DE FECHA INGRESADA --
+				DELETE FROM [POC_ItemPrice] WHERE [ItemID] = @ID AND [SupplierID] = @SUPPLIERID
+
+				-- INSERTAR BITÁCORA DE PROVEEDOR --
+				INSERT INTO [POC_ItemPrice] ([ItemID], [SupplierID], [CurrencyID], [StartingDate], [UOMID], [MinQuantity], [UnitCost], [HQId])
+				VALUES (@ID, @SUPPLIERID, 0, CAST(CAST(GETDATE() AS DATE) AS DATETIME), 0, 0, @COSTDISCOUNT, 0)
+				SET @LASTACTION = CONCAT('INSERTAR POC_ITEMPRICE. ', @ID)
+			*/
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- INSERTAR O ACTUALIZAR EXTCENTRAL_ITEM --
+			DECLARE @EXISTS_EXTCENTRAL_ITEM INT = 0
+			SELECT @EXISTS_EXTCENTRAL_ITEM = COUNT(ItemID) FROM [ExtCentral_Item] WHERE [ItemID] = @ID
+
+			IF (@EXISTS_EXTCENTRAL_ITEM > 0) BEGIN
+				UPDATE [ExtCentral_Item]
+				SET [Utility] = @_UTILITY,
+					[CustomerDiscount] = @_CUSDISCOUNT,
+					[InvoiceDiscount] = @INVOICEDISCOUNT,
+					[StartDate] = CAST(GETDATE() AS DATE),
+					[StoresSelected] = @STORES
+				WHERE [ItemID] = @ID
+				SET @LASTACTION = 'ACTUALIZAR [ExtCentral_Item]'
+			END ELSE BEGIN
+				INSERT INTO [ExtCentral_Item] ([ItemID], [FamilyID], [SubCategoryID], [SegmentID], [CustomerDiscount], [InvoiceDiscount], [Utility], [StartDate], StoresSelected)
+				VALUES (@ID, 0, 0, 0, @_CUSDISCOUNT, @_INVDISCOUNT, @_UTILITY, CAST(GETDATE() AS DATE), @STORES)
+				SET @LASTACTION = 'INSERTAR [ExtCentral_Item]'
+			END
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- ACTUALIZA EXTCENTRAL_ITEMEXT --
+			UPDATE [ExtCentral_ItemExt]
+			SET [InvoiceDiscount] = CAST(@INVOICEDISCOUNT AS DECIMAL(18,2)),
+				[CustomerDiscount] = CAST(@CUSTOMERDISCOUNT AS DECIMAL(18,2)),
+				[Utility] = CAST(@UTILITY AS DECIMAL(18,2)),
+				[StartDate] = CAST(GETDATE() AS DATE),
+				[GrossCost] = @_COST
+			WHERE [StoreID] IN (SELECT STORE_ID FROM @TBL_WORKSHEETSTORES)
+				AND [SupplierID] = @SUPPLIERID
+				AND [ItemID] = @ID
+			SET @LASTACTION = CONCAT('ACTUALIZAR EXTCENTRAL_ITEMEXT. ', @ITEMLOOKUPCODE, ' .', @SUPPLIERID)
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- REVISAR SI FALTAN EXTCENTRAL_ITEM --
+			DECLARE @COUNT_STORES_NOT_IN INT = 0
+			SELECT @COUNT_STORES_NOT_IN = COUNT(STORE_ID)
+			FROM @TBL_WORKSHEETSTORES
+			WHERE STORE_ID NOT IN (SELECT StoreID FROM [ExtCentral_ItemExt] WHERE [ItemID] = @ID AND [SupplierID] = @SUPPLIERID)
+
+			IF (@COUNT_STORES_NOT_IN > 0) BEGIN
+				INSERT INTO [ExtCentral_ItemExt] (ItemID, SupplierID, StoreID, InvoiceDiscount, CustomerDiscount, StartDate, Utility, GrossCost)
+				SELECT @ID, @SUPPLIERID, STORE_ID, CAST(@INVOICEDISCOUNT AS DECIMAL(18,2)), CAST(@CUSTOMERDISCOUNT AS DECIMAL(18, 2)), CAST(GETDATE() AS DATE), CAST(@UTILITY AS DECIMAL(18,2)), @_COST
+				FROM @TBL_WORKSHEETSTORES
+				WHERE STORE_ID NOT IN (SELECT StoreID FROM [ExtCentral_ItemExt] WHERE [ItemID] = @ID AND [SupplierID] = @SUPPLIERID)
+				SET @LASTACTION = CONCAT('INSERTAR EXTCENTRAL_ITEMEXT. ', @ITEMLOOKUPCODE, ' .', @SUPPLIERID)
+			END
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- ACTUALIZA ITEMDYNAMIC --
+			UPDATE I
+			SET I.MSRP = @MSRP,
+				I.[Price] = @FINAL_PRICE_ROUND,
+				[Cost] = @COSTDISCOUNT,
+				I.TaxID = @ITEMTAXID
+			FROM [ItemDynamic] I
+			WHERE I.[ItemID] = @ID AND [StoreID] IN (SELECT STORE_ID FROM @TBL_WORKSHEETSTORES)
+			SET @LASTACTION = CONCAT('ACTUALIZAR DYNAMIC . ', @ITEMLOOKUPCODE)
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- INGRESAR LOS ITEMDYNAMIC FALTANTES --
+			INSERT INTO ItemDynamic (
+				ItemID, StoreID, MSRP, Price, Cost, TaxID,
+				QuantityCommitted, [SnapShotPrice], [SnapShotPriceA], [SnapShotPriceB], [SnapShotPriceC], [SnapShotSalePrice],
+				[SnapShotCost], SnapShotLastCost, SnapShotReplacementCost, SnapShotPriceLowerBound, SnapShotPriceUpperBound, SnapShotReorderPoint, SnapShotRestockLevel, SnapShotTaxID,
+				PriceLevelA, PriceLevelB, PriceLevelC, SalePrice,
+				LowerBound, UpperBound, BuydownPrice, BuydownQuantity, Quantity
+			)
+			SELECT @ID, STORE_ID, @MSRP, @FINAL_PRICE_ROUND, @COSTDISCOUNT, @ITEMTAXID,
+				0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0, 0, 0, 0, 0,
+				0, 0, 0, 0,
+				0, 0, 0, 0, 0
+			FROM @TBL_WORKSHEETSTORES
+			WHERE STORE_ID NOT IN (SELECT StoreID FROM ItemDynamic WITH (NOLOCK) WHERE ItemID = @ID)
+			SET @LASTACTION = CONCAT('INSERTAR ITEMDYNAMIC FALTANTES. ', @ITEMLOOKUPCODE, '. ', @ID)
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- INGRESAR POA_Item DE LOS QUE NO EXISTEN --
+			IF ((SELECT COUNT(*) FROM POA_Item WHERE ID = @ID) = 0) BEGIN
+				INSERT INTO POA_Item (ID, LastUpdated, ExtCode, TaxGroupID, ChildReorder, UnitOfMeasure, PurchaseUOM, PurchUOMID1, PurchUOMID2, PurchUOMID3, PurchQtyUOM1, PurchQtyUOM2, PurchQtyUOM3, LineNumber, HQId)
+				VALUES(@ID, GETDATE(), '', @ITEMTAXID, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+				SET @LASTACTION = CONCAT('INSERTAR PURCHASE ITEMTAX. ', @ITEMLOOKUPCODE, '. ', @ID)
+			END ELSE BEGIN
+				UPDATE POA_Item
+				SET LastUpdated = GETDATE(), TaxGroupID = @ITEMTAXID
+				WHERE ID = @ID
+				SET @LASTACTION = CONCAT('ACTUALIZAR PURCHASE ITEMTAX. ', @ITEMLOOKUPCODE, '. ', @ID)
+			END
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			UPDATE GlobalCatalog
+			SET IsActive = 1
+			WHERE SyncGuid = @SYNCGUID AND TableName = 'Item' AND StoreId IN (SELECT STORE_ID FROM @TBL_WORKSHEETSTORES)
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- ASIGNACIÓN DE ITEM A LA HOJA DE TRABAJO --
+			INSERT INTO Worksheet_ItemUpdate(WorksheetID, ItemId)
+			SELECT WORKSHEET_ID, @ID
+			FROM @TBL_WORKSHEETSTORES INNER JOIN Store S ON S.ID = STORE_ID
+			WHERE S.Inactive = 0
+			SET @LASTACTION = CONCAT('INSERTAR ITEM A HOJA DE TRABAJO. ', @ITEMLOOKUPCODE)
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- NEXT RECORD DEL BULKCOPY --
+			FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ID, @SUPPLIERID, @SUPPLIERCODE, @ITEMLOOKUPCODE, @GROSSCOST, @UTILITY, @INVOICEDISCOUNT, @CUSTOMERDISCOUNT
+		END
+		---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		-- CERRAR CURSOR --
+		CLOSE LIST_ITEMS_BULKCOPY
+		DEALLOCATE LIST_ITEMS_BULKCOPY
+		---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		-- GRABADO DE RESPUESTA DEL PROCEDIMIENTO --
+		SET @RESPUESTA = 'Cambios aplicados al sistema'
+		SET @LASTACTION = 'COMMIT'
+	END TRY
+	BEGIN CATCH
+		SET @STATUS = 0
+		SET @ERROR = ERROR_MESSAGE()
+		SET @ERROR_NUMBER = ERROR_NUMBER()
+		SET @RESPUESTA = CONCAT('Error al intentar aplicar cambios del producto ', @ITEMLOOKUPCODE, '. ERROR:', @ERROR_NUMBER)
+		
+		INSERT INTO EXTCENTRAL_WIZARD_LOG([DATE], ITEM_ERROR, LAST_ACTION, MESSAGE_ERROR, MESSAGE_NUMBER, RESPUESTA, STORES, TASK_CODE, TASK_NAME, TASK_DETAILS)
+		VALUES (GETDATE(), @ITEMLOOKUPCODE, @LASTACTION, @ERROR, @ERROR_NUMBER, @RESPUESTA, @STORES, '131', 'ACTIVACIÓN PRODUCTOS', CONCAT(@TITLE, '[', @NOTES, ']'))
+
+		CLOSE LIST_ITEMS_BULKCOPY
+		DEALLOCATE LIST_ITEMS_BULKCOPY
+	END CATCH
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	IF (@ERROR_NUMBER=2601) BEGIN
+		SET @RESPUESTA = CONCAT('Error al aplicar cambios a hoja de trabajo. El producto ', @ITEMLOOKUPCODE, ' ya cuenta con los mismos Costos del artículo del proveedor');
+	END
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	SELECT @RESPUESTA AS [RESPUESTA], @STATUS AS [STATUS], @LASTACTION AS [LASTACTION], @ERROR AS [ERROR], @ERROR_NUMBER AS [ERROR_NUMBER]
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WS_CHANGE_ITEM_PRICE_DYNACIC]    Script Date: 11/06/2024 10:35:48 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[UEP_WS_CHANGE_ITEM_PRICE_DYNACIC] ( @STYLE INT, @NOTES VARCHAR(255),@TITLE VARCHAR(50),@FROMDATE DATETIME, @STOREID INT, @EFFECTIVEDATE DATETIME, @USER_ID VARCHAR(50) )
+
+AS
+
+BEGIN
+	-- PARA EFECTOS DE TRANSACCIÓN DEL PROCEDIMIENTO --
+	DECLARE @RESPUESTA VARCHAR(MAX)
+	DECLARE @ERROR VARCHAR(MAX) = ''
+	DECLARE @ERROR_NUMBER INT = 0
+	DECLARE @LASTACTION VARCHAR(50) = ''
+	DECLARE @STATUS BIT = 1
+	DECLARE @EXISTS_ITEMEXT INT = 0
+	DECLARE @WorksheetID INT
+	-- PARA ALBERGAR LA INFO AL RECORRER LOS ITEMS DEL BULKCOPY --
+	DECLARE @ID INT
+	DECLARE @SUPPLIERCODE VARCHAR(30)
+	DECLARE @ITEMLOOKUPCODE VARCHAR(25)
+	DECLARE @INVOICEDISCOUNT VARCHAR(30)
+	DECLARE @CUSTOMERDISCOUNT VARCHAR(30)
+	DECLARE @STARTDATE VARCHAR(30)
+	DECLARE @ENDDATE VARCHAR(30)
+	DECLARE @QUANTITY VARCHAR(30)
+	DECLARE @SALEPRICE VARCHAR(30)
+	-- ADICIONAL --
+	DECLARE @SUPPLIERID INT
+	
+	--
+	DECLARE @USER_NAME VARCHAR(50) = (SELECT UserName FROM HQUser WHERE ID = @USER_ID)
+
+	-- PARA RECORRER LOS ITEMS DEL BULKCOPY --
+	DECLARE LIST_ITEMS_BULKCOPY CURSOR
+	FOR SELECT [ID], [SupplierCode], [ItemLookupCode], [InvoiceDiscount], [CustomerDiscount], [StartDate], [EndDate], [SalePrice], [Quantity] FROM ##TablaItemPriceDynamic
+	
+	-- INICIAR LECTURA DEL CURSOR --
+	OPEN LIST_ITEMS_BULKCOPY
+	FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ID, @SUPPLIERCODE, @ITEMLOOKUPCODE, @INVOICEDISCOUNT, @CUSTOMERDISCOUNT, @STARTDATE, @ENDDATE, @SALEPRICE, @QUANTITY
+
+	BEGIN TRY
+		-- INICIO DE TRANSACCIÓN
+		--BEGIN TRAN
+		
+		-- CREAR HOJA DE TRABAJO --
+		INSERT [Worksheet] (Style, EffectiveDate, [Status], Notes, Title, FromDate)
+		VALUES (@STYLE, @EFFECTIVEDATE, 1, @NOTES, @TITLE, @FROMDATE)
+		set @WorksheetID = (select top 1 ID FROM [Worksheet] WHERE @TITLE = @TITLE order by ID desc)
+		SET @LASTACTION = '-- CREAR HOJA DE TRABAJO --'
+
+		-- ASIGNAR TIENDA A LA HOJA DE TRABAJO --
+		INSERT [dbo].[WorksheetStore](WorksheetID, StoreID, [Status], Originator, DateProcessed)
+		VALUES (@WorksheetID, @STOREID, 1,0, NULL)
+		SET @LASTACTION = '-- ASIGNAR TIENDA A LA HOJA DE TRABAJO --'
+		
+		-- LE AÑADE EL HISTORIAL A LA HOJA DE TRABAJO --
+		INSERT INTO WorksheetHistory (WorksheetID, [Status], HistoryDate, HQEntry, StoreID, Comment)
+		VALUES (@WorksheetID, 1, GETDATE(), 1, @STOREID, CONCAT('Creado por ', @USER_NAME, ' desde Central Wizard.'))
+		SET @LASTACTION = '-- AÑADE EL HISTORIAL A LA HOJA DE TRABAJO --'
+
+		-- GUARDAR BITÁCORA DE USUARIO Y HOJA DE TRABAJO --
+		EXEC [UEP_ExtCentral_Worksheet_INSERT] @USER_ID, @WorksheetID, @STYLE, '121', @TITLE, @STOREID
+
+		-- RECORRIDO DE CURSOR --
+		WHILE @@FETCH_STATUS = 0 BEGIN
+			-- OBTENER ID DEL PROVEEDOR --
+			SELECT @SUPPLIERID = [ID] FROM Supplier WHERE [Code] = @SUPPLIERCODE
+			SET @LASTACTION = '-- OBTENER ID DEL PROVEEDOR --'
+
+			-- REVISAR SI YA EXISTE EXTCENTRAL_ITEMEXT --
+			SELECT @EXISTS_ITEMEXT = COUNT([ItemID]) FROM ExtCentral_ItemExt WHERE [StoreID] = @STOREID AND [SupplierID] = @SUPPLIERID AND [ItemID] = @ID
+			SET @LASTACTION = 'VER SI EXISTE EXTCENTRAL_ITEMEXT'
+
+			-- EN CASO DE EXISTIR O NO ITEMEXT --
+			IF (@EXISTS_ITEMEXT > 0) BEGIN
+				UPDATE [ExtCentral_ItemExt]
+				SET [InvoiceDiscount] = CAST(@INVOICEDISCOUNT AS DECIMAL(18,2)),
+					[CustomerDiscount] = CAST(@CUSTOMERDISCOUNT AS DECIMAL(18,2)),
+					[StartDate] = CAST(PARSE(@STARTDATE AS DATE USING 'es-CR') AS DATE),
+					[EndDate] = CAST(PARSE(@ENDDATE AS DATE USING 'es-CR') AS DATE),
+					[Type] = 'Venta'
+				WHERE [StoreID] = @STOREID AND [SupplierID] = @SUPPLIERID AND [ItemID] = @ID
+				SET @LASTACTION = CONCAT('ACTUALIZAR EXTCENTRAL_ITEMEXT. ', @ID, ' .', @SUPPLIERID)
+			END ELSE BEGIN
+				INSERT INTO [ExtCentral_ItemExt]
+					([ItemID], [StoreID], [SupplierID], [Type], [Utility], [CustomerDiscount], [InvoiceDiscount], [StartDate], [EndDate])
+				VALUES
+					(@ID, @STOREID, @SUPPLIERID, 'Venta', NULL, CAST(@CUSTOMERDISCOUNT AS DECIMAL(18,2)), CAST(@INVOICEDISCOUNT AS DECIMAL(18,2)),
+					CAST(PARSE(@STARTDATE AS DATE USING 'es-CR') AS DATE), CAST(PARSE(@ENDDATE AS DATE USING 'es-CR') AS DATE))
+				SET @LASTACTION = CONCAT('INSERTAR EXTCENTRAL_ITEMEXT. ', @ID, ' .', @SUPPLIERID)
+			END
+			
+			SET @QUANTITY = CONVERT(FLOAT, @QUANTITY) -- PARA LA VALIDACIÓN DE SI HAY CANTIDADES --
+
+			INSERT INTO [WorksheetUpdateItemPrices]
+				([WorksheetID], [ItemID], [Price], [Cost], [PriceLevelA], [PriceLevelB], [PriceLevelC], [MSRP],
+				[SalePrice], [BuydownQuantity], [SaleStartDate], [SaleEndDate], [BuyDownPrice], [LowerBound], [UpperBound] )
+			SELECT
+				@WorksheetID, @ID, I.[Price], I.[Cost], I.[PriceA], I.[PriceB], I.[PriceC], I.[MSRP],
+				(CASE WHEN @QUANTITY <= 0 THEN CAST(@SALEPRICE AS MONEY) ELSE NULL END), -- SALE PRICE
+				(CASE WHEN @QUANTITY > 0 THEN CAST(@QUANTITY AS FLOAT) ELSE NULL END), -- [BuydownQuantity]
+				(CASE WHEN @QUANTITY <= 0 THEN CAST(PARSE(@STARTDATE AS DATETIME USING 'es-CR') AS DATETIME) ELSE NULL END),
+				(CASE WHEN @QUANTITY <= 0 THEN CAST(PARSE(@ENDDATE AS DATETIME USING 'es-CR') AS DATETIME) ELSE NULL END),
+				(CASE WHEN @QUANTITY > 0 THEN CAST(@SALEPRICE AS MONEY) ELSE NULL END), -- [BuyDownPrice]
+				I.[PriceLowerBound], I.[PriceUpperBound]
+			FROM [Item] I
+			WHERE I.[ID] = @ID AND @STOREID IN (SELECT C.StoreId FROM GlobalCatalog C WHERE C.SyncGuid = i.SyncGuid AND C.TableName = 'Item' AND C.IsActive = 1)
+			SET @LASTACTION = CONCAT('ASIGNACIÓN DE ITEM A LA HOJA DE TRABAJO. ', @ID)
+
+			-- NEXT RECORD DEL BULKCOPY --
+			FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ID, @SUPPLIERCODE, @ITEMLOOKUPCODE, @INVOICEDISCOUNT, @CUSTOMERDISCOUNT, @STARTDATE, @ENDDATE, @SALEPRICE, @QUANTITY
+		END
+
+		-- CERRAR CURSOR --
+		CLOSE LIST_ITEMS_BULKCOPY
+		DEALLOCATE LIST_ITEMS_BULKCOPY
+
+		-- GRABADO DE RESPUESTA DEL PROCEDIMIENTO --
+		SET @RESPUESTA = CONCAT('Cambios aplicados en tienda ', @STOREID)
+
+		-- GUARDAR CAMBIOS DE TRANSACCIÓN --
+		--COMMIT TRAN
+	END TRY
+	BEGIN CATCH
+		-- QUITAR CAMBIOS DE TRANSACCIÓN --
+		--ROLLBACK TRAN
+		SET @STATUS = 0
+		SET @ERROR = ERROR_MESSAGE()
+		SET @ERROR_NUMBER = ERROR_NUMBER()
+		SET @RESPUESTA = CONCAT('Error al intentar aplicar cambios del producto ', @ITEMLOOKUPCODE, ' para la tienda ', @STOREID)
+
+		INSERT INTO EXTCENTRAL_WIZARD_LOG([DATE], ITEM_ERROR, LAST_ACTION, MESSAGE_ERROR, MESSAGE_NUMBER, RESPUESTA, STORES, TASK_CODE, TASK_NAME, TASK_DETAILS)
+		VALUES (GETDATE(), @ITEMLOOKUPCODE, @LASTACTION, @ERROR, @ERROR_NUMBER, @RESPUESTA, @STOREID, '121', 'UEP_WS_CHANGE_ITEM_PRICE_DYNACIC', CONCAT(@TITLE, '[', @NOTES, ']'))
+
+		-- CERRAR CURSOR --
+		CLOSE LIST_ITEMS_BULKCOPY
+		DEALLOCATE LIST_ITEMS_BULKCOPY
+	END CATCH
+
+	SELECT @RESPUESTA AS [RESPUESTA], @STATUS AS [STATUS], @LASTACTION AS [LASTACTION], @ERROR AS [ERROR], @ERROR_NUMBER AS [ERROR_NUMBER]
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WS_CHANGE_ITEM_PRICE_PROMO]    Script Date: 11/06/2024 10:35:48 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[UEP_WS_CHANGE_ITEM_PRICE_PROMO]
+(
+	@STYLE INT, @TITLE VARCHAR(50), @NOTES VARCHAR(255), @QUANTITY_DISCOUNT_ID INT, @STOREID INT, @EFFECTIVE_START_DATE DATETIME, @EFFECTIVE_END_DATE DATETIME, @FROMDATE DATETIME, @USER_ID VARCHAR(50)
+)
+AS
+BEGIN
+	-- PARA EFECTOS DE TRANSACCIÓN DEL PROCEDIMIENTO --
+	DECLARE @RESPUESTA VARCHAR(MAX)
+	DECLARE @ERROR VARCHAR(MAX) = ''
+	DECLARE @ERROR_NUMBER INT = 0
+	DECLARE @LASTACTION VARCHAR(50) = ''
+	DECLARE @STATUS BIT = 1
+	DECLARE @EXISTS_ITEMEXT INT = 0
+	DECLARE @WORKSHEET_START_ID INT
+	DECLARE @WORKSHEET_END_ID INT
+	-- PARA ALBERGAR LA INFO AL RECORRER LOS ITEMS DEL BULKCOPY --
+	DECLARE @ID INT
+	DECLARE @SUPPLIERCODE VARCHAR(30)
+	DECLARE @ITEMLOOKUPCODE VARCHAR(25)
+	DECLARE @INVOICEDISCOUNT VARCHAR(30)
+	DECLARE @CUSTOMERDISCOUNT VARCHAR(30)
+	-- ADICIONAL --
+	DECLARE @SUPPLIERID INT
+	
+	---
+	DECLARE @USER_NAME VARCHAR(50) = (SELECT UserName FROM HQUser WHERE ID = @USER_ID)
+
+	-- PARA RECORRER LOS ITEMS DEL BULKCOPY --
+	DECLARE LIST_ITEMS_BULKCOPY CURSOR
+	FOR SELECT [ID], [SupplierCode], [ItemLookupCode], [InvoiceDiscount], [CustomerDiscount] FROM ##TablaItemQuantityDiscount
+	
+	-- INICIAR LECTURA DEL CURSOR --
+	OPEN LIST_ITEMS_BULKCOPY
+	FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ID, @SUPPLIERCODE, @ITEMLOOKUPCODE, @INVOICEDISCOUNT, @CUSTOMERDISCOUNT
+
+	BEGIN TRY
+		-- INICIO DE TRANSACCIÓN
+		-- BEGIN TRAN
+		
+		-----------------------------------------------------------------------------------------------------------------------------------------------
+		--------------------------------------------------- HOJA TRABAJO INICIO -----------------------------------------------------------------------
+		-----------------------------------------------------------------------------------------------------------------------------------------------
+		DECLARE @TITLE_START VARCHAR(50) = CONVERT(VARCHAR(50), CONCAT('ACTIVAR: ', @TITLE))
+		-- CREAR HOJA DE TRABAJO PARA INICIAR DINÁMICA --
+		INSERT [Worksheet] (Style, EffectiveDate, [Status], Notes, Title, FromDate)
+		VALUES (@STYLE, @EFFECTIVE_START_DATE, 1, CONVERT(VARCHAR(50), CONCAT('ACTIVAR: ', @NOTES)), @TITLE_START, @FROMDATE)
+		
+		-- OBTENER ID DE HOJA DE TRABAJO DE INICIAR DINÁMICA --
+		SET @WORKSHEET_START_ID = CONVERT(INT, SCOPE_IDENTITY())
+		
+		-- DEFINIR TIENDA A LA HOJA DE TRABAJO --
+		INSERT [dbo].[WorksheetStore](WorksheetID, StoreID, [Status], Originator, DateProcessed)
+		VALUES (@WORKSHEET_START_ID, @STOREID, 1,0, NULL)
+		
+		-- AGREGAR PRIMER HISTORIAL --
+		INSERT INTO WorksheetHistory (WorksheetID, [Status], HistoryDate, HQEntry, StoreID, Comment) 
+		VALUES (@WORKSHEET_START_ID, 1, GETDATE(), 1, @STOREID, CONCAT('Creado por ', @USER_NAME, ' desde Central Wizard.'))
+
+		-- GUARDAR BITÁCORA DE USUARIO Y HOJA DE TRABAJO --
+		EXEC [UEP_ExtCentral_Worksheet_INSERT] @USER_ID, @WORKSHEET_START_ID, @STYLE, '122', @TITLE_START, @STOREID
+		
+		-----------------------------------------------------------------------------------------------------------------------------------------------
+		---------------------------------------------------- HOJA TRABAJAO FINAL ----------------------------------------------------------------------
+		-----------------------------------------------------------------------------------------------------------------------------------------------
+		DECLARE @TITLE_END VARCHAR(50) = CONVERT(VARCHAR(50), CONCAT('DESACTIVAR: ', @TITLE))
+		-- CREAR HOJA DE TRABAJO PARA TERMINAR DINÁMICA --
+		INSERT [Worksheet] (Style, EffectiveDate, [Status], Notes, Title, FromDate)
+		VALUES (@STYLE, DATEADD(HOUR, 3, @EFFECTIVE_END_DATE), 1, CONVERT(VARCHAR(50), CONCAT('DESACTIVAR: ', @NOTES)), CONVERT(VARCHAR(50), CONCAT('DESACTIVAR: ', @TITLE)), @FROMDATE)
+		
+		-- OBTENER ID DE HOJA DE TRABAJO DE TERMINAR DINÁMICA --
+		SET @WORKSHEET_END_ID = CONVERT(INT, SCOPE_IDENTITY())
+
+		-- DEFINIR TIENDA A LA HOJA DE TRABAJO --
+		INSERT [dbo].[WorksheetStore](WorksheetID, StoreID, [Status], Originator, DateProcessed)
+		VALUES (@WORKSHEET_END_ID, @STOREID, 1,0, NULL)
+		
+		-- AGREGAR PRIMER HISTORIAL --
+		INSERT INTO WorksheetHistory (WorksheetID, [Status], HistoryDate, HQEntry, StoreID, Comment) 
+		VALUES (@WORKSHEET_END_ID, 1, GETDATE(), 1, @STOREID, CONCAT('Creado por ', @USER_NAME, ' desde Central Wizard.'))
+
+		-- GUARDAR BITÁCORA DE USUARIO Y HOJA DE TRABAJO --
+		EXEC [UEP_ExtCentral_Worksheet_INSERT] @USER_ID, @WORKSHEET_END_ID, @STYLE, '122', @TITLE_END, @STOREID
+		----------------------------------------------------------------------------------------------------------------------------------------------
+		-------------------------------------------------- RECORRIDO DEL BULKCOPY --------------------------------------------------------------------
+		----------------------------------------------------------------------------------------------------------------------------------------------
+		-- RECORRIDO DE CURSOR --
+		WHILE @@FETCH_STATUS = 0 BEGIN
+			-- OBTENER ID DEL PROVEEDOR --
+			SELECT @SUPPLIERID = [ID] FROM Supplier WHERE [Code] = @SUPPLIERCODE
+			SET @LASTACTION = '-- OBTENER ID DEL PROVEEDOR --'
+
+			-- ACTUALIZAR DESCUENTO DEL ITEM --
+			UPDATE ITEM
+			SET [QuantityDiscountID] = @QUANTITY_DISCOUNT_ID
+			WHERE [ID] = @ID
+			SET @LASTACTION = '-- ACTUALIZAR DESCUENTO DEL ITEM --'
+
+			-- CONSULTA PARA OBTENER RESULTADOS DE SI EXISTE UN ITEM_EXT --
+			SELECT @EXISTS_ITEMEXT = COUNT(IE.ItemID) FROM [ExtCentral_ItemExt] IE WHERE IE.ItemID = @ID AND IE.SupplierID = @SUPPLIERID AND IE.StoreID = @STOREID
+			SET @LASTACTION = '-- CONSULTA PARA OBTENER RESULTADOS DE SI EXISTE UN ITEM_EXT --'
+
+			IF (@EXISTS_ITEMEXT = 0) BEGIN
+				-- INSERTAR EXTCENTRAL_ITEMEXT --
+				INSERT INTO [ExtCentral_ItemExt] ([ItemID], [SupplierID], [StoreID], [InvoiceDiscount], [CustomerDiscount], [StartDate], [EndDate], [Type], [Utility])
+				VALUES (
+					@ID, @SUPPLIERID, @STOREID,
+					CONVERT(DECIMAL(18,2),@INVOICEDISCOUNT),
+					CONVERT(DECIMAL(18,2), @CUSTOMERDISCOUNT),
+					CONVERT(DATE, @EFFECTIVE_START_DATE),
+					CONVERT(DATE, @EFFECTIVE_END_DATE),
+					'Descuento', NULL
+				)
+				SET @LASTACTION = CONCAT('INSERTAR EXTCENTRAL_ITEMEXT. ', @ID, ' .', @SUPPLIERID)
+			END ELSE BEGIN
+				-- ACTUALIZAR EXTCENTRAL_ITEMEXT --
+				UPDATE [ExtCentral_ItemExt]
+				SET [InvoiceDiscount] = CONVERT(DECIMAL(18,2),@INVOICEDISCOUNT),
+					[CustomerDiscount] = CONVERT(DECIMAL(18,2), @CUSTOMERDISCOUNT),
+					[StartDate] = CONVERT(DATE, @EFFECTIVE_START_DATE),
+					[EndDate] = CONVERT(DATE, @EFFECTIVE_END_DATE),
+					[Type] = 'Descuento'
+				WHERE [StoreID] = @STOREID AND [SupplierID] = @SUPPLIERID AND [ItemID] = @ID
+				SET @LASTACTION = CONCAT('ACTUALIZAR EXTCENTRAL_ITEMEXT. ', @ID, ' .', @SUPPLIERID)
+			END
+
+			-- ASIGNAR ITEM A LA HOJA DE TRABAJO DE INICIO DE PROMO DE DESCUENTO --
+			INSERT INTO Worksheet_ItemUpdate(WorksheetID, ItemId)
+			SELECT @WORKSHEET_START_ID, @ID
+			WHERE @STOREID IN (SELECT C.StoreId FROM GlobalCatalog C WHERE C.SyncGuid = (SELECT SyncGuid FROM Item WHERE ID = @ID) AND C.TableName = 'Item' AND C.IsActive = 1)
+
+			-- ASIGNAR ITEM A LA HOJA DE TRABAJO DE FIN DE PROMO DE DESCUENTO --
+			INSERT INTO Worksheet_ItemUpdate(WorksheetID, ItemId)
+			SELECT @WORKSHEET_END_ID, @ID
+			WHERE @STOREID IN (SELECT C.StoreId FROM GlobalCatalog C WHERE C.SyncGuid = (SELECT SyncGuid FROM Item WHERE ID = @ID) AND C.TableName = 'Item' AND C.IsActive = 1)
+
+			FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ID, @SUPPLIERCODE, @ITEMLOOKUPCODE, @INVOICEDISCOUNT, @CUSTOMERDISCOUNT
+		END
+		
+		-----------------------------------------------------------------------------------------------------------------------------------------------
+		------------------------------------------------------- CERRAR CURSOR -------------------------------------------------------------------------
+		-----------------------------------------------------------------------------------------------------------------------------------------------
+		CLOSE LIST_ITEMS_BULKCOPY
+		DEALLOCATE LIST_ITEMS_BULKCOPY
+		
+		-----------------------------------------------------------------------------------------------------------------------------------------------
+		------------------------------------------ GRABADO DE RESPUESTA DEL PROCEDIMIENTO -------------------------------------------------------------
+		-----------------------------------------------------------------------------------------------------------------------------------------------
+		SET @RESPUESTA = CONCAT('Cambios aplicados en tienda ', (SELECT [NAME] FROM [STORE] WHERE [ID] = @STOREID))
+		
+		-----------------------------------------------------------------------------------------------------------------------------------------------
+		--------------------------------------------- GUARDAR CAMBIOS DE TRANSACCIÓN ------------------------------------------------------------------
+		-----------------------------------------------------------------------------------------------------------------------------------------------
+		-- COMMIT TRAN
+	END TRY
+	BEGIN CATCH
+		-- QUITAR CAMBIOS DE TRANSACCIÓN --
+		-- ROLLBACK TRAN
+		SET @STATUS = 0
+		SET @ERROR = ERROR_MESSAGE()
+		SET @ERROR_NUMBER = ERROR_NUMBER()
+		SET @RESPUESTA = CONCAT('Error al intentar aplicar cambios del producto ', @ITEMLOOKUPCODE, ' para la tienda ', (SELECT [NAME] FROM [STORE] WHERE [ID] = @STOREID))
+		
+		INSERT INTO EXTCENTRAL_WIZARD_LOG([DATE], ITEM_ERROR, LAST_ACTION, MESSAGE_ERROR, MESSAGE_NUMBER, RESPUESTA, STORES, TASK_CODE, TASK_NAME, TASK_DETAILS)
+		VALUES (GETDATE(), @ITEMLOOKUPCODE, @LASTACTION, @ERROR, @ERROR_NUMBER, @RESPUESTA, @STOREID, '122', 'UEP_WS_CHANGE_ITEM_PRICE_PROMO', CONCAT(@TITLE, '[', @NOTES, ']'))
+
+		-- CERRAR CURSOR --
+		CLOSE LIST_ITEMS_BULKCOPY
+		DEALLOCATE LIST_ITEMS_BULKCOPY
+	END CATCH
+
+	SELECT @RESPUESTA AS [RESPUESTA], @STATUS AS [STATUS], @LASTACTION AS [LASTACTION], @ERROR AS [ERROR], @ERROR_NUMBER AS [ERROR_NUMBER]
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WS_CHANGE_ITEM_PRICE_REGULAR]    Script Date: 11/06/2024 10:35:48 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[UEP_WS_CHANGE_ITEM_PRICE_REGULAR] ( @TITLE VARCHAR(50), @NOTES VARCHAR(255), @STORES VARCHAR(MAX), @EFFECTIVEDATE DATETIME, @FROMDATE DATETIME, @USER_ID VARCHAR(50) )
+
+AS
+
+BEGIN
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- PARA EFECTOS DE TRANSACCIÓN DEL PROCEDIMIENTO --
+	DECLARE @RESPUESTA VARCHAR(MAX)
+	DECLARE @ERROR VARCHAR(MAX) = ''
+	DECLARE @ERROR_NUMBER INT = 0
+	DECLARE @LASTACTION VARCHAR(50) = ''
+	DECLARE @STATUS BIT = 1
+	DECLARE @EXISTS_ITEMEXT INT = 0
+	DECLARE @WORKSHEET_COST INT
+	DECLARE @WORKSHEET_PRICE INT
+	DECLARE @EXISTS_SUPPLIERLIST INT = 0
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- BANDERA PARA CUANDO HUBO ERROR DE PROVEEDOR PRIIMARIO --
+	DECLARE @ERROR_PRIMARY_SUPPLIER BIT = 0
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- PARA ALBERGAR LA INFO AL RECORRER LOS ITEMS DEL BULKCOPY --
+	DECLARE @ID INT
+	DECLARE @ITEMLOOKUPCODE VARCHAR(25)
+	DECLARE @INVOICEDISCOUNT VARCHAR(30)
+	DECLARE @CUSTOMERDISCOUNT VARCHAR(30)
+	DECLARE @COST VARCHAR(30)
+	DECLARE @UTILITY VARCHAR(30)
+	DECLARE @ITEMTAXID INT
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	DECLARE @USER_NAME VARCHAR(50) = (SELECT UserName FROM HQUser WHERE ID = @USER_ID)
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- ADICIONAL --
+	DECLARE @SUPPLIERID INT
+	DECLARE @TAXRATE FLOAT
+	DECLARE @TAXRATENAME VARCHAR(MAX)
+	DECLARE @SYNCGUID UNIQUEIDENTIFIER
+	DECLARE @MSRP MONEY
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- PARA RECORRER LAS TIENDAS Y GENERAR SUS HOJAS DE TRABAJO --
+	DECLARE @STOREID INT
+	DECLARE @WORKSHEETID INT
+	DECLARE @TBL_WORKSHEETSTORES TABLE (WORKSHEET_ID INT, STORE_ID INT)
+	DECLARE LIST_STORES CURSOR FOR
+	SELECT DISTINCT CONVERT(INT, VALUE) FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> ''
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- ABRIR CURSOR DE LAS TIENDAS --
+	OPEN LIST_STORES
+	FETCH NEXT FROM LIST_STORES INTO @STOREID
+
+	-- RECORRER CURSOR DE TIENDAS --
+	WHILE @@FETCH_STATUS = 0 BEGIN
+		-- CREAR WORKSHEET --
+		INSERT [Worksheet] (Style, EffectiveDate, [Status], Notes, Title, FromDate)
+		VALUES (261, @EFFECTIVEDATE, 1, @NOTES, @TITLE, GETDATE())
+		SET @WORKSHEETID = CONVERT(INT, SCOPE_IDENTITY())
+		SET @LASTACTION = 'CREAR HOJA DE TRABAJO'
+
+		-- ASIGNAR TIENDA A HOJA DE TRABAJO --
+		INSERT [WorksheetStore] (WorksheetID, StoreID, [Status], Originator, DateProcessed)
+		VALUES (@WORKSHEETID, @STOREID, 1, 0, NULL)
+		SET @LASTACTION = 'ASIGNAR TIENDAS A HOJA DE TRABAJO'
+
+		-- ASIGNAR HISTORICO POR TIENDA A LA HOJA --
+		INSERT INTO WorksheetHistory (WorksheetID, [Status], HistoryDate, HQEntry, StoreID, Comment)
+		VALUES (@WORKSHEETID, 1, GETDATE(), 1, @STOREID, CONCAT('Creado por ', @USER_NAME, ' desde Central Wizard.'))
+		SET @LASTACTION = 'ASIGNAR HISTORICO DE REGISTRO DE TIENDAS A HOJA DE TRABAJO'
+
+		-- GUARDAR ESTADO DE INSERCIÓN --
+		INSERT INTO @TBL_WORKSHEETSTORES (WORKSHEET_ID, STORE_ID)
+		VALUES (@WORKSHEETID, @STOREID)
+
+		-- GUARDAR BITÁCORA DE USUARIO Y HOJA DE TRABAJO --
+		EXEC [UEP_ExtCentral_Worksheet_INSERT] @USER_ID, @WORKSHEETID, 261, '123', @TITLE, @STOREID
+
+		-- SIGUIENTE TIENDA --
+		FETCH NEXT FROM LIST_STORES INTO @STOREID
+	END
+
+	-- CERRAR CURSOR --
+	CLOSE LIST_STORES
+	DEALLOCATE LIST_STORES
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- PARA RECORRER LOS ITEMS DEL BULKCOPY --
+	DECLARE LIST_ITEMS_BULKCOPY CURSOR
+	FOR SELECT [ID], [ItemLookupCode], [InvoiceDiscount], [CustomerDiscount], [Cost], [Utility] FROM ##TablaItemPriceRegular
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- INICIAR LECTURA DEL CURSOR --
+	OPEN LIST_ITEMS_BULKCOPY
+	FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ID, @ITEMLOOKUPCODE, @INVOICEDISCOUNT, @CUSTOMERDISCOUNT, @COST, @UTILITY
+
+	BEGIN TRY
+		----------------------------------------------------------------------------------------------------------------------------------------------
+		-------------------------------------------------- RECORRIDO DEL BULKCOPY --------------------------------------------------------------------
+		----------------------------------------------------------------------------------------------------------------------------------------------
+		-- RECORRIDO DE CURSOR --
+		WHILE @@FETCH_STATUS = 0 BEGIN
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- OBTENER DATOS DEL PRODUCTO --
+			SELECT @TAXRATE = ISNULL(T.[Percentage], 0),
+				@SUPPLIERID = I.[SupplierID],
+				@ITEMTAXID = I.TaxID,
+				@SYNCGUID = I.SyncGuid,
+				@MSRP = I.MSRP
+			FROM [Item] I
+				LEFT JOIN [ItemTax] IT ON IT.ID = I.TaxID
+				LEFT JOIN [Tax] T ON T.[ID] = IT.TaxID01
+			WHERE I.ID = @ID
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- VALIDAR QUE EL PRODUCTO SI TIENE UN PROVEEDOR PRIMARIO --
+			IF (@SUPPLIERID > 0) BEGIN
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				-- PARA OBTENER PRECIOS Y COSTOS FINALES --
+				DECLARE @FINAL_COST MONEY = CONVERT(MONEY, @COST);
+				
+				DECLARE @_CUSTOMER_DISCOUNT DECIMAL(18,2) = CONVERT(DECIMAL(18,2), @CUSTOMERDISCOUNT)
+				DECLARE @_INVOICE_DISCOUNT DECIMAL(18,2) = CONVERT(DECIMAL(18,2), @INVOICEDISCOUNT)
+
+				DECLARE @FINAL_CUSTOMER_DISCOUNT FLOAT = (CONVERT(FLOAT, @CUSTOMERDISCOUNT) / 100)
+				DECLARE @FINAL_INVOICE_DISCOUNT FLOAT = (CONVERT(FLOAT, @INVOICEDISCOUNT) / 100)
+				DECLARE @FINAL_UTILITY FLOAT = (CONVERT(FLOAT, @UTILITY) / 100)
+
+				DECLARE @FINAL_PRICE MONEY = (@FINAL_COST - (@FINAL_COST * @FINAL_CUSTOMER_DISCOUNT) + @MSRP)
+				DECLARE @FINAL_REGULAR_PRICE MONEY = (@FINAL_PRICE * (1 + @FINAL_UTILITY))
+				
+				DECLARE @PRICE_IVA MONEY = @FINAL_REGULAR_PRICE * (1 + (@TAXRATE / 100))
+
+				DECLARE @FINAL_SUPPLIER_COST MONEY = (@FINAL_COST - (@FINAL_COST * @FINAL_INVOICE_DISCOUNT))
+
+				DECLARE @REAL_PRICE MONEY = [dbo].[UEP_GET_PRICE_ROUND](@PRICE_IVA)
+				DECLARE @UTILITY_REAL DECIMAL(18,8) = [dbo].[UEP_GET_UTILITY_REAL] (@REAL_PRICE, @FINAL_REGULAR_PRICE, @FINAL_PRICE, @TAXRATE)
+				SET @LASTACTION = '-- OBTENER PRECIOS Y COSTOS FINALES --'
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				-- ACTUALIZAR ITEM --
+				UPDATE Item
+				SET [Cost] = @FINAL_SUPPLIER_COST,
+					[Price] = @REAL_PRICE,
+					[ReplacementCost] = @FINAL_COST,
+					[Notes] = CONCAT(N'Costo Bruto: ', @FINAL_COST, N'. ', '	IVA: ', @TAXRATE, '% (', @TAXRATENAME, '). ', CHAR(10),
+						'Imp. Específico: ', @MSRP, '. ', '	Costo Final: ', @FINAL_SUPPLIER_COST, '. ', CHAR(10),
+						'Desc. Factura: ', @INVOICEDISCOUNT, '%. ', '	Costo C/Desc. Cliente: ', @FINAL_PRICE, '. ', CHAR(10),
+						'Desc. Cliente: ', @CUSTOMERDISCOUNT, '%. ', '	Precio Final (SIN IVA): ', @FINAL_REGULAR_PRICE, '. ', CHAR(10),
+						'Utilidad: ', @UTILITY, '%. ', '		Precio Final (CON IVA): ', @PRICE_IVA, '.', CHAR(10), CHAR(10),
+						'Utilidad Real: ', @UTILITY_REAL, '%. ', CHAR(10),
+						'Precio Redondeado: ', @REAL_PRICE, '.', CHAR(10),
+						'Tiendas: [', (SELECT STRING_AGG(Name, ',') FROM Store WHERE ID IN (SELECT STORE_ID FROM @TBL_WORKSHEETSTORES)), ']')
+				WHERE [ID] = @ID
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				INSERT INTO ExtCentral_ItemHistory(
+					ItemID, StoreID, SupplierID, ItemTaxID,
+					MSRP, Utility, InvoiceDiscount, CustomerDiscount,
+					GrossCost, Cost, Price,
+					DateApplied, TaskApplied, Aditional)
+				SELECT
+					@ID, TBL.STORE_ID, @SUPPLIERID, @ITEMTAXID,
+					@MSRP, CONVERT(FLOAT, @UTILITY), CONVERT(DECIMAL(18,2), @INVOICEDISCOUNT), CONVERT(DECIMAL(18,2), @CUSTOMERDISCOUNT),
+					CAST(@FINAL_COST AS MONEY), @FINAL_SUPPLIER_COST, @REAL_PRICE,
+					GETDATE(), @TITLE, @NOTES
+				FROM @TBL_WORKSHEETSTORES TBL
+				SET @LASTACTION = 'INGRESAR BITÁCORA DE COSTOS DE PRODUCTOS'
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				-- OBTENER SUPPLIERLIST DEL ITEM --
+				SELECT @EXISTS_SUPPLIERLIST = COUNT(S.[ID])
+				FROM [SupplierList] AS S
+				WHERE S.[SupplierID] = @SUPPLIERID AND S.[ItemID] = @ID
+				SET @LASTACTION = 'VER SI EXISTE EL SUPPLIER LIST'
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				IF (@EXISTS_SUPPLIERLIST = 0) BEGIN
+					-- INSERTAR SUPPLIERLIST --
+					INSERT INTO [SupplierList] ([ItemID], [SupplierID], [Cost], [ReorderNumber], [MasterPackQuantity], [TaxRate])
+					VALUES (@ID, @SUPPLIERID, @FINAL_SUPPLIER_COST, 0, 0, @TAXRATE)
+					SET @LASTACTION = CONCAT('INSERTAR SUPPLIERLIST SUPPLIER=', @SUPPLIERID)
+				END ELSE BEGIN
+					-- ACTUALIZAR SUPPLIERLIST --
+					UPDATE [SupplierList]
+					SET [Cost] = @FINAL_SUPPLIER_COST, [TaxRate] = @TAXRATE
+					WHERE [SupplierID] = @SUPPLIERID AND [ItemID] = @ID
+					SET @LASTACTION = 'ACTUALIZAR SUPPLIERLIST'
+				END
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				-- ACTUALIZAR ITEMDYNAMIC --
+				UPDATE ItemDynamic
+				SET [Price] = @REAL_PRICE,
+					[Cost] = @FINAL_SUPPLIER_COST
+				WHERE [ItemID] = @ID
+					AND [StoreID] IN (SELECT STORE_ID FROM @TBL_WORKSHEETSTORES)
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				-- VERIFICAR SI EXISTE EL EXTCENTRAL_ITEMEXT --
+				SELECT @EXISTS_ITEMEXT = COUNT(I.[ItemID]) FROM [ExtCentral_ItemExt] I WHERE I.ItemID = @ID AND I.SupplierID = @SUPPLIERID AND I.StoreID = @STOREID
+
+				-- VALIDACIÓN PARA LA APLICACIÓN DE CAMBIOS PARA EXTCENTRAL_ITEMEXT --
+				IF (@EXISTS_ITEMEXT > 0) BEGIN
+					-- ACTUALIZAR ExtCentral_ItemExt --
+					UPDATE I
+					SET I.[CustomerDiscount] = CONVERT(DECIMAL(18,2), @CUSTOMERDISCOUNT),
+						I.[InvoiceDiscount] = CONVERT(DECIMAL(18,2), @INVOICEDISCOUNT), 
+						I.[StartDate] = CONVERT(DATE, @EFFECTIVEDATE),
+						I.[EndDate] = NULL,
+						I.[Utility] = CONVERT(DECIMAL(18,2), @UTILITY),
+						I.[Type] = 'Regular',
+						I.GrossCost = @FINAL_COST
+					FROM  [ExtCentral_ItemExt] I
+					WHERE I.[ItemID] = @ID AND I.[SupplierID] = @SUPPLIERID AND I.[StoreID] = @STOREID
+					SET @LASTACTION = '-- ACTUALIZAR ExtCentral_ItemExt --'
+				END ELSE BEGIN
+					-- INSERTAR ExtCentral_ItemExt --
+					INSERT INTO [ExtCentral_ItemExt] (
+						[ItemID], [SupplierID], [StoreID], [CustomerDiscount], [InvoiceDiscount], [StartDate], [EndDate], [Utility], [Type], GrossCost
+					) VALUES (
+						@ID, @SUPPLIERID, @STOREID, CONVERT(DECIMAL(18,2), @CUSTOMERDISCOUNT), CONVERT(DECIMAL(18,2), @INVOICEDISCOUNT),
+						CONVERT(DATE ,@EFFECTIVEDATE), NULL, CONVERT(DECIMAL(18,2), @UTILITY), 'Regular', @FINAL_COST
+					)
+					SET @LASTACTION = '-- INSERTAR ExtCentral_ItemExt --'
+				END
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+				-- ASIGNACIÓN DE ITEM A LA HOJA DE TRABAJO --
+				INSERT INTO Worksheet_ItemUpdate(WorksheetID, ItemId)
+				SELECT WORKSHEET_ID, @ID
+				FROM @TBL_WORKSHEETSTORES
+				WHERE STORE_ID IN (SELECT C.StoreId FROM GlobalCatalog C WHERE C.SyncGuid = @SYNCGUID AND C.TableName = 'Item' AND C.IsActive = 1)
+				SET @LASTACTION = CONCAT('INSERTAR ITEM A HOJA DE TRABAJO. ', @ITEMLOOKUPCODE)
+
+			END ELSE BEGIN -- SALIR EN CASO DE NO CUMPLIR LA VALIDACIÓN DEL PROVEEDOR PRIMARIO
+				SET @ERROR_PRIMARY_SUPPLIER = 1
+				BREAK
+			END
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ID, @ITEMLOOKUPCODE, @INVOICEDISCOUNT, @CUSTOMERDISCOUNT, @COST, @UTILITY
+		END
+
+		-----------------------------------------------------------------------------------------------------------------------------------------------
+		------------------------------------------------------- CERRAR CURSOR -------------------------------------------------------------------------
+		-----------------------------------------------------------------------------------------------------------------------------------------------
+		CLOSE LIST_ITEMS_BULKCOPY
+		DEALLOCATE LIST_ITEMS_BULKCOPY
+		-----------------------------------------------------------------------------------------------------------------------------------------------
+		------------------------------------------ GRABADO DE RESPUESTA DEL PROCEDIMIENTO -------------------------------------------------------------
+		-----------------------------------------------------------------------------------------------------------------------------------------------
+		IF (@ERROR_PRIMARY_SUPPLIER = 0) BEGIN
+			SET @STATUS = 1
+			SET @RESPUESTA = CONCAT('Cambios aplicados en las tiendas (', @STORES, ').')
+			-- COMMIT TRAN
+		END ELSE BEGIN
+			-- ROLLBACK TRAN
+			SET @STATUS = 0
+			SET @RESPUESTA = CONCAT('Error al intentar aplicar cambios para las tiendas (', @STORES, '). Uno o varios productos no tiene definido un proveedor primario.')
+		END
+	END TRY
+	BEGIN CATCH
+		-- QUITAR CAMBIOS DE TRANSACCIÓN --
+		-- ROLLBACK TRAN
+		SET @STATUS = 0
+		SET @ERROR = ERROR_MESSAGE()
+		SET @ERROR_NUMBER = ERROR_NUMBER()
+		SET @RESPUESTA = CONCAT('Error al intentar aplicar cambios del producto ', @ITEMLOOKUPCODE, ' para las tiendas (', @STORES, '). ERROR: ', @ERROR_NUMBER)
+		-- CERRAR CURSOR --
+
+		INSERT INTO EXTCENTRAL_WIZARD_LOG([DATE], ITEM_ERROR, LAST_ACTION, MESSAGE_ERROR, MESSAGE_NUMBER, RESPUESTA, STORES, TASK_CODE, TASK_NAME, TASK_DETAILS)
+		VALUES (GETDATE(), @ITEMLOOKUPCODE, @LASTACTION, @ERROR, @ERROR_NUMBER, @RESPUESTA, @STORES, '123', 'UEP_WS_CHANGE_ITEM_PRICE_REGULAR', CONCAT(@TITLE, '[', @NOTES, ']'))
+
+		CLOSE LIST_ITEMS_BULKCOPY
+		DEALLOCATE LIST_ITEMS_BULKCOPY
+	END CATCH
+
+	IF (@ERROR_NUMBER=2601) BEGIN
+		SET @RESPUESTA = CONCAT('Error al aplicar cambios a hoja de trabajo. El producto ', @ITEMLOOKUPCODE, ' ya cuenta con los mismos Costos del artículo del proveedor');
+	END
+
+	SELECT @RESPUESTA AS [RESPUESTA], @STATUS AS [STATUS], @LASTACTION AS [LASTACTION], @ERROR AS [ERROR], @ERROR_NUMBER AS [ERROR_NUMBER]
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WS_CHANGE_ITEM_PRICE_UTILITY]    Script Date: 11/06/2024 10:35:48 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[UEP_WS_CHANGE_ITEM_PRICE_UTILITY] ( @STORES VARCHAR(MAX), @EFFECTIVEDATE DATETIME, @TITLE VARCHAR(50), @NOTES VARCHAR(225), @USER_ID VARCHAR(50) )
+
+AS
+
+BEGIN
+	-- PARA EFECTOS DE RESULTADOS DEL PROCEDIMIENTO --
+	DECLARE @RESPUESTA VARCHAR(MAX)
+	DECLARE @LASTACTION VARCHAR(MAX)
+	DECLARE @ERROR VARCHAR(MAX)
+	DECLARE @ERROR_NUMBER INT
+	DECLARE @STATUS BIT = 1
+	DECLARE @COUNT INT = 0
+	
+	-- PARA RECORRER BULKCOPY --
+	DECLARE @ID INT
+	DECLARE @ITEMLOOKUPCODE VARCHAR (25)
+	DECLARE @UTILITY VARCHAR(30)
+	
+	-- ADICIONAL --
+	DECLARE @SUPPLIERID INT
+	DECLARE @TAXRATE FLOAT
+	DECLARE @TAXNAME VARCHAR(80)
+	DECLARE @EXISTS_ITEM INT
+	
+	-- PARA CÁLCULO DE NÚMEROS --
+	DECLARE @_COST MONEY
+	DECLARE @_UTILITY DECIMAL(18,2)
+	DECLARE @_CUSTDISCOUNT DECIMAL(18,2)
+	DECLARE @_INVODISCOUNT DECIMAL(18,2)
+	DECLARE @_MSRP MONEY
+	DECLARE @_FINALCOST MONEY
+	DECLARE @_FINALPRICE MONEY
+	DECLARE @_FINALPRICE_UTILITY MONEY
+	DECLARE @_FINALPRICE_IVA MONEY
+	
+	DECLARE @USER_NAME VARCHAR(50) = (SELECT UserName FROM HQUser WHERE ID = @USER_ID)
+
+	-- PARA ALMACENAR LOS ITEMS EN UNA VARIABLE Y RECORRERLOS --
+	DECLARE @TBL_ITEMS TABLE (ID INT, ItemLookupCode VARCHAR(50), Utility VARCHAR(30))
+	INSERT INTO @TBL_ITEMS (ID, ItemLookupCode, Utility)
+	SELECT [ID], [ItemLookupCode], [Utility] FROM ##TablaMargenUtility
+
+	-- CURSOR PARA RECORRER LOS ITEM --
+	DECLARE LIST_ITEMS_BULKCOPY CURSOR
+	FOR SELECT [ID], [ItemLookupCode], [Utility] FROM @TBL_ITEMS
+	
+	-- PARA HOJAS DE TRABAJO --
+	DECLARE @WORKSHEETID INT
+	DECLARE @STOREID INT
+
+	-- CURSOR PARA RECORRER LAS TIENDAS --
+	DECLARE LIST_STORES CURSOR
+	FOR SELECT VALUE FROM STRING_SPLIT(@STORES, ',')
+	WHERE VALUE <> ''
+
+	-- PARA ALMACENAR LOS IDS DEL WORKSHEET CON SU RESPECTIVA TIENDA --
+	DECLARE @TBL_WORKSHEET_STORE TABLE ( WORKSHEETID INT, STOREID INT )
+
+	BEGIN TRY
+		-----------------------------------------------------------------------------------------------------
+		-------------------------------------   RECORRIDO DE TIENDAS   --------------------------------------
+		-----------------------------------------------------------------------------------------------------
+		-- ABRIR CURSOR DE TIENDAS DE LAS HOJAS DE TRABAJO --
+		OPEN LIST_STORES
+		FETCH NEXT FROM LIST_STORES INTO @STOREID
+		
+		-- CREACIÓN DE HOJAS DE TRABAJO Y ASIGNACIÓN DE TIENDAS A LAS MISMAS --
+		WHILE @@FETCH_STATUS = 0 BEGIN
+			-- CREAR WORKSHEET --
+			INSERT [Worksheet] (Style, EffectiveDate, [Status], Notes, Title, FromDate)
+			VALUES (261, @EFFECTIVEDATE, 1, @NOTES, @TITLE, GETDATE())
+			SET @WORKSHEETID = CONVERT(INT, SCOPE_IDENTITY())
+			SET @LASTACTION = 'CREAR HOJA DE TRABAJO'
+
+			-- ASIGNAR TIENDAS AL WORKSHEET --
+			INSERT [dbo].[WorksheetStore](WorksheetID, StoreID, [Status], Originator, DateProcessed)
+			VALUES (@WORKSHEETID, @STOREID, 1, 0, NULL)
+			SET @LASTACTION = 'ASIGNAR TIENDAS A HOJA DE TRABAJO'
+
+			-- ASIGNAR HISTORICO POR TIENDA A LA HOJA --
+			INSERT INTO WorksheetHistory (WorksheetID, [Status], HistoryDate, HQEntry, StoreID, Comment)
+			VALUES (@WORKSHEETID, 1, GETDATE(), 1, @STOREID, CONCAT('Creado por ', @USER_NAME, ' desde Central Wizard.'))
+			SET @LASTACTION = 'ASIGNAR HISTORICO DE REGISTRO DE TIENDAS A HOJA DE TRABAJO'
+
+			-- GUARDAR ESTADO DE INSERCIÓN --
+			INSERT INTO @TBL_WORKSHEET_STORE (WORKSHEETID, STOREID)
+			VALUES (@WORKSHEETID, @STOREID)
+
+			-- GUARDAR BITÁCORA DE USUARIO Y HOJA DE TRABAJO --
+			EXEC [UEP_ExtCentral_Worksheet_INSERT] @USER_ID, @WORKSHEETID, 261, '124', @TITLE, @STOREID
+
+			-- SIGUIENTE TIENDA --
+			FETCH NEXT FROM LIST_STORES INTO @STOREID
+		END
+		
+		-- CERRAR CURSOR DE TIENDAS DE LAS HOJAS DE TRABAJO --
+		CLOSE LIST_STORES
+		DEALLOCATE LIST_STORES
+
+		-----------------------------------------------------------------------------------------------------
+		------------------------------------   RECORRIDO DE LOS ITEMS   -------------------------------------
+		-----------------------------------------------------------------------------------------------------
+		-- ABRIR CUROS PARA RECORRER EL BULKCOPY --
+		OPEN LIST_ITEMS_BULKCOPY
+		FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ID, @ITEMLOOKUPCODE, @UTILITY
+
+		---BEGIN TRAN
+
+		-- ASIGNAR ITEMS AL WORKSHEET --
+		WHILE @@FETCH_STATUS = 0 BEGIN
+			SELECT @SUPPLIERID = [SupplierID] FROM [Item] WHERE [ID] = @ID
+			IF (@SUPPLIERID > 0) BEGIN
+				-- OBTENER DATOS PARA CÁLCULOS DE PRECIOS --
+				DECLARE @SYNCGUID UNIQUEIDENTIFIER
+				SELECT @TAXRATE = ISNULL(T.[Percentage], 0),
+					@TAXNAME = ISNULL(T.[Description], '-NO DEFINIDO-'),
+					@_COST = CASE WHEN I.[ReplacementCost] = 0 THEN 1 ELSE I.[ReplacementCost] END,
+					@_CUSTDISCOUNT = ISNULL(XI.[CustomerDiscount], 0),
+					@_INVODISCOUNT = ISNULL(XI.[InvoiceDiscount], 0),
+					@_MSRP = [MSRP],
+					@EXISTS_ITEM = ISNULL(XI.ItemID, 0),
+					@SYNCGUID = I.SyncGuid
+				FROM [Item] I
+					LEFT JOIN [ItemTax] IT ON IT.ID = I.[TaxID]
+					LEFT JOIN [Tax] T ON T.ID = IT.[TaxID01]
+					LEFT JOIN [ExtCentral_Item] XI ON XI.ItemID = I.ID
+				WHERE I.ID = @ID
+
+				--SELECT @TAXRATE = ISNULL(T.[Percentage], 0) FROM [Item] I LEFT JOIN [ItemTax] IT ON IT.ID = I.[TaxID] LEFT JOIN [Tax] T ON T.ID = IT.[TaxID01]
+				--SELECT @TAXNAME = ISNULL(T.[Description], '-NO DEFINIDO-') FROM [Item] I LEFT JOIN [ItemTax] IT ON IT.ID = I.[TaxID] LEFT JOIN [Tax] T ON T.ID = IT.[TaxID01]
+				--SELECT @_COST = case when [ReplacementCost] = 0 then 1 else [ReplacementCost] end FROM [Item] WHERE [ID] = @ID
+				--SELECT @_CUSTDISCOUNT = ISNULL(XI.[CustomerDiscount], 0) FROM [ExtCentral_Item] XI WHERE XI.[ItemID] = @ID
+				--SELECT @_INVODISCOUNT = ISNULL(XI.[InvoiceDiscount], 0) FROM [ExtCentral_Item] XI WHERE XI.[ItemID] = @ID
+				--SELECT @_MSRP = [MSRP] FROM [Item] WHERE [ID] = @ID
+				
+				SET @_UTILITY = CONVERT(DECIMAL(18,2), @UTILITY)
+				SET @LASTACTION = 'OBTENER DATOS PARA CÁLCULOS DE PRECIOS'
+
+				-- CÁLCULO DE PRECIOS --
+				SET @_FINALCOST = (@_COST - (@_COST * (@_INVODISCOUNT / 100)))
+				SET @_FINALPRICE = (@_COST - (@_COST * (@_CUSTDISCOUNT / 100)) + @_MSRP)
+				SET @_FINALPRICE_UTILITY = (@_FINALPRICE * (1 + (@_UTILITY / 100)))
+				SET @_FINALPRICE_IVA = (@_FINALPRICE_UTILITY * (1 + (@TAXRATE / 100)))
+
+				DECLARE @FINAL_PRICE_ROUND MONEY = [dbo].[UEP_GET_PRICE_ROUND] (@_FINALPRICE_IVA)
+				DECLARE @UTILITY_REAL DECIMAL(18,8) = [dbo].[UEP_GET_UTILITY_REAL] (@FINAL_PRICE_ROUND, @_FINALPRICE_UTILITY, @_FINALPRICE, @TAXRATE)
+
+				SET @LASTACTION = CONCAT('CÁLCULO DE PRECIOS, ', @ID)
+
+				-- ACTUALIZA ITEM --
+				UPDATE I SET I.[Price] = @FINAL_PRICE_ROUND,
+					I.[LastUpdated] = GETDATE(),
+					I.Notes = CONCAT(N'Costo Bruto: ', I.ReplacementCost, N'. ', '	IVA: ', @TAXRATE, '% (', @TAXNAME, '). ', CHAR(10),
+						'Imp. Específico: ', I.MSRP, '. ', '	Costo Final: ', I.Cost, '. ', CHAR(10),
+						'Desc. Factura: ', @_INVODISCOUNT, '%. ', '	Costo C/Desc. Cliente: ', @_FINALPRICE, '. ', CHAR(10),
+						'Desc. Cliente: ', @_CUSTDISCOUNT, '%. ', '	Precio Final (SIN IVA): ', @_FINALPRICE_UTILITY, '. ', CHAR(10),
+						'Utilidad: ', @UTILITY, '%. ', '		Precio Final (CON IVA): ', @_FINALPRICE_IVA, '.', CHAR(10), CHAR(10),
+						'Utilidad Real: ', @UTILITY_REAL, '%. ', CHAR(10),
+						'Precio Redondeado: ', @FINAL_PRICE_ROUND, '.', CHAR(10),
+						'Tiendas: [', (SELECT STRING_AGG([Name], ',') FROM Store WHERE ID IN (SELECT STOREID FROM @TBL_WORKSHEET_STORE)), ']')
+				FROM [Item] I
+				WHERE i.[ID] = @ID
+				SET @LASTACTION = 'ACTUALIZAR ITEM'
+
+				INSERT INTO ExtCentral_ItemHistory(ItemID, StoreID, SupplierID, Utility, Price, DateApplied, TaskApplied, Aditional)
+				SELECT @ID, TBL.STOREID, @SUPPLIERID, @_UTILITY, @FINAL_PRICE_ROUND, GETDATE(), @TITLE, @NOTES
+				FROM @TBL_WORKSHEET_STORE TBL
+				SET @LASTACTION = 'INGRESAR BITÁCORA DE COSTOS DE PRODUCTOS'
+
+				-- 'ACTUALIZAR ITEMDYNAMIC' --
+				UPDATE I SET I.[Price] = @FINAL_PRICE_ROUND
+				FROM [ItemDynamic] I
+				WHERE I.[ItemID] = @ID AND I.StoreID IN (SELECT STOREID FROM @TBL_WORKSHEET_STORE)
+				SET @LASTACTION = 'ACTUALIZAR ITEMDYNAMIC'
+
+				-- REVISAR SI EXISTE EXTCENTRAL_ITEM --
+				IF (@EXISTS_ITEM > 0) BEGIN
+					-- ACTUALIZAR EXTCENTRAL_ITEM --
+					UPDATE I SET I.[Utility] = @_UTILITY
+					FROM [ExtCentral_Item] I
+					WHERE I.[ItemID] = @ID
+					SET @LASTACTION = 'ACTUALIZAR [ExtCentral_Item]'
+				END ELSE BEGIN
+					-- AGREGAR EXTCENTRAL_ITEM --
+					INSERT INTO [ExtCentral_Item] ([ItemID], [FamilyID], [SubCategoryID], [SegmentID], [CustomerDiscount], [InvoiceDiscount], [Utility], [StartDate])
+					VALUES (@ID, 0, 0, 0, 0, 0, @_UTILITY, GETDATE())
+					SET @LASTACTION = 'INSERTAR [ExtCentral_Item]'
+				END
+				
+				-- ASIGNAR PRODUCTO A HOJA DE TRABAJO --
+				INSERT INTO Worksheet_ItemUpdate(WorksheetID, ItemId)
+				SELECT WORKSHEETID, @ID
+				FROM @TBL_WORKSHEET_STORE WS
+				WHERE WS.STOREID IN (SELECT C.StoreId FROM GlobalCatalog C WHERE C.SyncGuid = @SYNCGUID AND C.TableName = 'Item' AND C.IsActive = 1)
+				SET @LASTACTION = 'ASIGNAR PRODUCTO A HOJA DE TRABAJO'
+			END ELSE BEGIN
+				SET @STATUS = 0
+				BREAK
+			END
+			SET @COUNT = @COUNT + 1
+			FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ID, @ITEMLOOKUPCODE, @UTILITY
+		END
+
+		-- CERRAR CURSOR --
+		CLOSE LIST_ITEMS_BULKCOPY
+		DEALLOCATE LIST_ITEMS_BULKCOPY
+
+		IF (@STATUS = 1) BEGIN
+			SET @RESPUESTA = 'Productos actualizados y cargados a las hojas de trabajo respectivas'
+			-- APLICAR CAMBIOS EN BASE DE DATOS --
+			--COMMIT TRAN
+			SET @LASTACTION = 'COMMIT'
+		END ELSE BEGIN
+			SET @RESPUESTA = CONCAT('Error. El producto (', @ITEMLOOKUPCODE, ') no tiene asignado un proveedor primario. Verifique la información. Sino, contáctese con soporte.')
+			--COMMIT TRAN
+			SET @LASTACTION = 'ROLLBACK'
+		END
+	END TRY
+	BEGIN CATCH
+		---COMMIT TRAN
+		SET @STATUS = 0
+		SET @RESPUESTA = CONCAT('Error al intentar ingresar los productos. Excepción ocurrida en el producto (', @ITEMLOOKUPCODE, ')')
+		SET @ERROR = ERROR_MESSAGE()
+		SET @ERROR_NUMBER = ERROR_NUMBER()
+
+		INSERT INTO EXTCENTRAL_WIZARD_LOG([DATE], ITEM_ERROR, LAST_ACTION, MESSAGE_ERROR, MESSAGE_NUMBER, RESPUESTA, STORES, TASK_CODE, TASK_NAME, TASK_DETAILS)
+		VALUES (GETDATE(), @ITEMLOOKUPCODE, @LASTACTION, @ERROR, @ERROR_NUMBER, @RESPUESTA, @STORES, '124', 'UEP_WS_CHANGE_ITEM_PRICE_UTILITY', CONCAT(@TITLE, '[', @NOTES, ']'))
+
+		CLOSE LIST_ITEMS_BULKCOPY
+		DEALLOCATE LIST_ITEMS_BULKCOPY
+	END CATCH
+
+	SELECT @RESPUESTA AS [RESPUESTA], @STATUS AS [STATUS], @LASTACTION AS [LASTACTION], @ERROR AS [ERROR], @ERROR_NUMBER AS [ERROR_NUMBER], @COUNT AS [COUNT]
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WS_CHANGE_ITEM_PROPERTIES]    Script Date: 11/06/2024 10:35:48 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[UEP_WS_CHANGE_ITEM_PROPERTIES] (@STORES VARCHAR(MAX), @PROPERTIES VARCHAR(MAX), @DATA_CONTENT_ID INT, @HQ_USER_ID INT, @TITLE VARCHAR(50), @NOTES VARCHAR(250), @EFFECTIVE_DATE DATE)
+
+AS
+
+BEGIN
+	-- PARA ALMACENAR DATOS DE RESPUESTA DEL PROCEDIMIENTO --
+	DECLARE @RESPUESTA VARCHAR(MAX) = ''
+		, @STATUS BIT = 1
+		, @ERROR VARCHAR(MAX)
+		, @ERROR_NUMBER INT = 0
+		, @LASTACTION VARCHAR (MAX)
+
+	-- PARA ALAMACENAR DATOS DE LOS PRODUCTOS A ACTUALIZAR --
+	DECLARE @ITEM_ID INT
+		, @ITEM_ITEMLOOKUPCODE VARCHAR(25)
+		, @ITEM_PROPERTIES VARCHAR(MAX)
+		, @ITEM_SYNCGUID UNIQUEIDENTIFIER
+		, @ITEM_OTHER_PROPS VARCHAR(MAX)
+		, @ITEM_XML_PROPERTIES VARCHAR(MAX)
+		, @ITEM_XML_DATA VARCHAR(MAX) = N'<ExtendedProperties>
+											<Property Name="WholeNumber" Type="System.Boolean">false</Property>
+											<Property Name="DoNotAllowEditUnitOfMeasure" Type="System.Boolean">false</Property>
+										</ExtendedProperties>'
+
+	-- PARA ALMACENAR DATOS DE HOJAS DE TRABAJO --
+	DECLARE @STORE_ID INT
+		, @WORKSHEET_ID INT
+		, @HQ_USER_NAME VARCHAR(50) = (SELECT U.UserName FROM HQUser U WHERE U.ID = @HQ_USER_ID)
+	
+	-- PARA ALMACENAR LAS TIENDAS Y SUS HOJAS DE TRABAJO --
+	DECLARE @TBL_WS TABLE (WORKSHEET_ID INT, STORE_ID INT)
+
+	BEGIN TRY
+		-- PARA ALMACENAR LISTA DE PRODUCTOS A MODIFICAR --
+		DECLARE @TBL_ITEMS TABLE (ID INT, ITEMLOOKUPCODE VARCHAR(25), PROPERTIES VARCHAR(MAX))
+		INSERT INTO @TBL_ITEMS (ID, ITEMLOOKUPCODE, PROPERTIES)
+		SELECT ID, ITEMLOOKUPCODE, PROPERTIES FROM ##TablaItemProperties
+
+		-- PARA RECORRER LISTA DE PRODUCTOS A MODIFICAR --
+		DECLARE LIST_ITEMS_BULKCOPY CURSOR FOR
+		SELECT T.ID, T.ITEMLOOKUPCODE, PROPERTIES, I.SyncGuid FROM @TBL_ITEMS T INNER JOIN Item I ON I.ID = T.ID
+
+		-- PARA RECORRER CADA UNA DE LAS TIENDAS INGRESADAS POR EL USUARIO --
+		DECLARE LIST_STORES CURSOR FOR SELECT DISTINCT CONVERT(INT, VALUE) FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> ''
+		OPEN LIST_STORES
+		FETCH NEXT FROM LIST_STORES INTO @STORE_ID
+
+		-- RECORRER CURSOR DE TIENDAS --
+		WHILE @@FETCH_STATUS = 0 BEGIN
+			-- CREAR WORKSHEET --
+			INSERT [Worksheet] (Style, EffectiveDate, [Status], Notes, Title, FromDate)
+			VALUES (261, @EFFECTIVE_DATE, 1, @NOTES, @TITLE, GETDATE())
+			SET @WORKSHEET_ID = CONVERT(INT, SCOPE_IDENTITY())
+			SET @LASTACTION = 'CREAR HOJA DE TRABAJO'
+
+			-- ASIGNAR TIENDA A HOJA DE TRABAJO --
+			INSERT [WorksheetStore] (WorksheetID, StoreID, [Status], Originator, DateProcessed)
+			VALUES (@WORKSHEET_ID, @STORE_ID, 1, 0, NULL)
+			SET @LASTACTION = 'ASIGNAR TIENDAS A HOJA DE TRABAJO'
+
+			-- ASIGNAR HISTORICO POR TIENDA A LA HOJA --
+			INSERT INTO WorksheetHistory (WorksheetID, [Status], HistoryDate, HQEntry, StoreID, Comment)
+			VALUES (@WORKSHEET_ID, 1, GETDATE(), 1, @STORE_ID, CONCAT('Creado por ', @HQ_USER_NAME, ' desde Central Wizard.'))
+			SET @LASTACTION = 'ASIGNAR HISTORICO DE REGISTRO DE TIENDAS A HOJA DE TRABAJO'
+
+			-- GUARDAR BITÁCORA DE USUARIO Y HOJA DE TRABAJO --
+			EXEC [UEP_ExtCentral_Worksheet_INSERT] @HQ_USER_ID, @WORKSHEET_ID, 261, '201', @TITLE, @STORE_ID, @DATA_CONTENT_ID
+			SET @LASTACTION = 'INSERT WORKSHEET_CONTENT'
+
+			-- GUARDAR ESTADO DE INSERCIÓN --
+			INSERT INTO @TBL_WS (STORE_ID, WORKSHEET_ID)
+			VALUES (@STORE_ID, @WORKSHEET_ID)
+
+			-- SIGUIENTE TIENDA --
+			FETCH NEXT FROM LIST_STORES INTO @STORE_ID
+		END
+
+		-- CERRAR CURSOR --
+		CLOSE LIST_STORES
+		DEALLOCATE LIST_STORES
+
+		-- ABRIR CURSOR DE ITEMS --
+		OPEN LIST_ITEMS_BULKCOPY
+		FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ITEM_ID, @ITEM_ITEMLOOKUPCODE, @ITEM_PROPERTIES, @ITEM_SYNCGUID
+		SET @LASTACTION = 'SIGUIENTE ITEM: ' + @ITEM_ITEMLOOKUPCODE
+
+		-- RECORRER CURSOR DE PRODUCTOS --
+		WHILE @@FETCH_STATUS = 0 BEGIN
+			IF ((SELECT COUNT(*) FROM GlobalCatalog GC WHERE GC.SyncGuid = @ITEM_SYNCGUID AND GC.IsActive = 1 AND GC.TableName = 'Item' AND GC.StoreId IN (SELECT CONVERT(INT, VALUE) FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> '')) > 0) BEGIN
+				-- OBTENER PROPIEDADES EXISTENTES --
+				SELECT @ITEM_OTHER_PROPS = STRING_AGG(CONCAT('<Property Name="', P.PropertyName, '" Type="', StringType.DataType, '">', P.[Value], '</Property>'), '')
+				FROM UEP_ITEMEXT_PROPERTY_GET_BY_ITEMID(@ITEM_ID, @STORES, '%', 1) P
+					CROSS APPLY (SELECT
+									CASE P.PropertyType
+										WHEN 1 THEN 'System.DateTime'
+										WHEN 2 THEN 'System.Decimal'
+										WHEN 3 THEN 'System.Decimal'
+										WHEN 4 THEN 'System.Boolean'
+										WHEN 5 THEN 'System.Collections.ArrayList'
+										ELSE 'System.String'
+									END
+								[DataType]) [StringType]
+				WHERE P.PropertyName NOT IN (SELECT VALUE FROM STRING_SPLIT(@PROPERTIES, ','))
+				SET @LASTACTION = 'OBTENER PROPIEDADES SIN ACCESO'
+
+				-- CONCATENAR VALORES DE PROPIEDADES EXISTENTES CON LAS NUEVAS --
+				SET @ITEM_XML_PROPERTIES = CONCAT('<ExtendedProperties>', @ITEM_OTHER_PROPS, @ITEM_PROPERTIES, '</ExtendedProperties>' )
+				SET @LASTACTION = 'CONCATENAR VALORES DE PROPIEDADES EXISTENTES CON LAS NUEVAS'
+
+				-- ACTUALIZAR O INGRESAR ITEMEXT DEL PRODUCTO --
+				IF ((SELECT COUNT(*) FROM ItemExt WHERE ItemId = @ITEM_ID) > 0) BEGIN
+					UPDATE ItemExt
+					SET ItemCustomPropertyXmlData = @ITEM_XML_PROPERTIES
+					WHERE ItemId = @ITEM_ID
+					SET @LASTACTION = 'ACTUALIZAR ITEM_EXT'
+				END ELSE BEGIN
+					INSERT INTO ItemExt (ItemId, XmlData, ItemCustomPropertyXmlData)
+					VALUES (@ITEM_ID, @ITEM_XML_DATA, @ITEM_XML_PROPERTIES)
+					SET @LASTACTION = 'INSERTAR ITEM_EXT'
+				END
+
+				INSERT INTO Worksheet_ItemUpdate (ItemID, WorksheetID)
+				SELECT @ITEM_ID, T.WORKSHEET_ID
+				FROM @TBL_WS T
+				WHERE T.STORE_ID IN (SELECT GC.StoreId FROM GlobalCatalog GC WHERE GC.IsActive = 1 AND GC.StoreId = T.STORE_ID AND GC.TableName = 'Item' AND GC.SyncGuid = @ITEM_SYNCGUID)
+				SET @LASTACTION = 'INSERTAR Worksheet_ItemUpdate'
+			END ELSE BEGIN
+				SET @LASTACTION = 'PASAR ITEM'
+				PRINT CONCAT('PRODUCTO OMITIDO: ', @ITEM_ITEMLOOKUPCODE, '. PARA TIENDAS: ', @STORES)
+			END
+
+			-- SIGUIENTE ITEM --
+			FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ITEM_ID, @ITEM_ITEMLOOKUPCODE, @ITEM_PROPERTIES, @ITEM_SYNCGUID
+			SET @LASTACTION = 'SIGUIENTE ITEM: ' + @ITEM_ITEMLOOKUPCODE
+		END
+
+		-- CERRAR CURSOR --
+		CLOSE LIST_ITEMS_BULKCOPY
+		DEALLOCATE LIST_ITEMS_BULKCOPY
+
+		-- ASIGNAR VALOR DE RESPUESTA --
+		SET @RESPUESTA = 'Cambios aplicados al sistema'
+		SET @LASTACTION = 'COMMIT'
+	END TRY
+	BEGIN CATCH
+		SET @STATUS = 0
+		SET @ERROR = ERROR_MESSAGE()
+		SET @ERROR_NUMBER = ERROR_NUMBER()
+		SET @RESPUESTA = CONCAT('Error al intentar aplicar cambios del producto ', @ITEM_ITEMLOOKUPCODE, '. ERROR:', @ERROR_NUMBER)
+
+		INSERT INTO EXTCENTRAL_WIZARD_LOG([DATE], ITEM_ERROR, LAST_ACTION, MESSAGE_ERROR, MESSAGE_NUMBER, RESPUESTA, STORES, TASK_CODE, TASK_NAME, TASK_DETAILS)
+		VALUES (GETDATE(), @ITEM_ITEMLOOKUPCODE, @LASTACTION, @ERROR, @ERROR_NUMBER, @RESPUESTA, @STORES, '201', 'ACTIVACIÓN PRODUCTOS', CONCAT(@TITLE, '[', @NOTES, ']'))
+
+		CLOSE LIST_ITEMS_BULKCOPY
+		DEALLOCATE LIST_ITEMS_BULKCOPY
+	END CATCH
+
+	-- DEVOLVER RESPUESTA DE RESULTADOS --
+	SELECT @RESPUESTA AS [RESPUESTA], @STATUS AS [STATUS], @LASTACTION AS [LASTACTION], @ERROR AS [ERROR], @ERROR_NUMBER AS [ERROR_NUMBER]
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WS_CHANGE_ITEM_SUPPLIER]    Script Date: 11/06/2024 10:35:48 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[UEP_WS_CHANGE_ITEM_SUPPLIER] (@STORES VARCHAR(MAX), @TITLE VARCHAR(50), @NOTES VARCHAR(225), @EFFECTIVEDATE DATETIME, @USER_ID VARCHAR(50), @WORKSHEETCONTENTID INT)
+
+AS
+
+BEGIN
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- PARA RESULTADOS DEL PROCEDIMIENTO --
+	DECLARE @RESPUESTA VARCHAR(MAX) = ''
+	DECLARE @ERROR VARCHAR(MAX) = ''
+	DECLARE @LASTACTION VARCHAR(50) = ''
+	DECLARE @EXISTS_SUPPLIERLIST INT = 0
+	DECLARE @EXISTS_ITEMEXT INT = 0
+	DECLARE @STATUS BIT = 1
+	DECLARE @ERROR_NUMBER INT = 0
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- PARA ALBERGAR LA INFO AL RECORRER LOS ITEMS DEL BULKCOPY --
+	DECLARE @ID INT
+	DECLARE @SUPPLIERID INT
+	DECLARE @ITEMTAXID INT
+	DECLARE @SUPPLIERCODE VARCHAR(30)
+	DECLARE @ITEMLOOKUPCODE VARCHAR(25)
+	DECLARE @COST VARCHAR(30)
+	DECLARE @UTILITY VARCHAR(30)
+	DECLARE @INVOICEDISCOUNT VARCHAR(30)
+	DECLARE @CUSTOMERDISCOUNT VARCHAR(30)
+	DECLARE @STARTDATE VARCHAR(30)
+	DECLARE @TAXRATE FLOAT
+	DECLARE @TAXRATENAME VARCHAR (50)
+	DECLARE @COSTDISCOUNT MONEY = 0
+	DECLARE @MSRP MONEY = 0
+	DECLARE @SYNCGUID UNIQUEIDENTIFIER
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	DECLARE @USER_NAME VARCHAR(50) = (SELECT UserName FROM HQUser WHERE ID = @USER_ID)
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- PARA ALMACENAR LOS ITEMS EN UNA VARIABLE Y RECORRERLOS --
+	DECLARE @TBL_ITEMS TABLE (ID INT, SupplierCode VARCHAR(30), ItemLookupCode VARCHAR(25), Cost VARCHAR(30), Utility VARCHAR(30), InvoiceDiscount VARCHAR(30), CustomerDiscount VARCHAR(30), StartDate VARCHAR(30))
+	INSERT INTO @TBL_ITEMS (ID, SupplierCode, ItemLookupCode, Cost, Utility, InvoiceDiscount, CustomerDiscount, StartDate)
+	SELECT [ID], [SupplierCode], [ItemLookupCode], [Cost], [Utility], [InvoiceDiscount], [CustomerDiscount], [StartDate] FROM ##TablaItemProveedor
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- PARA RECORRER LOS ITEMS DEL BULKCOPY --
+	DECLARE LIST_ITEMS_BULKCOPY CURSOR
+	FOR SELECT [ID], [SupplierCode], [ItemLookupCode], [Cost], [Utility], [InvoiceDiscount], [CustomerDiscount], [StartDate] FROM @TBL_ITEMS
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- PARA RECORRER LAS TIENDAS Y GENERAR SUS HOJAS DE TRABAJO --
+	DECLARE @STOREID INT
+	DECLARE @WORKSHEETID INT
+	DECLARE @TBL_WORKSHEETSTORES TABLE (WORKSHEET_ID INT, STORE_ID INT)
+	DECLARE LIST_STORES CURSOR FOR
+	SELECT DISTINCT CONVERT(INT, VALUE) FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> ''
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- ABRIR CURSOR DE LAS TIENDAS --
+	OPEN LIST_STORES
+	FETCH NEXT FROM LIST_STORES INTO @STOREID
+
+	-- RECORRER CURSOR DE TIENDAS --
+	WHILE @@FETCH_STATUS = 0 BEGIN
+		-- CREAR WORKSHEET --
+		INSERT [Worksheet] (Style, EffectiveDate, [Status], Notes, Title, FromDate)
+		VALUES (261, @EFFECTIVEDATE, 1, @NOTES, @TITLE, GETDATE())
+		SET @WORKSHEETID = CONVERT(INT, SCOPE_IDENTITY())
+		SET @LASTACTION = 'CREAR HOJA DE TRABAJO'
+
+		-- ASIGNAR TIENDA A HOJA DE TRABAJO --
+		INSERT [WorksheetStore] (WorksheetID, StoreID, [Status], Originator, DateProcessed)
+		VALUES (@WORKSHEETID, @STOREID, 1, 0, NULL)
+		SET @LASTACTION = 'ASIGNAR TIENDAS A HOJA DE TRABAJO'
+
+		-- ASIGNAR HISTORICO POR TIENDA A LA HOJA --
+		INSERT INTO WorksheetHistory (WorksheetID, [Status], HistoryDate, HQEntry, StoreID, Comment)
+		VALUES (@WORKSHEETID, 1, GETDATE(), 1, @STOREID, CONCAT('Creado por ', @USER_NAME, ' desde Central Wizard.'))
+		SET @LASTACTION = 'ASIGNAR HISTORICO DE REGISTRO DE TIENDAS A HOJA DE TRABAJO'
+
+		-- GUARDAR ESTADO DE INSERCIÓN --
+		INSERT INTO @TBL_WORKSHEETSTORES (WORKSHEET_ID, STORE_ID)
+		VALUES (@WORKSHEETID, @STOREID)
+
+		-- GUARDAR BITÁCORA DE USUARIO Y HOJA DE TRABAJO --
+		EXEC [UEP_ExtCentral_Worksheet_INSERT] @USER_ID, @WORKSHEETID, 261, '120', @TITLE, @STOREID, @WORKSHEETCONTENTID
+
+		-- SIGUIENTE TIENDA --
+		FETCH NEXT FROM LIST_STORES INTO @STOREID
+	END
+
+	-- CERRAR CURSOR --
+	CLOSE LIST_STORES
+	DEALLOCATE LIST_STORES
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- ABRIR CURSOR DE ITEMS --
+	OPEN LIST_ITEMS_BULKCOPY
+	FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ID, @SUPPLIERCODE, @ITEMLOOKUPCODE, @COST, @UTILITY, @INVOICEDISCOUNT, @CUSTOMERDISCOUNT, @STARTDATE
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- EJECUCIÓN DE PROCEDIMIENTO --
+	BEGIN TRY
+		WHILE @@FETCH_STATUS = 0 BEGIN
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- OBTENER ID DEL PROVEEDOR --
+			SELECT @SUPPLIERID = [ID] FROM [Supplier] WHERE [Code] = @SUPPLIERCODE
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- OBTENER DATOS ACTUALES DEL PRODUCTO --
+			SELECT @TAXRATE = CAST(T.[Percentage] AS FLOAT),
+				@TAXRATENAME = CAST(T.[Description] AS varchar(50)),
+				@MSRP = [MSRP],
+				@ITEMTAXID = I.TaxID,
+				@SYNCGUID = I.SyncGuid
+			FROM [Tax] AS T 
+				INNER JOIN [ItemTax] IT ON IT.TaxID01 = T.ID
+				INNER JOIN [Item] I ON I.TaxID = IT.ID
+			WHERE I.ID = @ID AND IT.[Description] NOT LIKE '%Bonifica%'
+			SET @LASTACTION = 'OBTENER IMPUESTO ACTUAL DEL PRODUCTO ' + @COST
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- EN CASO DE EXISTIR DESCUENTO DE FACTURA --
+			SET @COSTDISCOUNT = (CONVERT(MONEY, @COST) - (CONVERT(MONEY, @COST) * (CONVERT(DECIMAL(10,2), @INVOICEDISCOUNT) / 100)))
+			SET @LASTACTION = CONCAT('OBTENER DECUENTO EN FACTURA. ',@INVOICEDISCOUNT, '. ', @COSTDISCOUNT)
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- PARA ACTUALIZAR NÚMEROS EN ITEMS --
+			DECLARE @_UTILITY FLOAT = CONVERT(FLOAT, @UTILITY)
+			DECLARE @_INVDISCOUNT FLOAT = CONVERT(FLOAT, @INVOICEDISCOUNT)
+			DECLARE @_CUSDISCOUNT FLOAT = CONVERT(FLOAT, @CUSTOMERDISCOUNT)
+			DECLARE @_COST MONEY = CONVERT(MONEY, @COST)
+			DECLARE @FINAL_PRICE MONEY = (@_COST - (@_COST * (@_CUSDISCOUNT / 100)) + @MSRP)
+			DECLARE @FINAL_PRICE_UTILITY MONEY = (@FINAL_PRICE * (1 + (@_UTILITY / 100)))
+			DECLARE @FINAL_PRICE_IVA MONEY = (@FINAL_PRICE_UTILITY * (1 + (@TAXRATE / 100)))
+
+			-- OBTENER #S REALES --
+			DECLARE @FINAL_PRICE_ROUND MONEY = [dbo].[UEP_GET_PRICE_ROUND] (@FINAL_PRICE_IVA)
+			DECLARE @UTILITY_REAL DECIMAL(18,8) = [dbo].[UEP_GET_UTILITY_REAL] (@FINAL_PRICE_ROUND, @FINAL_PRICE_UTILITY, @FINAL_PRICE, @TAXRATE)
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- ACTUALIZAR ITEM --
+			UPDATE I SET I.[SupplierID] = @SUPPLIERID,
+				I.[Cost] = @COSTDISCOUNT,
+				I.[Price] = @FINAL_PRICE_ROUND,
+				I.[ReplacementCost] = @_COST,
+				I.LastUpdated = GETDATE(),
+				I.[Notes] = CONCAT(N'Costo Bruto: ', @_COST, N'. ', '	IVA: ', @TAXRATE, '% (', @TAXRATENAME, '). ', CHAR(10),
+					'Imp. Específico: ', @MSRP, '. ', '	Costo Final: ', @COSTDISCOUNT, '. ', CHAR(10),
+					'Desc. Factura: ', @_INVDISCOUNT, '%. ', '	Costo C/Desc. Cliente: ', @FINAL_PRICE, '. ', CHAR(10),
+					'Desc. Cliente: ', @_CUSDISCOUNT, '%. ', '	Precio Final (SIN IVA): ', @FINAL_PRICE_UTILITY, '. ', CHAR(10),
+					'Utilidad: ', @_UTILITY, '%. ', '		Precio Final (CON IVA): ', @FINAL_PRICE_IVA, '.', CHAR(10), CHAR(10),
+					'Utilidad Real: ', @UTILITY_REAL, '%. ', CHAR(10),
+					'Precio Redondeado: ', @FINAL_PRICE_ROUND, '.', CHAR(10),
+					'Tiendas: [', (SELECT STRING_AGG(Name, ',') FROM Store WHERE ID IN (SELECT STORE_ID FROM @TBL_WORKSHEETSTORES)), ']')
+			FROM [Item] I
+			WHERE I.[ID] = @ID
+			SET @LASTACTION = 'ACTUALIZAR ITEM'
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			INSERT INTO ExtCentral_ItemHistory(
+				ItemID, StoreID, SupplierID, ItemTaxID,
+				MSRP, Utility, InvoiceDiscount, CustomerDiscount,
+				GrossCost, Cost, Price,
+				DateApplied, TaskApplied, Aditional)
+			SELECT
+				@ID, TBL.STORE_ID, @SUPPLIERID, @ITEMTAXID,
+				@MSRP, @_UTILITY, CONVERT(DECIMAL(18,2), @INVOICEDISCOUNT), @_CUSDISCOUNT,
+				CAST(@COST AS MONEY), @COSTDISCOUNT, @FINAL_PRICE_ROUND,
+				GETDATE(), @TITLE, @NOTES
+			FROM @TBL_WORKSHEETSTORES TBL
+			SET @LASTACTION = 'INGRESAR BITÁCORA DE COSTOS DE PRODUCTOS'
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- OBTENER SUPPLIERLIST DEL ITEM --
+			SELECT @EXISTS_SUPPLIERLIST = COUNT(S.[ID])
+			FROM [SupplierList] AS S
+			WHERE S.[SupplierID] = @SUPPLIERID AND S.[ItemID] = @ID
+			SET @LASTACTION = 'VER SI EXISTE EL SUPPLIER LIST'
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			IF (@EXISTS_SUPPLIERLIST = 0) BEGIN
+				-- INSERTAR SUPPLIERLIST --
+				INSERT INTO [SupplierList] ([ItemID], [SupplierID], [Cost], [ReorderNumber], [MasterPackQuantity], [TaxRate])
+				VALUES (@ID, @SUPPLIERID, @COSTDISCOUNT, 0, 0, @TAXRATE)
+				SET @LASTACTION = CONCAT('INSERTAR SUPPLIERLIST SUPPLIER=', @SUPPLIERID)
+			END ELSE BEGIN
+				-- ACTUALIZAR SUPPLIERLIST --
+				UPDATE [SupplierList]
+				SET [Cost] = @COSTDISCOUNT, [TaxRate] = @TAXRATE
+				WHERE [SupplierID] = @SUPPLIERID AND [ItemID] = @ID
+				SET @LASTACTION = 'ACTUALIZAR SUPPLIERLIST'
+			END
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			/*
+				-- QUITAR HISTORICO DE COSTO DE FECHA INGRESADA --
+				DELETE FROM [POC_ItemPrice] WHERE [ItemID] = @ID AND [SupplierID] = @SUPPLIERID
+
+				-- INSERTAR BITÁCORA DE PROVEEDOR --
+				INSERT INTO [POC_ItemPrice] ([ItemID], [SupplierID], [CurrencyID], [StartingDate], [UOMID], [MinQuantity], [UnitCost], [HQId])
+				VALUES (@ID, @SUPPLIERID, 0, CAST(CAST(GETDATE() AS DATE) AS DATETIME), 0, 0, @COSTDISCOUNT, 0)
+				SET @LASTACTION = CONCAT('INSERTAR POC_ITEMPRICE. ', @ID)
+			*/
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- INSERTAR O ACTUALIZAR EXTCENTRAL_ITEM --
+			DECLARE @EXISTS_EXTCENTRAL_ITEM INT = 0
+			SELECT @EXISTS_EXTCENTRAL_ITEM = COUNT(ItemID) FROM [ExtCentral_Item] WHERE [ItemID] = @ID
+			-- FALTA AÑADIR STORESSELECTED --
+			IF (@EXISTS_EXTCENTRAL_ITEM > 0) BEGIN
+				UPDATE [ExtCentral_Item]
+				SET [Utility] = @_UTILITY,
+					[CustomerDiscount] = @_CUSDISCOUNT,
+					[InvoiceDiscount] = @INVOICEDISCOUNT,
+					[StartDate] = CAST(PARSE(SUBSTRING(@STARTDATE, 1, 10) AS DATE USING 'es-CR') AS DATE),
+					StoresSelected = @STORES
+				WHERE [ItemID] = @ID
+				SET @LASTACTION = 'ACTUALIZAR [ExtCentral_Item]'
+			END ELSE BEGIN
+				INSERT INTO [ExtCentral_Item] ([ItemID], [FamilyID], [SubCategoryID], [SegmentID], [CustomerDiscount], [InvoiceDiscount], [Utility], [StartDate], StoresSelected)
+				VALUES (@ID, 0, 0, 0, @_CUSDISCOUNT, @_INVDISCOUNT, @_UTILITY, CAST(PARSE(SUBSTRING(@STARTDATE, 1, 10) AS DATE USING 'es-CR') AS DATE), @STORES)
+				SET @LASTACTION = 'INSERTAR [ExtCentral_Item]'
+			END
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- ACTUALIZA EXTCENTRAL_ITEMEXT --
+			UPDATE [ExtCentral_ItemExt]
+			SET [InvoiceDiscount] = CAST(@INVOICEDISCOUNT AS DECIMAL(18,2)),
+				[CustomerDiscount] = CAST(@CUSTOMERDISCOUNT AS DECIMAL(18,2)),
+				[Utility] = CAST(@UTILITY AS DECIMAL(18,2)),
+				[StartDate] = CAST(PARSE(SUBSTRING(@STARTDATE, 1, 10) AS DATE USING 'es-CR') AS DATE),
+				[GrossCost] = @_COST
+			WHERE [StoreID] IN (SELECT STORE_ID FROM @TBL_WORKSHEETSTORES)
+				AND [SupplierID] = @SUPPLIERID
+				AND [ItemID] = @ID
+			SET @LASTACTION = CONCAT('ACTUALIZAR EXTCENTRAL_ITEMEXT. ', @ITEMLOOKUPCODE, ' .', @SUPPLIERID)
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- REVISAR SI FALTAN EXTCENTRAL_ITEM --
+			DECLARE @COUNT_STORES_NOT_IN INT = 0
+			SELECT @COUNT_STORES_NOT_IN = COUNT(STORE_ID)
+			FROM @TBL_WORKSHEETSTORES
+			WHERE STORE_ID NOT IN (SELECT StoreID FROM [ExtCentral_ItemExt] WHERE [ItemID] = @ID AND [SupplierID] = @SUPPLIERID)
+
+			IF (@COUNT_STORES_NOT_IN > 0) BEGIN
+				INSERT INTO [ExtCentral_ItemExt] (ItemID, SupplierID, StoreID, InvoiceDiscount, CustomerDiscount, StartDate, Utility, GrossCost)
+				SELECT @ID, @SUPPLIERID, STORE_ID, CAST(@INVOICEDISCOUNT AS DECIMAL(18,2)), CAST(@CUSTOMERDISCOUNT AS DECIMAL(18, 2)), CAST(PARSE(SUBSTRING(@STARTDATE, 1, 10) AS DATE USING 'es-CR') AS DATE), CAST(@UTILITY AS DECIMAL(18,2)), @_COST
+				FROM @TBL_WORKSHEETSTORES
+				WHERE STORE_ID NOT IN (SELECT StoreID FROM [ExtCentral_ItemExt] WHERE [ItemID] = @ID AND [SupplierID] = @SUPPLIERID)
+				SET @LASTACTION = CONCAT('INSERTAR EXTCENTRAL_ITEMEXT. ', @ITEMLOOKUPCODE, ' .', @SUPPLIERID)
+			END
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- ITEMDYNAMIC --
+			UPDATE I
+			SET I.MSRP = @MSRP, I.[Price] = @FINAL_PRICE_ROUND, [Cost] = @COSTDISCOUNT, TaxID = @ITEMTAXID
+			FROM [ItemDynamic] I
+			WHERE I.[ItemID] = @ID AND [StoreID] IN (SELECT STORE_ID FROM @TBL_WORKSHEETSTORES)
+			SET @LASTACTION = CONCAT('DYNAMIC . ', @ITEMLOOKUPCODE)
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- ASIGNACIÓN DE ITEM A LA HOJA DE TRABAJO --
+			INSERT INTO Worksheet_ItemUpdate(WorksheetID, ItemId)
+			SELECT WORKSHEET_ID, @ID
+			FROM @TBL_WORKSHEETSTORES
+			WHERE STORE_ID IN (SELECT C.StoreId FROM GlobalCatalog C WHERE C.SyncGuid = @SYNCGUID AND C.TableName = 'Item' AND C.IsActive = 1)
+			SET @LASTACTION = CONCAT('INSERTAR ITEM A HOJA DE TRABAJO. ', @ITEMLOOKUPCODE)
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+			-- NEXT RECORD DEL BULKCOPY --
+			FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ID, @SUPPLIERCODE, @ITEMLOOKUPCODE, @COST, @UTILITY, @INVOICEDISCOUNT, @CUSTOMERDISCOUNT, @STARTDATE
+		END
+		---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		-- CERRAR CURSOR --
+		CLOSE LIST_ITEMS_BULKCOPY
+		DEALLOCATE LIST_ITEMS_BULKCOPY
+		---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+		-- GRABADO DE RESPUESTA DEL PROCEDIMIENTO --
+		SET @RESPUESTA = 'Cambios aplicados al sistema'
+		SET @LASTACTION = 'COMMIT'
+
+		/*INSERT INTO EXTCENTRAL_WIZARD_LOG([DATE], ITEM_ERROR, LAST_ACTION, MESSAGE_ERROR, MESSAGE_NUMBER, RESPUESTA, STORES, TASK_CODE, TASK_NAME, TASK_DETAILS)
+		VALUES (GETDATE(), '', @LASTACTION, '', 0, @RESPUESTA, @STORES, '121', 'CAMBIO PROVEEDOR-COSTOS', CONCAT(@TITLE, '[', @NOTES, ']'))*/
+	END TRY
+	BEGIN CATCH
+		SET @STATUS = 0
+		SET @ERROR = ERROR_MESSAGE()
+		SET @ERROR_NUMBER = ERROR_NUMBER()
+		SET @RESPUESTA = CONCAT('Error al intentar aplicar cambios del producto ', @ITEMLOOKUPCODE, '. ERROR:', @ERROR_NUMBER)
+		
+		INSERT INTO EXTCENTRAL_WIZARD_LOG([DATE], ITEM_ERROR, LAST_ACTION, MESSAGE_ERROR, MESSAGE_NUMBER, RESPUESTA, STORES, TASK_CODE, TASK_NAME, TASK_DETAILS)
+		VALUES (GETDATE(), @ITEMLOOKUPCODE, @LASTACTION, @ERROR, @ERROR_NUMBER, @RESPUESTA, @STORES, '121', 'CAMBIO PROVEEDOR-COSTOS', CONCAT(@TITLE, '[', @NOTES, ']'))
+
+		BEGIN TRY
+			CLOSE LIST_ITEMS_BULKCOPY
+			DEALLOCATE LIST_ITEMS_BULKCOPY
+		END TRY
+		BEGIN CATCH
+		END CATCH
+	END CATCH
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	IF (@ERROR_NUMBER=2601) BEGIN
+		SET @RESPUESTA = CONCAT('Error al aplicar cambios a hoja de trabajo. El producto ', @ITEMLOOKUPCODE, ' ya cuenta con los mismos Costos del artículo del proveedor');
+	END
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	SELECT @RESPUESTA AS [RESPUESTA], @STATUS AS [STATUS], @LASTACTION AS [LASTACTION], @ERROR AS [ERROR], @ERROR_NUMBER AS [ERROR_NUMBER]
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WS_DOWNLOAD_ITEMS]    Script Date: 11/06/2024 10:35:48 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[UEP_WS_DOWNLOAD_ITEMS] ( @STORESID VARCHAR(MAX), @TITLE VARCHAR(50), @NOTES VARCHAR(255), @EEFECTIVEDATE DATETIME, @FROMDATE DATETIME, @USER_ID VARCHAR(50), @WORKSHEETCONTENTID INT)
+
+AS
+
+BEGIN
+	DECLARE @RESPUESTA VARCHAR(500) = 'HOJAS DE TRABAJO CREADAS PARA SINCRONIZAR PRODUCTOS A LAS TIENDAS SELECCIONADAS'
+	DECLARE @ERROR VARCHAR (MAX)
+	DECLARE @ERROR_NUMBER INT
+	DECLARE @STATUS BIT = 1
+	DECLARE @LASTACTION VARCHAR(MAX)
+
+	DECLARE @USER_NAME VARCHAR(50) = (SELECT UserName FROM HQUser WHERE ID = @USER_ID)
+	DECLARE @STOREID INT
+	DECLARE @WORKSHEET_ID INT
+
+	DECLARE LIST_STORES CURSOR
+	FOR SELECT CONVERT(INT, VALUE)
+	FROM STRING_SPLIT(@STORESID, ',')
+	WHERE VALUE <> ''
+
+	OPEN LIST_STORES
+
+	FETCH NEXT FROM LIST_STORES INTO @STOREID
+
+	BEGIN TRY
+		--BEGIN TRAN
+
+		WHILE @@FETCH_STATUS = 0 BEGIN
+			-- CREAR HOJA DE TRABAJO --
+			INSERT [Worksheet] (Style, EffectiveDate, [Status], Notes, Title, FromDate)
+			VALUES (261, @EEFECTIVEDATE, 1, @NOTES, @TITLE, @FROMDATE)
+			
+			-- OBTENER ID DE HOJA DE TRABAJO --
+			SET @WORKSHEET_ID = CONVERT(INT, SCOPE_IDENTITY())
+
+			-- INSERTAR TIENDA EN HOJA DE TRABAJO --
+			INSERT [dbo].[WorksheetStore](WorksheetID, StoreID, [Status], Originator, DateProcessed)
+			VALUES (@WORKSHEET_ID, @STOREID, 1, 0, NULL)
+			
+			-- INSERTAR HISTÓRICO DE TIENDA EN HOJA DE TRABAJO --
+			INSERT INTO WorksheetHistory (WorksheetID, [Status], HistoryDate, HQEntry, StoreID, Comment) 
+			VALUES (@WORKSHEET_ID, 1, GETDATE(), 1, @STOREID, CONCAT('Creado por ', @USER_NAME, ' desde Central Wizard.'))
+
+			-- DEBUG --
+			SET @LASTACTION = 'TO EXECT'
+			
+			-- INGRESAR PRODUCTO A LA HOJA DE LA TIENDA --
+			INSERT INTO [Worksheet_ItemUpdate] (WorksheetID, ItemID)
+			SELECT @WORKSHEET_ID, I.ID
+			FROM ##TMPListItemsDownload TI
+				INNER JOIN Item I ON I.ItemLookupCode = TI.ItemLookupCode
+			SET @LASTACTION = 'Worksheet_ItemUpdate'
+
+			-- GUARDAR BITÁCORA DE USUARIO Y HOJA DE TRABAJO --
+			EXEC [UEP_ExtCentral_Worksheet_INSERT] @USER_ID, @WORKSHEET_ID, 261, '130', @TITLE, @STOREID, @WORKSHEETCONTENTID
+			SET @LASTACTION = 'FIN EXECT'
+			
+			-- SIGUIENTE TIENDA --
+			FETCH NEXT FROM LIST_STORES INTO @STOREID
+		END
+
+		CLOSE LIST_STORES
+		DEALLOCATE LIST_STORES
+
+		--COMMIT TRAN
+	END TRY
+	BEGIN CATCH
+		--ROLLBACK TRAN
+		BEGIN TRY
+			CLOSE LIST_STORES
+			DEALLOCATE LIST_STORES
+		END TRY
+		BEGIN CATCH
+		END CATCH
+		SET @ERROR = ERROR_MESSAGE()
+		SET @ERROR_NUMBER = ERROR_NUMBER()
+		SET @RESPUESTA = CONCAT('OCURRIÓ UN ERROR AL INTENTAR CREAR LAS HOJAS DE TRABAJO PARA LA SINCRONIZACIÓN DE PRODUCTOS. ERROR: ', @ERROR_NUMBER)
+		SET @STATUS = 0
+
+		INSERT INTO EXTCENTRAL_WIZARD_LOG([DATE], ITEM_ERROR, LAST_ACTION, MESSAGE_ERROR, MESSAGE_NUMBER, RESPUESTA, STORES, TASK_CODE, TASK_NAME, TASK_DETAILS)
+		VALUES (GETDATE(), '', @LASTACTION, @ERROR, @ERROR_NUMBER, @RESPUESTA, @STORESID, 'DOWNLOAD', 'UEP_WS_DOWNLOAD_ITEMS', CONCAT(@TITLE, '[', @NOTES, ']'))
+	END CATCH
+
+	SELECT @RESPUESTA AS [RESPUESTA], @STATUS AS [STATUS], @ERROR AS [ERROR], @ERROR_NUMBER AS [ERROR_NUMBER], @LASTACTION AS [LASTACTION]
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WS_EXTCENTRAL_WIZARDLIST_GETALL]    Script Date: 11/06/2024 10:35:48 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[UEP_WS_EXTCENTRAL_WIZARDLIST_GETALL]
+
+AS
+
+BEGIN
+	SELECT [Codigo]
+		  ,[Descripcion]
+		  ,[Estado]
+		  ,[WizardTask]
+	FROM [ExtCentral_WizardLista]
+	WHERE [Estado] = 1 AND [WizardTask] = 1
+	ORDER BY [Codigo] ASC
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WS_IMPORT_ITEMS]    Script Date: 11/06/2024 10:35:48 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[UEP_WS_IMPORT_ITEMS] (@STORES VARCHAR(500), @TITLE VARCHAR(50), @NOTES VARCHAR(200), @USER_ID VARCHAR(50))
+
+AS
+
+BEGIN
+	DECLARE @RESPUESTA VARCHAR(MAX)
+	DECLARE @ERROR VARCHAR(MAX) = ''
+	DECLARE @ERROR_NUMBER INT
+	DECLARE @STATUS BIT = 1
+	DECLARE @LASTACTION VARCHAR(MAX) = ''
+	DECLARE @WorksheetID INT
+	DECLARE @ITEM_EXISTS INT = 0
+	-- ITEM --
+	DECLARE @ITEMLOOKUPCODE VARCHAR(30)
+	DECLARE @DESCRIPTION VARCHAR(80)
+	DECLARE @EXTDESCRIPTION VARCHAR(MAX)
+	DECLARE @SUBDESCRIPTION3 VARCHAR(30)
+	DECLARE @SUBDESCRIPTION4 VARCHAR(30)
+	DECLARE @SUBDESCRIPTION5 VARCHAR(38)
+	DECLARE @SUBDESCRIPTION6 VARCHAR(30)
+	DECLARE @SUBDESCRIPTION7 VARCHAR(30)
+	DECLARE @SUBDESCRIPTION8 VARCHAR(30)
+	DECLARE @SUBDESCRIPTION9 VARCHAR(30)
+	DECLARE @SUBDESCRIPTION10 VARCHAR(30)
+	DECLARE @UOM VARCHAR(30)
+	DECLARE @FAMILYCODE VARCHAR(30)
+	DECLARE @DEPARTMENTCODE VARCHAR(30)
+	DECLARE @CATEGORYCODE VARCHAR(30)
+	DECLARE @SUBCATEGORYCODE VARCHAR(30)
+	DECLARE @SEGMENTCODE VARCHAR(30)
+	DECLARE @MANUFACTURERCODE INT
+	DECLARE @BRANDCODE INT
+	DECLARE @PURCHASERCODE VARCHAR(30)
+	DECLARE @SUPPLIERCODE VARCHAR(30)
+	DECLARE @COST VARCHAR(30)
+	DECLARE @MSRP VARCHAR(30)
+	DECLARE @UTILITY VARCHAR(30)
+	DECLARE @INVOICEDISCOUNT VARCHAR(30)
+	DECLARE @CUSTOMERDISCOUNT VARCHAR(30)
+	DECLARE @TAXID INT
+	-- ADICIONAL --
+	DECLARE @ID INT
+	DECLARE @SUPPLIERID INT
+	DECLARE @FAMILYID INT
+	DECLARE @DEPARTMENTID INT
+	DECLARE @CATEGORYID INT
+	DECLARE @SUBCATEGORYID INT
+	DECLARE @SEGMENTID INT
+	DECLARE @PURCHASERID INT
+	DECLARE @_UOMNAME VARCHAR(30)
+	DECLARE @ITEMTAXID INT
+
+	-- PARA RECORRER LOS ITEMS DEL BULKCOPY --
+	DECLARE LIST_ITEMS_BULKCOPY CURSOR
+	FOR SELECT [ItemLookupCode], [Description], [DescriptionExtended], [Subdescription3],
+		[Subdescription4],[Subdescription5],[Subdescription6],[Subdescription7],[Subdescription8],[Subdescription9],[Subdescription10],
+		[UOM],[FamilyCode], [DepartmentCode], [CategoryCode], [SubCategoryCode], [SegmentCode], [ManufacturerCode], [BrandCode], [PurchaserCode], [SupplierCode],
+		[Cost], [MSRP], [Utility], [InvoiceDiscount], [CustomerDiscount], [TaxID]
+	FROM ##TablaItem
+
+	OPEN LIST_ITEMS_BULKCOPY
+
+	BEGIN TRY
+		-- SIGUIENTE REGISTRO A INSERTAR --
+		FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ITEMLOOKUPCODE, @DESCRIPTION, @EXTDESCRIPTION, @SUBDESCRIPTION3,
+			@SUBDESCRIPTION4, @SUBDESCRIPTION5, @SUBDESCRIPTION6, @SUBDESCRIPTION7, @SUBDESCRIPTION8, @SUBDESCRIPTION9, @SUBDESCRIPTION10,
+			@UOM, @FAMILYCODE, @DEPARTMENTCODE, @CATEGORYCODE, @SUBCATEGORYCODE, @SEGMENTCODE, @MANUFACTURERCODE, @BRANDCODE, @PURCHASERCODE, @SUPPLIERCODE,
+			@COST, @MSRP, @UTILITY, @INVOICEDISCOUNT, @CUSTOMERDISCOUNT, @TAXID
+		
+		-- INICIAR TRANSACCIÓN DE BASE DE DATOS --
+		--BEGIN TRAN
+
+		-- RECORRER PRODUCTOS A INGRESAR --
+		WHILE @@FETCH_STATUS = 0 BEGIN
+			-- VERIFICAR SI YA EXISTE UN PRODUCTO CON EL MISMO CÓDIGO
+			SET @ITEM_EXISTS = (SELECT COUNT(*) FROM Item WHERE Item.ItemLookupCode = @ITEMLOOKUPCODE)
+
+			IF (@ITEM_EXISTS = 0) BEGIN -- EN CASO DE QUE EL CÓDIGO NO EXISTA
+				-- IDS DE RELACIONES --
+				SELECT @SUPPLIERID = [ID] FROM [Supplier] WHERE [Code] = @SUPPLIERCODE 
+				SELECT @FAMILYID = [ID] FROM [ExtCentral_Family] WHERE [Code] = @FAMILYCODE
+				SELECT @DEPARTMENTID = [ID] FROM [Department] WHERE [Code] = @DEPARTMENTCODE
+				SELECT @CATEGORYID = [ID] FROM [Category] WHERE [Code] = @CATEGORYCODE
+				SELECT @SUBCATEGORYID = [ID] FROM [ExtCentral_SubCategory] WHERE [Code] = @SUBCATEGORYCODE
+				SELECT @SEGMENTID = [ID] FROM [ExtCentral_Segment] WHERE [Code] = @SEGMENTCODE
+				SELECT @PURCHASERID = [ID] FROM [POA_Purchaser] WHERE [Code] = @PURCHASERCODE
+				SELECT @_UOMNAME = [Name] FROM [POA_UOM] WHERE [Code] = @UOM
+				SELECT @ITEMTAXID = [ID] FROM [ItemTax]	IT WHERE IT.[TaxID01] = @TAXID AND IT.[Description] NOT LIKE '%Bonif%'
+		
+				-- CONVERSIÓN DE VALORES --
+				DECLARE @_MSRP MONEY = CONVERT(MONEY, @MSRP)
+				DECLARE @_COST MONEY = CONVERT(MONEY, @COST)
+				DECLARE @_CUSTOMERDISCOUNT FLOAT = CONVERT(FLOAT, @CUSTOMERDISCOUNT)
+				DECLARE @_INVOICEDISCOUNT FLOAT = CONVERT(FLOAT, @INVOICEDISCOUNT)
+				DECLARE @_UTILITY FLOAT = CONVERT(FLOAT, @UTILITY)
+				DECLARE @_TAX FLOAT = (SELECT CAST([Percentage] AS FLOAT) FROM [Tax] WHERE [ID] = @TAXID)
+				-- PARA COSTOS Y PRECIOS FINALES --
+				DECLARE @_FINAL_COST MONEY = (@_COST - (@_COST * (@_INVOICEDISCOUNT / 100)))
+				DECLARE @_FINAL_PRICE MONEY = (@_COST - (@_COST * (@_CUSTOMERDISCOUNT / 100)) + @_MSRP)
+				DECLARE @_FINAL_PRICE_UTILITY MONEY = (@_FINAL_PRICE * (1 + (@_UTILITY / 100)))
+				DECLARE @_FINAL_PRICE_IVA MONEY = (@_FINAL_PRICE_UTILITY * (1 + (@_TAX / 100)))
+				DECLARE @FINAL_PRICE_ROUND MONEY = [dbo].[UEP_GET_PRICE_ROUND] (@_FINAL_PRICE_IVA)
+				DECLARE @UTILITY_REAL DECIMAL(18,8) = [dbo].[UEP_GET_UTILITY_REAL] (@FINAL_PRICE_ROUND, @_FINAL_PRICE_UTILITY, @_FINAL_PRICE, @_TAX)
+				SET @LASTACTION = concat('-- OBTENER PRECIOS Y COSTOS FINALES -- MSRP:', @_MSRP, ' -- Cost:', @_COST, ' -- Uility:', @_UTILITY, ' -- FinalCost:', @_FINAL_COST, ' -- FinalCostIVA: ', @_FINAL_PRICE_IVA)
+
+				-- INSERTAR ITEM PRINCIAL --	
+				INSERT INTO [Item] ([ItemLookupCode],
+					[Description],
+					[ExtendedDescription],
+					[SubDescription1],
+					[SubDescription2],
+					[SubDescription3],
+					[DepartmentID],
+					[CategoryID],
+					[Cost],
+					[DateCreated],
+					[ItemType],
+					[LastUpdated],
+					[Price],
+					[ReplacementCost],
+					[SupplierID],
+					[TaxID],
+					[UnitOfMeasure],
+					[MSRP],
+					[Notes])
+				VALUES(@ITEMLOOKUPCODE,
+					@DESCRIPTION,
+					@EXTDESCRIPTION,
+					--(SELECT ISNULL(M.[Description], '-NO DEFINIDO-') FROM ExtCentral_Manufacturer M WHERE M.ID = @MANUFACTURERCODE),
+					--(SELECT ISNULL(M.[Description], '-NO DEFINIDO-') FROM ExtCentral_Manufacturer M WHERE M.ID = @MANUFACTURERCODE),
+					ISNULL((SELECT CONVERT(VARCHAR(30), M.[Description]) FROM ExtCentral_Manufacturer M WHERE M.ID = @MANUFACTURERCODE), '-NO DEFINIDO-'),
+					ISNULL((SELECT CONVERT(VARCHAR(30), B.[Description]) FROM ExtCentral_Brand B WHERE B.ID = @BRANDCODE), '-NO DEFINIDO-'),
+					--CASE WHEN M.[Description] IS NULL THEN '-NO DEFINIDO-' ELSE SUBSTRING(M.[Description], 1, 30) END,
+					--CASE WHEN B.[Description] IS NULL THEN '-NO DEFINIDO-' ELSE SUBSTRING(B.[Description], 1, 30) END,
+					@SUBDESCRIPTION3,
+					@DEPARTMENTID,
+					@CATEGORYID,
+					@_FINAL_COST,
+					GETDATE(), 0, GETDATE(),
+					@FINAL_PRICE_ROUND,
+					@_COST,
+					@SUPPLIERID,
+					@ITEMTAXID,
+					ISNULL(@_UOMNAME, ''),
+					@_MSRP,
+					CONCAT(N'Costo Bruto: ', @_COST, N'. ', '	IVA: ', @_TAX, '%. ', CHAR(10),
+							'Imp. Específico: ', @MSRP, '. ', '	Costo Final: ', @_FINAL_COST, '. ', CHAR(10),
+							'Desc. Factura: ', @_INVOICEDISCOUNT, '%. ', '	Costo C/Desc. Cliente: ', @_FINAL_PRICE, '. ', CHAR(10),
+							'Desc. Cliente: ', @_CUSTOMERDISCOUNT, '%. ', '	Precio Final (SIN IVA): ', @_FINAL_PRICE_UTILITY, '. ', CHAR(10),
+							'Utilidad: ', @_UTILITY, '%. ', '		Precio Final (CON IVA): ', @_FINAL_PRICE_IVA, '.', CHAR(10), CHAR(10),
+							'Utilidad Real: ', @UTILITY_REAL, '%. ', CHAR(10),
+							'Precio Redondeado: ', @FINAL_PRICE_ROUND, '.')
+				)
+				SET @LASTACTION = CONCAT('INSERTAR ITEM ITEM=', @ITEMLOOKUPCODE)
+
+				-- OBTENER ID DEL NUEVO REGISTRO --
+				SET @ID = CONVERT(INT, SCOPE_IDENTITY())
+				SET @LASTACTION = CONCAT('OBTENER SCOPE_IDENTITY ID=', @ID)
+
+				/* CREAR ITEMDYNAMIC */
+				INSERT INTO ItemDynamic (
+					ItemID, StoreID, MSRP, Price, Cost, TaxID,
+					QuantityCommitted, [SnapShotPrice], [SnapShotPriceA], [SnapShotPriceB], [SnapShotPriceC], [SnapShotSalePrice],
+					[SnapShotCost], SnapShotLastCost, SnapShotReplacementCost, SnapShotPriceLowerBound, SnapShotPriceUpperBound, SnapShotReorderPoint, SnapShotRestockLevel, SnapShotTaxID,
+					PriceLevelA, PriceLevelB, PriceLevelC, SalePrice,
+					LowerBound, UpperBound, BuydownPrice, BuydownQuantity, Quantity
+				)
+				SELECT @ID, CONVERT(INT, VALUE), @_MSRP, @FINAL_PRICE_ROUND, @_FINAL_COST, @ITEMTAXID,
+					0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0,
+					0, 0, 0, 0,
+					0, 0, 0, 0, 0
+				FROM STRING_SPLIT(@STORES, ',')
+				WHERE VALUE <> ''
+				SET @LASTACTION = CONCAT('INSERTAR ITEMDYNAMIC. ', @ITEMLOOKUPCODE, '. ', @ID)
+
+				-- INGRESAR POA_Item DE LOS QUE NO EXISTEN --
+				INSERT INTO POA_Item (ID, LastUpdated, ExtCode, TaxGroupID, ChildReorder, UnitOfMeasure, PurchaseUOM, PurchUOMID1, PurchUOMID2, PurchUOMID3, PurchQtyUOM1, PurchQtyUOM2, PurchQtyUOM3, LineNumber, HQId)
+				VALUES(@ID, GETDATE(), '', @ITEMTAXID, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+				SET @LASTACTION = CONCAT('INSERTAR PURCHASE ITEMTAX. ', @ITEMLOOKUPCODE, '. ', @ID)
+
+				-- INSERTAR EXTCENTRAL_ITEM --
+				INSERT INTO [ExtCentral_Item] ([ItemID], [FamilyID], [SubCategoryID], [SegmentID], [ManufacturerID], [BrandID], [PurchaserID],
+					[CustomerDiscount], [InvoiceDiscount], [Utility], [StartDate],
+					[SubDescription4], [SubDescription5], [SubDescription6], [SubDescription7], [SubDescription8], [SubDescription9], [SubDescription10], StoresSelected)
+				VALUES (@ID, @FAMILYID, @SUBCATEGORYID, @SEGMENTID, @MANUFACTURERCODE, @BRANDCODE, @PURCHASERID,
+					@_CUSTOMERDISCOUNT, @_INVOICEDISCOUNT, @_UTILITY, GETDATE(),
+					@SUBDESCRIPTION4, @SUBDESCRIPTION5, @SUBDESCRIPTION6, @SUBDESCRIPTION7, @SUBDESCRIPTION8, @SUBDESCRIPTION9, @SUBDESCRIPTION10, @STORES)
+				SET @LASTACTION = CONCAT('INSERTAR EXTCENTRAL_ITEM ITEM=', @ID)
+
+				-- INSERTAR SUPPLIERLIST --
+				INSERT INTO [SupplierList] ([ItemID], [SupplierID], [Cost], [MinimumOrder], [ReorderNumber], [MasterPackQuantity], [TaxRate])
+				VALUES (@ID, @SUPPLIERID, @_FINAL_COST, 0, 0, 0, @_TAX)
+				SET @LASTACTION = CONCAT('INSERTAR SUPPLIERLIST SUPPLIER=', @SUPPLIERID)
+
+				-- INSERTAR EXTCENTRAL_ITEMEXT --
+				INSERT INTO [ExtCentral_ItemExt] (ItemID, SupplierID, StoreID, Utility, InvoiceDiscount, [CustomerDiscount], [Type], [StartDate], GrossCost)
+				SELECT @ID, @SUPPLIERID, CONVERT(INT, VALUE), @_UTILITY, @_INVOICEDISCOUNT, @_CUSTOMERDISCOUNT, 'Venta', CONVERT(DATE, GETDATE()), @_COST
+				FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> ''
+				SET @LASTACTION = CONCAT('INSERTAR EXTCENTRAL_ITEMEXT. ', @ID, ' .', @SUPPLIERID)
+				
+				-- INGRESAR BITÁCORA DE CAMBIOS DE PRECIOS --
+				INSERT INTO ExtCentral_ItemHistory(
+					ItemID, StoreID, SupplierID, ItemTaxID,
+					MSRP, Utility, InvoiceDiscount, CustomerDiscount,
+					GrossCost, Cost, Price,
+					DateApplied, TaskApplied, Aditional)
+				SELECT
+					@ID, CONVERT(INT, VALUE), @SUPPLIERID, @ITEMTAXID,
+					@_MSRP, @_Utility, @_InvoiceDiscount, @_CustomerDiscount,
+					@_COST, @_FINAL_COST, @FINAL_PRICE_ROUND,
+					GETDATE(), @TITLE, @NOTES
+				FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> ''
+				SET @LASTACTION = 'INGRESAR BITÁCORA DE COSTOS DE PRODUCTOS'
+				------------------------------------------------------- INSERTAR BITÁCORA DE PROVEEDOR -------------------------------------------------------
+				/*
+					INSERT INTO [POC_ItemPrice] ([ItemID], [SupplierID], [CurrencyID], [StartingDate], [UOMID], [MinQuantity], [UnitCost], [HQId])
+					VALUES (@ID, @SUPPLIERID, 0, CAST(CAST(GETDATE() AS DATE) AS DATETIME), 0, 0, @_FINAL_COST, 0)
+					SET @LASTACTION = CONCAT('INSERTAR POC_ITEMPRICE. ', @ID)
+				*/
+				----------------------------------------------------------------------------------------------------------------------------------------------
+
+			END
+
+			-- SIGUIENTE REGISTRO A INSERTAR --
+			FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ITEMLOOKUPCODE, @DESCRIPTION, @EXTDESCRIPTION, @SUBDESCRIPTION3,
+				@SUBDESCRIPTION4, @SUBDESCRIPTION5, @SUBDESCRIPTION6, @SUBDESCRIPTION7, @SUBDESCRIPTION8, @SUBDESCRIPTION9, @SUBDESCRIPTION10,
+				@UOM, @FAMILYCODE, @DEPARTMENTCODE, @CATEGORYCODE, @SUBCATEGORYCODE, @SEGMENTCODE, @MANUFACTURERCODE, @BRANDCODE, @PURCHASERCODE, @SUPPLIERCODE,
+				@COST, @MSRP, @UTILITY, @INVOICEDISCOUNT, @CUSTOMERDISCOUNT, @TAXID
+		END
+
+		-- CERRAR CURSOR --
+		CLOSE LIST_ITEMS_BULKCOPY
+		DEALLOCATE LIST_ITEMS_BULKCOPY
+
+		-- GRABADO DE RESPUESTA DEL PROCEDIMIENTO --
+		SET @RESPUESTA = 'Productos ingresados al sistema.'
+
+		-- APLICAR CAMBIOS EN BASE DE DATOS --
+		--COMMIT TRAN
+	END TRY
+	BEGIN CATCH
+		--ROLLBACK TRAN
+		SET @STATUS = 0
+		SET @ERROR = ERROR_MESSAGE()
+		SET @ERROR_NUMBER = ERROR_NUMBER()
+		SET @RESPUESTA = CONCAT('Error al intentar ingresar los productos. Excepción ocurrida en el producto (', @ITEMLOOKUPCODE, '). ERROR: ', @ERROR_NUMBER)
+		
+		INSERT INTO EXTCENTRAL_WIZARD_LOG([DATE], ITEM_ERROR, LAST_ACTION, MESSAGE_ERROR, MESSAGE_NUMBER, RESPUESTA, STORES, TASK_CODE, TASK_NAME, TASK_DETAILS)
+		VALUES (GETDATE(), @ITEMLOOKUPCODE, @LASTACTION, @ERROR, @ERROR_NUMBER, @RESPUESTA, @STORES, '130', 'IMPORTAR PRODUCTOS-APLICAR CAMBIOS', CONCAT(@TITLE, '[', @NOTES, ']'))
+
+		BEGIN TRY
+			CLOSE LIST_ITEMS_BULKCOPY
+			DEALLOCATE LIST_ITEMS_BULKCOPY
+		END TRY
+		BEGIN CATCH
+
+		END CATCH
+	END CATCH
+
+	SELECT @RESPUESTA AS [RESPUESTA], @STATUS AS [STATUS], @LASTACTION AS [LASTACTION], @ERROR AS [ERROR], @ERROR_NUMBER AS [ERROR_NUMBER]
+END
+GO

@@ -1,0 +1,664 @@
+﻿
+/****** Object:  StoredProcedure [dbo].[UEP_WORKSHEET_CHANGE_STATUS]    Script Date: 11/06/2024 11:17:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_CHANGE_STATUS] (
+	@STORES VARCHAR(1000),
+	@TASKS VARCHAR(1000),
+	@USERS VARCHAR(1000),
+	@HQUSERID INT,
+	@WORKSHEETID INT,
+	@STATUS INT
+)
+
+AS 
+
+BEGIN
+	DECLARE @RESPUESTA VARCHAR(30)
+	DECLARE @STATE BIT = 0
+	DECLARE @ERROR_NUMBER INT = 0
+	DECLARE @ERROR_MESSAGE VARCHAR(MAX)
+
+	BEGIN TRY
+		IF (@STATUS = 1 OR @STATUS = 2 OR @STATUS = 0 OR @STATUS = 8) BEGIN
+			UPDATE W
+			SET W.[Status] = @STATUS
+			FROM Worksheet W
+				INNER JOIN ExtCentral_Worksheet EW ON EW.WorksheetID = W.ID 
+					AND (@USERS = '%' OR EW.HQUserID IN (SELECT VALUE FROM STRING_SPLIT(@USERS, ',')))
+					AND (@TASKS = '%' OR EW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',')))
+			WHERE ID = @WORKSHEETID
+				AND [Status] = (CASE @STATUS WHEN 1 THEN 2 ELSE 1 END)
+				AND (SELECT COUNT(*) FROM WorksheetStore WHERE WorksheetID = @WORKSHEETID) = (SELECT COUNT(*) FROM WorksheetStore WHERE WorksheetID = @WORKSHEETID AND (@STORES = '%' OR StoreID IN (SELECT VALUE FROM STRING_SPLIT(@STORES, ','))))
+
+
+			DECLARE @ROWCOUNT INT = @@ROWCOUNT
+
+			IF (@ROWCOUNT > 0) BEGIN
+				INSERT INTO WorksheetHistory (Comment, HistoryDate, [Status], StoreID, WorksheetID)
+				OUTPUT inserted.WorksheetID, inserted.ID, @HQUSERID INTO ExtCentral_WorksheetHistory(WorksheetID, WorksheetHistoryID, HQUserID)
+				SELECT CONCAT((CASE @STATUS WHEN 1 THEN 'Desaprobado ' WHEN 0 THEN 'Suspendido ' WHEN 8 THEN 'Aprobado sin Cambios' ELSE 'Aprobado ' END), 'por ', (SELECT UserName FROM HQUser WHERE ID = @HQUSERID), ' desde AVS Central Manager'),
+					GETDATE(), @STATUS, WS.StoreID, @WORKSHEETID
+				FROM WorksheetStore WS
+				WHERE WS.WorksheetID = @WORKSHEETID
+
+				UPDATE WorksheetStore
+				SET [Status] = @STATUS
+				WHERE WorksheetID = @WORKSHEETID
+
+				SET @RESPUESTA = 'succ_actualizado'
+				SET @STATE = 1
+			END ELSE BEGIN
+				SET @RESPUESTA = 'error_reg_actualizado'
+			END
+		END ELSE BEGIN
+			SET @RESPUESTA = 'error_w_status'
+		END
+	END TRY
+	BEGIN CATCH
+		SET @RESPUESTA = 'error_reg_actualizado'
+		SET @ERROR_NUMBER = ERROR_NUMBER()
+		SET @ERROR_MESSAGE = ERROR_MESSAGE()
+
+		INSERT INTO EXTCENTRAL_LOG ([ACTION], [DATE], [ERROR_MESSAGE], [ERROR_NUMBER], [NOTE], [SP_NAME])
+		VALUES ('ACTUALIZAR HOJA DE TRABAJO', GETDATE(), @ERROR_MESSAGE, @ERROR_NUMBER, 'ERROR AL ACTUALIZAR UNA HOJA DE TRABAJO', '[UEP_WORKSHEET_CHANGE_STATUS]')
+
+	END CATCH
+
+	SELECT @RESPUESTA [RESPUESTA], @STATE [STATUS], @ERROR_NUMBER [ERROR_NUMBER], @ERROR_MESSAGE [ERROR_MESSAGE]
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WORKSHEET_CONTENT_GET]    Script Date: 11/06/2024 11:17:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_CONTENT_GET] (@WORKSHEETCONTENTID INT, @WORKSHEETID INT, @STORES VARCHAR(1000), @TASKS VARCHAR(1000), @USERS VARCHAR(1000))
+
+AS
+
+BEGIN
+	SELECT WC.*
+	FROM ExtCentral_WorksheetContent WC
+	WHERE ID = @WORKSHEETCONTENTID -- VALIDAR ÚNICO CONTENIDO
+		AND (
+			SELECT COUNT(*)
+			FROM ExtCentral_Worksheet XW
+			WHERE XW.WorksheetID = @WORKSHEETID
+				AND XW.WorksheetContentID = @WORKSHEETCONTENTID
+				AND XW.HQUserID = WC.HQUserID
+		) > 0 -- VALIDAR QUE CONTENIDO PERTENEZCA AL WORKSHEET SELECCIONADO
+		AND ( @USERS = '%' OR CONVERT(VARCHAR(1000), WC.HQUserID) IN (SELECT VALUE FROM STRING_SPLIT(@USERS, ',') WHERE VALUE <> '' AND VALUE <> '%') ) -- VALIDA QUE EL USUARIO LOGGEADO PUEDE TENER ACCESO AL DOCUMENTO
+		AND ( @TASKS = '%' OR WC.TaskCode IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',') WHERE VALUE <> '' AND VALUE <> '%') ) -- VALIDA QUE EL USUARIO LOGGEADO PUEDA TENER ACCESO AL DOCUMENTO POR CÓD. DE TAREA
+		AND (
+			SELECT COUNT(*)
+			FROM ExtCentral_Worksheet XW
+				INNER JOIN WorksheetStore XWS ON XWS.WorksheetID = XW.WorksheetID
+			WHERE XW.WorksheetID = @WORKSHEETID
+				AND XW.WorksheetContentID = @WORKSHEETCONTENTID
+				AND ( @STORES = '%' OR CONVERT(VARCHAR(30), XWS.StoreID) IN ( SELECT VALUE FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> '' AND VALUE <> '%' ) )
+		) > 0 -- VALIDA QUE EL USUARIO LOGGEADO TENGA ACCESO AL DOCUMENTO POR CÓDS. DE TIENDAS PERMITIDOS DEL MISMO
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WORKSHEET_CONTENT_INSERT]    Script Date: 11/06/2024 11:17:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_CONTENT_INSERT] (@HQUSERID INT, @TASKCODE VARCHAR(30), @FILENAME VARCHAR(500), @CONTENTTYPE VARCHAR(50), @CONTENTLENGHT BIGINT, @CONTENTDATA VARBINARY(MAX))
+
+AS
+
+BEGIN
+	INSERT INTO ExtCentral_WorksheetContent (
+		ContentData,
+		ContentLenght,
+		ContentType,
+		DateApplied,
+		[FileName],
+		HQUserID,
+		TaskCode
+	) VALUES (
+		@CONTENTDATA,
+		@CONTENTLENGHT,
+		@CONTENTTYPE,
+		GETDATE(),
+		@FILENAME,
+		@HQUSERID,
+		@TASKCODE
+	)
+
+	SELECT CONVERT(INT, SCOPE_IDENTITY()) [SCOPE]
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WORKSHEET_DETAIL_251_GETALL]    Script Date: 11/06/2024 11:17:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_DETAIL_251_GETALL] (@STORES VARCHAR(1000), @TASKS VARCHAR(1000), @USER_ID VARCHAR(1000), @WORKSHEET_ID INT)
+
+AS
+
+BEGIN
+	SELECT i.ItemLookupCode,
+		i.[Description],
+		i.ExtendedDescription,
+		i.DateCreated,
+		i.WebItem,
+		ProfitMargin = ROUND(((wuip.Price - wuip.Cost) /CASE WHEN wuip.Price=0 THEN 1 ELSE WUIP.PRICE END), 4),
+		IT.[Description] [ItemTaxDescription],
+		wuip.*,
+		CONVERT(BIT, CASE WHEN GC.SyncGuid is null Then 0 Else 1 End) as StoreAvailability,
+		WS.StoreID [StoreID],
+		S.[Name] [StoreName]
+	FROM WorksheetUpdateItemPrices wuip WITH (NOLOCK)
+		INNER JOIN Worksheet W ON W.ID = wuip.WorksheetID
+		INNER JOIN ExtCentral_Worksheet XW ON XW.WorksheetID = W.ID
+		INNER JOIN Item i ON i.ID = wuip.ItemID
+		LEFT OUTER JOIN WORKSHEETSTORE WS ON wuip.WorksheetID=WS.WorksheetID
+        LEFT OUTER JOIN GlobalCatalog GC ON i.Syncguid=GC.SyncGuid AND TableName='Item' AND GC.StoreID=WS.StoreID
+		LEFT OUTER JOIN Store S ON S.ID = WS.StoreID
+        LEFT OUTER JOIN [ItemDynamic] id ON ws.[StoreID] =id.[StoreID] AND i.[ID]=id.[ItemID]
+		LEFT OUTER JOIN [ItemTax] IT ON IT.ID = ID.TaxID
+    WHERE W.ID = @WORKSHEET_ID
+		AND (@USER_ID = '%' OR XW.HQUserID IN (SELECT VALUE FROM STRING_SPLIT(@USER_ID, ',')))
+		AND W.Style = 251
+		AND (XW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',') WHERE VALUE <> '') OR @TASKS = '%')
+		AND (SELECT COUNT(*) FROM WorksheetStore WS WHERE WS.WorksheetID = W.ID AND (WS.StoreID IN (SELECT VALUE FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> '') OR @STORES = '%')) > 0
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WORKSHEET_DETAIL_261_GETALL]    Script Date: 11/06/2024 11:17:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_DETAIL_261_GETALL] (@STORES VARCHAR(1000), @TASKS VARCHAR(1000), @USER_ID VARCHAR(1000), @WORKSHEET_ID INT)
+
+AS
+
+BEGIN
+	SELECT wsui.ID,
+		wsui.WorksheetID,
+		wsui.ItemID,
+		Item.ItemLookupCode,
+		Item.[Description],
+		Item.[ExtendedDescription],
+		CONVERT(BIT, CASE WHEN GC.SyncGuid is null Then 0 Else 1 End) as StoreAvailability,
+		WS.StoreID [StoreID],
+		S.[Name] [StoreName]
+	FROM Worksheet_ItemUpdate wsui WITH (NOLOCK)
+		INNER JOIN Worksheet W ON W.ID = wsui.WorksheetID
+		INNER JOIN ExtCentral_Worksheet XW ON XW.WorksheetID = W.ID
+		INNER JOIN Item on wsui.itemID = item.ID
+		LEFT OUTER JOIN WORKSHEETSTORE WS ON wsui.WorksheetID=WS.WorksheetID
+        LEFT OUTER JOIN GlobalCatalog GC ON item.Syncguid=GC.SyncGuid AND TableName='Item' AND GC.StoreID=WS.StoreID
+		LEFT OUTER JOIN Store S ON S.ID = WS.StoreID
+    WHERE W.ID = @WORKSHEET_ID
+		AND (@USER_ID = '%' OR XW.HQUserID IN (SELECT VALUE FROM STRING_SPLIT(@USER_ID, ',')))
+		AND W.Style = 261
+		AND (XW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',') WHERE VALUE <> '') OR @TASKS = '%')
+		AND (SELECT COUNT(*) FROM WorksheetStore WS WHERE WS.WorksheetID = W.ID AND (WS.StoreID IN (SELECT VALUE FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> '') OR @STORES = '%')) > 0
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WORKSHEET_DETAIL_320_GETALL]    Script Date: 11/06/2024 11:17:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_DETAIL_320_GETALL] (@STORES VARCHAR(1000), @TASKS VARCHAR(1000), @USER_ID VARCHAR(1000), @WORKSHEET_ID INT)
+
+AS
+
+BEGIN
+	SELECT i.ItemLookupCode,
+		i.[Description],
+		i.[ExtendedDescription],
+		wip.ID,
+		wip.ItemID,
+		wip.WorksheetID,
+		IT.[Description] [ItemTaxDescription],
+		CONVERT(BIT, CASE WHEN GC.SyncGuid is null Then 0 Else 1 End) as StoreAvailability,
+		WS.StoreID [StoreID],
+		S.[Name] [StoreName]
+	FROM Worksheet_ItemTax wip WITH (NOLOCK)
+		INNER JOIN Worksheet W ON W.ID = wip.WorksheetID
+		INNER JOIN ExtCentral_Worksheet XW ON XW.WorksheetID = W.ID
+        INNER JOIN Item i ON i.ID = wip.ItemID
+		LEFT OUTER JOIN WorksheetStore WS ON wip.WorksheetID=WS.WorksheetID
+        LEFT OUTER JOIN GlobalCatalog GC ON i.Syncguid=GC.SyncGuid AND TableName='Item' AND GC.StoreID=WS.StoreID
+		LEFT OUTER JOIN Store S ON S.ID = WS.StoreID
+		INNER JOIN ItemTax IT ON IT.ID = wip.TaxID
+    WHERE wip.WorksheetID = @WORKSHEET_ID
+		AND (@USER_ID = '%' OR XW.HQUserID IN (SELECT VALUE FROM STRING_SPLIT(@USER_ID, ',')))
+		AND W.Style = 320
+		AND (XW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',') WHERE VALUE <> '') OR @TASKS = '%')
+		AND (SELECT COUNT(*) FROM WorksheetStore WS WHERE WS.WorksheetID = W.ID AND (WS.StoreID IN (SELECT VALUE FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> '') OR @STORES = '%')) > 0
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WORKSHEET_GET]    Script Date: 11/06/2024 11:17:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_GET] (@STORES VARCHAR(1000), @TASKS VARCHAR(1000), @USER_ID VARCHAR(1000), @WORKSHEET_ID INT)
+
+AS
+
+BEGIN
+	
+	SELECT XW.[Date] [DateApplied], W.ID, XW.HQUserID, XW.WizardTaskCode, W.Style, XW.WorsheetTitle [Title], W.EffectiveDate, W.Notes, W.[Status],
+		(SELECT STRING_AGG(StoreID, ', ') FROM WorksheetStore WHERE WorksheetID = W.ID) [StoresID],
+		(SELECT STRING_AGG([Name], ', ') FROM WorksheetStore INNER JOIN Store ON Store.ID = StoreID WHERE WorksheetID = W.ID) [StoresName],
+		WL.Descripcion [WizardTaskDescription],
+		XW.HQUserID [UserID],
+		U.UserName
+	FROM ExtCentral_Worksheet XW
+		INNER JOIN Worksheet W ON W.ID = XW.WorksheetID
+		INNER JOIN ExtCentral_WizardLista WL ON WL.Codigo = XW.WizardTaskCode
+		INNER JOIN HQUser U ON U.ID = XW.HQUserID
+	WHERE XW.WorksheetID = @WORKSHEET_ID
+		AND (@USER_ID = '%' OR XW.HQUserID IN (SELECT VALUE FROM STRING_SPLIT(@USER_ID, ',')))
+		AND (XW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',') WHERE VALUE <> '') OR @TASKS = '%')
+		AND (
+			SELECT COUNT(*)
+			FROM WorksheetStore WS
+				INNER JOIN Store S ON S.ID = WS.StoreID
+			WHERE WS.WorksheetID = @WORKSHEET_ID
+				AND (WS.StoreID IN (SELECT VALUE FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> '') OR @STORES = '%')
+				AND S.Inactive = 0
+		) > 0
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WORKSHEET_GET_COUNT_RECORDS]    Script Date: 11/06/2024 11:17:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_GET_COUNT_RECORDS] (@STORES VARCHAR(1000), @TASKS VARCHAR(1000), @USERS_ID VARCHAR(1000), @SearchValue NVARCHAR(100) = '', @FROMDATE VARCHAR(30), @TODATE VARCHAR(30))
+
+AS
+
+BEGIN
+	--- PARA QUE LINQ RECONOZCA LA CONSULTA ---
+	IF (1 = 0) BEGIN SELECT CAST(1 AS INT) AS [TOTAL_RECORDS], CAST(1 AS INT) AS [TOTAL_FILTERED] END
+
+	--- VARIABLES ---
+	DECLARE @TOTAL_RECORDS INT = 0
+	DECLARE @QUERY NVARCHAR(MAX) = ''
+	
+	--- OBTENER TODOS LOS REGISTROS ACCESIBLES POR EL USUARIO ---
+	SELECT @TOTAL_RECORDS = COUNT(*)
+	FROM ExtCentral_Worksheet XW
+		INNER JOIN Worksheet W ON W.ID = XW.WorksheetID
+		LEFT JOIN ExtCentral_WizardLista WL ON WL.Codigo = XW.WizardTaskCode
+		INNER JOIN HQUser U ON U.ID = XW.HQUserID
+	WHERE (@USERS_ID = '%' OR CONVERT(VARCHAR(30), XW.HQUserID) IN (SELECT VALUE FROM STRING_SPLIT(@USERS_ID, ',') WHERE VALUE <> '' AND VALUE <> '%')) 
+		AND (@TASKS = '%' OR XW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',') WHERE VALUE <> '' AND VALUE <> '%'))
+		AND (
+			SELECT COUNT(*)
+			FROM WorksheetStore WS
+				INNER JOIN Store S ON S.ID = WS.StoreID
+			WHERE WS.WorksheetID = W.ID
+				AND (@STORES = '%' OR CONVERT(VARCHAR(30), WS.StoreID) IN (SELECT VALUE FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> '' AND VALUE <> '%'))
+				AND S.Inactive = 0
+		) > 0
+
+	--- DECLARERACIÓN DE QUERY DINÁMICA ---
+	SET @QUERY = CONCAT(@QUERY, N'SELECT CAST(COUNT(*) AS INT) [TOTAL_FILTERED], CAST(', @TOTAL_RECORDS,' AS INT) [TOTAL_RECORDS]
+		FROM ExtCentral_Worksheet XW
+			INNER JOIN Worksheet W ON W.ID = XW.WorksheetID
+			LEFT JOIN ExtCentral_WizardLista WL ON WL.Codigo = XW.WizardTaskCode
+			INNER JOIN HQUser U ON U.ID = XW.HQUserID
+		WHERE (''', @USERS_ID, ''' = ''%'' OR XW.HQUserID IN (SELECT VALUE FROM STRING_SPLIT(''', @USERS_ID, N''', '','' ) WHERE VALUE <> '''')) ',
+			N'AND (XW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(''',@TASKS, N''', '','') WHERE VALUE <> '''') OR ''',@TASKS, N''' = ''%'')
+			AND (
+				SELECT COUNT(*)
+				FROM WorksheetStore WS
+					INNER JOIN Store S ON S.ID = WS.StoreID
+				WHERE WS.WorksheetID = W.ID
+					AND ( ''', @STORES, N''' = ''%'' OR WS.StoreID IN (SELECT VALUE FROM STRING_SPLIT(''', @STORES, N''', '','') WHERE VALUE <> '''') )
+					AND S.Inactive = 0
+			) > 0 '
+	)
+
+	--- AGREGAR VALIDACIÓN POR VALOR DE FILTRO ---
+	IF (@SearchValue <> '' AND @SearchValue IS NOT NULL) BEGIN
+		SET @QUERY = CONCAT(@QUERY, N' AND (
+				CONVERT(VARCHAR(30), W.ID) LIKE ''%', @SearchValue, N'%'' 
+				OR XW.WorsheetTitle LIKE ''%', @SearchValue, N'%''
+				OR XW.WizardTaskCode LIKE ''%', @SearchValue, N'%''
+				OR W.Notes LIKE ''%', @SearchValue, N'%''
+				OR WL.Descripcion LIKE ''%', @SearchValue, N'%''
+				OR U.UserName LIKE ''%', @SearchValue, N'%''
+				OR (
+					SELECT COUNT(*)
+					FROM WorksheetStore WS
+						INNER JOIN Store S ON S.ID = WS.StoreID
+					WHERE WS.WorksheetID = W.ID
+						AND ( ''', @STORES, N''' = ''%'' OR WS.StoreID IN (SELECT VALUE FROM STRING_SPLIT(''', @STORES, N''', '','') WHERE VALUE <> '''') )
+						AND S.Inactive = 0
+						AND S.[Name] LIKE ''%', @SearchValue, N'%''
+				) > 0
+			)'
+		)
+	END
+
+	--- AGREGAR VALIDACIÓN POR FECHA INICIAL ---
+	IF (@FROMDATE <> '' AND @FROMDATE IS NOT NULL) BEGIN
+		SET @QUERY = CONCAT(@QUERY, N' AND CONVERT(DATE, XW.[Date]) >= CONVERT(DATE, ''', @FROMDATE, ''') ')
+	END
+
+	--- AGREGAR VALIDACIÓN POR FECHA FINAL ---
+	IF (@TODATE <> '' AND @TODATE IS NOT NULL) BEGIN
+		SET @QUERY = CONCAT(@QUERY, N' AND CONVERT(DATE, XW.[Date]) <= CONVERT(DATE, ''', @TODATE, ''') ')
+	END
+
+	PRINT @QUERY
+	EXEC sp_executesql @QUERY
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WORKSHEET_GETALL]    Script Date: 11/06/2024 11:17:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_GETALL] (@STORES VARCHAR(1000), @TASKS VARCHAR(1000), @USERS_ID VARCHAR(1000), @SearchValue NVARCHAR(100) = '', @OrderColumn INT = 0, @OrderDirection NVARCHAR(4) = 'asc', @Skip INT = 0, @Take INT = 10, @FROMDATE VARCHAR(30), @TODATE VARCHAR(30))
+
+AS
+
+BEGIN
+	--- PARA QUE LINQ RECONOZCA LA CONSULTA ---
+	IF (1 = 0) BEGIN
+		SELECT
+			W.ID,
+			W.Style,
+			W.[Status],
+			XW.WorsheetTitle [Title],
+			XW.[Date] [DateApplied],
+			W.EffectiveDate,
+			ISNULL(WL.Descripcion, '') [TaskDescription],
+			WL.Codigo [TaskCode],
+			(SELECT STRING_AGG(WS.StoreID, ', ') FROM WorksheetStore WS WHERE WS.WorksheetID = W.ID) [StoresID],
+			(SELECT STRING_AGG(S.[Name], ', ') FROM WorksheetStore WS INNER JOIN Store S ON S.ID = WS.StoreID WHERE WS.WorksheetID = W.ID) [StoresName],
+			W.Notes,
+			U.UserName,
+			U.ID [UserID],
+			XW.WorksheetContentID
+		FROM ExtCentral_Worksheet XW
+			INNER JOIN Worksheet W ON W.ID = XW.WorksheetID
+			INNER JOIN HQUser U ON U.ID = XW.HQUserID
+			LEFT JOIN ExtCentral_WizardLista WL ON WL.Codigo = XW.WizardTaskCode
+	END
+	
+	--- VARIABLES ---
+	DECLARE @QUERY NVARCHAR(MAX) = ''
+
+	--- DECLARERACIÓN DE QUERY DINÁMICA ---
+	SET @QUERY = CONCAT(@QUERY, N'SELECT
+			W.ID,
+			W.Style,
+			W.[Status],
+			XW.WorsheetTitle [Title],
+			XW.[Date] [DateApplied],
+			W.EffectiveDate,
+			ISNULL(WL.Descripcion, '''') [TaskDescription],
+			WL.Codigo [TaskCode],
+			(SELECT STRING_AGG(WS.StoreID, '', '') FROM WorksheetStore WS WHERE WS.WorksheetID = W.ID) [StoresID],
+			(SELECT STRING_AGG(S.[Name], '', '') FROM WorksheetStore WS INNER JOIN Store S ON S.ID = WS.StoreID WHERE WS.WorksheetID = W.ID) [StoresName],
+			W.Notes,
+			U.UserName,
+			U.ID [UserID],
+			XW.WorksheetContentID
+		FROM ExtCentral_Worksheet XW
+			INNER JOIN Worksheet W ON W.ID = XW.WorksheetID
+			INNER JOIN HQUser U ON U.ID = XW.HQUserID
+			LEFT JOIN ExtCentral_WizardLista WL ON WL.Codigo = XW.WizardTaskCode
+		WHERE (''', @USERS_ID, ''' = ''%'' OR XW.HQUserID IN (SELECT VALUE FROM STRING_SPLIT(''', @USERS_ID, N''', '','' ) WHERE VALUE <> '''')) ',
+			N'AND (XW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(''',@TASKS, N''', '','') WHERE VALUE <> '''') OR ''',@TASKS, N''' = ''%'')
+			AND (
+				SELECT COUNT(*)
+				FROM WorksheetStore WS
+					INNER JOIN Store S ON S.ID = WS.StoreID
+				WHERE WS.WorksheetID = W.ID
+					AND ( ''', @STORES, N''' = ''%'' OR WS.StoreID IN (SELECT VALUE FROM STRING_SPLIT(''', @STORES, N''', '','') WHERE VALUE <> '''') )
+					AND S.Inactive = 0
+			) > 0 '
+	)
+
+	--- AGREGAR VALIDACIÓN POR VALOR DE FILTRO ---
+	IF (@SearchValue <> '' AND @SearchValue IS NOT NULL) BEGIN
+		SET @QUERY = CONCAT(@QUERY, N' AND (
+				CONVERT(VARCHAR(30), W.ID) LIKE ''%', @SearchValue, N'%'' 
+				OR XW.WorsheetTitle LIKE ''%', @SearchValue, N'%''
+				OR XW.WizardTaskCode LIKE ''%', @SearchValue, N'%''
+				OR W.Notes LIKE ''%', @SearchValue, N'%''
+				OR WL.Descripcion LIKE ''%', @SearchValue, N'%''
+				OR U.UserName LIKE ''%', @SearchValue, N'%''
+				OR (
+					SELECT COUNT(*)
+					FROM WorksheetStore WS
+						INNER JOIN Store S ON S.ID = WS.StoreID
+					WHERE WS.WorksheetID = W.ID
+						AND ( ''', @STORES, N''' = ''%'' OR WS.StoreID IN (SELECT VALUE FROM STRING_SPLIT(''', @STORES, N''', '','') WHERE VALUE <> '''') )
+						AND S.Inactive = 0
+						AND S.[Name] LIKE ''%', @SearchValue, N'%''
+				) > 0
+			)'
+		)
+	END
+
+	--- AGREGAR VALIDACIÓN POR FECHA INICIAL ---
+	IF (@FROMDATE <> '' AND @FROMDATE IS NOT NULL) BEGIN
+		SET @QUERY = CONCAT(@QUERY, N' AND CONVERT(DATE, XW.[Date]) >= CONVERT(DATE, ''', @FROMDATE, ''') ')
+	END
+
+	--- AGREGAR VALIDACIÓN POR FECHA FINAL ---
+	IF (@TODATE <> '' AND @TODATE IS NOT NULL) BEGIN
+		SET @QUERY = CONCAT(@QUERY, N' AND CONVERT(DATE, XW.[Date]) <= CONVERT(DATE, ''', @TODATE, ''') ')
+	END
+
+	--- AGREGAR ORDER BY ---
+	SET @QUERY = CONCAT(@QUERY, N' ORDER BY ',
+		CASE @OrderColumn 
+			WHEN 1 THEN '[Style]'
+			WHEN 2 THEN '[Status]'
+			WHEN 3 THEN '[Title]'
+			WHEN 4 THEN '[DateApplied]'
+			WHEN 5 THEN '[EffectiveDate]'
+			WHEN 6 THEN '[TaskDescription]'
+			WHEN 7 THEN '[TaskCode]'
+			WHEN 8 THEN '[StoresID]'
+			WHEN 9 THEN '[StoresName]'
+			WHEN 10 THEN '[Notes]'
+			WHEN 11 THEN '[UserName]'
+			ELSE '[ID]'
+		END, ' ', @OrderDirection
+	)
+
+	--- AGREGAR FILAS A OMITIR ---
+	SET @QUERY = CONCAT(@QUERY, ' OFFSET ', @Skip, ' ROWS ')
+
+	--- AGREGAR FILAS A TOMAR ---
+	SET @QUERY = CONCAT(@QUERY, ' FETCH NEXT ', @Take, ' ROWS ONLY ')
+
+	PRINT @QUERY
+	EXEC sp_executesql @QUERY
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WORKSHEET_HISTORY_GETALL]    Script Date: 11/06/2024 11:17:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_HISTORY_GETALL](@STORES VARCHAR(1000), @TASKS VARCHAR(1000), @USER_ID VARCHAR(1000), @WORKSHEET_ID INT)
+
+AS
+
+BEGIN
+	SELECT WH.*, S.[Name] [StoreName], U.ID [UserID], U.UserName
+	FROM WorksheetHistory WH
+		INNER JOIN Worksheet W ON W.ID = WH.WorksheetID
+		INNER JOIN ExtCentral_Worksheet XW ON XW.WorksheetID = W.ID
+		INNER JOIN Store S ON S.ID = WH.StoreID
+		LEFT JOIN ExtCentral_WorksheetHistory XWH ON XWH.WorksheetHistoryID = WH.ID AND XWH.WorksheetID = WH.WorksheetID
+		LEFT JOIN HQUser U ON U.ID = XWH.HQUserID
+	WHERE W.ID = @WORKSHEET_ID
+		AND (@USER_ID = '%' OR XW.HQUserID IN (SELECT VALUE FROM STRING_SPLIT(@USER_ID, ',')))
+		AND (@STORES = '%' OR WH.StoreID IN (SELECT VALUE FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> ''))
+		AND (@TASKS = '%' OR XW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',') WHERE VALUE <> ''))
+END
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_WORKSHEET_STORE_GETALL]    Script Date: 11/06/2024 11:17:55 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_STORE_GETALL](@STORES VARCHAR(1000), @TASKS VARCHAR(1000), @USER_ID VARCHAR(1000), @WORKSHEET_ID INT)
+
+AS
+
+BEGIN
+	SELECT WS.*, S.[Name] [StoreName]
+	FROM WorksheetStore WS
+		INNER JOIN Worksheet W ON W.ID = WS.WorksheetID
+		INNER JOIN ExtCentral_Worksheet XW ON XW.WorksheetID = W.ID
+		INNER JOIN Store S ON S.ID = WS.StoreID
+	WHERE W.ID = @WORKSHEET_ID
+		AND (@USER_ID = '%' OR XW.HQUserID IN (SELECT VALUE FROM STRING_SPLIT(@USER_ID, ',')))
+		AND (@STORES = '%' OR WS.StoreID IN (SELECT VALUE FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> ''))
+		AND (@TASKS = '%' OR XW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',') WHERE VALUE <> ''))
+END
+GO
+
+/****** Object:  StoredProcedure [dbo].[UEP_WORKSHEET_GETALL]    Script Date: 11/06/2024 13:30:16 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[UEP_WORKSHEET_GETALL] (@STORES VARCHAR(1000), @TASKS VARCHAR(1000), @USERS_ID VARCHAR(1000), @SearchValue NVARCHAR(100) = '', @OrderColumn INT = 0, @OrderDirection NVARCHAR(4) = 'asc', @Skip INT = 0, @Take INT = 10, @FROMDATE VARCHAR(30), @TODATE VARCHAR(30))
+
+AS
+
+BEGIN
+	--- PARA QUE LINQ RECONOZCA LA CONSULTA ---
+	IF (1 = 0) BEGIN
+		SELECT
+			W.ID,
+			W.Style,
+			W.[Status],
+			XW.WorsheetTitle [Title],
+			XW.[Date] [DateApplied],
+			W.EffectiveDate,
+			ISNULL(WL.Descripcion, '') [TaskDescription],
+			WL.Codigo [TaskCode],
+			(SELECT STRING_AGG(WS.StoreID, ', ') FROM WorksheetStore WS WHERE WS.WorksheetID = W.ID) [StoresID],
+			(SELECT STRING_AGG(S.[Name], ', ') FROM WorksheetStore WS INNER JOIN Store S ON S.ID = WS.StoreID WHERE WS.WorksheetID = W.ID) [StoresName],
+			W.Notes,
+			U.UserName,
+			U.ID [UserID],
+			XW.WorksheetContentID
+		FROM ExtCentral_Worksheet XW
+			INNER JOIN Worksheet W ON W.ID = XW.WorksheetID
+			INNER JOIN HQUser U ON U.ID = XW.HQUserID
+			LEFT JOIN ExtCentral_WizardLista WL ON WL.Codigo = XW.WizardTaskCode
+	END
+	
+	--- VARIABLES ---
+	DECLARE @QUERY NVARCHAR(MAX) = ''
+
+	--- DECLARERACIÓN DE QUERY DINÁMICA ---
+	SET @QUERY = CONCAT(@QUERY, N'SELECT
+			W.ID,
+			W.Style,
+			W.[Status],
+			XW.WorsheetTitle [Title],
+			XW.[Date] [DateApplied],
+			W.EffectiveDate,
+			ISNULL(WL.Descripcion, '''') [TaskDescription],
+			WL.Codigo [TaskCode],
+			(SELECT STRING_AGG(WS.StoreID, '', '') FROM WorksheetStore WS WHERE WS.WorksheetID = W.ID) [StoresID],
+			(SELECT STRING_AGG(S.[Name], '', '') FROM WorksheetStore WS INNER JOIN Store S ON S.ID = WS.StoreID WHERE WS.WorksheetID = W.ID) [StoresName],
+			W.Notes,
+			U.UserName,
+			U.ID [UserID],
+			XW.WorksheetContentID
+		FROM ExtCentral_Worksheet XW
+			INNER JOIN Worksheet W ON W.ID = XW.WorksheetID
+			INNER JOIN HQUser U ON U.ID = XW.HQUserID
+			LEFT JOIN ExtCentral_WizardLista WL ON WL.Codigo = XW.WizardTaskCode
+		WHERE (''', @USERS_ID, ''' = ''%'' OR XW.HQUserID IN (SELECT VALUE FROM STRING_SPLIT(''', @USERS_ID, N''', '','' ) WHERE VALUE <> '''')) ',
+			N'AND (XW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(''',@TASKS, N''', '','') WHERE VALUE <> '''') OR ''',@TASKS, N''' = ''%'')
+			AND (
+				SELECT COUNT(*)
+				FROM WorksheetStore WS
+					INNER JOIN Store S ON S.ID = WS.StoreID
+				WHERE WS.WorksheetID = W.ID
+					AND ( ''', @STORES, N''' = ''%'' OR WS.StoreID IN (SELECT VALUE FROM STRING_SPLIT(''', @STORES, N''', '','') WHERE VALUE <> '''') )
+					AND S.Inactive = 0
+			) > 0 '
+	)
+
+	--- AGREGAR VALIDACIÓN POR VALOR DE FILTRO ---
+	IF (@SearchValue <> '' AND @SearchValue IS NOT NULL) BEGIN
+		SET @QUERY = CONCAT(@QUERY, N' AND (
+				CONVERT(VARCHAR(30), W.ID) LIKE ''%', @SearchValue, N'%'' 
+				OR XW.WorsheetTitle LIKE ''%', @SearchValue, N'%''
+				OR XW.WizardTaskCode LIKE ''%', @SearchValue, N'%''
+				OR W.Notes LIKE ''%', @SearchValue, N'%''
+				OR WL.Descripcion LIKE ''%', @SearchValue, N'%''
+				OR U.UserName LIKE ''%', @SearchValue, N'%''
+				OR (
+					SELECT COUNT(*)
+					FROM WorksheetStore WS
+						INNER JOIN Store S ON S.ID = WS.StoreID
+					WHERE WS.WorksheetID = W.ID
+						AND ( ''', @STORES, N''' = ''%'' OR WS.StoreID IN (SELECT VALUE FROM STRING_SPLIT(''', @STORES, N''', '','') WHERE VALUE <> '''') )
+						AND S.Inactive = 0
+						AND S.[Name] LIKE ''%', @SearchValue, N'%''
+				) > 0
+			)'
+		)
+	END
+
+	--- AGREGAR VALIDACIÓN POR FECHA INICIAL ---
+	IF (@FROMDATE <> '' AND @FROMDATE IS NOT NULL) BEGIN
+		SET @QUERY = CONCAT(@QUERY, N' AND CONVERT(DATE, XW.[Date]) >= CONVERT(DATE, ''', @FROMDATE, ''') ')
+	END
+
+	--- AGREGAR VALIDACIÓN POR FECHA FINAL ---
+	IF (@TODATE <> '' AND @TODATE IS NOT NULL) BEGIN
+		SET @QUERY = CONCAT(@QUERY, N' AND CONVERT(DATE, XW.[Date]) <= CONVERT(DATE, ''', @TODATE, ''') ')
+	END
+
+	--- AGREGAR ORDER BY ---
+	SET @QUERY = CONCAT(@QUERY, N' ORDER BY ',
+		CASE @OrderColumn 
+			WHEN 1 THEN '[Style]'
+			WHEN 2 THEN '[Status]'
+			WHEN 3 THEN '[Title]'
+			WHEN 4 THEN '[DateApplied]'
+			WHEN 5 THEN '[EffectiveDate]'
+			WHEN 6 THEN '[TaskDescription]'
+			WHEN 7 THEN '[TaskCode]'
+			WHEN 8 THEN '[StoresID]'
+			WHEN 9 THEN '[StoresName]'
+			WHEN 10 THEN '[Notes]'
+			WHEN 11 THEN '[UserName]'
+			ELSE '[ID]'
+		END, ' ', @OrderDirection
+	)
+
+	--- AGREGAR FILAS A OMITIR ---
+	SET @QUERY = CONCAT(@QUERY, ' OFFSET ', @Skip, ' ROWS ')
+
+	--- AGREGAR FILAS A TOMAR ---
+	SET @QUERY = CONCAT(@QUERY, ' FETCH NEXT ', @Take, ' ROWS ONLY ')
+
+	PRINT @QUERY
+	EXEC sp_executesql @QUERY
+END

@@ -1,0 +1,235 @@
+﻿
+
+--Cambios Masivo Wizard
+--Tablas--
+[ExtCentral_WizardLista]
+[RMH_StoreGroup]
+[RMH_StoreGroupStoreList]
+
+
+--Scripts--
+UEP_WS_EXTCENTRAL_WIZARDLIST_GETALL
+UEP_STOREGROUP_GETALL
+--
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ExtCentral_WizardLista](
+	[Codigo] [varchar](50) NOT NULL,
+	[Descripcion] [varchar](150) NOT NULL,
+	[Estado] [char](1) NOT NULL,
+	[WizardTask] [bit] NOT NULL,
+	[SyncGuid] [uniqueidentifier] NULL
+) ON [PRIMARY]
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'101', N'Cambiar Precios de Productos', N'0', 1, N'0006ee5b-a8df-4db6-9dad-5da2b8094322')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'102', N'Cambiar Costos de Productos', N'0', 1, N'000d8c36-319f-4a03-9774-24b7025d03bd')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'103', N'Cambiar Cantidades de Productos', N'0', 1, N'000d8797-33b4-4824-b2f8-d964bd243d65')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'104', N'Cambiar IVA de Productos', N'1', 1, N'00083e29-5947-4fc2-b41d-56388e968518')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'105', N'(Mantenimiento) Activar/Desactivar Productos', N'0', 1, N'00018011-8348-4703-8843-8f55be0987b7')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'121', N'Cambio de Precios: Descuentos', N'1', 1, N'000ece73-678a-4b88-ab17-74944544ee24')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'107', N'Cambiar Descripción (Supermercados)', N'1', 1, N'0001ea77-4491-4d50-b512-cc525d022e63')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'108', N'Cambiar Descripción  (Mayoreos-CEDI)', N'1', 1, N'0008077f-7ee3-4340-9b4e-f2e9083d4d8f')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'109', N'Cambiar SubDescripción2', N'0', 1, N'00071ecf-081f-404d-a0d6-b547e4a78efa')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'110', N'Cambiar Código CabSyS', N'1', 1, N'000259f0-546e-4830-963d-db1e84949c0f')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'111', N'Cambiar Departamento/Categorías de Productos', N'0', 1, N'000a573e-14e1-414f-8130-a54cf1a334fb')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'119', N'Actualizar Margen de Utilidad', N'0', 1, N'00023c94-99ea-437e-891a-1756bf3ef476')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'120', N'Cambio de Proveedor - Costos', N'1', 1, N'000bdc16-2200-440c-909e-d94e3830eb96')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'130', N'Importar Productos', N'1', 1, N'00093193-5245-4d0a-b617-8dd77e08623e')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'124', N'Cambio de Precios: Margen de Utilidad.', N'1', 1, N'00042bdb-220f-4909-a064-4ccc63e2ccf9')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'122', N'Cambio de Precios: Descuentos por Condición', N'1', 1, N'00058555-8da3-4a5f-b725-4b94b134b81f')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'123', N'Cambio de Precios: Precio Regular', N'1', 1, N'000ae8ce-f347-4395-8af5-3ed737b9fc09')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'131', N'Activar Productos', N'1', 1, N'000d5573-2990-4a59-9368-a89474ce48fd')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'001', N'Actualización Manual de Productos', N'1', 0, N'00075f8e-d74d-4449-b6ef-b85e4139d1dd')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'201', N'Cambio de Propiedad de Productos', N'1', 1, N'00041d03-a487-4d65-b00d-6bc4396fb2bb')
+GO
+INSERT [dbo].[ExtCentral_WizardLista] ([Codigo], [Descripcion], [Estado], [WizardTask], [SyncGuid]) VALUES (N'002', N'Actualización Manual de Propiedades de Productos', N'1', 0, N'00053fcb-82d9-4300-9bc3-c6d2d26e95cc')
+GO
+ALTER TABLE [dbo].[ExtCentral_WizardLista] ADD  CONSTRAINT [DF_ExtCentral_WizardLista_WizardTask]  DEFAULT ((1)) FOR [WizardTask]
+GO
+ALTER TABLE [dbo].[ExtCentral_WizardLista] ADD  CONSTRAINT [DF__ExtCentra__SyncG__46142CBB]  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_EXTCENTRAL_WIZARD_LIST_GETALL]    Script Date: 03/06/2024 11:03:30 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[UEP_EXTCENTRAL_WIZARD_LIST_GETALL] (@TASKS VARCHAR(1000))
+
+AS
+
+BEGIN
+	SELECT [Codigo]
+		  ,[Descripcion]
+		  ,[Estado]
+		  ,[WizardTask]
+	FROM [ExtCentral_WizardLista]
+	WHERE ([Codigo] IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',') WHERE VALUE <> '') OR @TASKS = '%')
+	ORDER BY [Codigo] ASC
+END
+GO
+-----------------------
+GO
+/****** Object:  Table [dbo].[RMH_StoreGroup]    Script Date: 03/06/2024 11:20:46 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[RMH_StoreGroup](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[Description] [nvarchar](50) NOT NULL,
+	[Code] [nvarchar](25) NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_RMH_StoreGroup] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[RMH_StoreGroupStoreList]    Script Date: 03/06/2024 11:20:46 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[RMH_StoreGroupStoreList](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[StoreGroupID] [int] NULL,
+	[StoreID] [int] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_RMH_StoreGroupStoreList] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+SET IDENTITY_INSERT [dbo].[RMH_StoreGroup] ON 
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (1, N'Automercado BM', N'01', N'00066057-b765-4495-96b2-09b67c9725a3')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (2, N'COMERCIAL BM S.A.', N'02', N'000b3970-b86d-4d68-b4fb-8fcd55982566')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (3, N'BM  DEL PALMAR S.A.', N'03', N'000bde75-dec5-4e87-a9c1-3dad4c3cf660')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (4, N'SABALITO BM S.A.', N'04', N'0005f39d-8f99-4e97-9b6a-63da8e5e7993')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (5, N'COMERCIAL CORCOVADO DEL SUR S.A.', N'05', N'0007f984-4853-49a7-bae6-686ddf5b0a4f')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (6, N'SUPERMERCADO BM LTDA', N'06', N'0007896d-bc81-419e-8375-0ae5130a5615')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (7, N'BM DE UVITA S.A.', N'07', N'0009bc6d-e6df-43af-b346-e56537bcdcd7')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (8, N'SUPERMERCADOS DEL PACIFICO S.A.', N'08', N'000e91f6-8404-4c3a-b20d-ee7865621b19')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (9, N'BM DEL GENERAL S.A.', N'09', N'0002541e-fae7-48b1-ad96-a5cba8aa015e')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (10, N'SUR BM S.A.', N'10', N'0007f8ef-6df1-4ab9-8a17-4b31006d74a7')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (11, N'BM QUEPOS S.A.', N'11', N'000aee81-0ee9-4f4a-9550-d4b8997c51a7')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (12, N'RIO CLARO', N'12', N'000862f9-958b-4d24-aced-6ea356cc6909')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (13, N'IMPORTACIONES MG PZ S.A.', N'13', N'000e6fb9-55ba-47fd-a905-742c29311f16')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (14, N'MARJAVA SUPERMERCADOS S.A.', N'14', N'0002b7cb-fc35-4fec-8d62-39ec65d78714')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (15, N'GRUPO BM SP S.A.', N'15', N'000c2f4a-a389-4a05-ac90-209e0b02b9f7')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (16, N'MAYOREO BM S.A.', N'16', N'000c8f22-702a-4b37-aabd-6cb149790160')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (17, N'ALMACEN LA GARANTIA', N'17', N'0001485d-c326-423b-8c52-5d993c11a13e')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (18, N'HOGARCENTRO CB S.A.', N'18', N'000f51f5-9fb9-42d6-99f9-336d3e8ab85d')
+GO
+INSERT [dbo].[RMH_StoreGroup] ([ID], [Description], [Code], [SyncGuid]) VALUES (19, N'BOSTON', N'19', N'0008574b-cc58-4508-a165-8f80ca25d3c6')
+GO
+SET IDENTITY_INSERT [dbo].[RMH_StoreGroup] OFF
+GO
+SET IDENTITY_INSERT [dbo].[RMH_StoreGroupStoreList] ON 
+GO
+INSERT [dbo].[RMH_StoreGroupStoreList] ([ID], [StoreGroupID], [StoreID], [SyncGuid]) VALUES (15, 15, 15, N'16fd6ea6-e32e-47ac-9455-e45760c0ec56')
+GO
+SET IDENTITY_INSERT [dbo].[RMH_StoreGroupStoreList] OFF
+GO
+ALTER TABLE [dbo].[RMH_StoreGroup] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[RMH_StoreGroupStoreList] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+/****** Object:  StoredProcedure [dbo].[UEP_STOREGROUP_GETALL]    Script Date: 03/06/2024 11:20:46 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[UEP_STOREGROUP_GETALL] (@STORES_ID VARCHAR(500))
+
+AS
+
+BEGIN
+	SELECT DISTINCT SG.[ID]
+		,SG.[Description]
+		,SG.[Code]
+	FROM [RMH_StoreGroup] SG
+		INNER JOIN [RMH_StoreGroupStoreList] SL ON SL.StoreGroupID = SG.ID
+		INNER JOIN Store S ON S.ID = SL.StoreID
+	WHERE S.Inactive = 0
+		AND (@STORES_ID = '%' OR S.ID IN (SELECT VALUE FROM STRING_SPLIT(@STORES_ID, ',') WHERE VALUE <> ''))
+END
+GO
+
+-----------------------
+CREATE PROCEDURE [dbo].[UEP_EXTCENTRAL_WORKSHEET_INSERT] (@USER_ID INT, @WORKSHEET_ID INT, @WORKSHEET_TYPE INT, @WIZARD_TASK VARCHAR(50), @WORSHEET_TITLE VARCHAR(50), @STORES VARCHAR(1000), @WORKSHEETCONTENTID INT = 0)
+
+AS
+
+BEGIN
+	INSERT INTO ExtCentral_Worksheet (HQUserID, WorksheetID, WorksheetType, WizardTaskCode, WorsheetTitle, Stores, WorksheetContentID)
+	VALUES (@USER_ID, @WORKSHEET_ID, @WORKSHEET_TYPE, @WIZARD_TASK, @WORSHEET_TITLE, @STORES, @WORKSHEETCONTENTID)
+END
+GO
+
+
+
+/****** Object:  StoredProcedure [dbo].[UEP_USER_GET_BY_ACCOUNT]    Script Date: 2025/05/07 14:54:07 ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[UEP_USER_GET_BY_ACCOUNT] (@ACCOUNT VARCHAR(30))
+
+AS
+
+BEGIN
+	SELECT U.ID,
+		U.Number as Account,
+		U.[Password],
+		U.[Name] as UserName,
+		U.EmailAddress,
+		U.Privileges as UserPrivileges,
+		U.SecurityLevel
+	FROM [Cashier] U
+	WHERE U.Number = 'soporte'--@ACCOUNT
+END
+
+

@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?><Database Name="AVS_SECURITY" Class="SecurityDBDataContext" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
+  <Connection Mode="AppSettings" ConnectionString="Data Source=.\CAFE,5413;Initial Catalog=AVS_SECURITY;User ID=sa" SettingsObjectName="Security.DataAccess.Properties.Settings" SettingsPropertyName="AVS_SECURITYConnectionString1" Provider="System.Data.SqlClient" />
+  <Function Name="dbo.SC_USER_VALIDATE" Method="SC_USER_VALIDATE">
+    <Parameter Name="ACCOUNT" Parameter="aCCOUNT" Type="System.String" DbType="VarChar(50)" />
+    <Parameter Name="AUTOID" Parameter="aUTOID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="SYSTEMID" Parameter="sYSTEMID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="SC_USER_VALIDATEResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="AutoID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SystemID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Account" Type="System.String" DbType="VarChar(50) NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="VarChar(100)" CanBeNull="true" />
+      <Column Name="EnCloseSession" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="Enable" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.SC_USER_VALIDATE_SESSION" Method="SC_USER_VALIDATE_SESSION">
+    <Parameter Name="ID" Parameter="iD" Type="System.Int32" DbType="Int" />
+    <Parameter Name="AUTOID" Parameter="aUTOID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="SYSTEMID" Parameter="sYSTEMID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="SC_USER_VALIDATE_SESSIONResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.SC_SYSTEM_VALIDATE" Method="SC_SYSTEM_VALIDATE">
+    <Parameter Name="USER_ID" Parameter="uSER_ID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="SYSTEM_CODE" Parameter="sYSTEM_CODE" Type="System.String" DbType="VarChar(30)" />
+    <ElementType Name="SC_SYSTEM_VALIDATEResult">
+      <Column Name="RESULT" Type="System.Int32" DbType="Int" CanBeNull="true" />
+      <Column Name="RESULT_STATUS" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.SC_MODULE_VALIDATE_GET" Method="SC_MODULE_VALIDATE_GET">
+    <Parameter Name="SYSTEM_CODE" Parameter="sYSTEM_CODE" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="USER_ID" Parameter="uSER_ID" Type="System.Int32" DbType="Int" />
+    <ElementType Name="SC_MODULE_VALIDATE_GETResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="SystemID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Code" Type="System.String" DbType="VarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="VarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="Enable" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.SC_VIEW_VALIDATE_GET" Method="SC_VIEW_VALIDATE_GET">
+    <Parameter Name="USER_ID" Parameter="uSER_ID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="SYSTEM_CODE" Parameter="sYSTEM_CODE" Type="System.String" DbType="VarChar(30)" />
+    <ElementType Name="SC_VIEW_VALIDATE_GETResult">
+      <Column Name="ID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="MuduleID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="Code" Type="System.String" DbType="VarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="Name" Type="System.String" DbType="VarChar(80) NOT NULL" CanBeNull="false" />
+      <Column Name="Enable" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+    </ElementType>
+  </Function>
+  <Function Name="dbo.SC_DATAACCESS_VALIDATE" Method="SC_DATAACCESS_VALIDATE">
+    <Parameter Name="DATA_CODE" Parameter="dATA_CODE" Type="System.String" DbType="VarChar(30)" />
+    <Parameter Name="USER_ID" Parameter="uSER_ID" Type="System.Int32" DbType="Int" />
+    <Parameter Name="SYSTEM_CODE" Parameter="sYSTEM_CODE" Type="System.String" DbType="VarChar(30)" />
+    <ElementType Name="SC_DATAACCESS_VALIDATEResult">
+      <Column Name="DataID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="DataCode" Type="System.String" DbType="VarChar(30) NOT NULL" CanBeNull="false" />
+      <Column Name="DataDescription" Type="System.String" DbType="VarChar(200) NOT NULL" CanBeNull="false" />
+      <Column Name="DataTableName" Type="System.String" DbType="VarChar(150)" CanBeNull="true" />
+      <Column Name="DataTablePKName" Type="System.String" DbType="VarChar(50)" CanBeNull="true" />
+      <Column Name="DataSystemID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="DataEnable" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="DataAccessID" Type="System.Int32" DbType="Int NOT NULL" CanBeNull="false" />
+      <Column Name="DataAccessDescription" Type="System.String" DbType="VarChar(100) NOT NULL" CanBeNull="false" />
+      <Column Name="DataAccessEnAll" Type="System.Boolean" DbType="Bit NOT NULL" CanBeNull="false" />
+      <Column Name="DataAccessDataIDs" Type="System.String" DbType="VarChar(1000)" CanBeNull="true" />
+      <Column Name="DataAccessEnable" Type="System.Boolean" DbType="Bit" CanBeNull="true" />
+    </ElementType>
+  </Function>
+</Database>

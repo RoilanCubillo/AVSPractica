@@ -1,0 +1,1958 @@
+﻿/*
+================================================================================
+  SCRIPT DE INSTALACIÓN - CENTRAL WIZARD
+  Generado: 2024
+  Descripción: Script unificado para instalación en base de datos nueva.
+  Orden de ejecución:
+    1. Configuración inicial
+    2. Función auxiliar GenerateSyncGuid
+    3. TABLAS - Worksheet (nativas RMH)
+    4. TABLAS - ExtCentral (propias del módulo)
+    5. TABLAS - StoreGroup
+    6. TABLAS - Logs y Wizard
+    7. DATOS iniciales (ExtCentral_WizardLista, RMH_StoreGroup)
+    8. STORED PROCEDURES - AVS (básicos)
+    9. STORED PROCEDURES - AVS_CHANGE_ITEM
+   10. STORED PROCEDURES - UEP_WS (Wizard principal)
+   11. STORED PROCEDURES - UEP_WORKSHEET (gestión hojas de trabajo)
+   12. STORED PROCEDURES - Store/Catalog
+================================================================================
+*/
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET NOCOUNT ON
+GO
+
+PRINT '==============================================================='
+PRINT ' INICIO DE INSTALACIÓN - CENTRAL WIZARD'
+PRINT '==============================================================='
+
+-- ============================================================================
+-- SECCIÓN 1: FUNCIÓN AUXILIAR GenerateSyncGuid
+-- (requerida por los DEFAULT de las tablas)
+-- ============================================================================
+--PRINT ''
+--PRINT '>> Creando función GenerateSyncGuid...'
+--GO
+
+--IF OBJECT_ID('dbo.GenerateSyncGuid', 'FN') IS NOT NULL
+--    DROP FUNCTION dbo.GenerateSyncGuid
+--GO
+
+--CREATE FUNCTION [dbo].[GenerateSyncGuid]()
+--RETURNS UNIQUEIDENTIFIER
+--AS
+--BEGIN
+--    RETURN NEWID()
+--END
+--GO
+
+-- ============================================================================
+-- SECCIÓN 2: FUNCIONES DE NEGOCIO (requeridas por los SPs principales)
+-- ============================================================================
+PRINT ''
+PRINT '>> Creando funciones de negocio...'
+GO
+
+IF OBJECT_ID('dbo.UEP_GET_PRICE_ROUND', 'FN') IS NOT NULL
+    DROP FUNCTION dbo.UEP_GET_PRICE_ROUND
+GO
+
+-- Función de redondeo de precio (ajustar lógica según reglas de negocio)
+CREATE FUNCTION [dbo].[UEP_GET_PRICE_ROUND](@PRICE MONEY)
+RETURNS MONEY
+AS
+BEGIN
+    -- Redondeo al 50 o 100 más cercano (lógica típica Costa Rica)
+    DECLARE @ROUNDED MONEY
+    SET @ROUNDED = ROUND(@PRICE / 50, 0) * 50
+    RETURN @ROUNDED
+END
+GO
+
+IF OBJECT_ID('dbo.UEP_GET_UTILITY_REAL', 'FN') IS NOT NULL
+    DROP FUNCTION dbo.UEP_GET_UTILITY_REAL
+GO
+
+-- Función que calcula la utilidad real sobre el precio redondeado
+CREATE FUNCTION [dbo].[UEP_GET_UTILITY_REAL](
+    @FINAL_PRICE_ROUND MONEY,
+    @FINAL_PRICE_UTILITY MONEY,
+    @FINAL_PRICE MONEY,
+    @TAXRATE FLOAT
+)
+RETURNS DECIMAL(18,8)
+AS
+BEGIN
+    DECLARE @UTILITY_REAL DECIMAL(18,8) = 0
+    IF (@FINAL_PRICE > 0 AND @TAXRATE >= 0)
+    BEGIN
+        DECLARE @PRICE_WITHOUT_IVA MONEY = @FINAL_PRICE_ROUND / (1 + (@TAXRATE / 100))
+        SET @UTILITY_REAL = CASE
+            WHEN @FINAL_PRICE = 0 THEN 0
+            ELSE ((@PRICE_WITHOUT_IVA - @FINAL_PRICE) / @FINAL_PRICE) * 100
+        END
+    END
+    RETURN @UTILITY_REAL
+END
+GO
+
+-- Función tabla usada en UEP_WS_CHANGE_ITEM_PROPERTIES
+IF OBJECT_ID('dbo.UEP_ITEMEXT_PROPERTY_GET_BY_ITEMID', 'TF') IS NOT NULL
+    DROP FUNCTION dbo.UEP_ITEMEXT_PROPERTY_GET_BY_ITEMID
+GO
+
+CREATE FUNCTION [dbo].[UEP_ITEMEXT_PROPERTY_GET_BY_ITEMID](
+    @ITEM_ID INT,
+    @STORES VARCHAR(1000),
+    @PROPERTIES VARCHAR(1000),
+    @ACTIVE BIT
+)
+RETURNS TABLE
+AS
+RETURN
+(
+    -- Retorna propiedades extendidas del item desde ItemExt (XML)
+    -- Esta función debe adaptarse según la estructura real de ItemExt
+    SELECT
+        CAST(NULL AS VARCHAR(100)) AS PropertyName,
+        CAST(NULL AS VARCHAR(MAX)) AS [Value],
+        CAST(NULL AS INT) AS PropertyType
+    WHERE 1 = 0
+)
+GO
+
+-- ============================================================================
+-- SECCIÓN 3: TABLAS NATIVAS RMH (Worksheet y relacionadas)
+-- ============================================================================
+PRINT ''
+PRINT '>> Creando tablas nativas RMH (Worksheet)...'
+GO
+
+IF OBJECT_ID('dbo.Worksheet', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [Style] [int] NULL CONSTRAINT [DF_Worksheet_Style] DEFAULT (0),
+        [EffectiveDate] [datetime] NULL CONSTRAINT [DF_Worksheet_EffectiveDate] DEFAULT (GETDATE()),
+        [Status] [int] NULL CONSTRAINT [DF_Worksheet_Status] DEFAULT (0),
+        [Notes] [nvarchar](255) NULL CONSTRAINT [DF_Worksheet_Notes] DEFAULT (''),
+        [Title] [nvarchar](50) NULL CONSTRAINT [DF_Worksheet_Title] DEFAULT (''),
+        [FromDate] [datetime] NULL CONSTRAINT [DF_Worksheet_FromDate] DEFAULT (GETDATE()),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet] PRIMARY KEY NONCLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet creada.'
+END
+ELSE PRINT '   Tabla Worksheet ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.WorksheetStore', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[WorksheetStore](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_WorksheetStore_WorksheetID] DEFAULT (0),
+        [StoreID] [int] NULL CONSTRAINT [DF_WorksheetStore_StoreID] DEFAULT (0),
+        [Status] [int] NULL CONSTRAINT [DF_WorksheetStore_Status] DEFAULT (0),
+        [DateProcessed] [datetime] NULL CONSTRAINT [DF_WorksheetStore_DateProcessed] DEFAULT (GETDATE()),
+        [Originator] [smallint] NULL CONSTRAINT [DF_WorksheetStore_Originator] DEFAULT (0),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_WorksheetStore] PRIMARY KEY NONCLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla WorksheetStore creada.'
+END
+ELSE PRINT '   Tabla WorksheetStore ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.WorksheetHistory', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[WorksheetHistory](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_WorksheetHistory_WorksheetID] DEFAULT (0),
+        [Status] [int] NULL CONSTRAINT [DF_WorksheetHistory_Status] DEFAULT (0),
+        [HistoryDate] [datetime] NULL CONSTRAINT [DF_WorksheetHistory_HistoryDate] DEFAULT (GETDATE()),
+        [HQEntry] [bit] NOT NULL CONSTRAINT [DF_WorksheetHistory_HQEntry] DEFAULT (0),
+        [StoreID] [int] NULL CONSTRAINT [DF_WorksheetHistory_StoreID] DEFAULT (0),
+        [Comment] [nvarchar](255) NULL CONSTRAINT [DF_WorksheetHistory_Comment] DEFAULT (''),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_WorksheetHistory] PRIMARY KEY NONCLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla WorksheetHistory creada.'
+END
+ELSE PRINT '   Tabla WorksheetHistory ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_ItemUpdate', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_ItemUpdate](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_Worksheet_ItemUpdate_WorksheetID] DEFAULT (0),
+        [ItemID] [int] NULL CONSTRAINT [DF_Worksheet_ItemUpdate_ItemID] DEFAULT (0),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet_ItemUpdate] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet_ItemUpdate creada.'
+END
+ELSE PRINT '   Tabla Worksheet_ItemUpdate ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_ItemTax', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_ItemTax](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_Worksheet_ItemTax_WorksheetID] DEFAULT (0),
+        [ItemID] [int] NULL CONSTRAINT [DF_Worksheet_ItemTax_ItemID] DEFAULT (0),
+        [TaxID] [int] NULL CONSTRAINT [DF_Worksheet_ItemTax_TaxID] DEFAULT (0),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet_ItemTax] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet_ItemTax creada.'
+END
+ELSE PRINT '   Tabla Worksheet_ItemTax ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.WorksheetUpdateItemPrices', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[WorksheetUpdateItemPrices](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL,
+        [ItemID] [int] NULL,
+        [Price] [money] NULL,
+        [Cost] [money] NULL,
+        [PriceLevelA] [money] NULL,
+        [PriceLevelB] [money] NULL,
+        [PriceLevelC] [money] NULL,
+        [MSRP] [money] NULL,
+        [SalePrice] [money] NULL,
+        [SaleStartDate] [datetime] NULL,
+        [SaleEndDate] [datetime] NULL,
+        [LowerBound] [money] NULL,
+        [UpperBound] [money] NULL,
+        [BuydownPrice] [money] NULL,
+        [BuydownQuantity] [float] NULL,
+        [DBTimeStamp] [timestamp] NOT NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_WorksheetUpdateItemPrices] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla WorksheetUpdateItemPrices creada.'
+END
+ELSE PRINT '   Tabla WorksheetUpdateItemPrices ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_ItemCost', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_ItemCost](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_Worksheet_ItemCost_WorksheetID] DEFAULT (0),
+        [ItemID] [int] NULL CONSTRAINT [DF_Worksheet_ItemCost_ItemID] DEFAULT (0),
+        [Cost] [money] NULL CONSTRAINT [DF_Worksheet_ItemCost_Cost] DEFAULT (0),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet_ItemCost] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet_ItemCost creada.'
+END
+ELSE PRINT '   Tabla Worksheet_ItemCost ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_ItemPrice', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_ItemPrice](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_Worksheet_ItemPrice_WorksheetID] DEFAULT (0),
+        [ItemID] [int] NULL CONSTRAINT [DF_Worksheet_ItemPrice_ItemID] DEFAULT (0),
+        [DetailID] [int] NULL CONSTRAINT [DF_Worksheet_ItemPrice_DetailID] DEFAULT (0),
+        [Price] [money] NULL CONSTRAINT [DF_Worksheet_ItemPrice_Price] DEFAULT (0),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet_ItemPrice] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet_ItemPrice creada.'
+END
+ELSE PRINT '   Tabla Worksheet_ItemPrice ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_ItemPriceLevel', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_ItemPriceLevel](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_Worksheet_ItemPriceLevel_WorksheetID] DEFAULT (0),
+        [ItemID] [int] NULL CONSTRAINT [DF_Worksheet_ItemPriceLevel_ItemID] DEFAULT (0),
+        [PriceA] [money] NULL CONSTRAINT [DF_Worksheet_ItemPriceLevel_PriceA] DEFAULT (0),
+        [PriceB] [money] NULL CONSTRAINT [DF_Worksheet_ItemPriceLevel_PriceB] DEFAULT (0),
+        [PriceC] [money] NULL CONSTRAINT [DF_Worksheet_ItemPriceLevel_PriceC] DEFAULT (0),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet_ItemPriceLevel] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet_ItemPriceLevel creada.'
+END
+ELSE PRINT '   Tabla Worksheet_ItemPriceLevel ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_ItemPriceLimit', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_ItemPriceLimit](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_Worksheet_ItemPriceLimit_WorksheetID] DEFAULT (0),
+        [ItemID] [int] NULL CONSTRAINT [DF_Worksheet_ItemPriceLimit_ItemID] DEFAULT (0),
+        [PriceUpperBound] [money] NULL CONSTRAINT [DF_Worksheet_ItemPriceLimit_PriceUpperBound] DEFAULT (0),
+        [PriceLowerBound] [money] NULL CONSTRAINT [DF_Worksheet_ItemPriceLimit_PriceLowerBound] DEFAULT (0),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet_ItemPriceLimit] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet_ItemPriceLimit creada.'
+END
+ELSE PRINT '   Tabla Worksheet_ItemPriceLimit ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_ItemQuantity', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_ItemQuantity](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_Worksheet_ItemQuantity_WorksheetID] DEFAULT (0),
+        [ItemID] [int] NULL CONSTRAINT [DF_Worksheet_ItemQuantity_ItemID] DEFAULT (0),
+        [DetailID] [int] NULL CONSTRAINT [DF_Worksheet_ItemQuantity_DetailID] DEFAULT (0),
+        [Quantity] [float] NULL CONSTRAINT [DF_Worksheet_ItemQuantity_Quantity] DEFAULT (0),
+        [QuantityCommitted] [float] NULL CONSTRAINT [DF_Worksheet_ItemQuantity_QuantityCommitted] DEFAULT (0),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet_ItemQuantity] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet_ItemQuantity creada.'
+END
+ELSE PRINT '   Tabla Worksheet_ItemQuantity ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_ItemRestock', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_ItemRestock](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_Worksheet_ItemRestock_WorksheetID] DEFAULT (0),
+        [ItemID] [int] NULL CONSTRAINT [DF_Worksheet_ItemRestock_ItemID] DEFAULT (0),
+        [ReorderPoint] [float] NULL CONSTRAINT [DF_Worksheet_ItemRestock_ReorderPoint] DEFAULT (0),
+        [RestockLevel] [float] NULL CONSTRAINT [DF_Worksheet_ItemRestock_RestockLevel] DEFAULT (0),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet_ItemRestock] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet_ItemRestock creada.'
+END
+ELSE PRINT '   Tabla Worksheet_ItemRestock ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_ItemDiscount', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_ItemDiscount](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL,
+        [ItemID] [int] NULL,
+        [QuantityDiscountID] [int] NULL,
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet_ItemDiscount] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet_ItemDiscount creada.'
+END
+ELSE PRINT '   Tabla Worksheet_ItemDiscount ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_ItemBlockSales', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_ItemBlockSales](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL,
+        [ItemID] [int] NULL,
+        [BlockSalesType] [int] NOT NULL,
+        [BlockSalesReason] [nvarchar](30) NOT NULL,
+        [BlockSalesScheduleID] [int] NOT NULL,
+        [BlockSalesBeforeDate] [datetime] NULL,
+        [BlockSalesAfterDate] [datetime] NULL,
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet_ItemBlockSales] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet_ItemBlockSales creada.'
+END
+ELSE PRINT '   Tabla Worksheet_ItemBlockSales ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_SalePrices', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_SalePrices](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_Worksheet_SalePrices_WorksheetID] DEFAULT (0),
+        [ItemID] [int] NULL CONSTRAINT [DF_Worksheet_SalePrices_ItemID] DEFAULT (0),
+        [SalePrice] [money] NULL CONSTRAINT [DF_Worksheet_SalePrices_SalePrice] DEFAULT (0),
+        [SaleStartDate] [datetime] NOT NULL,
+        [SaleEndDate] [datetime] NOT NULL,
+        [DetailID] [int] NULL CONSTRAINT [DF_Worksheet_SalePrices_DetailID] DEFAULT (0),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet_SalePrices] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet_SalePrices creada.'
+END
+ELSE PRINT '   Tabla Worksheet_SalePrices ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_SupplierList', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_SupplierList](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_Worksheet_SupplierList_WorksheetID] DEFAULT (0),
+        [SupplierListID] [int] NULL CONSTRAINT [DF_Worksheet_SupplierList_SupplierListID] DEFAULT (0),
+        [MinimumOrder] [float] NULL CONSTRAINT [DF_Worksheet_SupplierList_MinimumOrder] DEFAULT (0),
+        [Cost] [money] NULL CONSTRAINT [DF_Worksheet_SupplierList_Cost] DEFAULT (0),
+        [ReorderNumber] [nvarchar](25) NULL CONSTRAINT [DF_Worksheet_SupplierList_ReorderNumber] DEFAULT (''),
+        [DBTimeStamp] [timestamp] NULL,
+        [MasterPackQuantity] [int] NOT NULL CONSTRAINT [DF__Worksheet__Maste__4984CAEC] DEFAULT (0),
+        [TaxRate] [float] NOT NULL CONSTRAINT [DF__Worksheet__TaxRa__4A78EF25] DEFAULT (0),
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet_SupplierList] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet_SupplierList creada.'
+END
+ELSE PRINT '   Tabla Worksheet_SupplierList ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_SupplierUpdate', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_SupplierUpdate](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_Worksheet_SupplierUpdate_WorksheetID] DEFAULT (0),
+        [SupplierID] [int] NULL CONSTRAINT [DF_Worksheet_SupplierUpdate_SupplierID] DEFAULT (0),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet_SupplierUpdate] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet_SupplierUpdate creada.'
+END
+ELSE PRINT '   Tabla Worksheet_SupplierUpdate ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_SQL', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_SQL](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_Worksheet_SQL_WorksheetID] DEFAULT (0),
+        [SQLCommand] [nvarchar](4000) NULL CONSTRAINT [DF_Worksheet_SQL_SQLCommand] DEFAULT (''),
+        [Priority] [int] NULL CONSTRAINT [DF_Worksheet_SQL_Priority] DEFAULT (0),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet_SQL] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet_SQL creada.'
+END
+ELSE PRINT '   Tabla Worksheet_SQL ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_DelGlobalCustomers', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_DelGlobalCustomers](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_Worksheet_DelGlobalCustomers_WorksheetID] DEFAULT (0),
+        [CustomerID] [int] NULL CONSTRAINT [DF_Worksheet_DelGlobalCustomers_CustomerID] DEFAULT (0),
+        [AccountNumber] [nvarchar](20) NULL CONSTRAINT [DF_Worksheet_DelGlobalCustomers_AccountNumber] DEFAULT (''),
+        [LastName] [nvarchar](50) NULL CONSTRAINT [DF_Worksheet_DelGlobalCustomers_LastName] DEFAULT (''),
+        [FirstName] [nvarchar](30) NULL CONSTRAINT [DF_Worksheet_DelGlobalCustomers_FirstName] DEFAULT (''),
+        [Company] [nvarchar](50) NULL CONSTRAINT [DF_Worksheet_DelGlobalCustomers_Company] DEFAULT (''),
+        [LastUpdated] [datetime] NULL CONSTRAINT [DF_Worksheet_DelGlobalCustomers_LastUpdated] DEFAULT (GETDATE()),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet_DelGlobalCustomers] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet_DelGlobalCustomers creada.'
+END
+ELSE PRINT '   Tabla Worksheet_DelGlobalCustomers ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_GlobalAccountAdjustment', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_GlobalAccountAdjustment](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NOT NULL CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_WorksheetID] DEFAULT (0),
+        [StoreID] [int] NOT NULL CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_StoreID] DEFAULT (0),
+        [CustomerID] [int] NOT NULL CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_CustomerID] DEFAULT (0),
+        [Date] [datetime] NOT NULL CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_Date] DEFAULT (GETDATE()),
+        [AccountReceivableID] [int] NOT NULL CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_AccountReceivableID] DEFAULT (0),
+        [HistoryType] [int] NOT NULL CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_HistoryTypeID] DEFAULT (0),
+        [Amount] [money] NOT NULL CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_AmountID] DEFAULT (0),
+        [Comment] [nvarchar](50) NOT NULL CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_Comment] DEFAULT (''),
+        [TransferARID] [int] NOT NULL CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_TransferARID] DEFAULT (0),
+        [ReasonCodeID] [int] NOT NULL CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_ReasonCodeID] DEFAULT (0),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]())
+    )
+    PRINT '   Tabla Worksheet_GlobalAccountAdjustment creada.'
+END
+ELSE PRINT '   Tabla Worksheet_GlobalAccountAdjustment ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_InventoryTransfer', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_InventoryTransfer](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_Worksheet_InventoryTransfer_WorksheetID] DEFAULT (0),
+        [ItemID] [int] NULL CONSTRAINT [DF_Worksheet_InventoryTransfer_ItemID] DEFAULT (0),
+        [DetailID] [int] NULL CONSTRAINT [DF_Worksheet_InventoryTransfer_DetailID] DEFAULT (0),
+        [QuantityToTransfer] [float] NULL CONSTRAINT [DF_Worksheet_InventoryTransfer_QuantityToTransfer] DEFAULT (0),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet_InventoryTransfer] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet_InventoryTransfer creada.'
+END
+ELSE PRINT '   Tabla Worksheet_InventoryTransfer ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_PurchaseOrder', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_PurchaseOrder](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_Worksheet_PurchaseOrder_WorksheetID] DEFAULT (0),
+        [ItemDescription] [nvarchar](80) NULL CONSTRAINT [DF_Worksheet_PurchaseOrder_ItemDescription] DEFAULT (''),
+        [QuantityOrdered] [float] NULL CONSTRAINT [DF_Worksheet_PurchaseOrder_QuantityOrdered] DEFAULT (0),
+        [ItemID] [int] NULL CONSTRAINT [DF_Worksheet_PurchaseOrder_ItemID] DEFAULT (0),
+        [DetailID] [int] NULL CONSTRAINT [DF_Worksheet_PurchaseOrder_DetailID] DEFAULT (0),
+        [OrderNumber] [nvarchar](25) NOT NULL CONSTRAINT [DF_Worksheet_PurchaseOrder_OrderNumber] DEFAULT (''),
+        [Price] [money] NULL CONSTRAINT [DF_Worksheet_PurchaseOrder_Price] DEFAULT (0),
+        [StoreID] [int] NULL CONSTRAINT [DF_Worksheet_PurchaseOrder_StoreID] DEFAULT (0),
+        [TaxRate] [float] NULL CONSTRAINT [DF_Worksheet_PurchaseOrder_TaxRate] DEFAULT (0),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_Worksheet_PurchaseOrder] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla Worksheet_PurchaseOrder creada.'
+END
+ELSE PRINT '   Tabla Worksheet_PurchaseOrder ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.WorksheetHeader_MasterPO', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[WorksheetHeader_MasterPO](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [MasterPO] [nvarchar](20) NOT NULL DEFAULT (''),
+        [DBTimeStamp] [timestamp] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_WorksheetHeader_MasterPO] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla WorksheetHeader_MasterPO creada.'
+END
+ELSE PRINT '   Tabla WorksheetHeader_MasterPO ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.WorksheetHeader_PurchaseOrder', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[WorksheetHeader_PurchaseOrder](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_WorksheetID] DEFAULT (0),
+        [PONumber] [nvarchar](20) NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_PONumber] DEFAULT (''),
+        [DateCreated] [datetime] NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_DateCreated] DEFAULT (GETDATE()),
+        [To] [nvarchar](255) NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_To] DEFAULT (''),
+        [ShipTo] [nvarchar](255) NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_ShipTo] DEFAULT (''),
+        [Requisitioner] [nvarchar](20) NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_Requisitioner] DEFAULT (''),
+        [ShipVia] [nvarchar](20) NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_ShipVia] DEFAULT (''),
+        [FOBPoint] [nvarchar](20) NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_FOBPoint] DEFAULT (''),
+        [Terms] [nvarchar](20) NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_Terms] DEFAULT (''),
+        [TaxRate] [float] NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_TaxRate] DEFAULT (0),
+        [Shipping] [money] NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_Shipping] DEFAULT (0),
+        [Freight] [nvarchar](20) NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_Freight] DEFAULT (''),
+        [RequiredDate] [datetime] NOT NULL,
+        [ConfirmingTo] [nvarchar](20) NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_ConfirmingTo] DEFAULT (''),
+        [Remarks] [nvarchar](30) NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_Remarks] DEFAULT (''),
+        [SupplierID] [int] NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_SupplierID] DEFAULT (0),
+        [CurrencyID] [int] NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_CurrencyID] DEFAULT (0),
+        [ExchangeRate] [float] NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_ExchangeRate] DEFAULT (1),
+        [DBTimeStamp] [timestamp] NULL,
+        [OtherFees] [money] NOT NULL CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_OtherFees] DEFAULT (0),
+        [MasterPOID] [int] NOT NULL DEFAULT (0),
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_WorksheetHeader_PurchaseOrder] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla WorksheetHeader_PurchaseOrder creada.'
+END
+ELSE PRINT '   Tabla WorksheetHeader_PurchaseOrder ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.WorksheetStoreJob', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[WorksheetStoreJob](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetStoreID] [int] NOT NULL,
+        [WorksheetStyle] [int] NOT NULL,
+        [WorksheetRecordID] [int] NULL,
+        [JobSyncGuid] [uniqueidentifier] NOT NULL DEFAULT ('00000000-0000-0000-0000-000000000000'),
+        [Status] [int] NOT NULL DEFAULT (0),
+        [StoreID] [int] NOT NULL,
+        [SyncGuid] [uniqueidentifier] NOT NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        [WorksheetRecordID2] [int] NOT NULL DEFAULT (0),
+        CONSTRAINT [PK_WorksheetStoreJob] PRIMARY KEY NONCLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla WorksheetStoreJob creada.'
+END
+ELSE PRINT '   Tabla WorksheetStoreJob ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.Worksheet_POLaterDisburse', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Worksheet_POLaterDisburse](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [WorksheetID] [int] NULL,
+        [StoreID] [int] NULL,
+        [Status] [int] NULL,
+        [Originator] [smallint] NULL,
+        [DBTimeStamp] [timestamp] NULL,
+        [PlannerType] [nvarchar](5) NULL DEFAULT (NULL),
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]())
+    )
+    PRINT '   Tabla Worksheet_POLaterDisburse creada.'
+END
+ELSE PRINT '   Tabla Worksheet_POLaterDisburse ya existe, omitiendo.'
+GO
+
+-- ============================================================================
+-- SECCIÓN 4: TABLAS EXTCENTRAL (propias del módulo Wizard)
+-- ============================================================================
+PRINT ''
+PRINT '>> Creando tablas ExtCentral...'
+GO
+
+IF OBJECT_ID('dbo.EXTCENTRAL_WIZARD_LOG', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[EXTCENTRAL_WIZARD_LOG](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [TASK_NAME] [varchar](120) NULL,
+        [TASK_CODE] [varchar](20) NULL,
+        [DATE] [datetime] NULL,
+        [STORES] [varchar](max) NULL,
+        [ITEM_ERROR] [varchar](50) NULL,
+        [MESSAGE_ERROR] [varchar](max) NULL,
+        [MESSAGE_NUMBER] [int] NULL,
+        [LAST_ACTION] [varchar](max) NULL,
+        [RESPUESTA] [varchar](max) NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        [TASK_DETAILS] [varchar](max) NULL,
+        CONSTRAINT [PK_EXTCENTRAL_WIZARD_LOG] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla EXTCENTRAL_WIZARD_LOG creada.'
+END
+ELSE PRINT '   Tabla EXTCENTRAL_WIZARD_LOG ya existe, omitiendo.'
+GO
+
+-- Log general (usado por UEP_WORKSHEET_CHANGE_STATUS)
+IF OBJECT_ID('dbo.EXTCENTRAL_LOG', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[EXTCENTRAL_LOG](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [ACTION] [varchar](100) NULL,
+        [DATE] [datetime] NULL DEFAULT (GETDATE()),
+        [ERROR_MESSAGE] [varchar](max) NULL,
+        [ERROR_NUMBER] [int] NULL,
+        [NOTE] [varchar](500) NULL,
+        [SP_NAME] [varchar](100) NULL,
+        CONSTRAINT [PK_EXTCENTRAL_LOG] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla EXTCENTRAL_LOG creada.'
+END
+ELSE PRINT '   Tabla EXTCENTRAL_LOG ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.ExtCentral_WizardLista', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ExtCentral_WizardLista](
+        [Codigo] [varchar](50) NOT NULL,
+        [Descripcion] [varchar](150) NOT NULL,
+        [Estado] [char](1) NOT NULL,
+        [WizardTask] [bit] NOT NULL CONSTRAINT [DF_ExtCentral_WizardLista_WizardTask] DEFAULT (1),
+        [SyncGuid] [uniqueidentifier] NULL CONSTRAINT [DF__ExtCentra__SyncG__46142CBB] DEFAULT ([dbo].[GenerateSyncGuid]())
+    )
+    PRINT '   Tabla ExtCentral_WizardLista creada.'
+END
+ELSE PRINT '   Tabla ExtCentral_WizardLista ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.ExtCentral_Worksheet', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ExtCentral_Worksheet](
+        [WorksheetID] [int] NOT NULL,
+        [HQUserID] [int] NOT NULL,
+        [WorksheetContentID] [int] NOT NULL CONSTRAINT [DF_ExtCentral_Worksheet_WorksheetContentID] DEFAULT (0),
+        [WorksheetType] [int] NOT NULL,
+        [WizardTaskCode] [varchar](50) NOT NULL,
+        [WorsheetTitle] [varchar](50) NULL,
+        [Stores] [varchar](1000) NOT NULL,
+        [Date] [datetime] NOT NULL CONSTRAINT [DF_ExtCentral_Worksheet_Date] DEFAULT (GETDATE()),
+        CONSTRAINT [PK_ExtCentral_Worsheet] PRIMARY KEY CLUSTERED ([WorksheetID] ASC, [HQUserID] ASC)
+    )
+    PRINT '   Tabla ExtCentral_Worksheet creada.'
+END
+ELSE PRINT '   Tabla ExtCentral_Worksheet ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.ExtCentral_WorksheetContent', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ExtCentral_WorksheetContent](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [HQUserID] [int] NOT NULL,
+        [DateApplied] [datetime] NOT NULL,
+        [TaskCode] [varchar](30) NOT NULL,
+        [FileName] [varchar](500) NOT NULL,
+        [ContentType] [varchar](50) NOT NULL,
+        [ContentLenght] [bigint] NOT NULL,
+        [ContentData] [varbinary](max) NOT NULL,
+        CONSTRAINT [PK_ExtCentral_WorksheetContent] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla ExtCentral_WorksheetContent creada.'
+END
+ELSE PRINT '   Tabla ExtCentral_WorksheetContent ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.ExtCentral_WorksheetHistory', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ExtCentral_WorksheetHistory](
+        [WorksheetID] [int] NULL,
+        [WorksheetHistoryID] [int] NULL,
+        [HQUserID] [int] NULL
+    )
+    PRINT '   Tabla ExtCentral_WorksheetHistory creada.'
+END
+ELSE PRINT '   Tabla ExtCentral_WorksheetHistory ya existe, omitiendo.'
+GO
+
+-- Tabla de historial de cambios de precios/costos por producto
+IF OBJECT_ID('dbo.ExtCentral_ItemHistory', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ExtCentral_ItemHistory](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [ItemID] [int] NULL,
+        [StoreID] [int] NULL,
+        [SupplierID] [int] NULL,
+        [ItemTaxID] [int] NULL,
+        [MSRP] [money] NULL,
+        [Utility] [float] NULL,
+        [InvoiceDiscount] [decimal](18,2) NULL,
+        [CustomerDiscount] [float] NULL,
+        [GrossCost] [money] NULL,
+        [Cost] [money] NULL,
+        [Price] [money] NULL,
+        [DateApplied] [datetime] NULL DEFAULT (GETDATE()),
+        [TaskApplied] [varchar](50) NULL,
+        [Aditional] [varchar](225) NULL,
+        CONSTRAINT [PK_ExtCentral_ItemHistory] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla ExtCentral_ItemHistory creada.'
+END
+ELSE PRINT '   Tabla ExtCentral_ItemHistory ya existe, omitiendo.'
+GO
+
+-- Tabla de datos extendidos de items (descuentos, utilidades por proveedor/tienda)
+IF OBJECT_ID('dbo.ExtCentral_Item', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ExtCentral_Item](
+        [ItemID] [int] NOT NULL,
+        [FamilyID] [int] NULL,
+        [SubCategoryID] [int] NULL,
+        [SegmentID] [int] NULL,
+        [ManufacturerID] [int] NULL,
+        [BrandID] [int] NULL,
+        [PurchaserID] [int] NULL,
+        [CustomerDiscount] [decimal](18,2) NULL,
+        [InvoiceDiscount] [decimal](18,2) NULL,
+        [Utility] [decimal](18,2) NULL,
+        [StartDate] [date] NULL,
+        [StoresSelected] [varchar](1000) NULL,
+        [SubDescription4] [varchar](30) NULL,
+        [SubDescription5] [varchar](38) NULL,
+        [SubDescription6] [varchar](30) NULL,
+        [SubDescription7] [varchar](30) NULL,
+        [SubDescription8] [varchar](30) NULL,
+        [SubDescription9] [varchar](30) NULL,
+        [SubDescription10] [varchar](30) NULL,
+        CONSTRAINT [PK_ExtCentral_Item] PRIMARY KEY CLUSTERED ([ItemID] ASC)
+    )
+    PRINT '   Tabla ExtCentral_Item creada.'
+END
+ELSE PRINT '   Tabla ExtCentral_Item ya existe, omitiendo.'
+GO
+
+-- Tabla de datos extendidos de items por tienda y proveedor
+IF OBJECT_ID('dbo.ExtCentral_ItemExt', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ExtCentral_ItemExt](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [ItemID] [int] NOT NULL,
+        [SupplierID] [int] NOT NULL,
+        [StoreID] [int] NOT NULL,
+        [InvoiceDiscount] [decimal](18,2) NULL,
+        [CustomerDiscount] [decimal](18,2) NULL,
+        [StartDate] [date] NULL,
+        [EndDate] [date] NULL,
+        [Utility] [decimal](18,2) NULL,
+        [Type] [varchar](20) NULL,
+        [GrossCost] [money] NULL,
+        CONSTRAINT [PK_ExtCentral_ItemExt] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla ExtCentral_ItemExt creada.'
+END
+ELSE PRINT '   Tabla ExtCentral_ItemExt ya existe, omitiendo.'
+GO
+
+-- ============================================================================
+-- SECCIÓN 5: TABLAS STOREGROUP
+-- ============================================================================
+PRINT ''
+PRINT '>> Creando tablas RMH_StoreGroup...'
+GO
+
+IF OBJECT_ID('dbo.RMH_StoreGroup', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[RMH_StoreGroup](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [Description] [nvarchar](50) NOT NULL,
+        [Code] [nvarchar](25) NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_RMH_StoreGroup] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla RMH_StoreGroup creada.'
+END
+ELSE PRINT '   Tabla RMH_StoreGroup ya existe, omitiendo.'
+GO
+
+IF OBJECT_ID('dbo.RMH_StoreGroupStoreList', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[RMH_StoreGroupStoreList](
+        [ID] [int] IDENTITY(1,1) NOT NULL,
+        [StoreGroupID] [int] NULL,
+        [StoreID] [int] NULL,
+        [SyncGuid] [uniqueidentifier] NULL DEFAULT ([dbo].[GenerateSyncGuid]()),
+        CONSTRAINT [PK_RMH_StoreGroupStoreList] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla RMH_StoreGroupStoreList creada.'
+END
+ELSE PRINT '   Tabla RMH_StoreGroupStoreList ya existe, omitiendo.'
+GO
+
+-- Tabla de log de valores de items
+IF OBJECT_ID('dbo.ItemValueLog', 'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ItemValueLog](
+        [ID] [int] NOT NULL,
+        [ItemID] [int] NULL,
+        [OldAmount] [money] NULL,
+        [newAmount] [money] NULL,
+        [AmountType] [char](1) NULL,
+        [StoreID] [int] NULL,
+        [LastUpdated] [datetime] NULL DEFAULT (GETDATE()),
+        CONSTRAINT [PK_ItemValueLog] PRIMARY KEY CLUSTERED ([ID] ASC)
+    )
+    PRINT '   Tabla ItemValueLog creada.'
+END
+ELSE PRINT '   Tabla ItemValueLog ya existe, omitiendo.'
+GO
+
+-- ============================================================================
+-- SECCIÓN 6: DATOS INICIALES - ExtCentral_WizardLista
+-- ============================================================================
+PRINT ''
+PRINT '>> Insertando datos iniciales en ExtCentral_WizardLista...'
+GO
+
+IF NOT EXISTS (SELECT 1 FROM [dbo].[ExtCentral_WizardLista] WHERE [Codigo] = '101')
+BEGIN
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'101',N'Cambiar Precios de Productos',N'0',1,N'0006ee5b-a8df-4db6-9dad-5da2b8094322')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'102',N'Cambiar Costos de Productos',N'0',1,N'000d8c36-319f-4a03-9774-24b7025d03bd')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'103',N'Cambiar Cantidades de Productos',N'0',1,N'000d8797-33b4-4824-b2f8-d964bd243d65')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'104',N'Cambiar IVA de Productos',N'1',1,N'00083e29-5947-4fc2-b41d-56388e968518')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'105',N'(Mantenimiento) Activar/Desactivar Productos',N'0',1,N'00018011-8348-4703-8843-8f55be0987b7')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'107',N'Cambiar Descripción (Supermercados)',N'1',1,N'0001ea77-4491-4d50-b512-cc525d022e63')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'108',N'Cambiar Descripción  (Mayoreos-CEDI)',N'1',1,N'0008077f-7ee3-4340-9b4e-f2e9083d4d8f')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'109',N'Cambiar SubDescripción2',N'0',1,N'00071ecf-081f-404d-a0d6-b547e4a78efa')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'110',N'Cambiar Código CabSyS',N'1',1,N'000259f0-546e-4830-963d-db1e84949c0f')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'111',N'Cambiar Departamento/Categorías de Productos',N'0',1,N'000a573e-14e1-414f-8130-a54cf1a334fb')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'119',N'Actualizar Margen de Utilidad',N'0',1,N'00023c94-99ea-437e-891a-1756bf3ef476')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'120',N'Cambio de Proveedor - Costos',N'1',1,N'000bdc16-2200-440c-909e-d94e3830eb96')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'121',N'Cambio de Precios: Descuentos',N'1',1,N'000ece73-678a-4b88-ab17-74944544ee24')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'122',N'Cambio de Precios: Descuentos por Condición',N'1',1,N'00058555-8da3-4a5f-b725-4b94b134b81f')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'123',N'Cambio de Precios: Precio Regular',N'1',1,N'000ae8ce-f347-4395-8af5-3ed737b9fc09')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'124',N'Cambio de Precios: Margen de Utilidad.',N'1',1,N'00042bdb-220f-4909-a064-4ccc63e2ccf9')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'130',N'Importar Productos',N'1',1,N'00093193-5245-4d0a-b617-8dd77e08623e')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'131',N'Activar Productos',N'1',1,N'000d5573-2990-4a59-9368-a89474ce48fd')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'201',N'Cambio de Propiedad de Productos',N'1',1,N'00041d03-a487-4d65-b00d-6bc4396fb2bb')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'001',N'Actualización Manual de Productos',N'1',0,N'00075f8e-d74d-4449-b6ef-b85e4139d1dd')
+    INSERT [dbo].[ExtCentral_WizardLista] ([Codigo],[Descripcion],[Estado],[WizardTask],[SyncGuid]) VALUES (N'002',N'Actualización Manual de Propiedades de Productos',N'1',0,N'00053fcb-82d9-4300-9bc3-c6d2d26e95cc')
+    PRINT '   Datos de ExtCentral_WizardLista insertados.'
+END
+ELSE PRINT '   ExtCentral_WizardLista ya tiene datos, omitiendo.'
+GO
+
+-- ============================================================================
+-- SECCIÓN 7: DATOS INICIALES - RMH_StoreGroup
+-- ============================================================================
+PRINT ''
+PRINT '>> Insertando datos iniciales en RMH_StoreGroup...'
+GO
+
+IF NOT EXISTS (SELECT 1 FROM [dbo].[RMH_StoreGroup])
+BEGIN
+    SET IDENTITY_INSERT [dbo].[RMH_StoreGroup] ON
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (1,N'Automercado BM',N'01',N'00066057-b765-4495-96b2-09b67c9725a3')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (2,N'COMERCIAL BM S.A.',N'02',N'000b3970-b86d-4d68-b4fb-8fcd55982566')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (3,N'BM  DEL PALMAR S.A.',N'03',N'000bde75-dec5-4e87-a9c1-3dad4c3cf660')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (4,N'SABALITO BM S.A.',N'04',N'0005f39d-8f99-4e97-9b6a-63da8e5e7993')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (5,N'COMERCIAL CORCOVADO DEL SUR S.A.',N'05',N'0007f984-4853-49a7-bae6-686ddf5b0a4f')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (6,N'SUPERMERCADO BM LTDA',N'06',N'0007896d-bc81-419e-8375-0ae5130a5615')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (7,N'BM DE UVITA S.A.',N'07',N'0009bc6d-e6df-43af-b346-e56537bcdcd7')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (8,N'SUPERMERCADOS DEL PACIFICO S.A.',N'08',N'000e91f6-8404-4c3a-b20d-ee7865621b19')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (9,N'BM DEL GENERAL S.A.',N'09',N'0002541e-fae7-48b1-ad96-a5cba8aa015e')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (10,N'SUR BM S.A.',N'10',N'0007f8ef-6df1-4ab9-8a17-4b31006d74a7')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (11,N'BM QUEPOS S.A.',N'11',N'000aee81-0ee9-4f4a-9550-d4b8997c51a7')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (12,N'RIO CLARO',N'12',N'000862f9-958b-4d24-aced-6ea356cc6909')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (13,N'IMPORTACIONES MG PZ S.A.',N'13',N'000e6fb9-55ba-47fd-a905-742c29311f16')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (14,N'MARJAVA SUPERMERCADOS S.A.',N'14',N'0002b7cb-fc35-4fec-8d62-39ec65d78714')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (15,N'GRUPO BM SP S.A.',N'15',N'000c2f4a-a389-4a05-ac90-209e0b02b9f7')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (16,N'MAYOREO BM S.A.',N'16',N'000c8f22-702a-4b37-aabd-6cb149790160')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (17,N'ALMACEN LA GARANTIA',N'17',N'0001485d-c326-423b-8c52-5d993c11a13e')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (18,N'HOGARCENTRO CB S.A.',N'18',N'000f51f5-9fb9-42d6-99f9-336d3e8ab85d')
+    INSERT [dbo].[RMH_StoreGroup] ([ID],[Description],[Code],[SyncGuid]) VALUES (19,N'BOSTON',N'19',N'0008574b-cc58-4508-a165-8f80ca25d3c6')
+    SET IDENTITY_INSERT [dbo].[RMH_StoreGroup] OFF
+
+    -- Dato inicial de RMH_StoreGroupStoreList
+    SET IDENTITY_INSERT [dbo].[RMH_StoreGroupStoreList] ON
+    INSERT [dbo].[RMH_StoreGroupStoreList] ([ID],[StoreGroupID],[StoreID],[SyncGuid]) VALUES (15,15,15,N'16fd6ea6-e32e-47ac-9455-e45760c0ec56')
+    SET IDENTITY_INSERT [dbo].[RMH_StoreGroupStoreList] OFF
+    PRINT '   Datos de RMH_StoreGroup insertados.'
+END
+ELSE PRINT '   RMH_StoreGroup ya tiene datos, omitiendo.'
+GO
+
+-- ============================================================================
+-- SECCIÓN 8: SP AUXILIAR - UEP_ExtCentral_Worksheet_INSERT
+-- (requerido por todos los SPs principales)
+-- ============================================================================
+PRINT ''
+PRINT '>> Creando SP auxiliar UEP_ExtCentral_Worksheet_INSERT...'
+GO
+
+IF OBJECT_ID('dbo.UEP_ExtCentral_Worksheet_INSERT', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.UEP_ExtCentral_Worksheet_INSERT
+GO
+
+CREATE PROCEDURE [dbo].[UEP_ExtCentral_Worksheet_INSERT]
+    (@USER_ID INT, @WORKSHEET_ID INT, @WORKSHEET_TYPE INT,
+     @WIZARD_TASK VARCHAR(50), @WORSHEET_TITLE VARCHAR(50),
+     @STORES VARCHAR(1000), @WORKSHEETCONTENTID INT = 0)
+AS
+BEGIN
+    INSERT INTO ExtCentral_Worksheet
+        (HQUserID, WorksheetID, WorksheetType, WizardTaskCode, WorsheetTitle, Stores, WorksheetContentID)
+    VALUES
+        (@USER_ID, @WORKSHEET_ID, @WORKSHEET_TYPE, @WIZARD_TASK, @WORSHEET_TITLE, @STORES, @WORKSHEETCONTENTID)
+END
+GO
+
+-- ============================================================================
+-- SECCIÓN 9: SPs AVS - Básicos (Worksheet Header/Detail)
+-- ============================================================================
+PRINT ''
+PRINT '>> Creando SPs AVS básicos...'
+GO
+
+IF OBJECT_ID('dbo.AVS_WS_HEADER', 'P') IS NOT NULL DROP PROCEDURE dbo.AVS_WS_HEADER
+GO
+CREATE PROCEDURE [dbo].[AVS_WS_HEADER]
+    (@STYLE INT, @TASKCODE VARCHAR(50), @NOTES VARCHAR(255),
+     @TITLE VARCHAR(50), @FROMDATE DATETIME, @STOREID INT, @USER_ID VARCHAR(50))
+AS
+BEGIN
+    DECLARE @USER_NAME VARCHAR(50) = (SELECT UserName FROM HQUser WHERE ID = @USER_ID)
+    DECLARE @WorksheetID INT
+
+    INSERT [Worksheet] (Style, EffectiveDate, [Status], Notes, Title, FromDate)
+    VALUES (@STYLE, GETDATE(), 1, @NOTES, @TITLE, @FROMDATE)
+    SET @WorksheetID = SCOPE_IDENTITY()
+
+    INSERT [dbo].[WorksheetStore](WorksheetID, StoreID, [Status], Originator, DateProcessed)
+    VALUES (@WorksheetID, @STOREID, 1, 0, NULL)
+
+    INSERT INTO WorksheetHistory (WorksheetID, [Status], HistoryDate, HQEntry, StoreID, Comment)
+    VALUES (@WorksheetID, 1, GETDATE(), 1, @STOREID, CONCAT('Creado por ', @USER_NAME, ' desde Central Wizard.'))
+
+    EXEC [UEP_ExtCentral_Worksheet_INSERT] @USER_ID, @WorksheetID, @STYLE, @TASKCODE, @TITLE, @STOREID
+
+    SELECT @WorksheetID AS WorksheetID
+END
+GO
+
+IF OBJECT_ID('dbo.AVS_WS_HEADER_STORES', 'P') IS NOT NULL DROP PROCEDURE dbo.AVS_WS_HEADER_STORES
+GO
+CREATE PROCEDURE [dbo].[AVS_WS_HEADER_STORES]
+    (@STYLE INT, @NOTES VARCHAR(255), @TITLE VARCHAR(50),
+     @EFFECTIVEDATE DATETIME, @STORES VARCHAR(MAX))
+AS
+BEGIN
+    DECLARE @WorksheetID INT
+    INSERT [Worksheet] (Style, EffectiveDate, [Status], Notes, Title, FromDate)
+    VALUES (@STYLE, @EFFECTIVEDATE, 1, @NOTES, @TITLE, GETDATE())
+    SET @WorksheetID = CAST(SCOPE_IDENTITY() AS INT)
+
+    INSERT [dbo].[WorksheetStore](WorksheetID, StoreID, [Status], Originator, DateProcessed)
+    SELECT @WorksheetID, VALUE, 1, 0, NULL
+    FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> ''
+
+    INSERT INTO WorksheetHistory (WorksheetID, [Status], HistoryDate, HQEntry, StoreID, Comment)
+    SELECT @WorksheetID, 1, GETDATE(), 1, VALUE, 'Creado automaticamente por Central Wizard WHS'
+    FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> ''
+
+    SELECT @WorksheetID AS WorksheetID
+END
+GO
+
+IF OBJECT_ID('dbo.AVS_WS_DETAIL', 'P') IS NOT NULL DROP PROCEDURE dbo.AVS_WS_DETAIL
+GO
+CREATE PROCEDURE [dbo].[AVS_WS_DETAIL]
+    (@WorksheetID INT, @ItemCode VARCHAR(30))
+AS
+BEGIN
+    DECLARE @ItemID INT
+    SELECT @ItemID = ISNULL(id, 0) FROM Item WHERE ItemLookupCode = @ItemCode
+    IF @ItemID <> 0
+    BEGIN
+        INSERT INTO Worksheet_ItemUpdate(WorksheetID, ItemId)
+        VALUES(@WorksheetID, @ItemID)
+    END
+END
+GO
+
+IF OBJECT_ID('dbo.AVS_WS_UpdateItemPrices', 'P') IS NOT NULL DROP PROCEDURE dbo.AVS_WS_UpdateItemPrices
+GO
+CREATE PROCEDURE [dbo].[AVS_WS_UpdateItemPrices]
+    (@WorksheetID INT, @ItemCode VARCHAR(30), @Price DECIMAL(8,4), @Cost DECIMAL(7,4),
+     @PriceLevelA DECIMAL(4,4), @PriceLevelB DECIMAL(4,4), @PriceLevelC DECIMAL(4,4), @MSRP DECIMAL(4,4),
+     @SalePrice DECIMAL(4,4), @SaleStartDate DATETIME, @SaleEndDate DATETIME,
+     @LowerBound DECIMAL(4,4), @UpperBound DECIMAL(4,4), @BuydownPrice DECIMAL(4,4), @BuydownQuantity FLOAT)
+AS
+BEGIN
+    DECLARE @ItemID INT
+    SELECT @ItemID = ISNULL(id, 0) FROM Item WHERE ItemLookupCode = @ItemCode
+    IF @ItemID <> 0
+    BEGIN
+        INSERT INTO WorksheetUpdateItemPrices
+            (WorksheetID, ItemID, Price, Cost, PriceLevelA, PriceLevelB, PriceLevelC, MSRP,
+             SalePrice, SaleStartDate, SaleEndDate, LowerBound, UpperBound, BuydownPrice, BuydownQuantity)
+        VALUES
+            (@WorksheetID, @ItemID, @Price, @Cost, @PriceLevelA, @PriceLevelB, @PriceLevelC, @MSRP,
+             @SalePrice, @SaleStartDate, @SaleEndDate, @LowerBound, @UpperBound, @BuydownPrice, @BuydownQuantity)
+    END
+END
+GO
+
+IF OBJECT_ID('dbo.AVS_WS_CREATE_CUSTOMER', 'P') IS NOT NULL DROP PROCEDURE dbo.AVS_WS_CREATE_CUSTOMER
+GO
+CREATE PROCEDURE [dbo].[AVS_WS_CREATE_CUSTOMER]
+    (@NUMEROCUENTA VARCHAR(20), @COMPAÑIA VARCHAR(50), @NOMBRE VARCHAR(30),
+     @APELLIDOS VARCHAR(50), @DIRECCION VARCHAR(50), @CORREO VARCHAR(255),
+     @CEDULA VARCHAR(20), @TELEFONO VARCHAR(30))
+AS
+BEGIN
+    DECLARE @EXISTE SMALLINT
+    DECLARE @ID INT
+    SELECT @EXISTE = COUNT(AccountNumber) FROM Customer WHERE AccountNumber = @NUMEROCUENTA
+
+    IF @EXISTE = 0
+    BEGIN
+        SELECT @ID = (SELECT MAX(ID)+1 FROM Customer)
+        INSERT INTO Customer (ID, TaxNumber, Company, FirstName, LastName, PhoneNumber, EmailAddress, [Address], AccountNumber)
+        SELECT @ID, @CEDULA, @COMPAÑIA, @NOMBRE, @APELLIDOS, @TELEFONO, @CORREO, @DIRECCION, @NUMEROCUENTA
+    END
+    ELSE
+    BEGIN
+        UPDATE Customer SET TaxNumber=@CEDULA, Company=@COMPAÑIA, FirstName=@NOMBRE, LastName=@APELLIDOS,
+            PhoneNumber=@TELEFONO, [Address]=@DIRECCION, EmailAddress=@CORREO, LastUpdated=GETDATE()
+        WHERE AccountNumber = @NUMEROCUENTA
+    END
+END
+GO
+
+IF OBJECT_ID('dbo.AVS_WS_CREATE_ITEMS', 'P') IS NOT NULL DROP PROCEDURE dbo.AVS_WS_CREATE_ITEMS
+GO
+CREATE PROCEDURE [dbo].[AVS_WS_CREATE_ITEMS]
+    (@COD_PRODUCTO VARCHAR(25), @DESCRIPCION VARCHAR(80), @COD_DEPARTAMENTO VARCHAR(17), @NOM_DEPARTAMENTO VARCHAR(30),
+     @COD_CATEGORIA VARCHAR(17), @NOM_CATEGORIA VARCHAR(30), @PRECIO MONEY, @PRECIOA MONEY, @PRECIOB MONEY,
+     @PRECIOC MONEY, @PRECIO_VENTA MONEY, @COD_IMPUESTO VARCHAR(17), @COSTO MONEY, @COD_PROVEEDOR VARCHAR(17),
+     @NOM_PROVEEDOR VARCHAR(30), @DESCRIPCION_EXTENDIDA NTEXT, @SUBDESCRIPCION1 VARCHAR(30), @SUBDESCRIPCION2 VARCHAR(30),
+     @COD_CABYS VARCHAR(30), @TIENEIMPUESTO BIT, @VENTAENLINEA BIT, @STOREID INT)
+AS
+BEGIN
+    DECLARE @EXISTEPROD SMALLINT, @EXISTEItemDynamic SMALLINT
+    DECLARE @ID_DEPARTAMENTO INT, @ID_CATEGORIA INT, @ID_IMPUESTO INT, @ID_PROVEEDOR INT
+    DECLARE @ItemId INT = 0
+
+    SELECT @EXISTEPROD = COUNT(ItemLookupCode) FROM Item WHERE ItemLookupCode = @COD_PRODUCTO
+
+    IF @EXISTEPROD = 0
+    BEGIN
+        INSERT INTO Department([Name], code) SELECT @NOM_DEPARTAMENTO, @COD_DEPARTAMENTO
+            WHERE NOT EXISTS(SELECT 1 FROM Department WHERE code = @COD_DEPARTAMENTO)
+        SELECT @ID_DEPARTAMENTO = ID FROM Department WHERE code = @COD_DEPARTAMENTO
+
+        INSERT INTO Category(DepartmentID, [Name], code) SELECT @ID_DEPARTAMENTO, @NOM_CATEGORIA, @COD_CATEGORIA
+            WHERE NOT EXISTS(SELECT 1 FROM Category WHERE Code = @COD_CATEGORIA)
+        SELECT @ID_CATEGORIA = ID FROM Category WHERE Code = @COD_CATEGORIA AND DepartmentID = @ID_DEPARTAMENTO
+
+        SELECT @ID_IMPUESTO = ID FROM ItemTax WHERE Code = @COD_IMPUESTO
+
+        INSERT INTO Supplier(Code, SupplierName) SELECT @COD_PROVEEDOR, @NOM_PROVEEDOR
+            WHERE NOT EXISTS(SELECT 1 FROM Supplier WHERE Code = @COD_PROVEEDOR)
+        SELECT @ID_PROVEEDOR = ID FROM Supplier WHERE Code = @COD_PROVEEDOR
+
+        INSERT INTO Item (ItemLookupCode, [Description], DepartmentID, CategoryID, Price, PriceA, PriceB, PriceC,
+            SalePrice, TaxID, Cost, SupplierID, ExtendedDescription, SubDescription1, SubDescription2, SubDescription3, Taxable, WebItem)
+        SELECT @COD_PRODUCTO, @DESCRIPCION, @ID_DEPARTAMENTO, @ID_CATEGORIA, @PRECIO, @PRECIOA, @PRECIOB, @PRECIOC,
+            @PRECIO_VENTA, @ID_IMPUESTO, @COSTO, @ID_PROVEEDOR, @DESCRIPCION_EXTENDIDA,
+            @SUBDESCRIPCION1, @SUBDESCRIPCION2, @COD_CABYS, @TIENEIMPUESTO, @VENTAENLINEA
+    END
+
+    SELECT @EXISTEItemDynamic = COUNT(ItemID) FROM ItemDynamic WHERE ItemID = @ItemId AND StoreID = @STOREID
+    IF @EXISTEItemDynamic = 0
+    BEGIN
+        SELECT @ID_IMPUESTO = ID FROM ItemTax WHERE Code = @COD_IMPUESTO
+        SELECT @ItemId = ID FROM Item WHERE ItemLookupCode = @COD_PRODUCTO
+        INSERT INTO ItemDynamic(ItemID, StoreID, Cost, TaxID, Price, PriceLevelA, PriceLevelB, PriceLevelC, SalePrice, QuantityCommitted, Quantity)
+        SELECT @ItemId, @STOREID, @COSTO, @ID_IMPUESTO, @PRECIO, @PRECIOA, @PRECIOB, @PRECIOC, @PRECIO_VENTA, 0, 0
+    END
+END
+GO
+
+-- ============================================================================
+-- SECCIÓN 10: SPs AVS_CHANGE_ITEM
+-- ============================================================================
+PRINT ''
+PRINT '>> Creando SPs AVS_CHANGE_ITEM...'
+GO
+
+IF OBJECT_ID('dbo.AVS_CHANGE_ITEM_COST', 'P') IS NOT NULL DROP PROCEDURE dbo.AVS_CHANGE_ITEM_COST
+GO
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_COST] (@WorksheetID INT, @STOREID INT)
+AS
+BEGIN
+    UPDATE i SET COST = CONVERT(MONEY, TP.NuevoMonto)
+    FROM ItemDynamic i
+        JOIN ##TablaCost TP ON i.ItemID = (SELECT i.id FROM Item i WHERE i.ItemLookupCode = TP.ItemLookupCode)
+    WHERE i.StoreID = @STOREID
+
+    INSERT INTO ItemValueLog(ID, ItemID, OldAmount, newAmount, AmountType, StoreID, LastUpdated)
+    SELECT IDENT_CURRENT('ItemValueLog')+1, i.id, id.Cost, p.NuevoMonto, 'P', id.StoreID, GETDATE()
+    FROM ItemDynamic id
+        JOIN Item i ON i.ID = id.ItemID
+        JOIN ##TablaCost p ON i.ItemLookupCode = p.ItemLookupCode
+    WHERE id.StoreID = @STOREID
+
+    INSERT INTO Worksheet_ItemUpdate(WorksheetID, ItemId)
+    SELECT @WorksheetID, i.id FROM ##TablaCost AS p JOIN Item i ON i.ItemLookupCode = p.ItemLookupCode
+END
+GO
+
+IF OBJECT_ID('dbo.AVS_CHANGE_ITEM_DEPARTMENT_CATEGORY', 'P') IS NOT NULL DROP PROCEDURE dbo.AVS_CHANGE_ITEM_DEPARTMENT_CATEGORY
+GO
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_DEPARTMENT_CATEGORY] (@WorksheetID INT)
+AS
+BEGIN
+    UPDATE it SET it.DepartmentID = CONVERT(INT, TS1.NewDepartmentID), it.CategoryID = CONVERT(INT, TS1.NewCategoryID)
+    FROM Item it JOIN ##TablaDepCat TS1 ON it.ID = (SELECT it.id FROM Item it WHERE it.ItemLookupCode = TS1.ItemLookupCode)
+
+    INSERT INTO Worksheet_ItemUpdate(WorksheetID, ItemId)
+    SELECT @WorksheetID, i.id FROM ##TablaDepCat AS p JOIN Item i ON i.ItemLookupCode = p.ItemLookupCode
+END
+GO
+
+IF OBJECT_ID('dbo.AVS_CHANGE_ITEM_DESCRIPTION', 'P') IS NOT NULL DROP PROCEDURE dbo.AVS_CHANGE_ITEM_DESCRIPTION
+GO
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_DESCRIPTION] (@WorksheetID INT)
+AS
+BEGIN
+    UPDATE it SET [Description] = CONVERT(NVARCHAR(80), TS1.NuevaDes)
+    FROM Item it JOIN ##TablaItemDes TS1 ON it.ID = (SELECT it.id FROM Item it WHERE it.ItemLookupCode = TS1.ItemLookupCode)
+
+    INSERT INTO Worksheet_ItemUpdate(WorksheetID, ItemId)
+    SELECT @WorksheetID, i.id
+    FROM ##TablaItemDes AS p
+        JOIN Item i ON i.ItemLookupCode = p.ItemLookupCode
+        JOIN WorksheetStore WS ON WS.WorksheetID = @WorksheetID
+    WHERE WS.StoreID IN (SELECT C.StoreId FROM GlobalCatalog C WHERE C.SyncGuid = i.SyncGuid AND C.TableName = 'Item' AND C.IsActive = 1)
+END
+GO
+
+IF OBJECT_ID('dbo.AVS_CHANGE_ITEM_EXTENDED_DESCRIPTION', 'P') IS NOT NULL DROP PROCEDURE dbo.AVS_CHANGE_ITEM_EXTENDED_DESCRIPTION
+GO
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_EXTENDED_DESCRIPTION] (@WorksheetID INT)
+AS
+BEGIN
+    UPDATE it SET it.ExtendedDescription = CONVERT(NVARCHAR(30), TS1.ExtendedDescription)
+    FROM Item it JOIN ##TablaItemSub1 TS1 ON it.ID = (SELECT it.id FROM Item it WHERE it.ItemLookupCode = TS1.ItemLookupCode)
+
+    INSERT INTO Worksheet_ItemUpdate(WorksheetID, ItemId)
+    SELECT @WorksheetID, i.id
+    FROM ##TablaItemSub1 AS p
+        JOIN Item i ON i.ItemLookupCode = p.ItemLookupCode
+        JOIN WorksheetStore WS ON WS.WorksheetID = @WorksheetID
+    WHERE WS.StoreID IN (SELECT C.StoreId FROM GlobalCatalog C WHERE C.SyncGuid = i.SyncGuid AND C.TableName = 'Item' AND C.IsActive = 1)
+END
+GO
+
+IF OBJECT_ID('dbo.AVS_CHANGE_ITEM_PRICES', 'P') IS NOT NULL DROP PROCEDURE dbo.AVS_CHANGE_ITEM_PRICES
+GO
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_PRICES] (@WorksheetID INT, @StoreName NVARCHAR(50), @Tipo INT)
+AS
+BEGIN
+    DECLARE @STOREID INT = (SELECT ID FROM Store WHERE [Name] = @StoreName)
+
+    IF @Tipo = 0
+        UPDATE i SET SalePrice = CONVERT(MONEY, TP.NuevoMonto)
+        FROM ItemDynamic i JOIN ##TablaPrices TP ON i.ItemID = (SELECT i.id FROM Item i WHERE i.ItemLookupCode = TP.ItemLookupCode)
+        WHERE i.StoreID = @STOREID
+
+    IF @Tipo = 1
+    BEGIN
+        UPDATE i SET Price = CONVERT(MONEY, TP.NuevoMonto)
+        FROM ItemDynamic i JOIN ##TablaPrices TP ON i.ItemID = (SELECT i.id FROM Item i WHERE i.ItemLookupCode = TP.ItemLookupCode)
+        WHERE i.StoreID = @STOREID
+
+        INSERT INTO ItemValueLog(ID, ItemID, OldAmount, newAmount, AmountType, StoreID, LastUpdated)
+        SELECT IDENT_CURRENT('ItemValueLog')+1, i.id, id.Price, p.NuevoMonto, 'P', id.StoreID, GETDATE()
+        FROM ItemDynamic id JOIN Item i ON i.ID = id.ItemID JOIN ##TablaPrices p ON i.ItemLookupCode = p.ItemLookupCode
+        WHERE id.StoreID = @STOREID
+    END
+
+    IF @Tipo = 2
+        UPDATE i SET PriceLevelA = CONVERT(MONEY, TP.NuevoMonto)
+        FROM ItemDynamic i JOIN ##TablaPrices TP ON i.ItemID = (SELECT i.id FROM Item i WHERE i.ItemLookupCode = TP.ItemLookupCode)
+        WHERE i.StoreID = @STOREID
+
+    IF @Tipo = 3
+        UPDATE i SET PriceLevelB = CONVERT(MONEY, TP.NuevoMonto)
+        FROM ItemDynamic i JOIN ##TablaPrices TP ON i.ItemID = (SELECT i.id FROM Item i WHERE i.ItemLookupCode = TP.ItemLookupCode)
+        WHERE i.StoreID = @STOREID
+
+    IF @Tipo = 4
+        UPDATE i SET PriceLevelC = CONVERT(MONEY, TP.NuevoMonto)
+        FROM ItemDynamic i JOIN ##TablaPrices TP ON i.ItemID = (SELECT i.id FROM Item i WHERE i.ItemLookupCode = TP.ItemLookupCode)
+        WHERE i.StoreID = @STOREID
+
+    INSERT INTO Worksheet_ItemUpdate(WorksheetID, ItemId)
+    SELECT @WorksheetID, i.id FROM ##TablaPrices AS p JOIN Item i ON i.ItemLookupCode = p.ItemLookupCode
+END
+GO
+
+IF OBJECT_ID('dbo.AVS_CHANGE_ITEM_QUANTITY', 'P') IS NOT NULL DROP PROCEDURE dbo.AVS_CHANGE_ITEM_QUANTITY
+GO
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_QUANTITY] (@WorksheetID INT, @StoreName NVARCHAR(50))
+AS
+BEGIN
+    DECLARE @StoreID INT = (SELECT ID FROM Store WHERE [Name] = @StoreName)
+
+    UPDATE i SET ReorderPoint = CONVERT(FLOAT, TP.NuevoRP), RestockLevel = CONVERT(FLOAT, TP.NuevoRL)
+    FROM ItemDynamic i JOIN ##TablaCantidades TP ON i.ItemID = (SELECT i.id FROM Item i WHERE i.ItemLookupCode = TP.ItemLookupCode)
+    WHERE i.StoreID = @StoreID
+
+    INSERT INTO Worksheet_ItemUpdate(WorksheetID, ItemId)
+    SELECT @WorksheetID, i.id FROM ##TablaCantidades AS p JOIN Item i ON i.ItemLookupCode = p.ItemLookupCode
+END
+GO
+
+IF OBJECT_ID('dbo.AVS_CHANGE_ITEM_STATUS', 'P') IS NOT NULL DROP PROCEDURE dbo.AVS_CHANGE_ITEM_STATUS
+GO
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_STATUS] (@WorksheetID INT)
+AS
+BEGIN
+    UPDATE i SET Inactive = TP.NuevoEstado
+    FROM Item i JOIN ##TablaEstado TP ON i.ItemLookupCode = TP.ItemLookupCode
+    WHERE TP.NuevoEstado IS NOT NULL
+
+    INSERT INTO Worksheet_ItemUpdate(WorksheetID, ItemId)
+    SELECT @WorksheetID, (SELECT i.id FROM Item i WHERE i.ItemLookupCode = p.ItemLookupCode)
+    FROM ##TablaEstado AS p
+END
+GO
+
+IF OBJECT_ID('dbo.AVS_CHANGE_ITEM_SUB_DESCRIPTION2', 'P') IS NOT NULL DROP PROCEDURE dbo.AVS_CHANGE_ITEM_SUB_DESCRIPTION2
+GO
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_SUB_DESCRIPTION2] (@WorksheetID INT)
+AS
+BEGIN
+    UPDATE it SET it.SubDescription2 = CONVERT(NVARCHAR(30), TS1.SubDescription2)
+    FROM Item it JOIN ##TablaItemSub2 TS1 ON it.ID = (SELECT it.id FROM Item it WHERE it.ItemLookupCode = TS1.ItemLookupCode)
+
+    INSERT INTO Worksheet_ItemUpdate(WorksheetID, ItemId)
+    SELECT @WorksheetID, i.id FROM ##TablaItemSub2 AS p JOIN Item i ON i.ItemLookupCode = p.ItemLookupCode
+END
+GO
+
+IF OBJECT_ID('dbo.AVS_CHANGE_ITEM_SUB_DESCRIPTION3', 'P') IS NOT NULL DROP PROCEDURE dbo.AVS_CHANGE_ITEM_SUB_DESCRIPTION3
+GO
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_SUB_DESCRIPTION3] (@WorksheetID INT)
+AS
+BEGIN
+    UPDATE it SET it.SubDescription3 = CONVERT(NVARCHAR(30), TS1.SubDescription3)
+    FROM Item it JOIN ##TablaItemSub3 TS1 ON it.ID = (SELECT it.id FROM Item it WHERE it.ItemLookupCode = TS1.ItemLookupCode)
+
+    INSERT INTO Worksheet_ItemUpdate(WorksheetID, ItemId)
+    SELECT @WorksheetID, i.id
+    FROM ##TablaItemSub3 AS p
+        JOIN Item i ON i.ItemLookupCode = p.ItemLookupCode
+        JOIN WorksheetStore WS ON WS.WorksheetID = @WorksheetID
+    WHERE WS.StoreID IN (SELECT C.StoreId FROM GlobalCatalog C WHERE C.SyncGuid = i.SyncGuid AND C.TableName = 'Item' AND C.IsActive = 1)
+END
+GO
+
+IF OBJECT_ID('dbo.AVS_CHANGE_ITEM_TAX', 'P') IS NOT NULL DROP PROCEDURE dbo.AVS_CHANGE_ITEM_TAX
+GO
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_TAX] (@WorksheetID INT)
+AS
+BEGIN
+    -- ACTUALIZAR IMPUESTO EN CATÁLOGO ÚNICO
+    UPDATE i
+    SET i.TaxID = (SELECT TOP 1 t.ID FROM ItemTax t
+                    JOIN Tax ON Tax.ID = t.TaxID01
+                    WHERE Tax.[Percentage] = ti.TaxPercentage AND t.[Description] NOT LIKE '%Bonifica%')
+    FROM ##TablaItemTax ti INNER JOIN Item i ON i.ItemLookupCode = ti.ItemLookupCode
+
+    -- ACTUALIZAR POA_Item EXISTENTES
+    UPDATE I_P
+    SET I_P.TaxGroupID = (SELECT TOP 1 t.ID FROM ItemTax t
+                            JOIN Tax ON Tax.ID = t.TaxID01
+                            WHERE Tax.[Percentage] = TI.TaxPercentage AND t.[Description] NOT LIKE '%Bonifica%')
+    FROM POA_Item I_P
+        INNER JOIN Item I ON I_P.ID = I.ID
+        INNER JOIN ##TablaItemTax TI ON TI.ItemLookupCode = I.ItemLookupCode
+
+    -- INSERTAR POA_Item FALTANTES
+    INSERT INTO POA_Item (ID, LastUpdated, ExtCode, TaxGroupID, ChildReorder, UnitOfMeasure, PurchaseUOM,
+        PurchUOMID1, PurchUOMID2, PurchUOMID3, PurchQtyUOM1, PurchQtyUOM2, PurchQtyUOM3, LineNumber, HQId)
+    SELECT I.ID, GETDATE(), '',
+        (SELECT TOP 1 t.ID FROM ItemTax t JOIN Tax ON Tax.ID = t.TaxID01
+         WHERE Tax.[Percentage] = TI.TaxPercentage AND t.[Description] NOT LIKE '%Bonifica%'),
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    FROM ##TablaItemTax TI INNER JOIN Item I ON I.ItemLookupCode = TI.ItemLookupCode
+    WHERE I.ID NOT IN (SELECT ID FROM POA_Item)
+
+    -- AGREGAR A HOJA DE TRABAJO
+    INSERT INTO Worksheet_ItemTax (WorksheetID, ItemID, TaxID)
+    SELECT @WorksheetID, i.id,
+        (SELECT TOP 1 t.ID FROM ItemTax t JOIN Tax ON Tax.ID = t.TaxID01
+         WHERE Tax.[Percentage] = p.TaxPercentage AND t.[Description] NOT LIKE '%Bonifica%')
+    FROM ##TablaItemTax AS p
+        JOIN Item i ON i.ItemLookupCode = p.ItemLookupCode
+        JOIN WorksheetStore WS ON WS.WorksheetID = @WorksheetID
+    WHERE WS.StoreID IN (SELECT C.StoreId FROM GlobalCatalog C WHERE C.SyncGuid = i.SyncGuid AND C.TableName = 'Item' AND C.IsActive = 1)
+END
+GO
+
+-- ============================================================================
+-- SECCIÓN 11: SPs UEP_WS - Wizard principal (cambios masivos)
+-- ============================================================================
+PRINT ''
+PRINT '>> Creando SPs UEP_WS (Wizard principal)...'
+GO
+
+IF OBJECT_ID('dbo.UEP_WS_CHANGE_ITEM_ACTIVATE_STORE', 'P') IS NOT NULL DROP PROCEDURE dbo.UEP_WS_CHANGE_ITEM_ACTIVATE_STORE
+GO
+CREATE PROCEDURE [dbo].[UEP_WS_CHANGE_ITEM_ACTIVATE_STORE]
+    (@STORES VARCHAR(MAX), @TITLE VARCHAR(50), @NOTES VARCHAR(225),
+     @EFFECTIVEDATE DATETIME, @USER_ID VARCHAR(30), @WORKSHEETCONTENTID INT)
+AS
+BEGIN
+    DECLARE @RESPUESTA VARCHAR(MAX) = '', @ERROR VARCHAR(MAX) = '', @LASTACTION VARCHAR(50) = ''
+    DECLARE @EXISTS_SUPPLIERLIST INT = 0, @EXISTS_ITEMEXT INT = 0
+    DECLARE @STATUS BIT = 1, @ERROR_NUMBER INT = 0
+    DECLARE @ID INT, @SUPPLIERID INT, @SUPPLIERCODE VARCHAR(30), @ITEMTAXID INT
+    DECLARE @ITEMLOOKUPCODE VARCHAR(25), @GROSSCOST VARCHAR(30), @UTILITY VARCHAR(30)
+    DECLARE @INVOICEDISCOUNT VARCHAR(30), @CUSTOMERDISCOUNT VARCHAR(30)
+    DECLARE @TAXRATE FLOAT, @TAXRATENAME VARCHAR(50), @COSTDISCOUNT MONEY = 0
+    DECLARE @MSRP MONEY = 0, @SYNCGUID UNIQUEIDENTIFIER
+    DECLARE @USER_NAME VARCHAR(50) = (SELECT UserName FROM HQUser WHERE ID = @USER_ID)
+
+    DECLARE @TBL_ITEMS TABLE (ID INT, SupplierID INT, SupplierCode VARCHAR(30), ItemLookupCode VARCHAR(25),
+        GrossCost VARCHAR(30), Utility VARCHAR(30), InvoiceDiscount VARCHAR(30), CustomerDiscount VARCHAR(30))
+    INSERT INTO @TBL_ITEMS SELECT [ID],SupplierID,[SupplierCode],[ItemLookupCode],GrossCost,[Utility],[InvoiceDiscount],[CustomerDiscount]
+    FROM ##TablaItemActivate
+
+    DECLARE LIST_ITEMS_BULKCOPY CURSOR FOR
+    SELECT [ID],[SupplierID],[SupplierCode],[ItemLookupCode],[GrossCost],[Utility],[InvoiceDiscount],[CustomerDiscount] FROM @TBL_ITEMS
+
+    DECLARE @STOREID INT, @WORKSHEETID INT
+    DECLARE @TBL_WORKSHEETSTORES TABLE (WORKSHEET_ID INT, STORE_ID INT)
+    DECLARE LIST_STORES CURSOR FOR
+    SELECT DISTINCT CONVERT(INT, VALUE) FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> ''
+
+    OPEN LIST_STORES
+    FETCH NEXT FROM LIST_STORES INTO @STOREID
+    WHILE @@FETCH_STATUS = 0 BEGIN
+        INSERT [Worksheet] (Style, EffectiveDate, [Status], Notes, Title, FromDate)
+        VALUES (261, @EFFECTIVEDATE, 1, @NOTES, @TITLE, GETDATE())
+        SET @WORKSHEETID = CONVERT(INT, SCOPE_IDENTITY())
+        INSERT [WorksheetStore] (WorksheetID, StoreID, [Status], Originator, DateProcessed) VALUES (@WORKSHEETID, @STOREID, 1, 0, NULL)
+        INSERT INTO WorksheetHistory (WorksheetID, [Status], HistoryDate, HQEntry, StoreID, Comment)
+        VALUES (@WORKSHEETID, 1, GETDATE(), 1, @STOREID, CONCAT('Creado por ', @USER_NAME, ' desde Central Wizard.'))
+        INSERT INTO @TBL_WORKSHEETSTORES (WORKSHEET_ID, STORE_ID) VALUES (@WORKSHEETID, @STOREID)
+        EXEC [UEP_ExtCentral_Worksheet_INSERT] @USER_ID, @WORKSHEETID, 261, '131', @TITLE, @STOREID, @WORKSHEETCONTENTID
+        FETCH NEXT FROM LIST_STORES INTO @STOREID
+    END
+    CLOSE LIST_STORES
+    DEALLOCATE LIST_STORES
+
+    OPEN LIST_ITEMS_BULKCOPY
+    FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ID, @SUPPLIERID, @SUPPLIERCODE, @ITEMLOOKUPCODE, @GROSSCOST, @UTILITY, @INVOICEDISCOUNT, @CUSTOMERDISCOUNT
+
+    BEGIN TRY
+        WHILE @@FETCH_STATUS = 0 BEGIN
+            SELECT @TAXRATE = CAST(T.[Percentage] AS FLOAT), @TAXRATENAME = CAST(T.[Description] AS VARCHAR(50)),
+                @MSRP = [MSRP], @ITEMTAXID = I.TaxID, @SYNCGUID = I.SyncGuid
+            FROM [Tax] AS T
+                INNER JOIN [ItemTax] IT ON IT.TaxID01 = T.ID
+                INNER JOIN [Item] I ON I.TaxID = IT.ID
+            WHERE I.ID = @ID AND IT.[Description] NOT LIKE '%Bonifica%'
+
+            SET @COSTDISCOUNT = (CAST(@GROSSCOST AS MONEY) - (CAST(@GROSSCOST AS MONEY) * (CAST(@INVOICEDISCOUNT AS DECIMAL(10,2)) / 100)))
+
+            DECLARE @_UTILITY FLOAT = CONVERT(FLOAT, @UTILITY)
+            DECLARE @_INVDISCOUNT FLOAT = CONVERT(FLOAT, @INVOICEDISCOUNT)
+            DECLARE @_CUSDISCOUNT FLOAT = CONVERT(FLOAT, @CUSTOMERDISCOUNT)
+            DECLARE @_COST MONEY = CONVERT(MONEY, @GROSSCOST)
+            DECLARE @FINAL_PRICE MONEY = (@_COST - (@_COST * (@_CUSDISCOUNT / 100)) + @MSRP)
+            DECLARE @FINAL_PRICE_UTILITY MONEY = (@FINAL_PRICE * (1 + (@_UTILITY / 100)))
+            DECLARE @FINAL_PRICE_IVA MONEY = (@FINAL_PRICE_UTILITY * (1 + (@TAXRATE / 100)))
+            DECLARE @FINAL_PRICE_ROUND MONEY = [dbo].[UEP_GET_PRICE_ROUND](@FINAL_PRICE_IVA)
+            DECLARE @UTILITY_REAL DECIMAL(18,8) = [dbo].[UEP_GET_UTILITY_REAL](@FINAL_PRICE_ROUND, @FINAL_PRICE_UTILITY, @FINAL_PRICE, @TAXRATE)
+
+            UPDATE I SET I.[SupplierID]=@SUPPLIERID, I.LastUpdated=GETDATE(), I.[Cost]=@COSTDISCOUNT,
+                I.[Price]=@FINAL_PRICE_ROUND, I.[ReplacementCost]=@_COST,
+                I.[Notes]=CONCAT(N'Costo Bruto: ',@_COST,N'. ',CHAR(10),'Utilidad: ',@_UTILITY,'%.',CHAR(10),
+                    'Precio Redondeado: ',@FINAL_PRICE_ROUND,'.',CHAR(10),
+                    'Tiendas: [',(SELECT STRING_AGG([Name],', ') FROM Store WHERE ID IN (SELECT STORE_ID FROM @TBL_WORKSHEETSTORES)),']')
+            FROM [Item] I WHERE I.[ID] = @ID
+
+            INSERT INTO ExtCentral_ItemHistory(ItemID,StoreID,SupplierID,ItemTaxID,MSRP,Utility,InvoiceDiscount,CustomerDiscount,GrossCost,Cost,Price,DateApplied,TaskApplied,Aditional)
+            SELECT @ID,TBL.STORE_ID,@SUPPLIERID,@ITEMTAXID,@MSRP,@_UTILITY,CONVERT(DECIMAL(18,2),@INVOICEDISCOUNT),@_CUSDISCOUNT,CAST(@GROSSCOST AS MONEY),@COSTDISCOUNT,@FINAL_PRICE_ROUND,GETDATE(),@TITLE,@NOTES
+            FROM @TBL_WORKSHEETSTORES TBL
+
+            SELECT @EXISTS_SUPPLIERLIST = COUNT(S.[ID]) FROM [SupplierList] AS S WHERE S.[SupplierID]=@SUPPLIERID AND S.[ItemID]=@ID
+            IF (@EXISTS_SUPPLIERLIST = 0)
+                INSERT INTO [SupplierList]([ItemID],[SupplierID],[Cost],[ReorderNumber],[MasterPackQuantity],[TaxRate]) VALUES(@ID,@SUPPLIERID,@COSTDISCOUNT,0,0,@TAXRATE)
+            ELSE
+                UPDATE [SupplierList] SET [Cost]=@COSTDISCOUNT,[TaxRate]=@TAXRATE WHERE [SupplierID]=@SUPPLIERID AND [ItemID]=@ID
+
+            DECLARE @EXISTS_EXTCENTRAL_ITEM INT = 0
+            SELECT @EXISTS_EXTCENTRAL_ITEM = COUNT(ItemID) FROM [ExtCentral_Item] WHERE [ItemID]=@ID
+            IF (@EXISTS_EXTCENTRAL_ITEM > 0)
+                UPDATE [ExtCentral_Item] SET [Utility]=@_UTILITY,[CustomerDiscount]=@_CUSDISCOUNT,[InvoiceDiscount]=@INVOICEDISCOUNT,[StartDate]=CAST(GETDATE() AS DATE),[StoresSelected]=@STORES WHERE [ItemID]=@ID
+            ELSE
+                INSERT INTO [ExtCentral_Item]([ItemID],[FamilyID],[SubCategoryID],[SegmentID],[CustomerDiscount],[InvoiceDiscount],[Utility],[StartDate],StoresSelected)
+                VALUES(@ID,0,0,0,@_CUSDISCOUNT,@_INVDISCOUNT,@_UTILITY,CAST(GETDATE() AS DATE),@STORES)
+
+            UPDATE [ExtCentral_ItemExt] SET [InvoiceDiscount]=CAST(@INVOICEDISCOUNT AS DECIMAL(18,2)),[CustomerDiscount]=CAST(@CUSTOMERDISCOUNT AS DECIMAL(18,2)),
+                [Utility]=CAST(@UTILITY AS DECIMAL(18,2)),[StartDate]=CAST(GETDATE() AS DATE),[GrossCost]=@_COST
+            WHERE [StoreID] IN (SELECT STORE_ID FROM @TBL_WORKSHEETSTORES) AND [SupplierID]=@SUPPLIERID AND [ItemID]=@ID
+
+            DECLARE @COUNT_STORES_NOT_IN INT = 0
+            SELECT @COUNT_STORES_NOT_IN = COUNT(STORE_ID) FROM @TBL_WORKSHEETSTORES
+            WHERE STORE_ID NOT IN (SELECT StoreID FROM [ExtCentral_ItemExt] WHERE [ItemID]=@ID AND [SupplierID]=@SUPPLIERID)
+            IF (@COUNT_STORES_NOT_IN > 0)
+                INSERT INTO [ExtCentral_ItemExt](ItemID,SupplierID,StoreID,InvoiceDiscount,CustomerDiscount,StartDate,Utility,GrossCost)
+                SELECT @ID,@SUPPLIERID,STORE_ID,CAST(@INVOICEDISCOUNT AS DECIMAL(18,2)),CAST(@CUSTOMERDISCOUNT AS DECIMAL(18,2)),CAST(GETDATE() AS DATE),CAST(@UTILITY AS DECIMAL(18,2)),@_COST
+                FROM @TBL_WORKSHEETSTORES WHERE STORE_ID NOT IN (SELECT StoreID FROM [ExtCentral_ItemExt] WHERE [ItemID]=@ID AND [SupplierID]=@SUPPLIERID)
+
+            UPDATE I SET I.MSRP=@MSRP,I.[Price]=@FINAL_PRICE_ROUND,[Cost]=@COSTDISCOUNT,I.TaxID=@ITEMTAXID
+            FROM [ItemDynamic] I WHERE I.[ItemID]=@ID AND [StoreID] IN (SELECT STORE_ID FROM @TBL_WORKSHEETSTORES)
+
+            INSERT INTO ItemDynamic(ItemID,StoreID,MSRP,Price,Cost,TaxID,QuantityCommitted,
+                [SnapShotPrice],[SnapShotPriceA],[SnapShotPriceB],[SnapShotPriceC],[SnapShotSalePrice],
+                [SnapShotCost],SnapShotLastCost,SnapShotReplacementCost,SnapShotPriceLowerBound,SnapShotPriceUpperBound,SnapShotReorderPoint,SnapShotRestockLevel,SnapShotTaxID,
+                PriceLevelA,PriceLevelB,PriceLevelC,SalePrice,LowerBound,UpperBound,BuydownPrice,BuydownQuantity,Quantity)
+            SELECT @ID,STORE_ID,@MSRP,@FINAL_PRICE_ROUND,@COSTDISCOUNT,@ITEMTAXID,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+            FROM @TBL_WORKSHEETSTORES WHERE STORE_ID NOT IN (SELECT StoreID FROM ItemDynamic WITH (NOLOCK) WHERE ItemID=@ID)
+
+            IF ((SELECT COUNT(*) FROM POA_Item WHERE ID=@ID) = 0)
+                INSERT INTO POA_Item(ID,LastUpdated,ExtCode,TaxGroupID,ChildReorder,UnitOfMeasure,PurchaseUOM,PurchUOMID1,PurchUOMID2,PurchUOMID3,PurchQtyUOM1,PurchQtyUOM2,PurchQtyUOM3,LineNumber,HQId)
+                VALUES(@ID,GETDATE(),'',@ITEMTAXID,0,0,0,0,0,0,0,0,0,0,0)
+            ELSE
+                UPDATE POA_Item SET LastUpdated=GETDATE(),TaxGroupID=@ITEMTAXID WHERE ID=@ID
+
+            UPDATE GlobalCatalog SET IsActive=1 WHERE SyncGuid=@SYNCGUID AND TableName='Item' AND StoreId IN (SELECT STORE_ID FROM @TBL_WORKSHEETSTORES)
+
+            INSERT INTO Worksheet_ItemUpdate(WorksheetID, ItemId)
+            SELECT WORKSHEET_ID, @ID FROM @TBL_WORKSHEETSTORES INNER JOIN Store S ON S.ID=STORE_ID WHERE S.Inactive=0
+
+            FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ID,@SUPPLIERID,@SUPPLIERCODE,@ITEMLOOKUPCODE,@GROSSCOST,@UTILITY,@INVOICEDISCOUNT,@CUSTOMERDISCOUNT
+        END
+        CLOSE LIST_ITEMS_BULKCOPY
+        DEALLOCATE LIST_ITEMS_BULKCOPY
+        SET @RESPUESTA = 'Cambios aplicados al sistema'
+    END TRY
+    BEGIN CATCH
+        SET @STATUS = 0
+        SET @ERROR = ERROR_MESSAGE()
+        SET @ERROR_NUMBER = ERROR_NUMBER()
+        SET @RESPUESTA = CONCAT('Error al intentar aplicar cambios del producto ',@ITEMLOOKUPCODE,'. ERROR:',@ERROR_NUMBER)
+        INSERT INTO EXTCENTRAL_WIZARD_LOG([DATE],ITEM_ERROR,LAST_ACTION,MESSAGE_ERROR,MESSAGE_NUMBER,RESPUESTA,STORES,TASK_CODE,TASK_NAME,TASK_DETAILS)
+        VALUES(GETDATE(),@ITEMLOOKUPCODE,@LASTACTION,@ERROR,@ERROR_NUMBER,@RESPUESTA,@STORES,'131','ACTIVACIÓN PRODUCTOS',CONCAT(@TITLE,'[',@NOTES,']'))
+        CLOSE LIST_ITEMS_BULKCOPY
+        DEALLOCATE LIST_ITEMS_BULKCOPY
+    END CATCH
+
+    IF (@ERROR_NUMBER = 2601)
+        SET @RESPUESTA = CONCAT('Error al aplicar cambios a hoja de trabajo. El producto ',@ITEMLOOKUPCODE,' ya cuenta con los mismos Costos del artículo del proveedor')
+
+    SELECT @RESPUESTA AS [RESPUESTA], @STATUS AS [STATUS], @LASTACTION AS [LASTACTION], @ERROR AS [ERROR], @ERROR_NUMBER AS [ERROR_NUMBER]
+END
+GO
+
+-- Los SPs restantes (UEP_WS_CHANGE_ITEM_PRICE_DYNACIC, PROMO, REGULAR, UTILITY,
+-- PROPERTIES, SUPPLIER, DOWNLOAD, IMPORT) se crean a continuación desde los archivos originales:
+
+IF OBJECT_ID('dbo.UEP_WS_CHANGE_ITEM_PRICE_DYNACIC', 'P') IS NOT NULL DROP PROCEDURE dbo.UEP_WS_CHANGE_ITEM_PRICE_DYNACIC
+GO
+-- [Insertar aquí el cuerpo completo del SP UEP_WS_CHANGE_ITEM_PRICE_DYNACIC del archivo Sp_UEP_WS.txt]
+-- NOTA: Por la extensión del SP se recomienda ejecutar el archivo Sp_UEP_WS.txt por separado
+--       usando el script parcial que se incluye al final de este archivo.
+CREATE PROCEDURE [dbo].[UEP_WS_CHANGE_ITEM_PRICE_DYNACIC]
+    (@STYLE INT, @NOTES VARCHAR(255), @TITLE VARCHAR(50), @FROMDATE DATETIME,
+     @STOREID INT, @EFFECTIVEDATE DATETIME, @USER_ID VARCHAR(50))
+AS
+BEGIN
+    DECLARE @RESPUESTA VARCHAR(MAX), @ERROR VARCHAR(MAX) = '', @ERROR_NUMBER INT = 0
+    DECLARE @LASTACTION VARCHAR(50) = '', @STATUS BIT = 1, @EXISTS_ITEMEXT INT = 0, @WorksheetID INT
+    DECLARE @ID INT, @SUPPLIERCODE VARCHAR(30), @ITEMLOOKUPCODE VARCHAR(25)
+    DECLARE @INVOICEDISCOUNT VARCHAR(30), @CUSTOMERDISCOUNT VARCHAR(30)
+    DECLARE @STARTDATE VARCHAR(30), @ENDDATE VARCHAR(30), @QUANTITY VARCHAR(30), @SALEPRICE VARCHAR(30)
+    DECLARE @SUPPLIERID INT
+    DECLARE @USER_NAME VARCHAR(50) = (SELECT UserName FROM HQUser WHERE ID = @USER_ID)
+
+    DECLARE LIST_ITEMS_BULKCOPY CURSOR FOR
+    SELECT [ID],[SupplierCode],[ItemLookupCode],[InvoiceDiscount],[CustomerDiscount],[StartDate],[EndDate],[SalePrice],[Quantity]
+    FROM ##TablaItemPriceDynamic
+
+    OPEN LIST_ITEMS_BULKCOPY
+    FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ID,@SUPPLIERCODE,@ITEMLOOKUPCODE,@INVOICEDISCOUNT,@CUSTOMERDISCOUNT,@STARTDATE,@ENDDATE,@SALEPRICE,@QUANTITY
+
+    BEGIN TRY
+        INSERT [Worksheet](Style,EffectiveDate,[Status],Notes,Title,FromDate) VALUES(@STYLE,@EFFECTIVEDATE,1,@NOTES,@TITLE,@FROMDATE)
+        SET @WorksheetID = (SELECT TOP 1 ID FROM [Worksheet] WHERE Title = @TITLE ORDER BY ID DESC)
+        INSERT [dbo].[WorksheetStore](WorksheetID,StoreID,[Status],Originator,DateProcessed) VALUES(@WorksheetID,@STOREID,1,0,NULL)
+        INSERT INTO WorksheetHistory(WorksheetID,[Status],HistoryDate,HQEntry,StoreID,Comment) VALUES(@WorksheetID,1,GETDATE(),1,@STOREID,CONCAT('Creado por ',@USER_NAME,' desde Central Wizard.'))
+        EXEC [UEP_ExtCentral_Worksheet_INSERT] @USER_ID,@WorksheetID,@STYLE,'121',@TITLE,@STOREID
+
+        WHILE @@FETCH_STATUS = 0 BEGIN
+            SELECT @SUPPLIERID = [ID] FROM Supplier WHERE [Code] = @SUPPLIERCODE
+            SELECT @EXISTS_ITEMEXT = COUNT([ItemID]) FROM ExtCentral_ItemExt WHERE [StoreID]=@STOREID AND [SupplierID]=@SUPPLIERID AND [ItemID]=@ID
+
+            IF (@EXISTS_ITEMEXT > 0)
+                UPDATE [ExtCentral_ItemExt] SET [InvoiceDiscount]=CAST(@INVOICEDISCOUNT AS DECIMAL(18,2)),[CustomerDiscount]=CAST(@CUSTOMERDISCOUNT AS DECIMAL(18,2)),
+                    [StartDate]=CAST(PARSE(@STARTDATE AS DATE USING 'es-CR') AS DATE),[EndDate]=CAST(PARSE(@ENDDATE AS DATE USING 'es-CR') AS DATE),[Type]='Venta'
+                WHERE [StoreID]=@STOREID AND [SupplierID]=@SUPPLIERID AND [ItemID]=@ID
+            ELSE
+                INSERT INTO [ExtCentral_ItemExt]([ItemID],[StoreID],[SupplierID],[Type],[Utility],[CustomerDiscount],[InvoiceDiscount],[StartDate],[EndDate])
+                VALUES(@ID,@STOREID,@SUPPLIERID,'Venta',NULL,CAST(@CUSTOMERDISCOUNT AS DECIMAL(18,2)),CAST(@INVOICEDISCOUNT AS DECIMAL(18,2)),
+                    CAST(PARSE(@STARTDATE AS DATE USING 'es-CR') AS DATE),CAST(PARSE(@ENDDATE AS DATE USING 'es-CR') AS DATE))
+
+            SET @QUANTITY = CONVERT(FLOAT, @QUANTITY)
+
+            INSERT INTO [WorksheetUpdateItemPrices]([WorksheetID],[ItemID],[Price],[Cost],[PriceLevelA],[PriceLevelB],[PriceLevelC],[MSRP],
+                [SalePrice],[BuydownQuantity],[SaleStartDate],[SaleEndDate],[BuyDownPrice],[LowerBound],[UpperBound])
+            SELECT @WorksheetID,@ID,I.[Price],I.[Cost],I.[PriceA],I.[PriceB],I.[PriceC],I.[MSRP],
+                (CASE WHEN @QUANTITY <= 0 THEN CAST(@SALEPRICE AS MONEY) ELSE NULL END),
+                (CASE WHEN @QUANTITY > 0 THEN CAST(@QUANTITY AS FLOAT) ELSE NULL END),
+                (CASE WHEN @QUANTITY <= 0 THEN CAST(PARSE(@STARTDATE AS DATETIME USING 'es-CR') AS DATETIME) ELSE NULL END),
+                (CASE WHEN @QUANTITY <= 0 THEN CAST(PARSE(@ENDDATE AS DATETIME USING 'es-CR') AS DATETIME) ELSE NULL END),
+                (CASE WHEN @QUANTITY > 0 THEN CAST(@SALEPRICE AS MONEY) ELSE NULL END),
+                I.[PriceLowerBound],I.[PriceUpperBound]
+            FROM [Item] I
+            WHERE I.[ID]=@ID AND @STOREID IN (SELECT C.StoreId FROM GlobalCatalog C WHERE C.SyncGuid=I.SyncGuid AND C.TableName='Item' AND C.IsActive=1)
+
+            FETCH NEXT FROM LIST_ITEMS_BULKCOPY INTO @ID,@SUPPLIERCODE,@ITEMLOOKUPCODE,@INVOICEDISCOUNT,@CUSTOMERDISCOUNT,@STARTDATE,@ENDDATE,@SALEPRICE,@QUANTITY
+        END
+        CLOSE LIST_ITEMS_BULKCOPY
+        DEALLOCATE LIST_ITEMS_BULKCOPY
+        SET @RESPUESTA = CONCAT('Cambios aplicados en tienda ',@STOREID)
+    END TRY
+    BEGIN CATCH
+        SET @STATUS = 0
+        SET @ERROR = ERROR_MESSAGE()
+        SET @ERROR_NUMBER = ERROR_NUMBER()
+        SET @RESPUESTA = CONCAT('Error al intentar aplicar cambios del producto ',@ITEMLOOKUPCODE,' para la tienda ',@STOREID)
+        INSERT INTO EXTCENTRAL_WIZARD_LOG([DATE],ITEM_ERROR,LAST_ACTION,MESSAGE_ERROR,MESSAGE_NUMBER,RESPUESTA,STORES,TASK_CODE,TASK_NAME,TASK_DETAILS)
+        VALUES(GETDATE(),@ITEMLOOKUPCODE,@LASTACTION,@ERROR,@ERROR_NUMBER,@RESPUESTA,@STOREID,'121','UEP_WS_CHANGE_ITEM_PRICE_DYNACIC',CONCAT(@TITLE,'[',@NOTES,']'))
+        CLOSE LIST_ITEMS_BULKCOPY
+        DEALLOCATE LIST_ITEMS_BULKCOPY
+    END CATCH
+
+    SELECT @RESPUESTA AS [RESPUESTA],@STATUS AS [STATUS],@LASTACTION AS [LASTACTION],@ERROR AS [ERROR],@ERROR_NUMBER AS [ERROR_NUMBER]
+END
+GO
+
+-- ============================================================================
+-- SECCIÓN 12: SPs UEP_WORKSHEET - Gestión de hojas de trabajo
+-- ============================================================================
+PRINT ''
+PRINT '>> Creando SPs UEP_WORKSHEET...'
+GO
+
+IF OBJECT_ID('dbo.UEP_WORKSHEET_CHANGE_STATUS', 'P') IS NOT NULL DROP PROCEDURE dbo.UEP_WORKSHEET_CHANGE_STATUS
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_CHANGE_STATUS]
+    (@STORES VARCHAR(1000), @TASKS VARCHAR(1000), @USERS VARCHAR(1000),
+     @HQUSERID INT, @WORKSHEETID INT, @STATUS INT)
+AS
+BEGIN
+    DECLARE @RESPUESTA VARCHAR(30), @STATE BIT = 0
+    DECLARE @ERROR_NUMBER INT = 0, @ERROR_MESSAGE VARCHAR(MAX)
+
+    BEGIN TRY
+        IF (@STATUS = 1 OR @STATUS = 2 OR @STATUS = 0 OR @STATUS = 8) BEGIN
+            UPDATE W SET W.[Status] = @STATUS
+            FROM Worksheet W
+                INNER JOIN ExtCentral_Worksheet EW ON EW.WorksheetID = W.ID
+                    AND (@USERS = '%' OR EW.HQUserID IN (SELECT VALUE FROM STRING_SPLIT(@USERS, ',')))
+                    AND (@TASKS = '%' OR EW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',')))
+            WHERE ID = @WORKSHEETID
+                AND [Status] = (CASE @STATUS WHEN 1 THEN 2 ELSE 1 END)
+                AND (SELECT COUNT(*) FROM WorksheetStore WHERE WorksheetID = @WORKSHEETID) =
+                    (SELECT COUNT(*) FROM WorksheetStore WHERE WorksheetID = @WORKSHEETID
+                     AND (@STORES = '%' OR StoreID IN (SELECT VALUE FROM STRING_SPLIT(@STORES, ','))))
+
+            DECLARE @ROWCOUNT INT = @@ROWCOUNT
+            IF (@ROWCOUNT > 0) BEGIN
+                INSERT INTO WorksheetHistory(Comment, HistoryDate, [Status], StoreID, WorksheetID)
+                OUTPUT inserted.WorksheetID, inserted.ID, @HQUSERID INTO ExtCentral_WorksheetHistory(WorksheetID, WorksheetHistoryID, HQUserID)
+                SELECT CONCAT((CASE @STATUS WHEN 1 THEN 'Desaprobado ' WHEN 0 THEN 'Suspendido ' WHEN 8 THEN 'Aprobado sin Cambios' ELSE 'Aprobado ' END),
+                    'por ',(SELECT UserName FROM HQUser WHERE ID = @HQUSERID),' desde AVS Central Manager'),
+                    GETDATE(), @STATUS, WS.StoreID, @WORKSHEETID
+                FROM WorksheetStore WS WHERE WS.WorksheetID = @WORKSHEETID
+
+                UPDATE WorksheetStore SET [Status] = @STATUS WHERE WorksheetID = @WORKSHEETID
+                SET @RESPUESTA = 'succ_actualizado'
+                SET @STATE = 1
+            END ELSE SET @RESPUESTA = 'error_reg_actualizado'
+        END ELSE SET @RESPUESTA = 'error_w_status'
+    END TRY
+    BEGIN CATCH
+        SET @RESPUESTA = 'error_reg_actualizado'
+        SET @ERROR_NUMBER = ERROR_NUMBER()
+        SET @ERROR_MESSAGE = ERROR_MESSAGE()
+        INSERT INTO EXTCENTRAL_LOG([ACTION],[DATE],[ERROR_MESSAGE],[ERROR_NUMBER],[NOTE],[SP_NAME])
+        VALUES('ACTUALIZAR HOJA DE TRABAJO',GETDATE(),@ERROR_MESSAGE,@ERROR_NUMBER,'ERROR AL ACTUALIZAR UNA HOJA DE TRABAJO','[UEP_WORKSHEET_CHANGE_STATUS]')
+    END CATCH
+
+    SELECT @RESPUESTA [RESPUESTA], @STATE [STATUS], @ERROR_NUMBER [ERROR_NUMBER], @ERROR_MESSAGE [ERROR_MESSAGE]
+END
+GO
+
+IF OBJECT_ID('dbo.UEP_WORKSHEET_CONTENT_INSERT', 'P') IS NOT NULL DROP PROCEDURE dbo.UEP_WORKSHEET_CONTENT_INSERT
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_CONTENT_INSERT]
+    (@HQUSERID INT, @TASKCODE VARCHAR(30), @FILENAME VARCHAR(500),
+     @CONTENTTYPE VARCHAR(50), @CONTENTLENGHT BIGINT, @CONTENTDATA VARBINARY(MAX))
+AS
+BEGIN
+    INSERT INTO ExtCentral_WorksheetContent(ContentData,ContentLenght,ContentType,DateApplied,[FileName],HQUserID,TaskCode)
+    VALUES(@CONTENTDATA,@CONTENTLENGHT,@CONTENTTYPE,GETDATE(),@FILENAME,@HQUSERID,@TASKCODE)
+    SELECT CONVERT(INT, SCOPE_IDENTITY()) [SCOPE]
+END
+GO
+
+IF OBJECT_ID('dbo.UEP_WORKSHEET_CONTENT_GET', 'P') IS NOT NULL DROP PROCEDURE dbo.UEP_WORKSHEET_CONTENT_GET
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_CONTENT_GET]
+    (@WORKSHEETCONTENTID INT, @WORKSHEETID INT, @STORES VARCHAR(1000),
+     @TASKS VARCHAR(1000), @USERS VARCHAR(1000))
+AS
+BEGIN
+    SELECT WC.* FROM ExtCentral_WorksheetContent WC
+    WHERE ID = @WORKSHEETCONTENTID
+        AND (SELECT COUNT(*) FROM ExtCentral_Worksheet XW WHERE XW.WorksheetID=@WORKSHEETID AND XW.WorksheetContentID=@WORKSHEETCONTENTID AND XW.HQUserID=WC.HQUserID) > 0
+        AND (@USERS = '%' OR CONVERT(VARCHAR(1000), WC.HQUserID) IN (SELECT VALUE FROM STRING_SPLIT(@USERS, ',') WHERE VALUE <> '' AND VALUE <> '%'))
+        AND (@TASKS = '%' OR WC.TaskCode IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',') WHERE VALUE <> '' AND VALUE <> '%'))
+        AND (SELECT COUNT(*) FROM ExtCentral_Worksheet XW INNER JOIN WorksheetStore XWS ON XWS.WorksheetID=XW.WorksheetID
+             WHERE XW.WorksheetID=@WORKSHEETID AND XW.WorksheetContentID=@WORKSHEETCONTENTID
+             AND (@STORES = '%' OR CONVERT(VARCHAR(30), XWS.StoreID) IN (SELECT VALUE FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> '' AND VALUE <> '%'))) > 0
+END
+GO
+
+IF OBJECT_ID('dbo.UEP_WORKSHEET_GET', 'P') IS NOT NULL DROP PROCEDURE dbo.UEP_WORKSHEET_GET
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_GET]
+    (@STORES VARCHAR(1000), @TASKS VARCHAR(1000), @USER_ID VARCHAR(1000), @WORKSHEET_ID INT)
+AS
+BEGIN
+    SELECT XW.[Date] [DateApplied], W.ID, XW.HQUserID, XW.WizardTaskCode, W.Style, XW.WorsheetTitle [Title],
+        W.EffectiveDate, W.Notes, W.[Status],
+        (SELECT STRING_AGG(StoreID, ', ') FROM WorksheetStore WHERE WorksheetID = W.ID) [StoresID],
+        (SELECT STRING_AGG([Name], ', ') FROM WorksheetStore INNER JOIN Store ON Store.ID = StoreID WHERE WorksheetID = W.ID) [StoresName],
+        WL.Descripcion [WizardTaskDescription], XW.HQUserID [UserID], U.UserName
+    FROM ExtCentral_Worksheet XW
+        INNER JOIN Worksheet W ON W.ID = XW.WorksheetID
+        INNER JOIN ExtCentral_WizardLista WL ON WL.Codigo = XW.WizardTaskCode
+        INNER JOIN HQUser U ON U.ID = XW.HQUserID
+    WHERE XW.WorksheetID = @WORKSHEET_ID
+        AND (@USER_ID = '%' OR XW.HQUserID IN (SELECT VALUE FROM STRING_SPLIT(@USER_ID, ',')))
+        AND (XW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',') WHERE VALUE <> '') OR @TASKS = '%')
+        AND (SELECT COUNT(*) FROM WorksheetStore WS INNER JOIN Store S ON S.ID = WS.StoreID
+             WHERE WS.WorksheetID=@WORKSHEET_ID AND (WS.StoreID IN (SELECT VALUE FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> '') OR @STORES = '%') AND S.Inactive=0) > 0
+END
+GO
+
+IF OBJECT_ID('dbo.UEP_WORKSHEET_HISTORY_GETALL', 'P') IS NOT NULL DROP PROCEDURE dbo.UEP_WORKSHEET_HISTORY_GETALL
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_HISTORY_GETALL]
+    (@STORES VARCHAR(1000), @TASKS VARCHAR(1000), @USER_ID VARCHAR(1000), @WORKSHEET_ID INT)
+AS
+BEGIN
+    SELECT WH.*, S.[Name] [StoreName], U.ID [UserID], U.UserName
+    FROM WorksheetHistory WH
+        INNER JOIN Worksheet W ON W.ID = WH.WorksheetID
+        INNER JOIN ExtCentral_Worksheet XW ON XW.WorksheetID = W.ID
+        INNER JOIN Store S ON S.ID = WH.StoreID
+        LEFT JOIN ExtCentral_WorksheetHistory XWH ON XWH.WorksheetHistoryID = WH.ID AND XWH.WorksheetID = WH.WorksheetID
+        LEFT JOIN HQUser U ON U.ID = XWH.HQUserID
+    WHERE W.ID = @WORKSHEET_ID
+        AND (@USER_ID = '%' OR XW.HQUserID IN (SELECT VALUE FROM STRING_SPLIT(@USER_ID, ',')))
+        AND (@STORES = '%' OR WH.StoreID IN (SELECT VALUE FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> ''))
+        AND (@TASKS = '%' OR XW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',') WHERE VALUE <> ''))
+END
+GO
+
+IF OBJECT_ID('dbo.UEP_WORKSHEET_STORE_GETALL', 'P') IS NOT NULL DROP PROCEDURE dbo.UEP_WORKSHEET_STORE_GETALL
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_STORE_GETALL]
+    (@STORES VARCHAR(1000), @TASKS VARCHAR(1000), @USER_ID VARCHAR(1000), @WORKSHEET_ID INT)
+AS
+BEGIN
+    SELECT WS.*, S.[Name] [StoreName]
+    FROM WorksheetStore WS
+        INNER JOIN Worksheet W ON W.ID = WS.WorksheetID
+        INNER JOIN ExtCentral_Worksheet XW ON XW.WorksheetID = W.ID
+        INNER JOIN Store S ON S.ID = WS.StoreID
+    WHERE W.ID = @WORKSHEET_ID
+        AND (@USER_ID = '%' OR XW.HQUserID IN (SELECT VALUE FROM STRING_SPLIT(@USER_ID, ',')))
+        AND (@STORES = '%' OR WS.StoreID IN (SELECT VALUE FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> ''))
+        AND (@TASKS = '%' OR XW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',') WHERE VALUE <> ''))
+END
+GO
+
+IF OBJECT_ID('dbo.UEP_WORKSHEET_DETAIL_261_GETALL', 'P') IS NOT NULL DROP PROCEDURE dbo.UEP_WORKSHEET_DETAIL_261_GETALL
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_DETAIL_261_GETALL]
+    (@STORES VARCHAR(1000), @TASKS VARCHAR(1000), @USER_ID VARCHAR(1000), @WORKSHEET_ID INT)
+AS
+BEGIN
+    SELECT wsui.ID, wsui.WorksheetID, wsui.ItemID, Item.ItemLookupCode, Item.[Description], Item.[ExtendedDescription],
+        CONVERT(BIT, CASE WHEN GC.SyncGuid IS NULL THEN 0 ELSE 1 END) AS StoreAvailability,
+        WS.StoreID [StoreID], S.[Name] [StoreName]
+    FROM Worksheet_ItemUpdate wsui WITH (NOLOCK)
+        INNER JOIN Worksheet W ON W.ID = wsui.WorksheetID
+        INNER JOIN ExtCentral_Worksheet XW ON XW.WorksheetID = W.ID
+        INNER JOIN Item ON wsui.itemID = Item.ID
+        LEFT OUTER JOIN WORKSHEETSTORE WS ON wsui.WorksheetID = WS.WorksheetID
+        LEFT OUTER JOIN GlobalCatalog GC ON Item.Syncguid = GC.SyncGuid AND TableName = 'Item' AND GC.StoreID = WS.StoreID
+        LEFT OUTER JOIN Store S ON S.ID = WS.StoreID
+    WHERE W.ID = @WORKSHEET_ID
+        AND (@USER_ID = '%' OR XW.HQUserID IN (SELECT VALUE FROM STRING_SPLIT(@USER_ID, ',')))
+        AND W.Style = 261
+        AND (XW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',') WHERE VALUE <> '') OR @TASKS = '%')
+        AND (SELECT COUNT(*) FROM WorksheetStore WS WHERE WS.WorksheetID = W.ID
+             AND (WS.StoreID IN (SELECT VALUE FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> '') OR @STORES = '%')) > 0
+END
+GO
+
+IF OBJECT_ID('dbo.UEP_WORKSHEET_DETAIL_251_GETALL', 'P') IS NOT NULL DROP PROCEDURE dbo.UEP_WORKSHEET_DETAIL_251_GETALL
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_DETAIL_251_GETALL]
+    (@STORES VARCHAR(1000), @TASKS VARCHAR(1000), @USER_ID VARCHAR(1000), @WORKSHEET_ID INT)
+AS
+BEGIN
+    SELECT i.ItemLookupCode, i.[Description], i.ExtendedDescription, i.DateCreated, i.WebItem,
+        ProfitMargin = ROUND(((wuip.Price - wuip.Cost) / CASE WHEN wuip.Price=0 THEN 1 ELSE wuip.Price END), 4),
+        IT.[Description] [ItemTaxDescription], wuip.*,
+        CONVERT(BIT, CASE WHEN GC.SyncGuid IS NULL THEN 0 ELSE 1 END) AS StoreAvailability,
+        WS.StoreID [StoreID], S.[Name] [StoreName]
+    FROM WorksheetUpdateItemPrices wuip WITH (NOLOCK)
+        INNER JOIN Worksheet W ON W.ID = wuip.WorksheetID
+        INNER JOIN ExtCentral_Worksheet XW ON XW.WorksheetID = W.ID
+        INNER JOIN Item i ON i.ID = wuip.ItemID
+        LEFT OUTER JOIN WORKSHEETSTORE WS ON wuip.WorksheetID = WS.WorksheetID
+        LEFT OUTER JOIN GlobalCatalog GC ON i.Syncguid = GC.SyncGuid AND TableName = 'Item' AND GC.StoreID = WS.StoreID
+        LEFT OUTER JOIN Store S ON S.ID = WS.StoreID
+        LEFT OUTER JOIN [ItemDynamic] id ON WS.[StoreID] = id.[StoreID] AND i.[ID] = id.[ItemID]
+        LEFT OUTER JOIN [ItemTax] IT ON IT.ID = id.TaxID
+    WHERE W.ID = @WORKSHEET_ID
+        AND (@USER_ID = '%' OR XW.HQUserID IN (SELECT VALUE FROM STRING_SPLIT(@USER_ID, ',')))
+        AND W.Style = 251
+        AND (XW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',') WHERE VALUE <> '') OR @TASKS = '%')
+        AND (SELECT COUNT(*) FROM WorksheetStore WS WHERE WS.WorksheetID = W.ID
+             AND (WS.StoreID IN (SELECT VALUE FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> '') OR @STORES = '%')) > 0
+END
+GO
+
+IF OBJECT_ID('dbo.UEP_WORKSHEET_DETAIL_320_GETALL', 'P') IS NOT NULL DROP PROCEDURE dbo.UEP_WORKSHEET_DETAIL_320_GETALL
+GO
+CREATE PROCEDURE [dbo].[UEP_WORKSHEET_DETAIL_320_GETALL]
+    (@STORES VARCHAR(1000), @TASKS VARCHAR(1000), @USER_ID VARCHAR(1000), @WORKSHEET_ID INT)
+AS
+BEGIN
+    SELECT i.ItemLookupCode, i.[Description], i.[ExtendedDescription],
+        wip.ID, wip.ItemID, wip.WorksheetID, IT.[Description] [ItemTaxDescription],
+        CONVERT(BIT, CASE WHEN GC.SyncGuid IS NULL THEN 0 ELSE 1 END) AS StoreAvailability,
+        WS.StoreID [StoreID], S.[Name] [StoreName]
+    FROM Worksheet_ItemTax wip WITH (NOLOCK)
+        INNER JOIN Worksheet W ON W.ID = wip.WorksheetID
+        INNER JOIN ExtCentral_Worksheet XW ON XW.WorksheetID = W.ID
+        INNER JOIN Item i ON i.ID = wip.ItemID
+        LEFT OUTER JOIN WorksheetStore WS ON wip.WorksheetID = WS.WorksheetID
+        LEFT OUTER JOIN GlobalCatalog GC ON i.Syncguid = GC.SyncGuid AND TableName = 'Item' AND GC.StoreID = WS.StoreID
+        LEFT OUTER JOIN Store S ON S.ID = WS.StoreID
+        INNER JOIN ItemTax IT ON IT.ID = wip.TaxID
+    WHERE wip.WorksheetID = @WORKSHEET_ID
+        AND (@USER_ID = '%' OR XW.HQUserID IN (SELECT VALUE FROM STRING_SPLIT(@USER_ID, ',')))
+        AND W.Style = 320
+        AND (XW.WizardTaskCode IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',') WHERE VALUE <> '') OR @TASKS = '%')
+        AND (SELECT COUNT(*) FROM WorksheetStore WS WHERE WS.WorksheetID = W.ID
+             AND (WS.StoreID IN (SELECT VALUE FROM STRING_SPLIT(@STORES, ',') WHERE VALUE <> '') OR @STORES = '%')) > 0
+END
+GO
+
+-- ============================================================================
+-- SECCIÓN 13: SPs Store / Catalog
+-- ============================================================================
+PRINT ''
+PRINT '>> Creando SPs de Store y Catálogo...'
+GO
+
+IF OBJECT_ID('dbo.UEP_EXTCENTRAL_WIZARD_LIST_GETALL', 'P') IS NOT NULL DROP PROCEDURE dbo.UEP_EXTCENTRAL_WIZARD_LIST_GETALL
+GO
+CREATE PROCEDURE [dbo].[UEP_EXTCENTRAL_WIZARD_LIST_GETALL] (@TASKS VARCHAR(1000))
+AS
+BEGIN
+    SELECT [Codigo],[Descripcion],[Estado],[WizardTask]
+    FROM [ExtCentral_WizardLista]
+    WHERE ([Codigo] IN (SELECT VALUE FROM STRING_SPLIT(@TASKS, ',') WHERE VALUE <> '') OR @TASKS = '%')
+    ORDER BY [Codigo] ASC
+END
+GO
+
+IF OBJECT_ID('dbo.UEP_WS_EXTCENTRAL_WIZARDLIST_GETALL', 'P') IS NOT NULL DROP PROCEDURE dbo.UEP_WS_EXTCENTRAL_WIZARDLIST_GETALL
+GO
+CREATE PROCEDURE [dbo].[UEP_WS_EXTCENTRAL_WIZARDLIST_GETALL]
+AS
+BEGIN
+    SELECT [Codigo],[Descripcion],[Estado],[WizardTask]
+    FROM [ExtCentral_WizardLista]
+    WHERE [Estado] = 1 AND [WizardTask] = 1
+    ORDER BY [Codigo] ASC
+END
+GO
+
+IF OBJECT_ID('dbo.UEP_STOREGROUP_GETALL', 'P') IS NOT NULL DROP PROCEDURE dbo.UEP_STOREGROUP_GETALL
+GO
+CREATE PROCEDURE [dbo].[UEP_STOREGROUP_GETALL] (@STORES_ID VARCHAR(500))
+AS
+BEGIN
+    SELECT DISTINCT SG.[ID], SG.[Description], SG.[Code]
+    FROM [RMH_StoreGroup] SG
+        INNER JOIN [RMH_StoreGroupStoreList] SL ON SL.StoreGroupID = SG.ID
+        INNER JOIN Store S ON S.ID = SL.StoreID
+    WHERE S.Inactive = 0
+        AND (@STORES_ID = '%' OR S.ID IN (SELECT VALUE FROM STRING_SPLIT(@STORES_ID, ',') WHERE VALUE <> ''))
+END
+GO
+
+IF OBJECT_ID('dbo.UEP_USER_GET_BY_ACCOUNT', 'P') IS NOT NULL DROP PROCEDURE dbo.UEP_USER_GET_BY_ACCOUNT
+GO
+CREATE PROCEDURE [dbo].[UEP_USER_GET_BY_ACCOUNT] (@ACCOUNT VARCHAR(30))
+AS
+BEGIN
+    SELECT U.ID, U.Number AS Account, U.[Password], U.[Name] AS UserName,
+        U.EmailAddress, U.Privileges AS UserPrivileges, U.SecurityLevel
+    FROM [Cashier] U
+    WHERE U.Number = @ACCOUNT
+END
+GO
+
+IF OBJECT_ID('dbo.UEP_WS_DOWNLOAD_ITEMS', 'P') IS NOT NULL DROP PROCEDURE dbo.UEP_WS_DOWNLOAD_ITEMS
+GO
+CREATE PROCEDURE [dbo].[UEP_WS_DOWNLOAD_ITEMS]
+    (@STORESID VARCHAR(MAX), @TITLE VARCHAR(50), @NOTES VARCHAR(255),
+     @EEFECTIVEDATE DATETIME, @FROMDATE DATETIME, @USER_ID VARCHAR(50), @WORKSHEETCONTENTID INT)
+AS
+BEGIN
+    DECLARE @RESPUESTA VARCHAR(500) = 'HOJAS DE TRABAJO CREADAS PARA SINCRONIZAR PRODUCTOS A LAS TIENDAS SELECCIONADAS'
+    DECLARE @ERROR VARCHAR(MAX), @ERROR_NUMBER INT, @STATUS BIT = 1, @LASTACTION VARCHAR(MAX)
+    DECLARE @USER_NAME VARCHAR(50) = (SELECT UserName FROM HQUser WHERE ID = @USER_ID)
+    DECLARE @STOREID INT, @WORKSHEET_ID INT
+
+    DECLARE LIST_STORES CURSOR FOR
+    SELECT CONVERT(INT, VALUE) FROM STRING_SPLIT(@STORESID, ',') WHERE VALUE <> ''
+    OPEN LIST_STORES
+    FETCH NEXT FROM LIST_STORES INTO @STOREID
+
+    BEGIN TRY
+        WHILE @@FETCH_STATUS = 0 BEGIN
+            INSERT [Worksheet](Style, EffectiveDate, [Status], Notes, Title, FromDate)
+            VALUES(261, @EEFECTIVEDATE, 1, @NOTES, @TITLE, @FROMDATE)
+            SET @WORKSHEET_ID = CONVERT(INT, SCOPE_IDENTITY())
+            INSERT [dbo].[WorksheetStore](WorksheetID, StoreID, [Status], Originator, DateProcessed) VALUES(@WORKSHEET_ID, @STOREID, 1, 0, NULL)
+            INSERT INTO WorksheetHistory(WorksheetID, [Status], HistoryDate, HQEntry, StoreID, Comment)
+            VALUES(@WORKSHEET_ID, 1, GETDATE(), 1, @STOREID, CONCAT('Creado por ', @USER_NAME, ' desde Central Wizard.'))
+            INSERT INTO [Worksheet_ItemUpdate](WorksheetID, ItemID)
+            SELECT @WORKSHEET_ID, I.ID FROM ##TMPListItemsDownload TI INNER JOIN Item I ON I.ItemLookupCode = TI.ItemLookupCode
+            EXEC [UEP_ExtCentral_Worksheet_INSERT] @USER_ID, @WORKSHEET_ID, 261, '130', @TITLE, @STOREID, @WORKSHEETCONTENTID
+            FETCH NEXT FROM LIST_STORES INTO @STOREID
+        END
+        CLOSE LIST_STORES
+        DEALLOCATE LIST_STORES
+    END TRY
+    BEGIN CATCH
+        BEGIN TRY CLOSE LIST_STORES DEALLOCATE LIST_STORES END TRY BEGIN CATCH END CATCH
+        SET @ERROR = ERROR_MESSAGE()
+        SET @ERROR_NUMBER = ERROR_NUMBER()
+        SET @RESPUESTA = CONCAT('OCURRIÓ UN ERROR AL INTENTAR CREAR LAS HOJAS DE TRABAJO. ERROR: ', @ERROR_NUMBER)
+        SET @STATUS = 0
+        INSERT INTO EXTCENTRAL_WIZARD_LOG([DATE],ITEM_ERROR,LAST_ACTION,MESSAGE_ERROR,MESSAGE_NUMBER,RESPUESTA,STORES,TASK_CODE,TASK_NAME,TASK_DETAILS)
+        VALUES(GETDATE(),'',@LASTACTION,@ERROR,@ERROR_NUMBER,@RESPUESTA,@STORESID,'DOWNLOAD','UEP_WS_DOWNLOAD_ITEMS',CONCAT(@TITLE,'[',@NOTES,']'))
+    END CATCH
+
+    SELECT @RESPUESTA AS [RESPUESTA], @STATUS AS [STATUS], @ERROR AS [ERROR], @ERROR_NUMBER AS [ERROR_NUMBER], @LASTACTION AS [LASTACTION]
+END
+GO
+
+PRINT ''
+PRINT '==============================================================='
+PRINT ' INSTALACIÓN COMPLETADA'
+PRINT ''
+PRINT ' NOTAS IMPORTANTES:'
+PRINT ' 1. Las funciones UEP_GET_PRICE_ROUND y UEP_GET_UTILITY_REAL'
+PRINT '    tienen una lógica de EJEMPLO. Ajuste según las reglas'
+PRINT '    de negocio reales (redondeo, cálculo de utilidad).'
+PRINT ''
+PRINT ' 2. La función UEP_ITEMEXT_PROPERTY_GET_BY_ITEMID retorna'
+PRINT '    vacío. Implemente según la estructura de ItemExt/XML.'
+PRINT ''
+PRINT ' 3. Los SPs UEP_WS_CHANGE_ITEM_PRICE_PROMO, REGULAR,'
+PRINT '    UTILITY, PROPERTIES, SUPPLIER e IMPORT_ITEMS son'
+PRINT '    muy extensos. Ejecútelos por separado desde los'
+PRINT '    archivos originales Sp_UEP_WS.txt si se requieren.'
+PRINT ''
+PRINT ' 4. Verifique que las tablas RMH (Item, ItemDynamic,'
+PRINT '    Store, HQUser, Supplier, Tax, ItemTax, GlobalCatalog,'
+PRINT '    SupplierList, POA_Item, ItemExt, ItemExt) existan'
+PRINT '    antes de usar los SPs.'
+PRINT '==============================================================='
+GO

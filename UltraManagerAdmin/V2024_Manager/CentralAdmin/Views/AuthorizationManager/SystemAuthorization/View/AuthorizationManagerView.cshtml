@@ -1,0 +1,29 @@
+﻿@using CentralAdmin.AuthorizationManager.AuthorizationUtil;
+
+@{
+    Layout = "~/Views/AuthorizationManager/SystemAuthorization/Layout/_AthorizeLayout.cshtml";
+
+    string partialRoute = "~/Views/AuthorizationManager/SystemAuthorization/Partials/";
+    string partialName = "";
+
+    switch (AuthorizationStatus.Instance.SystemValidateStatus)
+    {
+        case Security.Entities.SC_Enum.ESystemValidateStatus.SYSTEM_NOT_CONFIGURED:
+            partialName = "Not_Configured.cshtml";
+            break;
+        case Security.Entities.SC_Enum.ESystemValidateStatus.SYSTEM_DISABLED:
+            partialName = "Disabled.cshtml";
+            break;
+        case Security.Entities.SC_Enum.ESystemValidateStatus.SYSTEM_UPDATING:
+            partialName = "Updating.cshtml";
+            break;
+        case Security.Entities.SC_Enum.ESystemValidateStatus.USER_UNAUTHORIZED:
+            partialName = "Unauthorized.cshtml";
+            break;
+        case Security.Entities.SC_Enum.ESystemValidateStatus.NOT_VERIFIED:
+            partialName = "ErrorAuthorized.cshtml";
+            break;
+    }
+}
+
+@Html.Partial($"{partialRoute}{partialName}")

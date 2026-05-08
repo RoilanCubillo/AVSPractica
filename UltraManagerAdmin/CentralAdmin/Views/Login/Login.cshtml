@@ -1,0 +1,138 @@
+@using Security.EntitiesAVS
+@{
+    EN_SC_Company[] companies = ViewBag.Companies as EN_SC_Company[];
+    bool hasCompanies = companies != null && companies.Length > 0;
+    string username = ViewBag.Username as string;
+    string remember = ViewBag.Remember as string;
+    int selectedCompanyId = 0;
+
+    if (ViewBag.SelectedCompanyId != null)
+    {
+        int.TryParse(ViewBag.SelectedCompanyId.ToString(), out selectedCompanyId);
+    }
+}
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&amp;display=fallback">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/dist/css/adminlte.min.css">
+
+    <script type="text/javascript" language="javascript">
+        function DisableBackButton() {
+            window.history.forward()
+        }
+
+        function onSubmit(token) {
+            document.getElementById("form-login").submit();
+        }
+
+        DisableBackButton();
+
+        window.onload = DisableBackButton;
+        window.onpageshow = function (evt) { if (evt.persisted) DisableBackButton() }
+        window.onunload = function () { void (0) }
+    </script>
+</head>
+<body class="login-page">
+    <div class="image d-flex justify-content-center">
+        <img src="~/Content/AdminLTE/dist/img/avs-media/avs_logo.png" class="img-circle elevation-2 login-logo" alt="User Image" height="140" width="140">
+    </div>
+    <div class="login-box w-100">
+        <div class="login-logo">
+            <a href="../Inicio/Login"><b>AVS Central Manager</b></a>
+        </div>
+
+        <div class="card p-2">
+            <div class="card-body login-card-body">
+                <p class="login-box-msg">¡Bienvenido! Ingrese los datos de inicio de sesión</p>
+
+                @if (!String.IsNullOrEmpty(ViewBag.ErrorLogin))
+                {
+                    <nav class="mt-2">
+                        <ul class="nav nav-pills nav-sidebar flex-column nav-child-indent">
+                            <li class="nav-item">
+                                <a class="nav-link">
+                                    <i class="nav-icon fa fa-exclamation-triangle text-danger"></i>
+                                    <p class="text text-danger">@ViewBag.ErrorLogin</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                }
+
+                <form id="form-login" action="@Url.Action("Login", "Inicio")" method="post">
+                    <input type="hidden" name="ReturnUrl" value="@ViewBag.ReturnUrl" />
+                    <div class="input-group mb-3">
+                        <input type="text"
+                               class="form-control @(String.IsNullOrEmpty(ViewBag.ErrorLogin) ? "" : "is-invalid")"
+                               placeholder="Usuario"
+                               name="username"
+                               value="@username"
+                               required>
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-user"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-3">
+                        <input type="password"
+                               class="form-control @(String.IsNullOrEmpty(ViewBag.ErrorLogin) ? "" : "is-invalid")"
+                               placeholder="Contraseña"
+                               name="password"
+                               required>
+                        <div class="input-group-append">
+                            <div class="input-group-text">
+                                <span class="fas fa-lock"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (hasCompanies)
+                    {
+                        <div class="input-group mb-3">
+                            <select class="form-control" name="companyId" required>
+                                <option value="">Seleccione una empresa</option>
+                                @foreach (var company in companies)
+                                {
+                                    <option value="@company.ID_Company" @(company.ID_Company == selectedCompanyId ? "selected" : "")>@company.Name</option>
+                                }
+                            </select>
+                            <div class="input-group-append">
+                                <div class="input-group-text">
+                                    <span class="fas fa-building"></span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="row">
+                        <div class="col-8">
+                            <div class="icheck-primary">
+                                <input type="checkbox" id="remember" name="remember" @(remember == "on" ? "checked" : "")>
+                                <label for="remember"> Recordarme </label>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <button class="btn btn-primary btn-block g-recaptcha"
+                                    data-sitekey="6Lc4__8fAAAAANfBZYf9p8t-JSyst1ncsJPWb-De"
+                                    data-callback='onSubmit'
+                                    data-action='submit'>
+                                Ingresar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="~/Content/AdminLTE/plugins/jquery/jquery.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/Content/AdminLTE/dist/js/adminlte.min.js"></script>
+    <script src="https://www.google.com/recaptcha/api.js"></script>
+</body>
+</html>

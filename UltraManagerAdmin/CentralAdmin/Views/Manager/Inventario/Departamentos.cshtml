@@ -1,0 +1,359 @@
+﻿
+@{
+    ViewBag.Title = Resources.views.departs;
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+    ViewBag.Name = Resources.views.mant_departs;
+}
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>FacturameCR | Dashboard</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    <!-- Select2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+    <!-- iCheck for checkboxes and radio inputs -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/dist/css/adminlte.min.css">
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- Select2 -->
+    <script src="~/Content/AdminLTE/plugins/select2/js/select2.full.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+</head>
+<body class="sidebar-mini layout-fixed">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <!-- Encabezado -->
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>@ViewBag.Name</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager","Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">@Resources.views.inventario</li>
+                                <li class="breadcrumb-item active">@Resources.views.departs</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Encabezado -->
+            <!-- Muestra de Departamentos -->
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="overlay-wrapper">
+                                        <div id="spn_tbl_department" class="overlay justify-content-center">
+                                            <i class="fas fa-3x fa-sync-alt fa-spin"></i>
+                                            <div class="text-bold pt-2">@Resources.views.cargando</div>
+                                        </div>
+                                        <div class="col-md-12" style="overflow: auto;">
+                                            <div class="row-cols-md-6">
+                                                <button type="button" class="btn btn-primary fa-pull-right" onclick="modalDepartamento('');">
+                                                    <i class="fa fa-plus"> </i> @Resources.views.agregar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <!-- div_departamentos -->
+                                        <div id="div_departamentos" class="dataTables_wrapper dt-bootstrap4">
+                                            <table class="table table-bordered table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>@Resources.views.nom</th>
+                                                        <th>@Resources.views.cod</th>
+                                                        <th>Cod. Familia</th>
+                                                        <th>Familia</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div><!-- div_departamentos -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Muestra de Departamentos -->
+        </div>
+    </div>
+
+    @*//=========MODAL DEPARTAMENTO=====================*@
+    <div id="modalDepartamento" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div id="spn_modalDepartamento" class="overlay">
+                    <i class="fas fa-2x fa-sync fa-spin"></i>
+                </div>
+                <div class="modal-header text-center">
+                    <h4 id="ModalTitle" class="modal-title"></h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body" style="overflow: auto">
+                    <div id="divDatos">
+                        <form id="form_department">
+                            <div class="form-group">
+                                <label for="inputCodigo" class="col-sm-2 control-label">@Resources.views.cod</label>
+                                <input id="inputCodigo" name="inputCodigo" type="text" class="form-control" placeholder="@Resources.views.ingresar_cod" />
+                                <input type="hidden" id="hfHQID" />
+                                <input type="hidden" id="hfID" />
+                            </div>
+                            <div class="form-group">
+                                <label for="inputDescripcion" class="col-sm-2 control-label">@Resources.views.descripcion</label>
+                                <input id="inputDescripcion" name="inputDescripcion" type="text" class="form-control" placeholder="@Resources.views.ingresar_desc" />
+                            </div>
+                            <div class="form-group">
+                                <label for="family" class="text-truncate">@Resources.views.familia:</label>
+                                <select class="form-control select2" id="family" name="family" data-placeholder="Seleccionar familia" style="width: 100%;"></select>
+                            </div>
+                            <div class="modal-footer">
+                                <button id="btnSaveProducto" type="submit" class="btn btn-success" modal-cliente-edit="">
+                                    <i class="fa fa-save"></i> @Resources.views.guardar
+                                </button>
+                                <button type="button" class="btn btn-danger" data-dismiss="modal">
+                                    <i class="fa fa-ban"></i> @Resources.views.cerrar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div><!-- Modal content-->
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        var url_GetDepartments = '@Url.Action("GetDepartments", "Departamentos")';
+        var url_GetDepartament = '@Url.Action("GetDepartment", "Departamentos")';
+        var url_SaveDepartment = '@Url.Action("SaveDepartment", "Departamentos")';
+        var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4000 }); // Variable para mostrar los mensajes.
+        var listFamilies = []
+        var rules = {
+            inputCodigo: { required: true, maxlength: 17 },
+            inputDescripcion: { required: true, maxlength: 30 },
+            family: { required: true }
+        }; // Roles que cumplirán los componentes del formulario
+        var messages = {
+            inputCodigo: {
+                required: "@Resources.messages.validacion_cod_req",
+                maxlength: "@Resources.messages.validacion_cod_max"
+            },
+            inputDescripcion: {
+                required: "@Resources.messages.validacion_desc_req",
+                maxlength: "@Resources.messages.validacion_desc_maxLen"
+            },
+            family: { required: "@Resources.messages.validacion_req" }
+        }; // Ménsajes de error para el formulario
+
+        $(function () {
+            $(".select2").select2();
+            $("#spn_tbl_department").hide();
+            $("#spn_modalDepartamento").hide();
+            StartLoadTable("div_departamentos", true);
+            EndLoadTable("@ViewBag.Name", "div_departamentos", true);
+            cargarComponenteFormulario();
+            llenarDepartamentos();
+            fillMenuItemsLayout();
+        });
+
+        /** Marca los items del menú del MainLayout para que se muestre en qué parte del menú se encuentra*/
+        function fillMenuItemsLayout() {
+            openMenu(["#nav-item-inventarios"]);
+            activeItemMenu([".nav-item-inventarios", "#nav-link-inventarios-departamentos"])
+        }
+
+        function fillSelectFamilies() {
+            var data = listFamilies.map(d => { return { 'id': d.ID, 'text': d.Name } });
+
+            $("#family").select2("destroy");
+            $("#family").select2({ data: data, allowClear: true, tags: true });
+        }
+
+        function cargarComponenteFormulario() {
+            $.validator.setDefaults({ submitHandler: function () { GuardarDepartamento(); } });
+            $('#form_department').validate({
+                rules: rules, messages: messages, errorElement: 'span',
+                errorPlacement: function (er, element) {
+                    er.addClass('invalid-feedback ml-2');
+                    element.closest('.form-group').append(er);
+                    error("Faltan campos", "@Resources.messages.validacion_campos_requeridos");
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        }
+
+        async function llenarDepartamentos() {
+            var div_table = "div_departamentos";
+            $("#spn_tbl_department").show();
+            try {
+                await $.ajax({ url: url_GetDepartments, type: 'post', dataType: 'json', contentType: 'application/json',
+                    data: {}, cache: false,
+                    success: function (data) {
+                        StartLoadTable(div_table, true);
+                        $("#" + div_table + "> table > tbody").html("");
+                        for (var i = 0; i < data.Result.departments.length; i++) {
+                            item = data.Result.departments[i];
+                            var row = $("<tr />")
+                            $("#" + div_table + " > table").append(row);
+                            row.append($("<td>" + item.Name + "</td>"));
+                            row.append($("<td>" + item.Code + "</td>"));
+                            row.append($("<td>" + item.FamilyCode + "</td>"));
+                            row.append($("<td>" + item.FamilyName + "</td>"));
+                            row.append($("<td><a class='btn btn-primary' style='margin-right: 5px;' title='Editar departamento' onclick='modalDepartamento(\"" + item.ID + "\");'>\
+                                        <i class='fa fa-edit' aria-hidden='true'></i></a></td>"));
+                        }
+                        $("#spn_tbl_department").hide();
+                        EndLoadTable("@ViewBag.Name", div_table, true);
+                        listFamilies = data.Result.families;
+                        fillSelectFamilies();
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        error(thrownError, "@Resources.messages.error_guardar");
+                        $("#spn_tbl_department").hide();
+                    }
+                });
+            }
+            catch (e) {
+                error(e, "@Resources.messages.error_intento_guardar");
+                $("#spn_tbl_department").hide();
+            }
+        }
+
+        function modalDepartamento(departamento_id) {
+            //Registrar evento modal
+            var is_edit = (departamento_id === "" ? false : true);
+            $("#btnSaveProducto").attr("modal-cliente-edit", is_edit);
+
+            //Limpiar formulario
+            $("#divDatos input").val("");
+            $("#divDatos textarea").val("");
+            $("#divDatos p").html('');
+
+
+            //Abrir modal y cargar datos (edición)
+            $('#modalDepartamento').modal({ backdrop: 'static', keyboard: false });
+
+            var t = "";
+            if (is_edit) {
+                t = "@Resources.views.editar";
+                LlenarModalDepartamento(departamento_id);
+            }
+            else {
+                t = "@Resources.views.agregar";
+                $("#hfHQID").val("");
+                $("#hfID").val("");
+                $("#inputCodigo").val("");
+                $("#inputDescripcion").val("");
+            }
+            $("#ModalTitle").html(t + " @Resources.views.depart");
+        }
+
+        function LlenarModalDepartamento(departamento_id) {
+            $.get(url_GetDepartament + '?id=' + departamento_id).done(function (data) {
+                //Llenar formulario
+                try {
+                    $("#hfHQID").val(data.HQID);
+                    $("#hfID").val(data.ID);
+                    $("#inputCodigo").val(data.Code);
+                    $("#inputDescripcion").val(data.Name);
+                }
+                catch (e) {
+                    error('Error Llenar Modal', "@Resources.messages.error_obt_regs");
+                }
+            }).fail(function (data) {
+                error('Error Llenar Modal', "@Resources.messages.error_obt_regs");
+            });
+        }
+
+        function GuardarDepartamento() {
+            var formulario_name = "divDatos";
+
+            var is_valid = comprobarForm(formulario_name, "Formulario incompleto");
+
+            if (is_valid) {
+                $("#spn_modalDepartamento").show();
+                try {
+                    //Inicia guardado
+                    var button_type = $("#btnSaveProducto").attr("modal-cliente-edit");
+
+
+                    var department_model = {
+                        hQID: $("#hfHQID").val(),
+                        ID: $("#hfID").val(),
+                        code: $("#inputCodigo").val(),
+                        name: $("#inputDescripcion").val(),
+                        FamilyID: $("#family").val()
+                    };
+
+                    $.ajax({
+                        url: url_SaveDepartment, type: 'post', dataType: 'json', contentType: 'application/json',
+                        data: JSON.stringify({ department: department_model}), cache: false,
+                        success: function (result) {
+                            if (result.Status) {
+                                $("#spn_modalDepartamento").hide();
+                                Toast.fire({ icon: 'success', title: result.Message });
+                                $("#hfID").val(result.Result)
+                                llenarDepartamentos();
+                            }
+                            else {
+                                $("#spn_modalDepartamento").hide();
+                                error(result.InternalMessage, result.Message);
+                            }
+                        },
+                        error: function (xhr, ajaxOptions, thrownError) {
+                            $("#spn_modalDepartamento").hide();
+                            error(thrownError, "@Resources.messages.error_guardar");
+                        }
+                    });
+                }
+                catch (e) {
+                    $("#spn_modalDepartamento").hide();
+                    error(e, "@Resources.messages.error_intento_guardar");
+                }
+            }
+        }
+
+        /** Muestra un error, recibe excepcion para mostrar en consola y el mensaje para el usuario. */
+        function error(e, msg) {
+            Toast.fire({ icon: 'error', title: msg });
+            console.error(e);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+﻿
+@{
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+}
+
+
+@*
+*@
+<div class="wrapper">
+    <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+            <div class="container-fluid">
+                <div class="row mb-2">
+                    <div class="col-sm-12">
+                        <ol class="breadcrumb float-sm-right">
+                            <li class="breadcrumb-item"><a href="@Url.Action("Manager", "Inicio")">@Resources.views.inicio</a></li>
+                            <li class="breadcrumb-item active">Sin Autorización</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="content">
+            <div class="error-page px-3">
+                <h2 class="headline text-danger"><i class="fas fa-exclamation-triangle text-yellow"></i></h2>
+                <div class="error-content">
+                    <h3>Acceso Denegado</h3>
+                    <p>
+                        Lo lamentamos, pero no cuenta con los permisos
+                        requeridos para acceder a esta sección del sistema.
+                        Comuníquese con el administrador para que le habilite el acceso.
+                        <a href="">Refrescar</a>.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

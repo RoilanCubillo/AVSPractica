@@ -1,0 +1,568 @@
+﻿
+@{
+    ViewBag.Title = Resources.views.msj_articulos;
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+    ViewBag.Head = Resources.views.mant_msjArts;
+}
+
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>@ViewBag.Title</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    <!-- iCheck for checkboxes and radio inputs -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- InputMask -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/inputmask/jquery.inputmask.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <!-- Encabezado -->
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>@ViewBag.Head</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager","Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">@Resources.views.inventario</li>
+                                <li class="breadcrumb-item active">@Resources.views.msj_articulos</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Encabezado -->
+            <!-- Muestra -->
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="overlay-wrapper">
+                                        <!-- Spinner tbl -->
+                                        <div id="spn_tbl_msg" class="overlay justify-content-center">
+                                            <i class="fas fa-3x fa-sync-alt fa-spin"></i>
+                                            <div class="text-bold pt-2">@Resources.views.cargando</div>
+                                        </div><!-- Spinner tbl -->
+                                        <!-- Boton agregar -->
+                                        <div class="col-md-12 mb-3" style="overflow: auto;">
+                                            <div class="row-cols-md-6">
+                                                <button type="button" class="btn btn-primary float-right fa-pull-right" onclick="onClickBtnAddMsgItem()"><i class="fa fa-plus"> </i> @Resources.views.agregar</button>
+                                            </div>
+                                        </div><!-- Boton agregar -->
+                                        <!-- Table msg -->
+                                        <div id="tbl_content_msg" class="dataTables_wrapper dt-bootstrap4">
+                                            <table class="table table-bordered table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>@Resources.views.titulo</th>
+                                                        <th>@Resources.views.limite_edad</th>
+                                                        <th>@Resources.views.msj</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody></tbody>
+                                            </table>
+                                        </div><!-- Table msg -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Muestra -->
+            <!-- Modal -->
+            <div class="modal fade" id="modal_msg">
+                <div class="modal-dialog modal-dialog-scrollable">
+                    <!-- Spinner Modal -->
+                    <div id="spn_modal_msg" class="overlay">
+                        <i class="fas fa-2x fa-sync fa-spin"></i>
+                    </div><!-- Spinner Modal -->
+                    <form id="form_modal_msg" class="modal-content">
+                        <!-- Encabezado Modal -->
+                        <div class="modal-header">
+                            <h4 id="title_modal_msg" class="modal-title"></h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                        </div><!-- Encabezado Modal -->
+                        <!-- Cuerpo Modal -->
+                        <div class="modal-body">
+                            <!-- Tap Panel -->
+                            <div class="card card-primary card-tabs">
+                                <!-- Tap Panel - Header -->
+                                <div class="card-header p-0 pt-1">
+                                    <ul class="nav nav-tabs" role="tablist">
+                                        <li class="nav-item"><a class="nav-link active" id="nav_tab_msg" data-toggle="pill" role="tab" href="#tab_msg" aria-controls="tab_msg" aria-selected="true">@ViewBag.Title</a></li>
+                                        <li class="nav-item"><a class="nav-link" id="nav_tab_stores" data-toggle="pill" role="tab" href="#tab_stores" aria-controls="tab_stores" aria-selected="false">@Resources.views.grupos_tiendas</a></li>
+                                    </ul>
+                                </div><!-- Tap Panel - Header -->
+                                <!-- Tap Panel - Body -->
+                                <div class="card-body">
+                                    <div class="tab-content">
+                                        <!-- Panel de formulario de mensajes de artículos -->
+                                        <div class="tab-pane fade show active" id="tab_msg" role="tabpanel" aria-labelledby="nav_tab_msg">
+                                            <input id="input_msg_id" type="hidden" /><input id="input_msg_hqid" type="hidden" />
+                                            <!-- título de mensaje de artículo -->
+                                            <div class="form-group">
+                                                <label for="input_msg_title">@Resources.views.titulo</label>
+                                                <input type="text" class="form-control" name="input_msg_title" id="input_msg_title" placeholder="@Resources.views.ingresar_titulo">
+                                            </div><!-- título de mensaje de artículo -->
+                                            <!-- Límite de edad de mensaje de artículo -->
+                                            <div class="form-group">
+                                                <label for="input_msg_age">@Resources.views.limite_edad</label>
+                                                <input type="text" class="form-control" name="input_msg_age" id="input_msg_age" data-inputmask="'mask': '9', 'repeat':'3', 'showMaskOnHover': false" placeholder="0" data-mask>
+                                            </div><!-- Límite de edad de mensaje de artículo -->
+                                            <!-- mensaje de mensaje de artículo -->
+                                            <div class="form-group">
+                                                <label for="area_msg_msg">@Resources.views.msj</label>
+                                                <textarea id="area_msg_msg" name="area_msg_msg" class="form-control" rows="3" placeholder="@Resources.views.ingresar_msj"></textarea>
+                                            </div><!-- mensaje de mensaje de artículo -->
+                                        </div><!-- Panel de formulario de mensajes de artículos -->
+                                        <!-- Panel de Grupos de tiendas -->   @* Esto es una prueba *@
+                                        <div class="tab-pane fade" id="tab_stores" role="tabpanel" aria-labelledby="nav_tab_stores">
+                                            <!-- Table store groups -->
+                                            <table id="tbl_content_str_grps" class="table table-bordered table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_all_groups" indeterminate="true" />
+                                                                <label for="chk_all_groups"></label>
+                                                            </div>
+                                                        </th>
+                                                        <th>@Resources.views.cod</th>
+                                                        <th>@Resources.views.descripcion</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr data-widget="expandable-table" aria-expanded="false">
+                                                        <td>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_store_groupid1" />
+                                                                <label for="chk_store_groupid1"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>200000-200000</td>
+                                                        <td>Ferreterías BM</td>
+                                                    </tr>
+                                                    <tr class="expandable-body">
+                                                        <td colspan="3">
+                                                            <div>
+                                                                <table class="table table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>@Resources.views.id_tienda</th>
+                                                                            <th>@Resources.views.nom</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td>1</td>
+                                                                            <td>BM Pacífico</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>2</td>
+                                                                            <td>BM Buenos Aires</td>
+                                                                        </tr>
+
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr data-widget="expandable-table" aria-expanded="false">
+                                                        <td>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_store_groupid2" />
+                                                                <label for="chk_store_groupid2"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>200000-200000</td>
+                                                        <td>Ferreterías BM</td>
+                                                    </tr>
+                                                    <tr class="expandable-body">
+                                                        <td colspan="3">
+                                                            <div>
+                                                                <table class="table table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>@Resources.views.id_tienda</th>
+                                                                            <th>@Resources.views.nom</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td>1</td>
+                                                                            <td>BM Pacífico</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>2</td>
+                                                                            <td>BM Buenos Aires</td>
+                                                                        </tr>
+
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr data-widget="expandable-table" aria-expanded="false">
+                                                        <td>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_store_groupid3" />
+                                                                <label for="chk_store_groupid3"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>200000-200000</td>
+                                                        <td>Ferreterías BM</td>
+                                                    </tr>
+                                                    <tr class="expandable-body">
+                                                        <td colspan="3">
+                                                            <div>
+                                                                <table class="table table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>@Resources.views.id_tienda</th>
+                                                                            <th>@Resources.views.nom</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td>1</td>
+                                                                            <td>BM Pacífico</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>2</td>
+                                                                            <td>BM Buenos Aires</td>
+                                                                        </tr>
+
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr data-widget="expandable-table" aria-expanded="false">
+                                                        <td>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_store_groupid4" />
+                                                                <label for="chk_store_groupid4"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>200000-200000</td>
+                                                        <td>Ferreterías BM</td>
+                                                    </tr>
+                                                    <tr class="expandable-body">
+                                                        <td colspan="3">
+                                                            <div>
+                                                                <table class="table table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>@Resources.views.id_tienda</th>
+                                                                            <th>@Resources.views.nom</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td>1</td>
+                                                                            <td>BM Pacífico</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>2</td>
+                                                                            <td>BM Buenos Aires</td>
+                                                                        </tr>
+
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                    <tr data-widget="expandable-table" aria-expanded="false">
+                                                        <td>
+                                                            <div class="icheck-primary clearfix text-center">
+                                                                <input type="checkbox" id="chk_store_groupid5" />
+                                                                <label for="chk_store_groupid5"></label>
+                                                            </div>
+                                                        </td>
+                                                        <td>200000-200000</td>
+                                                        <td>Ferreterías BM</td>
+                                                    </tr>
+                                                    <tr class="expandable-body">
+                                                        <td colspan="3">
+                                                            <div>
+                                                                <table class="table table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>@Resources.views.id_tienda</th>
+                                                                            <th>@Resources.views.nom</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td>1</td>
+                                                                            <td>BM Pacífico</td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td>2</td>
+                                                                            <td>BM Buenos Aires</td>
+                                                                        </tr>
+
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+
+                                                </tbody>
+                                            </table><!-- Table store groups -->
+                                        </div><!-- Panel de Grupos de tiendas -->
+                                    </div>
+                                </div><!-- Tap Panel - Body -->
+                            </div><!-- Tap Panel -->
+                        </div><!-- Cuerpo Modal -->
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="onClickBtnNewMsgItem()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                            <button type="submit" class="btn btn-success"> <i class="fa fa-save"></i> @Resources.views.guardar</button>
+                            <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                        </div>
+                    </form>
+                </div>
+            </div><!-- Modal-->
+        </div>
+    </div>
+
+    <!-- Variables -->
+    <script>
+        var url_getAllMsgItems = '@Url.Action("GetAll", "MensajesArticulos")'; // URL del evento obtener decuentos
+        var url_saveMsgItems = '@Url.Action("Save", "MensajesArticulos")'; // URL del evento guardar Mensaje de artículo
+        var list_msgItems = [];
+        var elements = { div_table: "tbl_content_msg", spn_table: "spn_tbl_msg", spn_modal: "spn_modal_msg" };
+        var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4000 }); // Variable para mostrar los mensajes.
+        var rules = {
+            input_msg_title: { required: true, maxlength: 30 },
+            input_msg_age: { required: true, number: true, min: 1, max: 999 },
+            area_msg_msg: { required: true, maxlength: 255 }
+        }; // Roles que cumplirán los componentes del formulario
+        var messages = {
+            input_msg_title: { required: "@Resources.messages.validacion_titulo_req", maxlength: "@Resources.messages.validacion_titulo_max" },
+            input_msg_age: { required: "@Resources.messages.validacion_limEdad_req", min: "@Resources.messages.validacion_limEdad_min", number: "@Resources.messages.validacion_num_inval", max: "@Resources.messages.validacion_limEdad_min"},
+            area_msg_msg: { required: "@Resources.messages.validacion_msj_req", maxlength: "@Resources.messages.validacion_msj_max" }
+        }; // Ménsajes de error para el formulario
+    </script>
+
+    <!-- Funciones -->
+    <script>
+        /** Función initialize */
+        $(function () {
+            $("#" + elements.spn_modal).hide();
+            StartLoadTable(elements.div_table, true);
+            EndLoadTable("@ViewBag.Head", elements.div_table, true);
+            getAllMsgItems();
+            setValidationForm();
+            setOnChangeChkAllGroups();
+            setOnChangeChkGroup();
+            fillMenuItemsLayout();
+            $('[data-mask]').inputmask();
+        });
+
+        /** Busca y devuelve un objeto ItemMessage según el id suministrado */
+        function findMsgItem(id) {
+            for (var i = 0; i < list_msgItems.length; i++)
+                if (list_msgItems[i].ID === id)
+                    return list_msgItems[i];
+            return null;
+        }
+
+        /** Marca los items del menú del MainLayout para que se muestre en qué parte del menú se encuentra*/
+        function fillMenuItemsLayout() {
+            openMenu(["#nav-item-inventarios"]);
+            activeItemMenu([".nav-item-inventarios", "#nav-link-inventarios-mensajes"])
+        }
+
+        /** Método encargado de recibir una lista de Mensajes de artículos, cargar la tabla con los DataTables y mostrar la lista en dicha tabla. */
+        function fillTableMsgItems() {
+            StartLoadTable(elements.div_table, true);
+            $("#" + elements.spn_table).show();
+            if (list_msgItems) {
+                $("#" + elements.div_table + " > table > tbody").html("");
+                list_msgItems.forEach(function (d) {
+                    var row = $("<tr />");
+                    $("#" + elements.div_table + " > table").append(row);
+                    row.append($("<td> " + d.Title + "</td>"));
+                    row.append($("<td> " + d.AgeLimit + "</td>"));
+                    row.append($("<td> " + d.Message + "</td>"));
+                    row.append($("<td><button class='btn btn-primary' title='@Resources.views.editar' data-toggle='modal' data-target='' onClick='onClickBtnEditMsgItem(" + d.ID + ")'> <i class='fa fa-edit' aria-hidden='true'></i></button></td>"));
+                });
+            } else Toast.fire({ icon: 'warning', title: '@Resources.messages.msj_lista_vacia' });
+            EndLoadTable("@ViewBag.Head", elements.div_table, true);
+            $("#" + elements.spn_table).hide();
+        }
+
+        /** Devuelve un objeto ItemMessage según la info que esté en la modal*/
+        function getMsgItemFromModal() {
+            try {
+                return {
+                    ID: $('#input_msg_id').val(), HQID: $('#input_msg_hqid').val(),
+                    Title: $('#input_msg_title').val(), AgeLimit: $('#input_msg_age').val(),
+                    Message: $('#area_msg_msg').val()
+                };
+            } catch (e) {
+                error(e, "@Resources.messages.error_obt_reg_a_guardar");
+                return null;
+            }
+        }
+
+        /** Método encargado de consultar al servidor por la lista de Mensajes de artículos*/
+        async function getAllMsgItems() {
+            try {
+                await $.get(url_getAllMsgItems).done(async function (data) {
+                    if (data.Status) {
+                        list_msgItems = data.Result;
+                        await fillTableMsgItems();
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#" + elements.spn_table).hide();
+                    }
+                }).fail(function (data) { error(data.InternalMessage, data.Message); });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        /** Da formato de Validación al formulario */
+        function setValidationForm() {
+            $.validator.setDefaults({ submitHandler: function () { onActionSaveMsgItem(); } });
+            $('#form_modal_msg').validate({
+                rules: rules, messages: messages, errorElement: 'span',
+                errorPlacement: function (er, element) {
+                    er.addClass('invalid-feedback ml-2');
+                    element.closest('.form-group').append(er);
+                    error("Faltan campos", "@Resources.messages.validacion_campos_requeridos");
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        }
+
+        /** Recibe un objeto ItemMessage y lo settea en el formulario de la modal */
+        function setDataMsgIteminModal(msg) {
+            $('#input_msg_id').val(msg.ID);
+            $('#input_msg_hqid').val(msg.HQID);
+            $('#input_msg_title').val(msg.Title);
+            $('#input_msg_age').val(msg.AgeLimit);
+            $('#area_msg_msg').val(msg.Message);
+        }
+
+        /** Asigna funcionalida para cuando se selecciona o no el checkbox de todos los grupos de tiendas */
+        function setOnChangeChkAllGroups() {
+            $('#chk_all_groups').click(function () {
+                var status = $('#chk_all_groups').is(":checked");
+                $("#tbl_content_str_grps tbody input:checkbox" + (status ? ":not(:checked)" : ":checked")).prop("checked", status);
+            });
+        }
+
+        /** Asigna funcionalida para cuando se selecciona o no el checkbox un grupo de tiendas */
+        function setOnChangeChkGroup() {
+            $("#tbl_content_str_grps tbody input:checkbox").click(function () {
+                if ($('#tbl_content_str_grps tbody input:checkbox:checked').length === $("#tbl_content_str_grps tbody input:checkbox").length)
+                    $('#chk_all_groups').prop("checked", true);
+                else $('#chk_all_groups').prop("checked", false);
+            });
+        }
+
+        /** Evento accionado al querer guaradar un registro, siempre y cuando el formulario lo permita */
+        async function onActionSaveMsgItem() {
+            $("#" + elements.spn_modal).show();
+            try {
+                var msg = getMsgItemFromModal();
+                if (msg !== null) {
+                    await $.ajax({
+                        url: url_saveMsgItems, type: 'post', dataType: 'json', contentType: 'application/json',
+                        data: JSON.stringify({ itemMessage: msg }), cache: false,
+                        success: async function (data) {
+                            if (data.Status) {
+                                Toast.fire({ icon: 'success', title: data.Message });
+                                $("#" + elements.spn_table).show();
+                                await getAllMsgItems();
+                                onClickBtnEditMsgItem(data.Result);
+                            } else error(data.InternalMessage, data.Message);
+                            $("#" + elements.spn_modal).hide();
+                        },
+                        error: function (xhr, ajaxOptions, thrownError) {
+                            error(thrownError, "@Resources.messages.error_guardar");
+                            $("#" + elements.spn_modal).hide();
+                        }
+                    });
+                } else $("#" + elements.spn_modal).hide();
+            } catch (e) {
+                error(e, "@Resources.messages.error_intento_guardar");
+                $("#" + elements.spn_modal).hide();
+            }
+        }
+
+        /** Método encargardo de acomodar la #modal_msg para agregar una nuevo registro. */
+        function onClickBtnAddMsgItem() {
+            newModal(true);
+        }
+
+        /** Evento accionado al dar click a uno de los botones editar del table */
+        function onClickBtnEditMsgItem(id) {
+            newModal(false);
+            var msg = findMsgItem(id);
+            if (msg !== null) setDataMsgIteminModal(msg);
+            else error("Registro no existe<<" + id + ">>", "@Resources.messages.error_reg_edit_inval");
+        }
+
+        /** Evento de cuando se desea crear un nuevo registro para que limpie la modal */
+        function onClickBtnNewMsgItem() {
+            Swal.fire({
+                title: '@Resources.messages.msj_continuar', html: "@Resources.messages.msj_campos_limpiar", icon: 'warning', showCancelButton: true,
+            }).then((result) => { if (result.isConfirmed) newModal(true); });
+        }
+
+        /** Limpia la modal. is_new ? "Agregar Registro" : "Editar Registro" */
+        function newModal(is_new) {
+            CleanForm("form_modal_msg");
+            $("#title_modal_msg").html((is_new ? "@Resources.views.agregar " : "@Resources.views.editar ") + "@ViewBag.Title");
+            $('#modal_msg').modal({ backdrop: 'static', keyboard: false });
+        }
+
+        /** Muestra un error, recibe excepcion para mostrar en consola y el mensaje para el usuario. */
+        function error(e, msg) {
+            Toast.fire({ icon: 'error', title: msg });
+            console.error(e);
+        }
+    </script>
+</body>
+</html>

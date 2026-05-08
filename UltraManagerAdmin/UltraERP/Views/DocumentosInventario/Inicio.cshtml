@@ -1,0 +1,460 @@
+@{
+    ViewBag.Title = "Documentos";
+    ViewBag.ActiveMenu = "Documentos";
+}
+
+<section class="page-header">
+    <div class="page-header-copy">
+        <span class="eyebrow">Pantalla principal</span>
+        <h1>Lista de documentos</h1>
+        <p>Consulte movimientos, revise auditoria y ejecute acciones del flujo sin salir de la bandeja principal.</p>
+    </div>
+    <a id="btnNuevo" class="btn btn-primary" href="@Url.Action("Registro", "DocumentosInventario")">Nuevo documento</a>
+</section>
+
+<section class="filter-panel">
+    <div class="row g-3">
+        <div class="col-12 col-md-3">
+            <label for="filter_tipo" class="form-label">Tipo Documento</label>
+            <select id="filter_tipo" class="form-select">
+                <option value="Todos">Todos</option>
+                <option value="Compra">Compra</option>
+                <option value="Entrada">Entrada</option>
+                <option value="Salida">Salida</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="filter_estado" class="form-label">Estado</label>
+            <select id="filter_estado" class="form-select">
+                <option value="Todos">Todos</option>
+                <option value="Borrador">Borrador</option>
+                <option value="Enviada">Enviada</option>
+                <option value="Parcial">Parcial</option>
+                <option value="Recibida">Recibida</option>
+                <option value="Cerrada">Cerrada</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="filter_fecha_desde" class="form-label">Fecha Desde</label>
+            <input id="filter_fecha_desde" type="date" class="form-control" />
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="filter_fecha_hasta" class="form-label">Fecha Hasta</label>
+            <input id="filter_fecha_hasta" type="date" class="form-control" />
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="filter_proveedor" class="form-label">Proveedor</label>
+            <input id="filter_proveedor" type="text" class="form-control" />
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="filter_numero" class="form-label">Numero de documento</label>
+            <input id="filter_numero" type="text" class="form-control" />
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="filter_factura" class="form-label">Numero Factura Ref.</label>
+            <input id="filter_factura" type="text" class="form-control" />
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="filter_persona" class="form-label">Persona solicita</label>
+            <input id="filter_persona" type="text" class="form-control" />
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button id="btnLimpiar" class="btn btn-outline-secondary" type="button">Limpiar</button>
+        <button id="btnConsultar" class="btn btn-primary" type="button">Consultar</button>
+    </div>
+</section>
+
+<section class="metric-grid">
+    <article>
+        <span>Documentos</span>
+        <strong id="summary_count">0</strong>
+    </article>
+    <article>
+        <span>Total</span>
+        <strong id="summary_total">0.00</strong>
+    </article>
+    <article>
+        <span>Pendientes</span>
+        <strong id="summary_pending">0</strong>
+    </article>
+</section>
+
+<section class="table-panel">
+    <div class="table-toolbar">
+        <div class="table-toolbar-main">
+            <input id="table_search" type="search" class="form-control" placeholder="Buscar en resultados" />
+            <span id="results_hint" class="toolbar-chip">0 resultados</span>
+        </div>
+        <span id="loading_state" class="loading-state">Cargando...</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle document-table inventory-list-table">
+            <thead>
+                <tr>
+                    <th>Numero</th>
+                    <th>Tipo</th>
+                    <th>Proveedor</th>
+                    <th>Factura Ref.</th>
+                    <th>Fecha Solicitud</th>
+                    <th>Fecha Entrega</th>
+                    <th>Fecha Aplicacion</th>
+                    <th>Estado</th>
+                    <th>Auditoria</th>
+                    <th>Total</th>
+                    <th>Persona Solicita</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="documentos_body"></tbody>
+        </table>
+    </div>
+</section>
+
+<div class="modal fade" id="documentoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="documentoModalTitle" class="modal-title">Documento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="document-view">
+                    <section class="document-view-hero">
+                        <div>
+                            <span class="eyebrow">Documento de inventario</span>
+                            <h2 id="doc_view_title" class="document-view-title"></h2>
+                            <p id="doc_view_subtitle" class="document-view-subtitle"></p>
+                        </div>
+                        <div class="document-view-total">
+                            <span>Total del documento</span>
+                            <strong id="doc_view_total"></strong>
+                        </div>
+                    </section>
+
+                    <div id="doc_view_badges" class="document-view-badges"></div>
+
+                    <section class="document-view-section">
+                        <h3>Resumen</h3>
+                        <div id="doc_view_summary" class="document-view-grid"></div>
+                    </section>
+
+                    <section id="doc_view_type_section" class="document-view-section" style="display:none;">
+                        <h3>Datos del movimiento</h3>
+                        <div id="doc_view_type_grid" class="document-view-grid"></div>
+                    </section>
+
+                    <section class="document-view-section">
+                        <h3>Auditoria</h3>
+                        <div id="doc_view_audit"></div>
+                    </section>
+
+                    <section class="document-view-section">
+                        <h3>Detalle</h3>
+                        <div id="doc_view_lines"></div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        var urls = {
+            documentos: '@Url.Action("GetDocumentos", "DocumentosInventario")',
+            duplicar: '@Url.Action("Duplicar", "DocumentosInventario")',
+            accion: '@Url.Action("EjecutarAccion", "DocumentosInventario")'
+        };
+        var documentos = [];
+
+        $(function () {
+            bindEvents();
+            getDocumentos();
+        });
+
+        function bindEvents() {
+            $("#btnConsultar").on("click", getDocumentos);
+            $("#table_search").on("input", renderTable);
+            $("#btnLimpiar").on("click", function () {
+                $("#filter_tipo").val("Todos");
+                $("#filter_estado").val("Todos");
+                $("#filter_fecha_desde").val("");
+                $("#filter_fecha_hasta").val("");
+                $("#filter_proveedor").val("");
+                $("#filter_numero").val("");
+                $("#filter_factura").val("");
+                $("#filter_persona").val("");
+                $("#table_search").val("");
+                getDocumentos();
+            });
+        }
+
+        function getFilters() {
+            return {
+                tipoDocumento: $("#filter_tipo").val(),
+                estado: $("#filter_estado").val(),
+                fechaDesde: $("#filter_fecha_desde").val(),
+                fechaHasta: $("#filter_fecha_hasta").val(),
+                proveedor: $("#filter_proveedor").val(),
+                numeroDocumento: $("#filter_numero").val(),
+                facturaRef: $("#filter_factura").val(),
+                personaSolicita: $("#filter_persona").val()
+            };
+        }
+
+        function getDocumentos() {
+            setLoading(true);
+            $.get(urls.documentos, getFilters())
+                .done(function (data) {
+                    if (!data.Status) {
+                        showToast(data.Message || "No se pudo consultar.");
+                        return;
+                    }
+
+                    documentos = data.Result || [];
+                    renderTable();
+                    updateSummary();
+                })
+                .fail(function () {
+                    showToast("No se pudo consultar la informacion.");
+                })
+                .always(function () {
+                    setLoading(false);
+                });
+        }
+
+        function renderTable() {
+            var text = ($("#table_search").val() || "").toLowerCase();
+            var rows = documentos.filter(function (item) {
+                if (!text) return true;
+                return Object.keys(item).some(function (key) {
+                    return String(item[key] || "").toLowerCase().indexOf(text) >= 0;
+                });
+            });
+
+            var html = rows.map(function (d) {
+                return "<tr>" +
+                    "<td>" + escapeHtml(d.Numero) + "</td>" +
+                    "<td>" + escapeHtml(d.Tipo) + "</td>" +
+                    "<td>" + escapeHtml(d.Proveedor) + "</td>" +
+                    "<td>" + escapeHtml(d.FacturaRef || "-") + "</td>" +
+                    "<td>" + escapeHtml(d.FechaSolicitud) + "</td>" +
+                    "<td>" + escapeHtml(d.FechaEntrega || "-") + "</td>" +
+                    "<td>" + escapeHtml(d.FechaAplicacion || "-") + "</td>" +
+                    "<td>" + getEstadoBadge(d.Estado) + "</td>" +
+                    "<td>" + getAuditoriaBadge(d) + "</td>" +
+                    "<td>" + formatMoney(d.Total) + "</td>" +
+                    "<td>" + escapeHtml(d.PersonaSolicita) + "</td>" +
+                    "<td>" + getActionButtons(d.ID) + "</td>" +
+                    "</tr>";
+            }).join("");
+
+            $("#results_hint").text(rows.length + " resultados");
+            $("#documentos_body").html(html || "<tr><td colspan='12' class='empty-state'>Sin documentos para los filtros aplicados.</td></tr>");
+        }
+
+        function getActionButtons(id) {
+            return "<div class='action-stack'>" +
+                "<button class='icon-button info' title='Ver' onclick='onVer(" + id + ")'>Ver</button>" +
+                "<button class='icon-button primary' title='Editar' onclick='onEditar(" + id + ")'>Editar</button>" +
+                "<button class='icon-button neutral' title='Duplicar' onclick='onDuplicar(" + id + ")'>Duplicar</button>" +
+                "<button class='icon-button neutral' title='Imprimir' onclick='onImprimir(" + id + ")'>Imprimir</button>" +
+                "<button class='icon-button warning' title='Enviar' onclick='onAccion(" + id + ", \"enviar\")'>Enviar</button>" +
+                "<button class='icon-button success' title='Recibir' onclick='onAccion(" + id + ", \"recibir\")'>Recibir</button>" +
+                "<button class='icon-button danger' title='Cerrar' onclick='onAccion(" + id + ", \"cerrar\")'>Cerrar</button>" +
+                "</div>";
+        }
+
+        function getEstadoBadge(estado) {
+            var css = "status-badge ";
+            if (estado === "Borrador") css += "draft";
+            else if (estado === "Enviada") css += "sent";
+            else if (estado === "Recibida") css += "received";
+            else if (estado === "Parcial") css += "applied";
+            else css += "closed";
+            return "<span class='" + css + "'>" + escapeHtml(estado) + "</span>";
+        }
+
+        function onVer(id) {
+            var documento = findDocumento(id);
+            if (!documento) return;
+
+            $("#documentoModalTitle").text("Documento " + documento.Numero);
+            $("#doc_view_title").text(documento.Numero);
+            $("#doc_view_subtitle").text(documento.Tipo + " gestionado para " + (documento.Proveedor || "Proveedor no definido") + ".");
+            $("#doc_view_total").text(formatMoney(documento.Total));
+            renderDocumentoHeaderBadges(documento);
+            renderDocumentoSummary(documento);
+            renderTipoDocumentoDetail(documento);
+            renderAuditDetail(documento);
+            renderDetalleLineas(documento);
+            new bootstrap.Modal(document.getElementById("documentoModal")).show();
+        }
+
+        function onEditar(id) {
+            var documento = findDocumento(id);
+            if (!documento) return;
+            showToast("La edicion del detalle se conectara al formulario del documento " + documento.Numero + ".");
+        }
+
+        function onDuplicar(id) {
+            $.post(urls.duplicar, { id: id }).done(function (data) {
+                showToast(data.Message || "Documento duplicado.");
+                getDocumentos();
+            });
+        }
+
+        function onImprimir(id) {
+            onVer(id);
+            setTimeout(function () { startDocumentPrint("documentoModal"); }, 300);
+        }
+
+        function onAccion(id, accion) {
+            var documento = findDocumento(id);
+            if (!documento || !confirm("Desea " + accion + " el documento " + documento.Numero + "?")) return;
+
+            $.post(urls.accion, { id: id, accion: accion }).done(function (data) {
+                showToast(data.Message || "Documento actualizado.");
+                getDocumentos();
+            });
+        }
+
+        function findDocumento(id) {
+            return documentos.find(function (item) { return item.ID === id; });
+        }
+
+        function updateSummary() {
+            var total = documentos.reduce(function (sum, item) { return sum + Number(item.Total || 0); }, 0);
+            var pending = documentos.filter(function (item) { return item.Estado === "Borrador" || item.Estado === "Enviada" || item.Estado === "Parcial"; }).length;
+            $("#summary_count").text(documentos.length);
+            $("#summary_total").text(formatMoney(total));
+            $("#summary_pending").text(pending);
+        }
+
+        function getAuditoriaBadge(documento) {
+            if (!documento.CantidadLineasEspeciales) return "<span class='status-badge draft'>Sin linea</span>";
+            return "<span class='audit-pill'>" + escapeHtml(documento.ResumenAuditoria || "Lineas auditadas") + "</span>";
+        }
+
+        function renderDocumentoHeaderBadges(documento) {
+            $("#doc_view_badges").html(getEstadoBadge(documento.Estado) + getAuditoriaBadge(documento));
+        }
+
+        function renderDocumentoSummary(documento) {
+            var items = [
+                { label: "Numero", value: documento.Numero },
+                { label: "Tipo", value: documento.Tipo },
+                { label: "Proveedor", value: documento.Proveedor || "-" },
+                { label: "Factura Ref.", value: documento.FacturaRef || "-" },
+                { label: "Estado", value: documento.Estado || "-" },
+                { label: "Fecha Solicitud", value: documento.FechaSolicitud || "-" },
+                { label: "Fecha Entrega", value: documento.FechaEntrega || "-" },
+                { label: "Fecha Aplicacion", value: documento.FechaAplicacion || "-" },
+                { label: "Persona solicita", value: documento.PersonaSolicita || "-" }
+            ];
+
+            $("#doc_view_summary").html(renderViewGrid(items));
+        }
+
+        function renderAuditDetail(documento) {
+            var html = "<div class='document-view-callout'>" + escapeHtml(documento.ResumenAuditoria || "Sin lineas especiales") + "</div>";
+
+            if (documento.LineasEspeciales && documento.LineasEspeciales.length) {
+                html += "<div class='document-view-subsection'><h4>Lineas especiales</h4>" +
+                    "<div class='document-view-table'><table class='table table-sm align-middle mb-0'><thead><tr><th>Codigo</th><th>Descripcion</th><th>Cantidad</th><th>Costo</th></tr></thead><tbody>" +
+                    documento.LineasEspeciales.map(function (linea) {
+                        return "<tr><td>" + escapeHtml(linea.CodigoProducto) + "</td><td>" + escapeHtml(linea.Descripcion) + "</td><td>" + formatNumber(linea.Cantidad) + "</td><td>" + formatMoney(linea.Costo) + "</td></tr>";
+                    }).join("") +
+                    "</tbody></table></div></div>";
+            }
+
+            $("#doc_view_audit").html(html);
+        }
+
+        function renderTipoDocumentoDetail(documento) {
+            var items = [];
+
+            if (documento.TipoSalida) {
+                items.push({ label: "Tipo salida", value: documento.TipoSalida });
+            }
+
+            if (documento.JustificacionSalida) {
+                items.push({ label: "Justificacion salida", value: documento.JustificacionSalida });
+            } else if (documento.JustificacionEntrada) {
+                items.push({ label: "Justificacion entrada", value: documento.JustificacionEntrada });
+            }
+
+            $("#doc_view_type_section").toggle(items.length > 0);
+            $("#doc_view_type_grid").html(renderViewGrid(items));
+        }
+
+        function renderDetalleLineas(documento) {
+            if (!documento.DetalleLineas || !documento.DetalleLineas.length) {
+                $("#doc_view_lines").html("<div class='document-view-empty'>Sin lineas registradas.</div>");
+                return;
+            }
+
+            var table = "<div class='document-view-table'><table class='table table-sm align-middle mb-0'><thead><tr><th>Codigo</th><th>Descripcion</th><th>Unidad</th><th>Cantidad</th><th>Total</th><th>Regalia</th></tr></thead><tbody>" +
+                documento.DetalleLineas.map(function (linea) {
+                    return "<tr><td>" + escapeHtml(linea.Codigo) + "</td><td>" + escapeHtml(linea.Descripcion) + "</td><td>" + escapeHtml(linea.Unidad) + "</td><td>" + formatNumber(linea.Cantidad) + "</td><td>" + formatMoney(linea.TotalLinea) + "</td><td>" + getBooleanBadge(linea.Regalia) + "</td></tr>";
+                }).join("") +
+                "</tbody></table></div>";
+
+            $("#doc_view_lines").html(table);
+        }
+
+        function renderViewGrid(items) {
+            return items.map(function (item) {
+                return "<article class='document-view-item'><span>" + escapeHtml(item.label) + "</span><strong>" + escapeHtml(item.value) + "</strong></article>";
+            }).join("");
+        }
+
+        function getBooleanBadge(flag) {
+            return flag ? "<span class='status-badge received'>Si</span>" : "<span class='status-badge draft'>No</span>";
+        }
+
+        function setLoading(isLoading) {
+            $("#loading_state").toggle(isLoading);
+        }
+
+        function startDocumentPrint(modalId) {
+            var modal = $("#" + modalId);
+            var body = $("body");
+
+            function cleanupPrintMode() {
+                body.removeClass("print-document-view");
+                modal.removeClass("print-active");
+                window.removeEventListener("afterprint", cleanupPrintMode);
+            }
+
+            body.addClass("print-document-view");
+            modal.addClass("print-active");
+            window.addEventListener("afterprint", cleanupPrintMode);
+            window.print();
+            setTimeout(cleanupPrintMode, 300);
+        }
+
+        function showToast(message) {
+            var toast = $("<div class='local-toast'></div>").text(message);
+            $("body").append(toast);
+            setTimeout(function () { toast.addClass("show"); }, 10);
+            setTimeout(function () {
+                toast.removeClass("show");
+                setTimeout(function () { toast.remove(); }, 250);
+            }, 2600);
+        }
+
+        function formatMoney(value) {
+            return Number(value || 0).toLocaleString("es-CR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatNumber(value) {
+            return Number(value || 0).toLocaleString("es-CR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function escapeHtml(value) {
+            return $("<div />").text(value || "").html();
+        }
+    </script>
+}

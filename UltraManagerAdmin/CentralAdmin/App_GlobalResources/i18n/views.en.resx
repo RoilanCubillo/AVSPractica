@@ -1,0 +1,534 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="agregar" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="articulos" xml:space="preserve">
+    <value>Items</value>
+  </data>
+  <data name="buscar" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="cargando" xml:space="preserve">
+    <value>Loading...</value>
+    <comment>Mensaje del spinner cuando está cargando</comment>
+  </data>
+  <data name="cargos" xml:space="preserve">
+    <value>Charges</value>
+  </data>
+  <data name="categs" xml:space="preserve">
+    <value>Categories</value>
+  </data>
+  <data name="cerrar" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="cod" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="cods_razon" xml:space="preserve">
+    <value>Reason codes</value>
+  </data>
+  <data name="column_visib" xml:space="preserve">
+    <value>Column visibility</value>
+  </data>
+  <data name="comercio" xml:space="preserve">
+    <value>Merchandising</value>
+  </data>
+  <data name="compradores" xml:space="preserve">
+    <value>Buyers</value>
+  </data>
+  <data name="compras" xml:space="preserve">
+    <value>Shopping</value>
+  </data>
+  <data name="conds_pago" xml:space="preserve">
+    <value>Payment conditions</value>
+  </data>
+  <data name="config" xml:space="preserve">
+    <value>Setting</value>
+  </data>
+  <data name="copiar" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="departs" xml:space="preserve">
+    <value>Departments</value>
+  </data>
+  <data name="descripcion" xml:space="preserve">
+    <value>Description</value>
+    <comment>Campo descripción se usa en los tables y las modales</comment>
+  </data>
+  <data name="descuentos" xml:space="preserve">
+    <value>Discounts</value>
+  </data>
+  <data name="domingo" xml:space="preserve">
+    <value>Sunday</value>
+  </data>
+  <data name="dtable_copy1" xml:space="preserve">
+    <value>Copied 1 rows to clipboard</value>
+  </data>
+  <data name="dtable_copyMore" xml:space="preserve">
+    <value>Copied %d rows to clipboard</value>
+  </data>
+  <data name="dtable_copyTitle" xml:space="preserve">
+    <value>Copy to clipboard</value>
+  </data>
+  <data name="dtable_first" xml:space="preserve">
+    <value>First</value>
+  </data>
+  <data name="dtable_info" xml:space="preserve">
+    <value>_TOTAL_ record(s) found.</value>
+  </data>
+  <data name="dtable_infoEmpty" xml:space="preserve">
+    <value>No record available.</value>
+  </data>
+  <data name="dtable_last" xml:space="preserve">
+    <value>Last</value>
+  </data>
+  <data name="dtable_lengthMenu" xml:space="preserve">
+    <value>Show _MENU_ records per page</value>
+  </data>
+  <data name="dtable_previa" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="dtable_sig" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="dtable_zeroRecords" xml:space="preserve">
+    <value>No records.</value>
+  </data>
+  <data name="editar" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="grupos_tiendas" xml:space="preserve">
+    <value>Store groups</value>
+  </data>
+  <data name="guardar" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="hora" xml:space="preserve">
+    <value>Hour</value>
+  </data>
+  <data name="horario" xml:space="preserve">
+    <value>Schedule</value>
+  </data>
+  <data name="horarios" xml:space="preserve">
+    <value>Schedules</value>
+  </data>
+  <data name="idioma" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="idioma_x_def" xml:space="preserve">
+    <value>Default language</value>
+  </data>
+  <data name="id_tienda" xml:space="preserve">
+    <value>Store ID</value>
+  </data>
+  <data name="imprimir" xml:space="preserve">
+    <value>Print</value>
+  </data>
+  <data name="incre_tiempo" xml:space="preserve">
+    <value>Time increase</value>
+  </data>
+  <data name="ingresar_desc" xml:space="preserve">
+    <value>Enter description</value>
+  </data>
+  <data name="ingresar_titulo" xml:space="preserve">
+    <value>Enter title</value>
+  </data>
+  <data name="inicio" xml:space="preserve">
+    <value>Beginning</value>
+  </data>
+  <data name="inventario" xml:space="preserve">
+    <value>Inventory</value>
+  </data>
+  <data name="jueves" xml:space="preserve">
+    <value>Thursday</value>
+  </data>
+  <data name="lunes" xml:space="preserve">
+    <value>Monday</value>
+  </data>
+  <data name="mant_horario" xml:space="preserve">
+    <value>Maintenance of Schedules</value>
+  </data>
+  <data name="martes" xml:space="preserve">
+    <value>Tuesday</value>
+  </data>
+  <data name="met_envio" xml:space="preserve">
+    <value>Shipping methods</value>
+  </data>
+  <data name="miercoles" xml:space="preserve">
+    <value>Wednesday</value>
+  </data>
+  <data name="mins" xml:space="preserve">
+    <value>Minutes</value>
+  </data>
+  <data name="msj_articulos" xml:space="preserve">
+    <value>Item Messages</value>
+  </data>
+  <data name="nom" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="nuevo" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="operaciones" xml:space="preserve">
+    <value>Central Operations</value>
+  </data>
+  <data name="pers_seguridad" xml:space="preserve">
+    <value>People and Security</value>
+  </data>
+  <data name="rep_ventas" xml:space="preserve">
+    <value>Sales Representatives</value>
+  </data>
+  <data name="sabado" xml:space="preserve">
+    <value>Saturday</value>
+  </data>
+  <data name="tienda" xml:space="preserve">
+    <value>Store</value>
+  </data>
+  <data name="tiendas" xml:space="preserve">
+    <value>Stores</value>
+  </data>
+  <data name="titulo" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="trans_envio" xml:space="preserve">
+    <value>Shipping carriers</value>
+  </data>
+  <data name="unids_medidas" xml:space="preserve">
+    <value>Measurement Units</value>
+  </data>
+  <data name="usu_central" xml:space="preserve">
+    <value>Central Users</value>
+  </data>
+  <data name="usu_tienda" xml:space="preserve">
+    <value>Store Users</value>
+  </data>
+  <data name="viernes" xml:space="preserve">
+    <value>Friday</value>
+  </data>
+  <data name="cant" xml:space="preserve">
+    <value>Quantity</value>
+  </data>
+  <data name="cant_prec" xml:space="preserve">
+    <value>Quantity to Buy at full price</value>
+  </data>
+  <data name="cant_desc" xml:space="preserve">
+    <value>Quantity to get with discount</value>
+  </data>
+  <data name="tipo_descuento_4" xml:space="preserve">
+    <value>Buy X Get Y for Z: Percent off</value>
+  </data>
+  <data name="tipo_descuento_2" xml:space="preserve">
+    <value>Buy X get Y for Z: Unit Price</value>
+  </data>
+  <data name="descont_impares" xml:space="preserve">
+    <value>Discount odd items</value>
+  </data>
+  <data name="descuento" xml:space="preserve">
+    <value>Discount</value>
+  </data>
+  <data name="horario_precios" xml:space="preserve">
+    <value>Price schedule</value>
+  </data>
+  <data name="mant_descuentos" xml:space="preserve">
+    <value>Maintenance of Discounts</value>
+  </data>
+  <data name="tipo_descuento_3" xml:space="preserve">
+    <value>Mix and Match: Percent off</value>
+  </data>
+  <data name="tipo_descuento_1" xml:space="preserve">
+    <value>Mix and Match: Unit Price</value>
+  </data>
+  <data name="nivel_a" xml:space="preserve">
+    <value>Level A</value>
+  </data>
+  <data name="nivel_b" xml:space="preserve">
+    <value>Level B</value>
+  </data>
+  <data name="nivel_c" xml:space="preserve">
+    <value>Level C</value>
+  </data>
+  <data name="porcent_desc" xml:space="preserve">
+    <value>Discount Percent</value>
+  </data>
+  <data name="prec_desc" xml:space="preserve">
+    <value>Discount price</value>
+  </data>
+  <data name="prec_reg" xml:space="preserve">
+    <value>Reg. Price</value>
+  </data>
+  <data name="tipo" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="tipo_descuento" xml:space="preserve">
+    <value>Discount Type </value>
+  </data>
+  <data name="categ" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="depart" xml:space="preserve">
+    <value>Department</value>
+  </data>
+  <data name="ingresar_cod" xml:space="preserve">
+    <value>Enter code</value>
+  </data>
+  <data name="ingresar_nom" xml:space="preserve">
+    <value>Enter name</value>
+  </data>
+  <data name="mant_categs" xml:space="preserve">
+    <value>Maintenance of Category</value>
+  </data>
+  <data name="no_def" xml:space="preserve">
+    <value>UNDEFINED</value>
+  </data>
+  <data name="nom_depart" xml:space="preserve">
+    <value>Department Name</value>
+  </data>
+  <data name="selec_depart" xml:space="preserve">
+    <value>Select a department </value>
+  </data>
+  <data name="mant_departs" xml:space="preserve">
+    <value>Maintenance of departments</value>
+  </data>
+  <data name="ingresar_msj" xml:space="preserve">
+    <value>Enter message...</value>
+  </data>
+  <data name="limite_edad" xml:space="preserve">
+    <value>Age limit (Years)</value>
+  </data>
+  <data name="mant_msjArts" xml:space="preserve">
+    <value>Maintenance of Article Messages</value>
+  </data>
+  <data name="msj" xml:space="preserve">
+    <value>Message</value>
+  </data>
+  <data name="ficha_proveedor" xml:space="preserve">
+    <value>Supplier File</value>
+  </data>
+  <data name="num_contrato" xml:space="preserve">
+    <value>Contract</value>
+  </data>
+  <data name="proveedores" xml:space="preserve">
+    <value>Supplier</value>
+  </data>
+  <data name="selec_prov" xml:space="preserve">
+    <value>Search Supplier</value>
+  </data>
+  <data name="fre_pago" xml:space="preserve">
+    <value>Payment Frequency</value>
+  </data>
+  <data name="negociacion" xml:space="preserve">
+    <value>Negotiation</value>
+  </data>
+  <data name="nom_proveedor" xml:space="preserve">
+    <value>Supplier name</value>
+  </data>
+  <data name="monto_total" xml:space="preserve">
+    <value>Payment Amount</value>
+  </data>
+  <data name="ano" xml:space="preserve">
+    <value>Year</value>
+  </data>
+  <data name="cabecera" xml:space="preserve">
+    <value>Headboard</value>
+  </data>
+  <data name="contratos" xml:space="preserve">
+    <value>Contracts</value>
+  </data>
+  <data name="historico" xml:space="preserve">
+    <value>Historic</value>
+  </data>
+  <data name="mant_cabeceras" xml:space="preserve">
+    <value>Headboard Maintenance</value>
+  </data>
+  <data name="vic_contrato" xml:space="preserve">
+    <value>Validity of the Contract</value>
+  </data>
+  <data name="accion" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="asig_prov" xml:space="preserve">
+    <value>Provider Asignment</value>
+  </data>
+  <data name="dinamica" xml:space="preserve">
+    <value>Dynamic</value>
+  </data>
+  <data name="fin_cont" xml:space="preserve">
+    <value>End of Contract</value>
+  </data>
+  <data name="ini_cont" xml:space="preserve">
+    <value>Start of Contract</value>
+  </data>
+  <data name="IVA" xml:space="preserve">
+    <value>IVA</value>
+  </data>
+  <data name="mant_isla-side" xml:space="preserve">
+    <value>Island Maintenance and Side Kick</value>
+  </data>
+  <data name="monto" xml:space="preserve">
+    <value>Amount</value>
+  </data>
+  <data name="numID" xml:space="preserve">
+    <value>ID Number</value>
+  </data>
+  <data name="vigencia" xml:space="preserve">
+    <value>Validity</value>
+  </data>
+  <data name="y" xml:space="preserve">
+    <value>and</value>
+  </data>
+  <data name="espacio_frio" xml:space="preserve">
+    <value>Cold Spaces</value>
+  </data>
+  <data name="activo" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="electricidad" xml:space="preserve">
+    <value>Electricity</value>
+  </data>
+  <data name="prod" xml:space="preserve">
+    <value>Product</value>
+  </data>
+  <data name="ubicacion" xml:space="preserve">
+    <value>Ubication</value>
+  </data>
+  <data name="fecha_fin" xml:space="preserve">
+    <value>Final  Date</value>
+    <comment>f</comment>
+  </data>
+  <data name="fecha_ini" xml:space="preserve">
+    <value>Start Date</value>
+  </data>
+  <data name="detalle" xml:space="preserve">
+    <value>Detail</value>
+  </data>
+  <data name="comercial" xml:space="preserve">
+    <value>Commerce Operations</value>
+  </data>
+  <data name="dtable_infoFiltered" xml:space="preserve">
+    <value>(filtered from _MAX_ total entries)</value>
+  </data>
+  <data name="aprobar" xml:space="preserve">
+    <value>Approve</value>
+  </data>
+  <data name="desaprobar" xml:space="preserve">
+    <value>Disapprove</value>
+  </data>
+</root>

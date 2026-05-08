@@ -1,0 +1,1092 @@
+﻿
+@{
+    ViewBag.Title = Resources.views.horarios;
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+    var Name = "Ficha de Proveedores";
+    var culture = System.Threading.Thread.CurrentThread.CurrentCulture;
+    var CurrencySymbol = culture.NumberFormat.CurrencySymbol;
+    var CurrencyDecimalSeparator = culture.Name.ToUpper() == "ES-CR" ? "." : culture.NumberFormat.CurrencyDecimalSeparator;
+    var CurrencyThousandSeparator = culture.Name.ToUpper() == "ES-CR" ? "," : culture.NumberFormat.NumberGroupSeparator;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+
+    @* < CSS > *@
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    <!-- Tempusdominus Bootstrap 4 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
+    <!-- Select2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+    @* < CSS / >*@
+
+    @* < SCRIPTS > *@
+    <!-- moment.js -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- Select2 -->
+    <script src="~/Content/AdminLTE/plugins/select2/js/select2.full.min.js"></script>
+    <!-- Tempusdominus Bootstrap 4 -->
+    <script src="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+    <!-- InputMask -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/inputmask/jquery.inputmask.min.js"></script>
+    @* < SCRIPTS / >*@
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <!-- Encabezado -->
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>@Name</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager", "Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">@Resources.views.cobros</li>
+                                <li class="breadcrumb-item active">@Resources.views.proveedores</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Encabezado -->
+            <!-- Muestra -->
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="overlay-wrapper">
+                                        <!-- Spinner tbl -->
+                                        <div id="spn_tbl_ficha_prov" class="overlay justify-content-center">
+                                            <i class="fas fa-3x fa-sync-alt fa-spin"></i>
+                                            <div class="text-bold pt-2">@Resources.views.cargando</div>
+                                        </div> <!-- Spinner tbl -->
+                                        <!-- Boton agregar -->
+                                        <div class="col-12 d-flex justify-content-end">
+                                            <button type="button" class="btn btn-primary float-right fa-pull-right" onclick="onClickBtnAddFichaProv()"><i class="fa fa-plus"> </i> @Resources.views.agregar</button>
+                                        </div><!-- Boton agregar -->
+                                        @* Mostrar tabla *@
+                                        <div id="tbl_content_ficha_prov" class="dataTables_wrapper dt-bootstrap4">
+                                            <table class="table table-bordered t    able-striped text-nowrap">
+                                                <thead>
+                                                    <tr>
+                                                        <th># Contrato</th>
+                                                        <th>@Resources.views.proveedor</th>
+                                                        <th>Casa Comercial</th>
+                                                        <th>Forma Rebajo</th>
+                                                        <th>Vigencia</th>
+                                                        <th>Estado</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div> @* Mostrar tabla *@
+                                    </div>
+                                    <!--tabs-->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Muestra -->
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal_ficha_proveedor" class="modal fade" role="dialog">
+        <div class="modal-dialog modal-xl">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <!-- Spinner Modal -->
+                <div id="spn_modal_ficha_proveedor" class="overlay">
+                    <i class="fas fa-2x fa-sync fa-spin"></i>
+                </div><!-- Spinner Modal -->
+                <!-- Encabezado Modal -->
+                <div class="modal-header text-center">
+                    <h4 id="title_modal_ficha_proveedor" class="modal-title"></h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div><!-- Encabezado Modal -->
+                <!-- Cuerpo Modal -->
+                <div class="modal-body text-sm">
+                    <div class="card card-outline card-primary position-relative">
+                        <div class="card-header">
+                            <div class="row">
+                                <div class="d-flex col-6 justify-content-lg-start">
+                                    <label class="col-form-label">#Contrato: </label>
+                                    <p id="label_contrato" class="col-form-label" style=""></p>
+                                </div>
+                                <div class="d-flex col-6">
+                                    <label class="col-form-label text-nowrap" style="width:150px;">Forma Rebajo: </label>
+                                    <select id="select_forma" name="select_forma" class="form-control select2" style="width:100%;"></select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            @* Fechas de vigencia - proveedor - casa comercial *@
+                            <form id="form_modal_ficha_proveedor" class="row">
+                                <input id="fichaID" type="hidden" />
+                                <div class="form-group col-md-6 col-lg-3">
+                                    <label>Vigencia Desde:</label>
+                                    <div id="div_date_desde" class="input-group date" data-target-input="nearest">
+                                        <input id="fecha_desde" type="text" class="form-control datetimepicker-input" data-target="#fecha_desde" name="fecha_desde" placeholder="Ingresar fecha" />
+                                        <div class="input-group-append" data-target="#fecha_desde" data-toggle="datetimepicker">
+                                            <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group col-md-6 col-lg-3">
+                                    <label>Hasta:</label>
+                                    <div id="div_date_hasta" class="input-group date" data-target-input="nearest">
+                                        <input id="fecha_hasta" type="text" class="form-control datetimepicker-input" data-target="#fecha_hasta" name="fecha_hasta" placeholder="Ingresar fecha" />
+                                        <div class="input-group-append" data-target="#fecha_hasta" data-toggle="datetimepicker">
+                                            <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group col-md-6 col-lg-3">
+                                    <label>Proveedor:</label>
+                                    <select id="select_proveedor" name="select_proveedor" class="form-control select2"></select>
+                                </div>
+                                <div class="form-group col-md-6 col-lg-3">
+                                    <label>Casa comercial:</label>
+                                    <select id="select_casa" name="select_casa" class="form-control select2" data-allow-clear="true" data-placeholder="Seleccione una casa"></select>
+                                </div>
+                                <div class="col-12 mb-2">
+                                    <button id="btnSiguiente" type="submit" class="btn btn-success float-right"><i class="fa fa-arrow-alt-circle-right"></i> Siguiente</button>
+                                </div>
+                            </form>
+                            @* IDC *@
+                            <div id="div_idc" class="row">
+                                <div class="col-12">
+                                    <div class="card card-outline card-success collapsed-card">
+                                        <div class="card-header">
+                                            <h3 class="card-title">Inversión Directa a la Cadena (IDC)</h3>
+                                            <div class="card-tools">
+                                                <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-plus"></i></button>
+                                            </div>
+                                        </div>
+                                        <div class="card-body overlay-wrapper">
+                                            <div>
+                                                <form id="form_idc" class="row p-2">
+                                                    <input hidden id="hfID_idc" />
+                                                    <div class="form-group col-md-6 col-lg-3">
+                                                        <label>Tipo inversión:</label>
+                                                        <select id="select_idc_inversion" name="select_idc_inversion" class="form-control select2"></select>
+                                                    </div>
+                                                    <div class="form-group col-md-6 col-lg-3">
+                                                        <label>Frecuencia de pago:</label>
+                                                        <select id="select_idc_frecuencia" name="select_idc_frecuencia" class="form-control select2"></select>
+                                                    </div>
+                                                    <div class="form-group col-md-6 col-lg-3">
+                                                        <label>Tipo negociación:</label>
+                                                        <select id="select_idc_tipo_neg" name="select_idc_tipo_neg" class="form-control select2"></select>
+                                                    </div>
+                                                    <div id="div_idc_val_money" class="form-group col-md-6 col-lg-3">
+                                                        <label for="input_idc_val_money">Valor negociación:</label>
+                                                        <div class="input-group">
+                                                            <div class="input-group-prepend"><span class="input-group-text"><i class="fas">@CurrencySymbol</i></span></div>
+                                                            <input id="input_idc_val_money" type="text" name="input_idc_valor_money" class="form-control" data-inputmask="'alias' : 'currency', 'groupSeparator':'@CurrencyThousandSeparator', 'radixPoint':'@CurrencyDecimalSeparator'" data-mask />
+                                                        </div>
+                                                    </div>
+                                                    <div id="div_idc_val_perc" class="form-group col-md-6 col-lg-3">
+                                                        <label for="input_idc_val_perc">Valor negociación:</label>
+                                                        <div class="input-group">
+                                                            <input id="input_idc_val_perc" type="text" name="input_idc_val_perc" class="form-control" data-inputmask="'alias': 'decimal', 'digits':'2'" placeholder="0" data-mask />
+                                                            <div class="input-group-append"><span class="input-group-text"><i class="fas">%</i></span></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group col-12">
+                                                        <label>@Resources.views.categs</label>
+                                                        <select id="select_idc_categs" name="select_idc_categs" class="form-control select2 w-100" multiple="multiple" data-placeholder="Buscar categorías"></select>
+                                                    </div>
+                                                    <button id="btn_add_idc" type="submit" class="btn btn-secondary col-12"><i class="fa fa-save"></i> Agregar</button>
+                                                </form>
+                                                <div class="col-12 card card-body p-0 mt-1 table-responsive" style="max-height:300px">
+                                                    <table id="tbl_idc" class="table table-head-fixed table-bordered table-hover">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Tipo de inversión</th>
+                                                                <th>Frecuencia de pago</th>
+                                                                <th>Tipo de negociación</th>
+                                                                <th>Valor de negociación</th>
+                                                                <th>Estado</th>
+                                                                <th></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody></tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @* IIC *@
+                            <div id="div_iic" class="row">
+                                <div class="col-12">
+                                    <div class="card card-outline card-success collapsed-card">
+                                        <div class="card-header">
+                                            <h3 class="card-title">Inversión Indirecta en la Cadena (IIC)</h3>
+                                            <div class="card-tools">
+                                                <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-plus"></i></button>
+                                            </div>
+                                        </div>
+                                        <div class="card-body overlay-wrapper">
+                                            <div class="col-12">
+                                                <form id="form_iic" class="row p-2">
+                                                    <input hidden id="hfID_iic" />
+                                                    <div class="form-group col-md-6 col-lg-3">
+                                                        <label>Tipo inversión:</label>
+                                                        <select id="select_iic_inversion" name="select_iic_inversion" class="form-control select2"></select>
+                                                    </div>
+                                                    <div class="form-group col-md-6 col-lg-3">
+                                                        <label>Frecuencia de pago:</label>
+                                                        <select id="select_iic_frecuencia" name="select_iic_frecuencia" class="form-control select2"></select>
+                                                    </div>
+                                                    <div class="form-group col-md-6 col-lg-3">
+                                                        <label>Tipo negociación:</label>
+                                                        <select id="select_iic_tipo_neg" name="select_iic_tipo_neg" class="form-control select2"></select>
+                                                    </div>
+                                                    <div id="div_iic_val_money" class="form-group col-md-6 col-lg-3">
+                                                        <label for="input_iic_val_money">Valor negociación:</label>
+                                                        <div class="input-group">
+                                                            <div class="input-group-prepend"><span class="input-group-text"><i class="fas">@CurrencySymbol</i></span></div>
+                                                            <input id="input_iic_val_money" type="text" name="input_iic_val_money" class="form-control" data-inputmask="'alias' : 'currency', 'groupSeparator':'@CurrencyThousandSeparator', 'radixPoint':'@CurrencyDecimalSeparator'" data-mask />
+                                                        </div>
+                                                    </div>
+                                                    <div id="div_iic_val_perc" class="form-group col-md-6 col-lg-3">
+                                                        <label for="input_iic_val_perc">Valor negociación:</label>
+                                                        <div class="input-group">
+                                                            <input id="input_iic_val_perc" type="text" name="input_iic_val_perc" class="form-control" data-inputmask="'alias': 'decimal', 'digits':'2'" placeholder="0" data-mask />
+                                                            <div class="input-group-append"><span class="input-group-text"><i class="fas">%</i></span></div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group col-12">
+                                                        <label>@Resources.views.categs</label>
+                                                        <select id="select_iic_categs" name="select_iic_categs" class="form-control select2" multiple="multiple" data-placeholder="Buscar categorías"></select>
+                                                    </div>
+                                                    <button id="btn_add_iic" type="submit" class="btn btn-secondary col-12"><i class="fa fa-save"></i> Agregar</button>
+                                                </form>
+                                                <div class="col-12 card card-body p-0 mt-1 table-responsive" style="max-height:300px">
+                                                    <table id="tbl_iic" class="table table-head-fixed table-bordered table-hover">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Tipo de inversión</th>
+                                                                <th>Frecuencia de pago</th>
+                                                                <th>Tipo de negociación</th>
+                                                                <th>Valor de negociación</th>
+                                                                <th>Estado</th>
+                                                                <th></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody></tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div id="div_ficha_actions" class="col-12 d-flex justify-content-end">
+                                    <div class="btn-group mr-2">
+                                        <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown">Estado: <span id="spn_estado"> BORRADOR</span></button>
+                                        <div class="dropdown-menu" role="menu">
+                                            <button class="dropdown-item ficha_actions" action="02">Activar Ficha</button>
+                                            <button class="dropdown-item ficha_actions" action="03">Enviar Ficha a Cobro</button>
+                                            <button class="dropdown-item ficha_actions" action="99">Suspender Ficha</button>
+                                        </div>
+                                    </div>
+                                    <button id="btnCancel" type="button" class="btn btn-danger" onclick="onClickBtnCancel()"><i class="fa fa-ban"></i> Cancelar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Cuerpo Modal -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="onClickBtnNewFicha()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                    <button type="button" class="btn btn-success" onclick="onClickBtnSaveFicha()"> <i class="fa fa-save"></i> @Resources.views.guardar</button>
+                    <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                </div>
+            </div><!-- Modal content-->
+        </div>
+    </div><!-- Modal -->
+    @* Variables *@
+    <script>
+        var urls = {
+            init: '@Url.Action("GetInitData", "CobroProveedores")',
+            categs: '@Url.Action("GetAll_BY_Supplier", "CobroProveedores")',
+            detalles: '@Url.Action("GetDetalles", "CobroProveedores")',
+            guardar: '@Url.Action("SaveFicha", "CobroProveedores")',
+            fichas: '@Url.Action("GetAllFichasProveedor", "CobroProveedores")',
+            chage_status: '@Url.Action("ChangeStatusProveedor", "CobroProveedores")'
+        };
+        var elements = {
+            div_table: "tbl_content_ficha_prov", spn_table: "spn_tbl_ficha_prov",
+            spn_modal: "spn_modal_ficha_proveedor", modal: "modal_ficha_proveedor",
+            title_modal: "title_modal_ficha_proveedor", form: "form_modal_ficha_proveedor",
+            spn_idc: "spn_idc", spn_iic: "spn_iic"
+        };
+        var estados = { '01': 'BORRADOR', '02': 'ACTIVO', '03': 'ENVIADO A COBRO', '99': 'SUSPENDIDO' };
+        var estadosColor = { '01': 'primary', '02': 'success', '03': 'info', '99': 'danger' };
+        var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4000 }); // Variable para mostrar los mensajes.
+        var lists = {
+            ficha_proveedores: [], proveedores: [], forma_rebajos: [], casas: [],
+            IDCsTipo: [], IICsTipo: [], frecuencias: [], negociaciones: [], categorias: [],
+            IDCs: [], IICs: []
+        };
+        var rules = {
+            idc: {
+                select_idc_inversion: { required: true },
+                select_idc_frecuencia: { required: true },
+                select_idc_tipo_neg: { required: true },
+                input_idc_valor_money: { required: function () { return (+$("#select_idc_tipo_neg").val()) === 2 } },
+                input_idc_val_perc: { required: function () { return (+$("#select_idc_tipo_neg").val()) === 1 }, min: 0, max: 100 },
+                select_idc_categs: { required: true }
+            },
+            iic: {
+                select_iic_inversion: { required: true },
+                select_iic_frecuencia: { required: true },
+                select_iic_tipo_neg: { required: true },
+                input_iic_valor_money: { required: function () { return (+$("#select_iic_tipo_neg").val()) === 2 } },
+                input_iic_val_perc: { required: function () { return (+$("#select_iic_tipo_neg").val()) === 1 }, min: 0, max: 100 },
+                select_iic_categs: { required: true }
+            },
+            ficha: {
+                fecha_desde: { required: true },
+                fecha_hasta: { required: true },
+                select_proveedor: { required: true },
+            }
+        };
+        var messages = {
+            idc: {
+                select_idc_inversion: { required: "@Resources.messages.validacion_req" },
+                select_idc_frecuencia: { required: "@Resources.messages.validacion_req" },
+                select_idc_tipo_neg: { required: "@Resources.messages.validacion_req" },
+                input_idc_valor_money: { required: "@Resources.messages.validacion_req", decimal: true},
+                input_idc_val_perc: { required: "@Resources.messages.validacion_req" },
+                select_idc_categs: { required: "@Resources.messages.validacion_req" }
+            },
+            iic: {
+                select_iic_inversion: { required: "@Resources.messages.validacion_req" },
+                select_iic_frecuencia: { required: "@Resources.messages.validacion_req" },
+                select_iic_tipo_neg: { required: "@Resources.messages.validacion_req" },
+                input_iic_valor_money: { required: "@Resources.messages.validacion_req", decimal: true},
+                input_iic_val_perc: { required: "@Resources.messages.validacion_req" },
+                select_iic_categs: { required: "@Resources.messages.validacion_req" }
+            },
+            ficha: {
+                fecha_desde: { required: "@Resources.messages.validacion_req" },
+                fecha_hasta: { required: "@Resources.messages.validacion_req" },
+                select_proveedor: { required: "@Resources.messages.validacion_req" },
+            }
+        }
+        var fichaProveedor = null;
+        var flag = null;
+    </script>
+
+    @* Funciones *@
+    <script>
+        /** funcion Initialize */
+        $(function () {
+            applyInitPlugins();
+            hideInitElements();
+            fillMenuItemsLayout();
+            setOnActions();
+            setAllValidationsForm();
+            getAllInitialData();
+            fillTableIDC();
+            fillTableIIC();
+            $(".ficha_actions").click(function () { onClickBtnChangeStatus($(this).attr("action")); });
+        })
+
+        function hideInitElements() {
+            $("#div_idc_val_money").hide();
+            $("#div_iic_val_money").hide();
+            $("#div_idc").hide();
+            $("#div_iic").hide();
+            $("#div_ficha_actions button").hide();
+            $("#" + elements.spn_modal).hide();
+            $("#" + elements.spn_idc).hide();
+            $("#" + elements.spn_iic).hide();
+        }
+
+        function applyInitPlugins() {
+            $('#fecha_desde').datetimepicker({ format: 'DD/MM/YYYY', });
+            $('#fecha_hasta').datetimepicker({ format: 'DD/MM/YYYY', });
+            $(".select2").select2({ theme: "bootstrap4" });
+            $('[data-mask]').inputmask();
+            StartLoadTable(elements.div_table, true);
+            EndLoadTable("@Name", elements.div_table, true);
+        }
+
+        function findFormaRebajo(id) {
+            return lists.forma_rebajos.find(f => f.ID === id);
+        }
+
+        function findProveedor(id) {
+            return lists.proveedores.find(x => x.ID === id);
+        }
+
+        function findCasaComercial(id) {
+            return lists.casas.find(x => x.ID === id);
+        }
+
+        function findTipoIDC(id) {
+            return lists.IDCsTipo.find(x => x.ID === id);
+        }
+
+        function findTipoIIC(id) {
+            return lists.IICsTipo.find(x => x.ID === id);
+        }
+
+        function findFrecuenciaPago(id) {
+            return lists.frecuencias.find(x => x.ID === id);
+        }
+
+        function findNegociacion(id) {
+            return lists.negociaciones.find(x => x.ID === id);
+        }
+
+        function fillMenuItemsLayout() {
+            openMenu(["#nav-item-proveedores"]);
+            activeItemMenu([".nav-item-proveedores", "#nav-link-cobros-proveedor"])
+        }
+
+        function fillSelect(data, selectID) {
+            $("#" + selectID).select2("destroy");
+            $("#" + selectID).select2({ theme: "bootstrap4", data: data, tags: true });
+        }
+
+        function fillSelectCategorias() {
+            var data_categs = lists.categorias.map(x => { return { id: x.ID, text: x.Name } });
+
+            $("#select_idc_categs").val(null).trigger("change");
+            $("#select_idc_categs").html(null);
+            $("#select_idc_categs").select2("destroy");
+
+            $("#select_iic_categs").val(null).trigger("change");
+            $("#select_iic_categs").html(null);
+            $("#select_iic_categs").select2("destroy");
+
+            $("#select_idc_categs").select2({ theme: "bootstrap4", data: data_categs, closeOnSelect: false, allowClear: true });
+            $("#select_iic_categs").select2({ theme: "bootstrap4", data: data_categs, closeOnSelect: false, allowClear: true });
+        }
+
+        function fillAllMainSelects() {
+            var data_formas = lists.forma_rebajos.map(x =>  { return { id: x.ID, text: x.Nombre } });
+            var data_provs = lists.proveedores.map(x => { return { id: x.ID, text: x.Name }; });
+            var data_casas = lists.casas.map(x => { return { id: x.ID, text: x.Name }; });
+            var data_IDCsTipo = lists.IDCsTipo.map(x => { return { id: x.ID, text: x.Nombre }; });
+            var data_IICsTipo = lists.IICsTipo.map(x => { return { id: x.ID, text: x.Nombre }; });
+            var data_frecuencias = lists.frecuencias.map(x => { return { id: x.ID, text: x.Nombre }; });
+            var data_negociaciones = lists.negociaciones.map(x => { return { id: x.ID, text: x.Nombre }; });
+
+            fillSelect(data_formas, "select_forma");
+            fillSelect(data_casas, "select_casa");
+            fillSelect(data_provs, "select_proveedor");
+
+            fillSelect(data_IDCsTipo, "select_idc_inversion");
+            fillSelect(data_negociaciones, "select_idc_tipo_neg");
+            fillSelect(data_frecuencias, "select_idc_frecuencia");
+
+            fillSelect(data_IICsTipo, "select_iic_inversion");
+            fillSelect(data_negociaciones, "select_iic_tipo_neg");
+            fillSelect(data_frecuencias, "select_iic_frecuencia");
+
+            $("#select_casa").val(null).trigger("change");
+        }
+
+        function fillTableFichaProveedores() {
+            try {
+                StartLoadTable(elements.div_table, true);
+                $("#" + elements.spn_table).show();
+                if (lists.ficha_proveedores) {
+                    $("#" + elements.div_table + " > table > tbody").html("");
+                    lists.ficha_proveedores.forEach(function (p) {
+                        var prov = findProveedor(p.ProveedorID),
+                            casa = findCasaComercial(p.CasaComercialID),
+                            forma = findFormaRebajo(p.FormaRebajoID),
+                            row = $("<tr />");
+                        $("#" + elements.div_table + " > table").append(row);
+                        row.append($("<td> " + p.NumeroContrato + "</td>"));
+                        row.append($("<td> " + (prov === null ? "-@Resources.views.no_def-" : prov.Name) + "</td>"));
+                        row.append($("<td> " + ((casa === null || p.CasaComercialID === 0) ? "-@Resources.views.no_def-" : casa.Name) + "</td>"));
+                        row.append($("<td> " + (forma === null ? "-@Resources.views.no_def-" : forma.Nombre) + "</td>"));
+                        row.append($("<td> " + p.VigenciaDesdeAux + " - " + p.VigenciaHastaAux + "</td>"));
+                        row.append($("<td><span class='badge bg-" + estadosColor[p.Estado] + "'>" + estados[p.Estado] + "</span></td>"));
+                        var title = "@Resources.views.editar";
+                        row.append($("<td><button class='btn btn-primary' title='" + title + "' data-toggle='modal' data-target='' onClick='onClickBtnEditFichaProveedor(" + p.ID + ")'> <i class='fa fa-edit' aria-hidden='true'></i></button></td>"));
+                    });
+                }
+                EndLoadTable("@Name", elements.div_table, true);
+                $("#" + elements.spn_table).hide();
+            } catch (e) { error(e, "@Resources.messages.error_llenar_registros"); }
+        }
+
+        async function fillTableIDC() {
+            try {
+                $("#tbl_idc > tbody").html(null);
+                if (lists.IDCs.length > 0) {
+                    var idAux = 1;
+                    await lists.IDCs.forEach(function (i) {
+                        if (i.Estado != -2 && i.Estado != -3) {
+                            i.IDAux = idAux;
+                            var row_expand = $("<tr class='expandable-body d-none'><td colspan='6'><div>Categorías: " + getNameCategories(i.ListaCategorias) + "</div></td></tr>"),
+                                row = $("<tr data-widget='expandable-table' aria-expanded='false'/>"), inv = findTipoIDC(i.IDCTipoID),
+                                frec = findFrecuenciaPago(i.FrecuenciaPagoID),
+                                neg = findNegociacion(i.NegociacionID),
+                                badge = $('<span class="badge bg-' + ((i.Estado === 1 || i.Estado === 2) ? 'success' : i.Estado === 0 ? 'primary' : 'danger') + '"></span>'),
+                                td = $("<td />"),
+                                btnDel = (fichaProveedor && fichaProveedor.Estado === '01') ? ("<button class='btn btn-danger' onClick='onClickBtnDeleteIDC(" + i.IDAux + ")'> <i class='fa fa-trash' aria-hidden='true'></i></button>") : '';
+                            badge.text((i.Estado === 1 ? 'Asignado' : i.Estado === 0 ? 'Por Guardar' : i.Estado === 2 ? 'Guardado' : i.Estado === -1 ? 'Por Eliminar' : 'NO GUARDADO'));
+                            td.append(badge);
+                            $("#tbl_idc > tbody").append(row);
+                            $("#tbl_idc > tbody").append(row_expand);
+                            row.append($("<td> " + inv.Nombre + "</td>"));
+                            row.append($("<td> " + frec.Nombre + "</td>"));
+                            row.append($("<td> " + neg.Nombre + "</td>"));
+                            row.append($("<td> " + (neg.ID === 1 ? ((i.ValorNegPorcentaje) + "%") : ("@CurrencySymbol" + numberWithCommas(i.ValorNegMonetizado))) + "</td>"));
+                            row.append(td);
+                            row.append($("<td> " + btnDel + "</td>"));
+                            idAux += 1;
+                        }
+                    });
+                } else $("#tbl_idc > tbody").append($("<tr><td colspan='6'><span class='d-flex justify-content-center'>Vacío</span></td></tr>"));
+            } catch (e) { error(e, "@Resources.messages.error_llenar_registros"); }
+        }
+
+        async function fillTableIIC() {
+            try {
+                $("#tbl_iic > tbody").html(null);
+                if (lists.IICs.length > 0) {
+                    var idAux = 1;
+                    await lists.IICs.forEach(function (i) {
+                        if (i.Estado !== -3 && i.Estado !== -2) {
+                            i.IDAux = idAux;
+                            var row_expand = $("<tr class='expandable-body d-none'><td colspan='6'><div>Categorías: " + getNameCategories(i.ListaCategorias) + "</div></td></tr>"),
+                                row = $("<tr data-widget='expandable-table' aria-expanded='false'/>"),
+                                inv = findTipoIIC(i.IICTipoID),
+                                frec = findFrecuenciaPago(i.FrecuenciaPagoID),
+                                neg = findNegociacion(i.NegociacionID),
+                                badge = $('<span class="badge bg-' + ((i.Estado === 1 || i.Estado === 2) ? 'success' : i.Estado === 0 ? 'primary' : 'danger') + '"></span>'),
+                                td = $("<td />"),
+                                btnDel = (fichaProveedor && fichaProveedor.Estado === '01') ? ("<button class='btn btn-danger' onClick='onClickBtnDeleteIIC(" + i.IDAux + ")'> <i class='fa fa-trash' aria-hidden='true'></i></button>") : '';
+                            badge.text((i.Estado === 1 ? 'Asignado' : i.Estado === 0 ? 'Por Guardar' : i.Estado === 2 ? 'Guardado' : i.Estado === -1 ? 'Por Eliminar' : 'NO GUARDADO'));
+                            td.append(badge);
+                            $("#tbl_iic > tbody").append(row);
+                            $("#tbl_iic > tbody").append(row_expand);
+                            row.append($("<td> " + inv.Nombre + "</td>"));
+                            row.append($("<td> " + frec.Nombre + "</td>"));
+                            row.append($("<td> " + neg.Nombre + "</td>"));
+                            row.append($("<td> " + (neg.ID === 1 ? ((i.ValorNegPorcentaje) + "%") : ("@CurrencySymbol" + numberWithCommas(i.ValorNegMonetizado))) + "</td>"));
+                            row.append(td);
+                            row.append($("<td> " + btnDel + "</td>"));
+                            idAux += 1;
+                        }
+                    });
+                } else $("#tbl_iic > tbody").append($("<tr><td colspan='6'><span class='d-flex justify-content-center'>Vacío</span></td></tr>"));
+            } catch (e) { error(e, "@Resources.messages.error_llenar_registros"); }
+        }
+
+        async function getAllInitialData() {
+            try {
+                await $.get(urls.init).done(async function (data) {
+                    if (data.Status) {
+                        lists.ficha_proveedores = data.Result.cxc_proveedores;
+                        lists.forma_rebajos = data.Result.cxc_formas;
+                        lists.proveedores = data.Result.proveedores;
+                        lists.casas = data.Result.casas;
+                        lists.IDCsTipo = data.Result.iDCs;
+                        lists.IICsTipo = data.Result.iICs;
+                        lists.frecuencias = data.Result.frecuencias;
+                        lists.negociaciones = data.Result.negociaciones;
+                        await fillTableFichaProveedores();
+                        fillAllMainSelects();
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#" + elements.spn_table).hide();
+                    }
+                }).fail(function (data) { error(data, "@Resources.messages.error_obt_regs"); });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        async function getAllFichasProveedor() {
+            try {
+                await $.get(urls.fichas).done(async function (data) {
+                    if (data.Status) {
+                        lists.ficha_proveedores = data.Result.cxc_proveedores;
+                        await fillTableFichaProveedores();
+                        $("#" + elements.spn_table).hide();
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#" + elements.spn_table).hide();
+                    }
+                }).fail(function (data) { error(data, "@Resources.messages.error_obt_regs"); });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        async function getCategorias() {
+            try {
+                $("#" + elements.spn_modal).show();
+                var suppID = $("#select_proveedor").val();
+                await $.get(urls.categs + "?supplierID=" + (suppID ? suppID : 0)).done(async function (data) {
+                    if (data.Status) {
+                        lists.categorias = data.Result;
+                        await fillSelectCategorias();
+                        if (flag) {
+                            getDetalleFichaProveedor(flag);
+                            flag = null;
+                        } else $("#" + elements.spn_modal).hide();
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#" + elements.spn_modal).hide();
+                    }
+                }).fail(function (data) {
+                    error(data, "@Resources.messages.error_obt_regs");
+                    $("#" + elements.spn_modal).hide();
+                });
+            } catch (e) {
+                error(e, "@Resources.messages.error_obt_regs");
+                $("#" + elements.spn_modal).hide();
+            }
+        }
+
+        async function getDetalleFichaProveedor(id) {
+            try {
+                $("#" + elements.spn_modal).show();
+                await $.get(urls.detalles + "?fichaID=" + id).done(async function (data) {
+                    if (data.Status) {
+                        lists.IDCs = data.Result.idc;
+                        lists.IICs = data.Result.iic;
+                        await fillTableIDC();
+                        await fillTableIIC();
+                        $("#form_modal_ficha_proveedor").submit();
+                        $("#" + elements.spn_modal).hide();
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#" + elements.spn_modal).hide();
+                    }
+                }).fail(function (data) {
+                    error(data, "@Resources.messages.error_obt_regs");
+                    $("#" + elements.spn_modal).hide();
+                });
+            } catch (e) {
+                error(e, "@Resources.messages.error_obt_regs");
+                $("#" + elements.spn_modal).hide();
+            }
+        }
+
+        function getIDCFromForm() {
+            var categs = "";
+            $("#select_idc_categs").select2('data').forEach(x => categs += (x.id + ','));
+            var idc = {
+                ID: +$("#hfID_idc").val(),
+                Estado: 0,
+                IDCTipoID: +$("#select_idc_inversion").val(),
+                FrecuenciaPagoID: +$("#select_idc_frecuencia").val(),
+                NegociacionID: +$("#select_idc_tipo_neg").val(),
+                ValorNegPorcentaje: +$("#select_idc_tipo_neg").val() === 1 ? +$("#input_idc_val_perc").val() : 0,
+                ValorNegMonetizado: +$("#select_idc_tipo_neg").val() === 2 ? ($("#input_idc_val_money").val().replaceAll("@CurrencyThousandSeparator", "")) : 0,
+                ListaCategorias: categs
+            };
+            return idc;
+        }
+
+        function getIICFromForm() {
+            var categs = "";
+            $("#select_iic_categs").select2('data').forEach(x => categs += (',' + x.id));
+            var idc = {
+                ID: +$("#hfID_iic").val(),
+                Estado: 0,
+                IICTipoID: +$("#select_iic_inversion").val(),
+                FrecuenciaPagoID: +$("#select_iic_frecuencia").val(),
+                NegociacionID: +$("#select_iic_tipo_neg").val(),
+                ValorNegPorcentaje: +$("#select_iic_tipo_neg").val() === 1 ? +$("#input_iic_val_perc").val() : 0,
+                ValorNegMonetizado: +$("#select_iic_tipo_neg").val() === 2 ? ($("#input_iic_val_money").val().replaceAll("@CurrencyThousandSeparator", "")) : 0,
+                ListaCategorias: categs
+            };
+            return idc;
+        }
+
+        function getFichaFromModal() {
+            var ficha = lists.ficha_proveedores.find(x => x.ID === +$("#fichaID").val());
+            var data = {
+                ID: +$("#fichaID").val(),
+                FormaRebajoID: +$("#select_forma").val(),
+                VigenciaDesde: $('#fecha_desde').datetimepicker('date').toDate(),
+                VigenciaHasta: $('#fecha_hasta').datetimepicker('date').toDate(),
+                ProveedorID: +$("#select_proveedor").val(),
+                CasaComercialID: +$("#select_casa").val(),
+                Estado: (ficha ? ficha.Estado : '01')
+            };
+            return data;
+        }
+
+        function getNameCategories(listIDs) {
+            if (listIDs) {
+                var names = "", list = listIDs.split(",");
+                for (var i = 0; i < list.length; i++) {
+                    var categ = lists.categorias.find(c => c.ID === (+list[i]));
+                    if (categ) names += "<span class='badge bg-success'>" + categ.Name + "</span> ";
+                }
+                return names;
+            } else return null;
+        }
+
+        function setOnActions() {
+            $("#select_proveedor").on("change", function (e) { onChangeSelectProveedor(); });
+            $("#select_idc_tipo_neg").on("change", function (e) { onChangeSelectIdcNegociacion(); });
+            $("#select_iic_tipo_neg").on("change", function (e) { onChangeSelectIicNegociacion(); });
+        }
+
+        function setAllValidationsForm() {
+            setValidationForm("form_idc", rules.idc, messages.idc, onSubmitFormIDC);
+            setValidationForm("form_iic", rules.iic, messages.iic, onSubmitFormIIC);
+            setValidationForm("form_modal_ficha_proveedor", rules.ficha, messages.ficha, onSubmitFormFichaProveedor);
+        }
+
+        function setValidationForm(formID, rules, messages, onSubmit) {
+            $.validator.setDefaults({ submitHandler: function () { onSubmit(); } });
+
+            $('#' + formID).validate({
+                rules: rules, messages: messages, errorElement: 'span',
+                errorPlacement: function (err, element) {
+                    err.addClass('invalid-feedback ml-2');
+                    element.closest('.form-group').append(err);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        }
+
+        function setFichaProveedor(ficha) {
+            $("#select_proveedor").val(ficha.ProveedorID).trigger("change");
+            $("#fichaID").val(ficha.ID);
+            $("#label_contrato").text(ficha.NumeroContrato);
+            $("#select_forma").val(ficha.FormaRebajoID).trigger("change");
+
+            $('#fecha_desde').datetimepicker('date', moment(ficha.VigenciaDesdeAux, "DD/MM/YYYY"));
+            $('#fecha_hasta').datetimepicker('date', moment(ficha.VigenciaHastaAux, "DD/MM/YYYY"));
+
+            $("#select_casa").val(ficha.CasaComercialID).trigger("change");
+            $("#spn_estado").text(estados[ficha.Estado]);
+        }
+
+        function setChangeDetail(list, idAux, status) {
+            console.log(list);
+            console.log("auxxx");
+            console.log(idAux);
+            var estado = list.find(x => x.IDAux === idAux).Estado;
+            if (estado === 0) {
+                if (status) list.find(x => x.IDAux === idAux).Estado = 2
+                else list.find(x => x.IDAux === idAux).Estado = 3;
+            } else if (estado === -1){
+                if (status) list.find(x => x.IDAux === idAux).Estado = -2
+                else list.find(x => x.IDAux === idAux).Estado = -3;
+            }
+        }
+
+        async function setNewStatesAfterSave(idcStates, iicStates) {
+            for (var i = 0; i < idcStates.length; i++) await setChangeDetail(lists.IDCs, idcStates[i].idAux, idcStates[i].status);
+            for (var i = 0; i < iicStates.length; i++) await setChangeDetail(lists.IICs, iicStates[i].idAux, iicStates[i].status);
+
+            await fillTableIDC();
+            await fillTableIIC();
+        }
+
+        function deleteIDCList(idAux) {
+            var lAux = [];
+            lists.IDCs.forEach(function (x) {
+                if (x.IDAux === idAux) {
+                    if (x.ID !== 0) {
+                        x.Estado = -1;
+                        lAux.push(x);
+                    }
+                } else lAux.push(x);
+            });
+            lists.IDCs = lAux;
+        }
+
+        function deleteIICList(idAux) {
+            var lAux = [];
+            lists.IICs.forEach(function (x) {
+                if (x.IDAux === idAux) {
+                    if (x.ID !== 0) {
+                        x.Estado = -1;
+                        lAux.push(x);
+                    }
+                } else lAux.push(x);
+            });
+            lists.IICs = lAux;
+        }
+
+        function onClickBtnAddFichaProv() {
+            openModal(true);
+        }
+
+        function onClickBtnEditFichaProveedor(id) {
+            $("#" + elements.spn_modal).show();
+            openModal(false);
+            flag = id;
+            limpiarFichaProveedor();
+            var ficha = lists.ficha_proveedores.find(x => x.ID === id);
+            fichaProveedor = ficha;
+            setFichaProveedor(ficha);
+            if (ficha) habilitarDetallesFicha(ficha.Estado === '01');
+        }
+
+        function onClickBtnNewFicha() {
+            Swal.fire({
+                title: "@Resources.messages.msj_continuar", html: "@Resources.messages.msj_campos_limpiar", icon: 'warning', showCancelButton: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    openModal(true);
+                    fichaProveedor = null;
+                    onClickBtnCancel();
+                    limpiarFichaProveedor();
+                    habilitarDetallesFicha(true);
+                }
+            });
+        }
+
+        function onClickBtnDeleteIDC(idAux) {
+            deleteIDCList(idAux);
+            fillTableIDC();
+        }
+
+        function onClickBtnDeleteIIC(idAux) {
+            deleteIICList(idAux);
+            fillTableIIC();
+        }
+
+        function onClickBtnCancel() {
+            if (fichaProveedor && fichaProveedor.ID > 0) {
+                error("FICHA YA GUARDADA", "ACCIÓN ERRONEA. EL ENCABEZADO DE LA FICHA DE PROVEEDOR NO PUEDE SER MODIFICADA");
+            } else {
+                habilitarFicha(true);
+                fichaProveedor = null;
+                limpiarDetallesFicha();
+            }
+        }
+
+        async function onClickBtnSaveFicha() {
+            if (fichaProveedor && (lists.IDCs.length > 0 || lists.IICs.length > 0)) {
+                $("#" + elements.spn_modal).show();
+                try {
+                    await $.ajax({
+                        url: urls.guardar, type: 'post', dataType: 'json', contentType: 'application/json',
+                        data: JSON.stringify({ ficha: fichaProveedor, IDCs: lists.IDCs, IICs: lists.IICs }), cache: false,
+                        success: async function (data) {
+                            if (data.Status) {
+                                Toast.fire({ icon: 'success', title: data.Message });
+                                lists.IDCs = [];
+                                lists.IICs = [];
+
+                                await getAllFichasProveedor();
+                                await onClickBtnEditFichaProveedor(data.Result.result_ficha.SCOPE);
+
+                                openModal(false);
+                            } else {
+                                $("#" + elements.spn_modal).hide();
+                                error(data.InternalMessage, data.Message);
+                            }
+                        },
+                        error: function (xhr, ajaxOptions, thrownError) {
+                            $("#spn_modal_cabeceras").hide();
+                            console.log("error al guardar");
+                            error(thrownError, "@Resources.messages.error_guardar");
+                        }
+                    });
+                } catch (e) {
+                    $("#" + elements.spn_modal).hide();
+                    error(e, "@Resources.messages.error_intento_guardar");
+                }
+            } else error("FALTAN CAMPOS", "@Resources.messages.validacion_campos_vacios");
+        }
+
+        function onClickBtnChangeStatus(action) {
+            if (fichaProveedor && fichaProveedor.ID > 0 && (+fichaProveedor.Estado) < (+action)) {
+                if (action === '03' && fichaProveedor.Estado !== '02') Toast.fire({ icon: 'error', title: "Error al enviar la ficha a cobro. La ficha no está activa." });
+                else {
+                    Swal.fire({
+                        title: "@Resources.messages.msj_continuar", html: 'La ficha pasará de estado "' + estados[fichaProveedor.Estado] + '" a estado "' + estados[action] + '".', icon: 'warning', showCancelButton: true,
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            $("#" + elements.spn_modal).show();
+                            $.post(urls.chage_status, { 'proveedorID': fichaProveedor.ID, status: action }, "json").done(async function (data) {
+                                Toast.fire({ icon: (data.Status ? 'success' : error), title: data.Message });
+                                if (data.Status) {
+                                    fichaProveedor.Estado = action;
+
+                                    await getAllFichasProveedor();
+                                    await onClickBtnEditFichaProveedor(fichaProveedor.ID);
+                                }
+                                $("#" + elements.spn_modal).hide();
+                            }).fail(function () {
+                                error("ERROR CAMBIAR ESTADO DE: " + fichaProveedor.ID + ", CON " + action, "Error al intentar cambiar el estado de la ficha");
+                                $("#" + elements.spn_modal).hide();
+                            });
+                        }
+                    });
+                }
+            } else if (fichaProveedor.Estado === action) Toast.fire({ icon: 'success', title: "La ficha ya se encuentra en estado: " + estados[action] });
+            else Toast.fire({ icon: 'error', title: "Error. No es permitido cambiar a un estado anterior." });
+        }
+
+        function onChangeSelectProveedor() {
+            lists.categorias = [];
+            getCategorias();
+        }
+
+        function onChangeSelectIdcNegociacion() {
+            if ($("#select_idc_tipo_neg").val() === "1") {
+                $("#div_idc_val_perc").show();
+                $("#div_idc_val_money").hide();
+            } else {
+                $("#div_idc_val_perc").hide();
+                $("#div_idc_val_money").show();
+            }
+        }
+
+        function onChangeSelectIicNegociacion() {
+            if ($("#select_iic_tipo_neg").val() === "1") {
+                $("#div_iic_val_perc").show();
+                $("#div_iic_val_money").hide();
+            } else {
+                $("#div_iic_val_perc").hide();
+                $("#div_iic_val_money").show();
+            }
+        }
+
+        function onSubmitFormIIC() {
+            var iic = getIICFromForm();
+            lists.IICs.push(iic);
+            fillTableIIC();
+        }
+
+        function onSubmitFormIDC() {
+            var idc = getIDCFromForm();
+            lists.IDCs.push(idc);
+            fillTableIDC();
+        }
+
+        function onSubmitFormFichaProveedor() {
+            if ($("#select_forma").val()) {
+                fichaProveedor = getFichaFromModal();
+                habilitarFicha(false);
+            } else error("CAMPOS REQUERIDOS", "@Resources.messages.validacion_forma_req");
+        }
+
+        function habilitarFicha(estado) {
+            $("#div_ficha_actions button").hide();
+            if (!estado) {
+                $("#btnSiguiente").slideUp("slow");
+                $("#div_idc").slideDown("slow");
+                $("#div_iic").slideDown("slow");
+
+                if (fichaProveedor && fichaProveedor.ID > 0) $("#div_ficha_actions > div button").slideDown("slow")
+                else $("#btnCancel").slideDown("slow");
+            } else {
+                $("#btnSiguiente").slideDown("slow");
+                $("#div_idc").slideUp("slow");
+                $("#div_iic").slideUp("slow");
+            }
+            $("#select_forma").prop("disabled", !estado);
+            $("#fecha_desde").prop("disabled", !estado);
+            $("#fecha_hasta").prop("disabled", !estado);
+            $("#select_proveedor").prop("disabled", !estado);
+            $("#select_casa").prop("disabled", !estado);
+        }
+
+        function habilitarDetallesFicha(estado) {
+            $("#div_idc input").prop("disabled", !estado);
+            $("#div_idc select").prop("disabled", !estado);
+            $("#div_idc #btn_add_idc").prop("disabled", !estado);
+            $("#form_idc button").prop("hidden", !estado);
+
+            $("#div_iic input").prop("disabled", !estado);
+            $("#div_iic select").prop("disabled", !estado);
+            $("#div_iic #btn_add_iic").prop("disabled", !estado);
+            $("#form_iic button").prop("hidden", !estado);
+        }
+
+        function limpiarDetallesFicha() {
+            lists.IDCs = [];
+            lists.IICs = [];
+
+            $("#input_idc_val_money").val("");
+            $("#input_iic_val_money").val("");
+
+            $("#select_idc_categs").val(null).trigger("change");
+            $("#select_iic_categs").val(null).trigger("change");
+
+            fillTableIDC();
+            fillTableIIC();
+        }
+
+        function limpiarFichaProveedor() {
+            $("#fichaID").val("");
+            $("#select_forma").val(1).trigger("change");
+            $("#select_casa").val(null).trigger("change");
+            $("#form_modal_ficha_proveedor input").val("");
+            $("#label_contrato").text("");
+            limpiarDetallesFicha();
+        }
+
+        function numberWithCommas(x) {
+            return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, "@CurrencyThousandSeparator");
+        }
+
+        /** Abre la modal */
+        function openModal(is_new) {
+            $("#" + elements.title_modal).html((is_new ? "@Resources.views.agregar" : "@Resources.views.editar") + " Ficha de Proveedor");
+            $('#' + elements.modal).modal({ backdrop: 'static', keyboard: false });
+        }
+
+        /** Muestra un error, recibe excepcion para mostrar en consola y el mensaje para el usuario. */
+        function error(e, msj) {
+            Toast.fire({ icon: 'error', title: msj });
+            console.error(e);
+        }
+    </script>
+</body>
+</html>

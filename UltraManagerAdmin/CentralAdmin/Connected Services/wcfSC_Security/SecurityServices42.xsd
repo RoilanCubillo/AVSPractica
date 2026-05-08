@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="http://tempuri.org/" elementFormDefault="qualified" targetNamespace="http://tempuri.org/" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="http://localhost:1793/SecurityServices.svc?xsd=xsd2" namespace="http://schemas.datacontract.org/2004/07/System" />
+  <xs:import schemaLocation="http://localhost:1793/SecurityServices.svc?xsd=xsd3" namespace="http://schemas.datacontract.org/2004/07/Security.Entities" />
+  <xs:element name="User_ValidateUser">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="account" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="autoID" type="xs:int" />
+        <xs:element minOccurs="0" name="systemID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="User_ValidateUserResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q1="http://schemas.datacontract.org/2004/07/System" minOccurs="0" name="User_ValidateUserResult" type="q1:ValueTupleOfEN_SC_UserintstringegmrjvJZ" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="User_ValidateUserSession">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="iD" type="xs:int" />
+        <xs:element minOccurs="0" name="autoID" type="xs:int" />
+        <xs:element minOccurs="0" name="systemID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="User_ValidateUserSessionResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="User_ValidateUserSessionResult" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="System_ValidateSystem">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="userID" type="xs:int" />
+        <xs:element minOccurs="0" name="systemCode" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="System_ValidateSystemResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q2="http://schemas.datacontract.org/2004/07/System" minOccurs="0" name="System_ValidateSystemResult" type="q2:ValueTupleOfSC_Enum.ESystemValidateStatusbooleanvlk_Ponk6" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Module_ValidateModules">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="userID" type="xs:int" />
+        <xs:element minOccurs="0" name="systemCode" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Module_ValidateModulesResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q3="http://schemas.datacontract.org/2004/07/Security.Entities" minOccurs="0" name="Module_ValidateModulesResult" nillable="true" type="q3:ArrayOfEN_SC_Module" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="View_ValidateViews">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="userID" type="xs:int" />
+        <xs:element minOccurs="0" name="systemCode" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="View_ValidateViewsResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q4="http://schemas.datacontract.org/2004/07/Security.Entities" minOccurs="0" name="View_ValidateViewsResult" nillable="true" type="q4:ArrayOfEN_SC_View" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="DataAccess_ValidateDataAccess">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="userID" type="xs:int" />
+        <xs:element minOccurs="0" name="systemCode" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="dataCode" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="DataAccess_ValidateDataAccessResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q5="http://schemas.datacontract.org/2004/07/Security.Entities" minOccurs="0" name="DataAccess_ValidateDataAccessResult" nillable="true" type="q5:ArrayOfEN_SC_DataAccess" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

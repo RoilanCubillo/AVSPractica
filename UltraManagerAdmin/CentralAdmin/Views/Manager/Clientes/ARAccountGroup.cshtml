@@ -1,0 +1,657 @@
+﻿
+@{
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+    var culture = System.Threading.Thread.CurrentThread.CurrentCulture;
+    var CurrencySymbol = culture.NumberFormat.CurrencySymbol;
+    var CurrencyDecimalSeparator = culture.Name.ToUpper() == "ES-CR" ? "." : culture.NumberFormat.CurrencyDecimalSeparator;
+    var CurrencyThousandSeparator = culture.Name.ToUpper() == "ES-CR" ? "," : culture.NumberFormat.NumberGroupSeparator;
+    var Name = Resources.views.mant_arts;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    <!-- Tempusdominus Bootstrap 4 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
+    <!-- Select2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+    <!-- iCheck for checkboxes and radio inputs -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/dist/css/adminlte.min.css">
+
+    <!-- moment.js -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- Select2 -->
+    <script src="~/Content/AdminLTE/plugins/select2/js/select2.full.min.js"></script>
+    <!-- Tempusdominus Bootstrap 4 -->
+    <script src="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+    <!-- InputMask -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/inputmask/jquery.inputmask.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>Grupo de Cuentas</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager", "Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">@Resources.views.clientes</li>
+                                <li class="breadcrumb-item active">@Resources.views.accountgroup</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Encabezado -->
+
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="col-md-12 mb-3" style="overflow: auto;">
+                                        <div class="row-cols-md-6">
+                                            <button type="button" class="btn btn-primary float-right fa-pull-right" onclick="onClickBtnAddMsgItem()"><i class="fa fa-plus"> </i> @Resources.views.agregar</button>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div id="tbl_accountgroup" class="dataTables_wrapper dt-bootstrap4 col-12">
+                                            <table id="AccountGroupTable" class="table table-bordered table-striped">
+                                            </table>
+                                        </div><!-- Table msg -->
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!--Modal-->
+            <div class="modal fade" id="modal_accountgroup">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                    <form id="form_accountgroup" class="modal-content">
+                        <!-- Encabezado Modal -->
+                        <div class="modal-header">
+                            <h4 id="title_modal_accountgroup" class="modal-title"></h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                        </div><!-- Fin Encabezado Modal -->
+                        <!-- Contenido del Modal -->
+                        <div class="modal-body">
+                            <input type="hidden" id="AccountGroupID" />
+                            <div class="card card-info card-tabs">
+                                <div class="card-header p-0 pt-2 px-1 overflow-auto">@Resources.views.accountgroup</div>
+                                <div class="row">
+                                    <!-- Primera Columna -->
+                                    <div class="col-md-6">
+                                        <div class="card card-teal">
+                                            <div class="card-body">
+                                                <div class="form-group">
+                                                    <label for="AccountGCode">@Resources.views.cod</label>
+                                                    <input id="AccountGCode" name="AccountGCode" type="text" class="form-control" placeholder="@Resources.views.ingresar_cod" />
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="AccountGName">@Resources.views.nom</label>
+                                                    <input id="AccountGName" name="AccountGName" type="text" class="form-control" placeholder="@Resources.views.ingresar_nom" />
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="AccountGPayTerm">@Resources.views.termPago</label>
+                                                    <select id="AccountGPayTerm" name="AccountGPayTerm" class="form-control select2bs4" style="width: 100%;">
+                                                    </select>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="AccountGCredLim">@Resources.views.limCredito</label>
+                                                    <input id="AccountGCredLim" name="AccountGCredLim" type="text" class="form-control" placeholder="@Resources.views.ingresar_limcredito" />
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="AccountGAppMet">@Resources.views.metAplicacion</label>
+                                                    <select id="AccountGAppMet" name="AccountGAppMet" class="form-control select2bs4" style="width: 100%;">
+                                                        <option value="1">Aplicar Antiguos</option>
+                                                        <option value="0">Manual</option>
+                                                    </select>
+                                                </div>
+                                                <div class="icheck-primary ml-3">
+                                                    <label for="chk_accg_inactivo">@Resources.views.inactivo</label>
+                                                    <input type="checkbox" id="chk_accg_inactivo" name="chk_accg_inactivo">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="AccountGCargoFi">@Resources.views.cargoFi</label>
+                                                    <select id="AccountGCargoFi" name="AccountGCargoFi" class="form-control select2bs4" style="width: 100%;">
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div><!-- Fin Primera Columna -->
+                                    <!-- Segunda Columna -->
+                                    <div class="col-md-6">
+                                        <div class="card card-teal">
+                                            <div class="card-body">
+                                                <div class="form-group">
+                                                    <label for="AccountGGerMad">@Resources.views.gerenteCuentas</label>
+                                                    <select id="AccountGGerMad" name="AccountGGerMad" class="form-control select2bs4" style="width: 100%;">
+                                                    </select>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="AccountGNumSer">@Resources.views.numSerie</label>
+                                                    <select id="AccountGNumSer" name="AccountGNumSer" class="form-control select2bs4" style="width: 100%;">
+                                                    </select>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="AccountGStaType">@Resources.views.tipInstruccion</label>
+                                                    <select id="AccountGStaType" name="AccountGStaType" class="form-control select2bs4" style="width: 100%;">
+                                                    </select>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="AccountGCredLimCk">@Resources.views.verificacionLimCredito</label>
+                                                    <select id="AccountGCredLimCk" name="AccountGCredLimCk" class="form-control select2bs4" style="width: 100%;">
+                                                        <option value="2">Ambos</option>
+                                                        <option value="1">Cliente</option>
+                                                        <option value="0">Cuenta</option>
+                                                    </select>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="AccountGStores">@Resources.views.tiendas</label>
+                                                    <select id="AccountGStores" name="AccountGStores[]" class="form-control select2bs4" style="width: 100%;" multiple="multiple">
+                                                    </select>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="AccountGPreCuenta">@Resources.views.pref</label>
+                                                    <input id="AccountGPreCuenta" name="AccountGPreCuenta" type="text" class="form-control" placeholder="@Resources.views.pref" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div><!-- Fin Segunda Columna -->
+                                </div><!-- Fin de la fila de las dos columnas -->
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="onClickBtnNewMsgItem()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                            <button type="submit" class="btn btn-success" onclick="setValidationForAccountGroupForm()"> <i class="fa fa-save"></i> @Resources.views.guardar</button>
+                            <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                        </div>
+                    </form><!-- Fin del formulario del Modal -->
+                </div><!-- Fin del diálogo del Modal -->
+            </div>
+
+            <!-- Fin del Modal -->
+
+
+        </div><!-- content-wrapper -->
+    </div><!-- wrapper -->
+</body>
+</html>
+
+
+@* Variables *@
+<script>
+    var DataAccountGroup = null;
+    var url_getAllAccountGroup = '@Url.Action("GetAll", "ARAccountGroup")';
+    var url_saveAccountGroup = '@Url.Action("Save", "ARAccountGroup")';
+    var list_accountgroups = [];
+    var listPaymentTerms = [];
+    var listFinanceCharge = [];
+    var listAccountManager = [];
+    var listStatementType = [];
+    var listStore = [];
+    var combinedList = [];
+    var listRRNumberSeries = [];
+    var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4000 }); // Variable para mostrar los mensajes.
+    var accountGroupData = [];
+    var identi = null;
+</script>
+
+@* Funciones *@
+<script>
+    $(function () {
+        initDataTable();
+        getAllAccountGroup();
+    });
+
+    function onClickBtnAddMsgItem() {
+        newModal(true);
+    }
+    function onClickBtnNewMsgItem() {
+            Swal.fire({
+                title: '@Resources.messages.msj_continuar', html: "@Resources.messages.msj_campos_limpiar", icon: 'warning', showCancelButton: true,
+            }).then((result) => { if (result.isConfirmed) newModal(true); });
+    }
+    function newModal(is_new) {
+        CleanForm("form_accountgroup");
+        $("#title_modal_accountgroup").html((is_new ? "@Resources.views.agregar " : "@Resources.views.editar ") + "@ViewBag.Title");
+        $('#modal_accountgroup').modal({ backdrop: 'static', keyboard: false });
+    }
+
+    function initDataTable() {
+
+        DataAccountGroup = $("#AccountGroupTable").DataTable({
+            columns: [
+                { title: "Código", data: "Code" },
+                { title: "Nombre", data: "Name" },
+                { title: "Inactivo", data: "Inactive" },
+                { title: "Cargo Finaciero", data: "FinChargeID" },
+                { title: "Termino de Pago", data: "PayTermsId" },
+                { title: "Gerente de Cuentas", data: "ManagerId" },
+                { title: "Numero de Serie", data: "NumberSeries" },
+                { title: "Limite de Credito", data: "CreditLimit" },
+                { title: "Tipo de Instruccion", data: "StatementType" },
+                { title: "Verificacion Limite Credito", data: "CreditLimitCheck" },
+                { title: "Metodo de Aplicacion", data: "ApplicationMethod" },
+                { title: "Tienda", data: "StoreID" },
+                { title: "Prefijo", data: "Prefix" },
+                {
+                    orderable: false, // Para que no se pueda ordenar esta columna
+                    data: "ID", // La propiedad de tus datos que se utilizará para esta columna
+                    render: function (data, type, row, meta) {
+                        var title = "Editar";
+                        return type === 'display' ?
+                            `<button class='btn btn-primary' title="${title}" onClick='onClickBtnEditAccountGroup(${data})'>
+                            <i class='fa fa-pencil' aria-hidden='true'></i>
+                            </button>` : data;
+                    }
+                }
+
+
+            ],
+            language: dtable_i18n, paging: true, lengthChange: true,
+            autoWidth: false, ordering: true,
+            responsive: true, buttons: ['colvis', 'pdf', 'excel'],
+            data: []
+        })
+    }
+
+
+    async function getAllAccountGroup() {
+        try {
+            await $.get(url_getAllAccountGroup).done(async function (data) {
+                    if (data.Status) {
+                        list_accountgroups = data.Result.list;
+                        listPaymentTerms = data.Result.listPaymentTerms;
+                        listFinanceCharge = data.Result.listFinanceCharge;
+                        listAccountManager = data.Result.listAccountManager;
+                        listStatementType = data.Result.listStatementType;
+                        listStore = data.Result.listStore;
+                        listRRNumberSeries = data.Result.listRRNumberSeries;
+                        combinedList = data.Result.combinedList;
+                        await DataAccountGroup.clear().rows.add(combinedList).draw();
+                        await fillSelect2PaymentTerms();
+                        await fillSelect2FinanceCharge();
+                        await fillSelect2AccountManager();
+                        await fillSelect2StatementType();
+                        await fillSelect2Stores();
+                        await fillSelect2RRNumberSeries();
+                        $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#" + elements.spn_table).hide();
+                    }
+                }).fail(function (data) { error(data, "@Resources.messages.error_obt_regs"); });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+    }
+
+    function findAccountGroup(id) {
+        return combinedList.find(x => x.ID === id);
+    }
+    function findExtCentalAccountGroup(id) {
+        return combinedList.find(x => x.ID === id);
+    }
+
+    function onClickBtnEditAccountGroup(id) {
+        var accountGroup = findAccountGroup(id);
+        var extCentral_AR_AccountGroup = findExtCentalAccountGroup(id);
+        if (accountGroup) {
+            newModal(false);
+            setAccountGroupInModal(accountGroup, extCentral_AR_AccountGroup);
+        } else Toast.fire({ icon: "warning", title: "@Resources.messages.error_reg_edit_inval" });
+    }
+
+     /** Se encarga de cargar el componente select con el plugin select2bs4 y trae los PaymentTerms */
+        function fillSelect2PaymentTerms() {
+            var aux = $("<p/>")
+            aux.html('@Resources.views.select_payterm');
+            select_categs = $('#AccountGPayTerm').select2({
+                placeholder: aux.text(),
+                data: getPaymentTermsToDataSelect2(),
+                theme: 'bootstrap4'
+            });
+        }
+
+        /** Clona la lista de categorías a otra lista data con elementos de {id, text} para el select2bs4*/
+        function getPaymentTermsToDataSelect2() {
+            return listPaymentTerms.map(d => { return { 'id': d.ID, 'text': "Código: " + d.Code + " | " + "Nombre: " + d.Name, 'value': d.ID } });
+        }
+
+        function fillSelect2FinanceCharge() {
+            var aux = $("<p/>")
+            aux.html('@Resources.views.select_financecharge');
+            select_categs = $('#AccountGCargoFi').select2({
+                placeholder: aux.text(),
+                data: getFinanceChargeToDataSelect2(),
+                theme: 'bootstrap4'
+            });
+        }
+
+        /** Clona la lista de categorías a otra lista data con elementos de {id, text} para el select2bs4*/
+        function getFinanceChargeToDataSelect2() {
+            return listFinanceCharge.map(d => { return { 'id': d.ID, 'text': "Código: " + d.Code + " | "+ "Nombre: " + d.Name, 'value': d.ID } });
+        }
+
+        function fillSelect2AccountManager() {
+            var aux = $("<p/>")
+            aux.html('@Resources.views.select_accountmanager');
+            select_categs = $('#AccountGGerMad').select2({
+                placeholder: aux.text(),
+                data: getAccountManagerToDataSelect2(),
+                theme: 'bootstrap4'
+            });
+        }
+
+        /** Clona la lista de categorías a otra lista data con elementos de {id, text} para el select2bs4*/
+        function getAccountManagerToDataSelect2() {
+            return listAccountManager.map(d => { return { 'id': d.ID, 'text': "Código: " + d.Code + " | "+ "Nombre: " + d.Name, 'value': d.ID } });
+        }
+
+
+        /**Carga statementType en el combobox*/
+        function fillSelect2StatementType() {
+            var aux = $("<p/>")
+            aux.html('@Resources.views.select_statementtype');
+            select_categs = $('#AccountGStaType').select2({
+                placeholder: aux.text(),
+                data: getStatementTypeToDataSelect2(),
+                theme: 'bootstrap4'
+            });
+        }
+
+        /** Clona la lista de categorías a otra lista data con elementos de {id, text} para el select2bs4*/
+        function getStatementTypeToDataSelect2() {
+            return listStatementType.map(d => { return { 'id': d.ID, 'text': "Código: " + d.Code + " | " + "Nombre: " + d.Name, 'value': d.ID } });
+        }
+
+
+
+        function fillSelect2Stores() {
+            var aux = $("<p/>")
+            aux.html('@Resources.views.tiendas');
+            select_categs = $('#AccountGStores').select2({
+                placeholder: aux.text(),
+                data: getStoresToDataSelect2(),
+                theme: 'bootstrap4'
+            });
+        }
+
+        /** Clona la lista de categorías a otra lista data con elementos de {id, text} para el select2bs4*/
+        function getStoresToDataSelect2() {
+            return listStore.map(d => { return { 'id': d.IDS, 'text': "Código: " + d.CodeS + " | " + "Nombre: " + d.NameS, 'value': d.IDS } });
+        }
+
+
+        function fillSelect2RRNumberSeries() {
+            var aux = $("<p/>")
+            aux.html('@Resources.views.select_numseries');
+            select_categs = $('#AccountGNumSer').select2({
+                placeholder: aux.text(),
+                data: getRRNumberSeriesToDataSelect2(),
+                theme: 'bootstrap4'
+            });
+        }
+
+        /** Clona la lista de categorías a otra lista data con elementos de {id, text} para el select2bs4*/
+        function getRRNumberSeriesToDataSelect2() {
+            return listRRNumberSeries.map(d => { return { 'id': d.ID, 'text': "Código: " + d.Code + " | " + "Nombre: " + d.Name, 'value': d.ID } });
+        }
+
+
+        function getSelectedStoreIDs() {
+            var selectedStoreIDs = $("#AccountGStores").val(); // Obtiene los valores seleccionados como una matriz
+            var selectedStoreIDsString = selectedStoreIDs ? selectedStoreIDs.join(',') : ''; // Convierte la matriz en una cadena separada por comas
+            return selectedStoreIDsString;
+        }
+
+        function fillSelect2MultiStores(selectedStoreIDs) {
+            var aux = $("<p/>");
+            aux.html('@Resources.views.tiendas');
+            select_categs = $('#AccountGStores').select2({
+                placeholder: aux.text(),
+                data: getMultiStoresToDataSelect2(selectedStoreIDs),
+                theme: 'bootstrap4'
+            });
+            $('#AccountGStores').val(selectedStoreIDs.split(',')).trigger('change');
+        }
+
+        function getMultiStoresToDataSelect2(selectedStoreIDs) {
+            var data = [];
+            listStore.forEach(function (d) {
+                data.push({
+                    'id': d.IDS,
+                    'text': "Código: " + d.CodeS + " | " + "Nombre: " + d.NameS,
+                    'value': d.IDS
+                });
+            });
+            return data;
+        }
+
+
+        function getAccountGroupFromModal() {
+            var data = {
+                ID: identi,
+                Code: $("#AccountGCode").val(),
+                Name: $("#AccountGName").val(),
+                Inactive: $("#chk_accg_inactivo").is(":checked"),
+                PayTermsId: $("#AccountGPayTerm").val(),
+                FinChargeID: $("#AccountGCargoFi").val(),
+                CurrencyId: 0,
+                ManagerId: $("#AccountGGerMad").val(),
+                CountryId: 0,
+                RegionId: 0,
+                LocationId: 0,
+                CreditLimit: $("#AccountGCredLim").val(),
+                CreditLimitCheck: $("#AccountGCredLimCk").val(),
+                StatementType: $("#AccountGStaType").val(),
+                ApplicationMethod: $("#AccountGAppMet").val(),
+                NumberSeries: $("#AccountGNumSer").val()
+            }
+
+            return data;
+            identi = null;
+
+        }
+        function getExtCentralAccountGroupFromModal() {
+            var data1 = {
+                StoreID: getSelectedStoreIDs(),
+                Prefix: $("#AccountGPreCuenta").val()
+            }
+            return data1
+        }
+
+
+    function setAccountGroupInModal(accountGroup, extCentral_AR_AccountGroup) {
+        try {
+            identi = accountGroup.ID;
+            $("#AccountGCode").val(accountGroup.Code);
+            $("#AccountGName").val(accountGroup.Name);
+            $("#chk_accg_inactivo").prop("checked", accountGroup.Inactive);
+            $("#AccountGPayTerm").val(accountGroup.PayTermsId).trigger('change');
+            $("#AccountGCargoFi").val(accountGroup.FinChargeID).trigger('change');
+            $("#AccountGGerMad").val(accountGroup.ManagerId).trigger('change');
+            $("#AccountGCredLim").val(accountGroup.CreditLimit);
+            $("#AccountGCredLimCk").prop("checked", accountGroup.CreditLimitCheck);
+            $("#AccountGStaType").val(accountGroup.StatementType).trigger('change');
+            $("#AccountGAppMet").val(accountGroup.ApplicationMethod).trigger('change');
+            $("#AccountGNumSer").val(accountGroup.NumberSeries).trigger('change');
+            fillSelect2MultiStores(extCentral_AR_AccountGroup.StoreID);
+            //$("#AccountGStores").val(extCentral_AR_AccountGroup.StoreID).trigger('change');
+            $("#AccountGPreCuenta").val(extCentral_AR_AccountGroup.Prefix);
+        }
+        catch (e) {
+            error(e, "@Resources.messages.error_mostrar_reg_edit");
+        }
+    }
+
+        async function SaveAccountGroup() {
+        try {
+            var accountGroup = getAccountGroupFromModal();
+            var extCentral_AR_AccountGroup = getExtCentralAccountGroupFromModal();
+            await $.post(url_saveAccountGroup, { accountGroup, extCentral_AR_AccountGroup }, "json")
+            .done(function (data) {
+                if (data.Status) {
+                    Toast.fire({ icon: 'success', title: data.Message });
+                    $('#modal_accountgroup').modal('hide');
+                    getAllAccountGroup();
+                    identi = null;
+                } else {
+                    Toast.fire({ icon: 'error', title: data.Message });
+                }
+            })
+            .fail(function () {
+                error("ERROR AL GUARDAR", "@Resources.messages.error_intento_guardar");
+            })
+            .always(function () {
+            });
+
+
+        } catch (e) { error(e, "@Resources.messages.error_intento_guardar"); }
+    }
+
+    function setValidationForAccountGroupForm() {
+        var rules = {
+            AccountGCode: {
+                required: true,
+                number: true
+            },
+            AccountGName: {
+                required: true,
+                pattern: /^[A-Za-z\sáéíóúÁÉÍÓÚüÜñÑ]+$/
+            },
+            AccountGCredLim: {
+                required: true,
+                number: true
+            },
+            AccountGPreCuenta: {
+                required: true,
+                pattern: /^[A-Za-záéíóúÁÉÍÓÚüÜñÑ]{2}$/
+            },
+            chk_accg_inactivo: {},
+            AccountGPayTerm: {
+                required: true
+            },
+            AccountGAppMet: {
+                required: true
+            },
+            AccountGCargoFi: {
+                required: true
+            },
+            AccountGGerMad: {
+                required: true
+            },
+            AccountGNumSer: {
+                required: true
+            },
+            AccountGStaType: {
+                required: true
+            },
+            AccountGStores: {
+                required: true
+            }
+        };
+
+        var messages = {
+            AccountGCode: {
+                required: "El código es obligatorio. Y este no se puede Repetir",
+                number: "Ingrese solo números en el código. Recuerde que el código es único"
+            },
+            AccountGName: {
+                required: "El nombre es obligatorio.",
+                pattern: "El nombre solo puede contener letras y tildes."
+            },
+            AccountGCredLim: {
+                required: "El límite de crédito es obligatorio.",
+                number: "Ingrese solo números en el límite de crédito."
+            },
+            AccountGPreCuenta: {
+                required: "El prefijo es obligatorioy este no se puede repetir",
+                pattern: "La cuenta prefijo debe contener exactamente dos letras."
+            },
+            AccountGPayTerm: {
+                required: "Seleccione un término de pago."
+            },
+            AccountGAppMet: {
+                required: "Seleccione un método de aplicación."
+            },
+            AccountGCargoFi: {
+                required: "Seleccione un cargo financiero."
+            },
+            AccountGGerMad: {
+                required: "Seleccione un gerente de cuentas."
+            },
+            AccountGNumSer: {
+                required: "Seleccione un número de serie."
+            },
+            AccountGStaType: {
+                required: "Seleccione un tipo de instrucción."
+            },
+            AccountGStores: {
+                required: "Seleccione al menos una tienda."
+            }
+        };
+
+        $.validator.setDefaults({
+            submitHandler: function () {
+                // Llama a la función de guardar correspondiente, por ejemplo, SaveAccountGroup
+                SaveAccountGroup();
+            }
+        });
+
+        $('#form_accountgroup').validate({
+            rules: rules,
+            messages: messages,
+            errorElement: 'span',
+            errorPlacement: function (err, element) {
+                err.addClass('invalid-feedback ml-2');
+                element.closest('.form-group').append(err);
+            },
+            highlight: function (element, errorClass, validClass) {
+                $(element).addClass('is-invalid');
+            },
+            unhighlight: function (element, errorClass, validClass) {
+                $(element).removeClass('is-invalid');
+            }
+        });
+    }
+</script>
+

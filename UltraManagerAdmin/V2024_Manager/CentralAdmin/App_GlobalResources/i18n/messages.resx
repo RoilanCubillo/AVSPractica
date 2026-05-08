@@ -1,0 +1,303 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="bienvenido" xml:space="preserve">
+    <value>Bienvenido</value>
+  </data>
+  <data name="ejec_abort" xml:space="preserve">
+    <value>Ejecución abortada.</value>
+  </data>
+  <data name="error_accion" xml:space="preserve">
+    <value>Error al ejecutar la acción, refresque e intente de nuevo.</value>
+  </data>
+  <data name="error_cod_igual" xml:space="preserve">
+    <value>Error, ya exite un registro con el mismo código.</value>
+  </data>
+  <data name="error_exist" xml:space="preserve">
+    <value>Error, registro ya existente</value>
+  </data>
+  <data name="error_get_proc" xml:space="preserve">
+    <value>Error al obtener la respuesta del procedimiento.</value>
+  </data>
+  <data name="error_guardar" xml:space="preserve">
+    <value>Ocurrió un error al guardar el registro.</value>
+  </data>
+  <data name="error_inicializar_horario" xml:space="preserve">
+    <value>Problemas al inicializar el horario.</value>
+  </data>
+  <data name="error_intento_editar" xml:space="preserve">
+    <value>Ocurrió un error al intentar editar un registro.</value>
+  </data>
+  <data name="error_intento_guardar" xml:space="preserve">
+    <value>Ocurrió un error intentando guardar el registro.</value>
+  </data>
+  <data name="error_interno" xml:space="preserve">
+    <value>Error interno. </value>
+  </data>
+  <data name="error_leer_proc" xml:space="preserve">
+    <value>Error al leer la respuesta del proceso.</value>
+  </data>
+  <data name="error_llenar_registros" xml:space="preserve">
+    <value>Ocurrió un error al mostrar los registros.</value>
+  </data>
+  <data name="error_loggin" xml:space="preserve">
+    <value>Complicaciones con el inicio de sesión. Consulte con soporte si el problema contiúa.</value>
+  </data>
+  <data name="error_loggin_credenciales" xml:space="preserve">
+    <value>Nombre de usuario o contraseña incorrectos.</value>
+  </data>
+  <data name="error_loggin_unauthorized" xml:space="preserve">
+    <value>No cuenta con los permisos para ingresar.</value>
+  </data>
+  <data name="error_mostrar_reg_edit" xml:space="preserve">
+    <value>Ocurrió un error al mostrar el registro a editar.</value>
+  </data>
+  <data name="error_no_existe" xml:space="preserve">
+    <value>Error, no existe el registro a actualizar.</value>
+  </data>
+  <data name="error_obt_reg" xml:space="preserve">
+    <value>Error, no se pudo obtener el registro.</value>
+  </data>
+  <data name="error_obt_regs" xml:space="preserve">
+    <value>Error, no se pudo obtener los registros.</value>
+  </data>
+  <data name="error_obt_reg_a_guardar" xml:space="preserve">
+    <value>Error al obtener el registro a guardar. Refresque e intente de nuevo.</value>
+  </data>
+  <data name="error_reg_actualizado" xml:space="preserve">
+    <value>Error, registro no actualizado.</value>
+  </data>
+  <data name="error_reg_edit_inval" xml:space="preserve">
+    <value>Registro a editar inválido.</value>
+  </data>
+  <data name="error_reg_insertado" xml:space="preserve">
+    <value>Error, registro no insertado.</value>
+  </data>
+  <data name="error_sql_2627" xml:space="preserve">
+    <value>Error, ya existe otro registro con alguno de los datos del registro a guardar.</value>
+  </data>
+  <data name="error_sql_515" xml:space="preserve">
+    <value>Error con algunos de los datos del registro a guardar.</value>
+  </data>
+  <data name="error_tipo_desc_inval" xml:space="preserve">
+    <value>Tipo de descuento inválido.</value>
+  </data>
+  <data name="error_w_status" xml:space="preserve">
+    <value />
+  </data>
+  <data name="msj_campos_limpiar" xml:space="preserve">
+    <value>Todos los campos se limpiarán!</value>
+  </data>
+  <data name="msj_continuar" xml:space="preserve">
+    <value>¿Continuar?</value>
+  </data>
+  <data name="msj_lista_vacia" xml:space="preserve">
+    <value>Lista de registros vacía.</value>
+  </data>
+  <data name="succ_actualizado" xml:space="preserve">
+    <value>Registro actualizado.</value>
+  </data>
+  <data name="succ_insertado" xml:space="preserve">
+    <value>Registro insertado.</value>
+  </data>
+  <data name="validacion_campos_requeridos" xml:space="preserve">
+    <value>Hay campos requeridos que están incompletos.</value>
+  </data>
+  <data name="validacion_campos_vacios" xml:space="preserve">
+    <value>Falta información requerida.</value>
+  </data>
+  <data name="validacion_cant_may_0" xml:space="preserve">
+    <value>La cantidad debe ser mayor a 0.</value>
+  </data>
+  <data name="validacion_categ_req" xml:space="preserve">
+    <value>La categoría es requerida.</value>
+  </data>
+  <data name="validacion_cod_max" xml:space="preserve">
+    <value>El código debe ser a lo sumo de {0} caracteres.</value>
+  </data>
+  <data name="validacion_cod_req" xml:space="preserve">
+    <value>El código es requerido.</value>
+  </data>
+  <data name="validacion_depart_req" xml:space="preserve">
+    <value>El departamento es requerido.</value>
+  </data>
+  <data name="validacion_desc_maxLen" xml:space="preserve">
+    <value>La descripción debe ser a lo sumo de {0} caracteres.</value>
+  </data>
+  <data name="validacion_desc_req" xml:space="preserve">
+    <value>La descripción es requerida.</value>
+  </data>
+  <data name="validacion_fecha" xml:space="preserve">
+    <value>Fecha inválida.</value>
+  </data>
+  <data name="validacion_forma_req" xml:space="preserve">
+    <value>Forma de rebajo requerido</value>
+  </data>
+  <data name="validacion_ing_valor" xml:space="preserve">
+    <value>Debe ingresar un valor.</value>
+  </data>
+  <data name="validacion_invalid" xml:space="preserve">
+    <value>Valor inválido.</value>
+  </data>
+  <data name="validacion_limEdad_max" xml:space="preserve">
+    <value>El límite de edad no puede ser mayor a {0}.</value>
+  </data>
+  <data name="validacion_limEdad_min" xml:space="preserve">
+    <value>El límite de edad debe ser mayor o igual a {0}.</value>
+  </data>
+  <data name="validacion_limEdad_req" xml:space="preserve">
+    <value>El límite de edad es requerido.</value>
+  </data>
+  <data name="validacion_max" xml:space="preserve">
+    <value>Debe ingresar a lo sumo {0} caracteres.</value>
+  </data>
+  <data name="validacion_msj_max" xml:space="preserve">
+    <value>El mensaje debe ser a lo sumo de {0} caracteres.</value>
+  </data>
+  <data name="validacion_msj_req" xml:space="preserve">
+    <value>El mensaje es requerido.</value>
+  </data>
+  <data name="validacion_nom_max" xml:space="preserve">
+    <value>El nombre debe ser a lo sumo de {0} caracteres.</value>
+  </data>
+  <data name="validacion_nom_req" xml:space="preserve">
+    <value>El nombre es requerido.</value>
+  </data>
+  <data name="validacion_num_inval" xml:space="preserve">
+    <value>Valor numérico inválido.</value>
+  </data>
+  <data name="validacion_req" xml:space="preserve">
+    <value>El campo es requerido.</value>
+  </data>
+  <data name="validacion_time_sche_inval" xml:space="preserve">
+    <value>Incremento de tiempo inválido.</value>
+  </data>
+  <data name="validacion_time_sche_req" xml:space="preserve">
+    <value>El incremento de tiempo es requerido.</value>
+  </data>
+  <data name="validacion_tipoDesc_req" xml:space="preserve">
+    <value>El tipo de descuento es requerido.</value>
+  </data>
+  <data name="validacion_titulo_max" xml:space="preserve">
+    <value>El título debe ser a lo sumo de {0} caracteres.</value>
+  </data>
+  <data name="validacion_titulo_req" xml:space="preserve">
+    <value>El título es requerido.</value>
+  </data>
+</root>

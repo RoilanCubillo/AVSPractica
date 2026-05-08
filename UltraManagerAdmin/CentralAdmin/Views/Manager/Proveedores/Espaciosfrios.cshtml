@@ -1,0 +1,1100 @@
+﻿@{
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+    var Name = Resources.views.mant_espacios_frios;
+    var Title = Resources.views.espacios;
+    var culture = System.Threading.Thread.CurrentThread.CurrentCulture;
+    var CurrencySymbol = culture.NumberFormat.CurrencySymbol;
+    var CurrencyDecimalSeparator = culture.Name.ToUpper() == "ES-CR" ? "." : culture.NumberFormat.CurrencyDecimalSeparator;
+    var CurrencyThousandSeparator = culture.Name.ToUpper() == "ES-CR" ? "," : culture.NumberFormat.NumberGroupSeparator;
+
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+
+    @* < CSS > *@
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    <!-- Tempusdominus Bootstrap 4 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
+    <!-- Select2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+    @* < CSS / >*@
+
+    @* < SCRIPTS > *@
+    <!-- moment.js -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- Select2 -->
+    <script src="~/Content/AdminLTE/plugins/select2/js/select2.full.min.js"></script>
+    <!-- Tempusdominus Bootstrap 4 -->
+    <script src="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+    <!-- InputMask -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/inputmask/jquery.inputmask.min.js"></script>
+    @* < SCRIPTS / >*@
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <!-- Encabezado -->
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>@Name</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager", "Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">@Resources.views.espacios</li>
+                                <li class="breadcrumb-item active">@Resources.views.espacio_frio</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Encabezado -->
+            <!-- Muestra -->
+            <div class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="overlay-wrapper">
+                                        <!-- Spinner tbl -->
+                                        <div id="spn_tbl_espacios" class="overlay justify-content-center">
+                                            <i class="fas fa-3x fa-sync-alt fa-spin"></i>
+                                            <div class="text-bold pt-2">@Resources.views.cargando</div>
+                                        </div>
+                                        <!-- Spinner tbl -->
+                                        <!-- Boton agregar -->
+                                        <div class="col-md-12 mb-3" style="overflow: auto;">
+                                            <div class="row-cols-md-6">
+                                                <button type="button" class="btn btn-primary float-right fa-pull-right" onclick="onClickBtnAddEspacio()"><i class="fa fa-plus"> </i> @Resources.views.agregar</button>
+                                            </div>
+                                        </div><!-- Boton agregar -->
+                                        <!-- Tap Panel -->
+                                        <div class="card card-primary card-tabs">
+                                            <!-- Tap Panel - Header -->
+                                            <div class="card-header p-0 pt-1">
+                                                <ul class="nav nav-tabs" role="tablist">
+                                                    <li class="nav-item"><a class="tab-tbls nav-link active" id="nav_tab_tblCab" data-toggle="pill" role="tab" href="#tab_tblCab" aria-controls="tab_tblCab" aria-selected="true">@Resources.views.espacio_frio</a></li>
+                                                    <li class="nav-item"><a class="tab-tbls nav-link" id="nav_tab_tbl_asig_prov" data-toggle="pill" role="tab" href="#tab_tbl_asig_prov" aria-controls="tab_tbl_asig_prov" aria-selected="false">@Resources.views.asig_prov</a></li>
+                                                </ul>
+                                            </div><!-- Tap Panel - Header -->
+                                            <div class="card-body">
+                                                <div class="tab-content">
+                                                    <!-- Panel de formulario de descuentos -->
+                                                    <div class="tab-pane fade show active" id="tab_tblCab" role="tabpanel" aria-labelledby="nav_tab_tblCab">
+                                                        <div id="tbl_content_espacios_frios" class="dataTables_wrapper dt-bootstrap4">
+                                                            <table class="table table-bordered table-striped">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>@Resources.views.tienda</th>
+                                                                        <th>@Resources.views.camara</th>
+                                                                        <th>Total Puertas</th>
+                                                                        <th>Total Parrillas x Puerta</th>
+                                                                        <th>Dimensión</th>
+                                                                        <th>Ubicación</th>
+                                                                        <th>Monto</th>
+                                                                        <th>@Resources.views.accion</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody></tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                    <div class="tab-pane fade" id="tab_tbl_asig_prov" role="tabpanel" aria-labelledby="nav_tab_tbl_asig_prov">
+                                                        <!-- Table-->
+                                                        <div id="tbl_content_espaciosfrios_prov" class="dataTables_wrapper dt-bootstrap4">
+                                                            <table class="table table-bordered table-striped table-responsive">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>@Resources.views.tienda</th>
+                                                                        <th>@Resources.views.camara</th>
+                                                                        <th>N° Puerta</th>                                                                       
+                                                                        <th>N° Parrilla</th>
+                                                                        <th>% de Usabilidad de parrilla</th>
+                                                                        <th>@Resources.views.proveedor</th>                                                                       
+                                                                        <th>@Resources.views.fecha_ini</th>
+                                                                        <th>@Resources.views.fecha_fin</th>
+                                                                        <th>Monto de parrilla</th>
+                                                                        <th>Impuesto</th>
+                                                                        <th>Monto Total</th>
+                                                                        <th>Estado</th>
+                                                                        <th>@Resources.views.accion</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody></tbody>
+                                                            </table>
+                                                        </div><!-- Table -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- Muestra -->
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal_espaciofrio" class="modal fade" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <!-- Spinner Modal -->
+                <div id="spn_modal_espacios" class="overlay">
+                    <i class="fas fa-2x fa-sync fa-spin"></i>
+                </div><!-- Spinner Modal -->
+
+                <!-- Encabezado Modal -->
+                <div class="modal-header text-center">
+                    <h4 id="title_modal_espaciofrio" class="modal-title"></h4>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div><!-- Encabezado Modal -->
+
+                <!-- Cuerpo Modal -->
+                <div class="modal-body" style="overflow: auto">
+                    <div class="card card-primary card-tabs">
+                        <div class="card-header p-0 pt-1">
+                            <ul class="nav nav-tabs" role="tablist">
+                                <li class="nav-item"><a class="nav-link active" id="nav_tab_espacio" data-toggle="pill" role="tab" href="#tab_espacio" aria-controls="tab_espacio" aria-selected="true">@Resources.views.espacio_frio</a></li>
+                                <li class="nav-item"><a class="nav-link" id="nav_tab_asig_esp" data-toggle="pill" role="tab" href="#tab_asig_esp" aria-controls="tab_asig_esp" aria-selected="false">@Resources.views.asig_prov</a></li>
+                            </ul>
+                        </div><!-- Tap Panel - Header -->
+                        <div class="card-body">
+                            <div class="tab-content" id="custom-content-below-tabContent">
+                                <!-- Panel de formulario de descuentos -->
+                                <div class="tab-pane fade show active" id="tab_espacio" role="tabpanel" aria-labelledby="nav_tab_espacio">
+                                   
+                                    <form id="form_espaciosfrios">
+                                        <div class="row">
+                                            <input type="hidden" id="hfID" />
+                                            <div class="form-group col-sm-6">
+                                                <label class="control-label">@Resources.views.tienda</label>
+                                                <select id="select_tienda" name="select_tienda" class="form-control select2bs4" data-placeholder="@Resources.views.buscar" style="width: 100%;">
+                                                </select>
+                                            </div>
+
+                                            <div class="form-group col-sm-6">
+                                                <label>Código de Camara</label>
+                                                <input id="input_camara" name="input_camara" type="text" class="form-control" placeholder="Código" />
+                                            </div>
+
+                                            <div class="form-group col-sm-6">
+                                                <label>Cantidad de puertas</label>
+                                                <input id="input_puerta" name="input_puerta" type="number" class="form-control" placeholder="Cantidad de puertas" />
+                                            </div>
+
+                                            <div class="form-group col-sm-6">
+                                                <label for="input_parrillas" class="control-label">Cantidad de parrillas por puerta</label>
+                                                <input id="input_parillas" name="input_parillas" type="number" class="form-control" placeholder="Cantidad de parrillas por puerta" />
+                                            </div>
+
+                                            <div class="form-group col-sm-6">
+                                                <label for="input_ubicacion" class="control-label">Ubicación</label>
+                                                <input id="input_ubicacion" name="input_ubicacion" type="text" class="form-control" placeholder="Ubicación" />
+                                            </div>
+
+                                            <div class="form-group col-sm-6">
+                                                <label for="input_dimension" class="control-label">Medidas</label>
+                                                <input id="input_dimension" name="input_dimension" type="text" class="form-control" placeholder="Medidas" />
+                                            </div>
+
+                                            <div class="form-group  col-sm-6">
+                                                <label>Monto por parrilla</label>
+                                                <div class="input-group">
+                                                    <div class="input-group-prepend">
+                                                        <span class="input-group-text"><i class="fas">@CurrencySymbol</i></span>
+                                                    </div>
+                                                    <input id="input_monto" type="text" name="input_monto" class="form-control" data-inputmask="'alias' : 'currency', 'groupSeparator':'@CurrencyThousandSeparator', 'radixPoint':'@CurrencyDecimalSeparator'" data-mask />
+                                                </div>
+                                                <!-- /.input group -->
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-primary" onclick="onClickBtnNewEspacio()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                                            <button type="submit" class="btn btn-success"> <i class="fa fa-save"></i> @Resources.views.guardar</button>
+                                            <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                                        </div>
+                                    </form>                                   
+                                </div>
+
+                                <div class="tab-pane fade" id="tab_asig_esp" role="tabpanel" aria-labelledby="nav_tab_asig_esp">
+                                    <form id="form_content_asignacion">
+                                        <div class="col-12 d-flex justify-content-end">
+                                            <div id="div_editar" class="checkbox icheck-turquoise">
+                                                <input type="checkbox" id="ck_editar">
+                                                <label for="ck_editar">
+                                                    Editar
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <!--filtro-->
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="card card-outline card-primary">
+                                                    <input type="hidden" id="ETID" />
+                                                    <div class="card-header">
+                                                        <h3 class="card-title">Asignación de Cámara</h3>
+                                                        <div class="card-tools">
+                                                            <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div id="actions" class="row">
+                                                            <div class="col-sm-6 col-md-4">
+                                                                <div class="form-group w-100">
+                                                                    <label class="control-label">@Resources.views.tienda</label>
+                                                                    <select id="select2_tienda" name="select2_tienda" class="form-control select2bs4" data-placeholder="@Resources.views.buscar" style="width: 100%;">
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-sm-6 col-md-4">
+                                                                <div class="d-inline-flex w-100 mb-0 mr-2">
+                                                                    <div class="form-group w-100">
+                                                                        <label>@Resources.views.espacio_frio</label>
+                                                                        <select id="select_espacio" name="select_espacio" class="form-control select2bs4" data-placeholder="@Resources.views.buscar" style="width: 100%;"></select>
+
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-md-4 form-group">
+                                                                <label>@Resources.views.proveedor</label>
+                                                                <select id="select_proveedor" name="select_proveedor" class="form-control select2bs4" data-placeholder="@Resources.views.buscar" style="width: 100%;"></select>
+                                                            </div>
+
+                                                            <div class=" col-sm-6 form-group">
+                                                                <label>N° Puerta</label>
+                                                                <input id="input_puertas" name="input_puertas" type="number" class="form-control " placeholder="Puerta #" style="width: 100%;" />
+                                                            </div>
+
+                                                            <div class=" col-sm-6 form-group">
+                                                                <label>N° Parrilla</label>
+                                                                <input id="input_parrilla" name="input_parrilla" type="number" class="form-control " placeholder="Parrilla #" style="width: 100%;" />
+                                                            </div>
+
+                                                            <div class="form-group  col-sm-6">
+                                                                <label>Porcentaje de usabilidad de parrilla</label>
+                                                                <div class="input-group">
+                                                                    <input id="input_porcentaje" type="text" name="input_porcentaje" class="form-control" data-inputmask="'alias': 'decimal', 'digits':'2'" placeholder="0" data-mask />
+                                                                    <div class="input-group-prepend">
+                                                                        <span class="input-group-text"><i class="fas">%</i></span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-sm-6 form-group">
+                                                                <label class="control-label">@Resources.views.IVA</label>
+                                                                <select id="select2_iva" name="select2_iva" class="form-control select2bs4" data-placeholder="@Resources.views.buscar" style="width: 100%;">
+                                                                </select>
+                                                                <input type="hidden" id="porcentaje" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- /.card-body -->
+                                                </div>
+                                                <!-- /.card -->
+                                            </div>
+                                        </div>
+                                        <!--filtro -->
+
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="card card-outline card-primary">
+                                                    <div class="card-header">
+                                                        <h3 class="card-title">Categoría y Productos</h3>
+                                                        <div class="card-tools">
+                                                            <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div id="actions" class="row">
+                                                            <div class="col-12 form-group">
+                                                                <label>@Resources.views.categs</label>
+                                                                <select id="select_categoria" name="select_categoria" class="form-control select2bs4" data-placeholder="@Resources.views.buscar" style="width: 100%;"></select>
+                                                            </div>
+
+                                                            <div class="col-12 form-group w-100">
+                                                                <label>@Resources.views.articulos</label>
+                                                                <select id="select_productos" name="select_productos" class="form-control select2" multiple="multiple" data-placeholder="@Resources.views.buscar" style="width: 100%;"></select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- /.card-body -->
+                                                </div>
+                                                <!-- /.card -->
+                                            </div>
+                                        </div>
+
+                                        <!-- /agregar fechas-->
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <div class="card card-outline card-primary">
+                                                    <div class="card-header">
+                                                        <h3 class="card-title">Vigencia</h3>
+                                                        <div class="card-tools">
+                                                            <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div id="actions" class="row">
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Fecha Inicio</label>
+                                                                    <div class="input-group date" id="fecha_ini" data-target-input="nearest">
+                                                                        <input id="fecha_ini" type="text" class="form-control datetimepicker-input" data-target="#fecha_ini" style="width:60%;" name="fecha_ini" />
+                                                                        <div class="input-group-append" data-target="#fecha_ini" data-toggle="datetimepicker">
+                                                                            <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="col-lg-6">
+                                                                <div class="form-group">
+                                                                    <label>Fecha Final</label>
+                                                                    <div class="input-group date" id="fecha_final" data-target-input="nearest">
+                                                                        <input id="fecha_final" type="text" class="form-control datetimepicker-input" data-target="#fecha_final" style="width:60%;" name="fecha_final" />
+                                                                        <div class="input-group-append" data-target="#fecha_final" data-toggle="datetimepicker">
+                                                                            <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <script type="text/javascript">
+                                                                $(function () {
+                                                                    $('#fecha_ini').datetimepicker({ format: 'DD/MM/YYYY', });
+                                                                    $('#fecha_final').datetimepicker({ format: 'DD/MM/YYYY', });
+                                                                });
+                                                            </script>
+                                                        </div>
+                                                    </div>
+                                                    <!-- /.card-body -->
+                                                </div>
+                                                <!-- /.card -->
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-primary" onclick="onClickBtnNewEspacioTienda()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                                            <button id="btnSaveCabecera" type="submit" class="btn btn-success"><i class="fa fa-save"></i> @Resources.views.guardar</button>
+                                            <button type="button" class="btn btn-danger" data-dismiss="modal"><i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div><!-- Cuerpo Modal -->
+            </div><!-- Modal content-->
+        </div>
+    </div><!-- Modal -->
+    @* Variables *@
+    <script>
+        var url_getAllEspacios = '@Url.Action("GetAll", "Espaciosfrios")', url_refresh = '@Url.Action("GetRefresh", "Espaciosfrios")';
+        var url_SaveEspacios = '@Url.Action("SaveEspaciosFrios", "Espaciosfrios")';
+        var url_SaveEspaciosTienda = '@Url.Action("SaveEspaciosFriosTienda", "Espaciosfrios")';
+        var url_Espacios = '@Url.Action("GetListEspaciosFrios", "Espaciosfrios")';
+        var url_Items = '@Url.Action("GetListItem", "Espaciosfrios")';
+        var url_Categorias = '@Url.Action("GetAllcategories_BY_Supplier", "Espaciosfrios")';
+        var url_Categoriaslist = '@Url.Action("GetAllcategories", "Espaciosfrios")';
+
+        var list_Store = []; // Almacena las tiendas obtenidas
+        var list_Supplier = [];
+        var list_espaciosfrios = [];
+        var list_espaciosfriosXTienda = [];
+        var list_espaciosfriostienda = [];
+        var list_productos = [];
+        var list_categorias = [];
+        var list_categorias2 = [];
+        var list_tax = [];
+
+        var select_store; // Componente Select
+        var select_supplier; // Componente Select
+        var select_espacios; // Componente Select
+        var select_espaciosXtienda; // Componente Select
+        var select_categorias; // Componente Select
+        var select_productos; // Componente Select
+        var select2_store;
+        var select_tax;
+
+        var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4000 }); // Variable para mostrar los mensajes.
+        var rules = {
+            input_camara: { required: true, maxlength: 17 },
+            input_puerta: { required: true, maxlength: 15 },
+            input_ubicacion: { required: true, maxlength: 15 },
+            input_parillas: { required: true, number: true, max: 20, min: 1 },
+            input_dimension: { required: true, maxlength: 15 },
+            select_tienda: { required: true, }
+        }; // Roles que cumplirán los componentes del formulario
+
+        var rulesET = {
+            fecha_ini: { required: true },
+            fecha_final: { required: true},
+            select2_tienda: { required: true },
+            select_espacio: { required: true },
+            select2_iva: { required: true },
+            select_proveedor: { required: true },
+            select_categoria: {
+                required: true
+            },
+            select_productos: {
+                required: true
+            },
+            input_parrilla: { required: true, maxlength: 17 },
+            input_puertas: { required: true, maxlength: 17 },
+            input_porcentaje: { required: true, maxlength: 17 }
+
+        };
+
+        var messages = {
+            select_tienda: { required: "@Resources.messages.validacion_req" },
+            input_camara: { required: "@Resources.messages.validacion_req", maxlength: "@Resources.messages.validacion_max" },
+            input_puerta: { required: "@Resources.messages.validacion_desc_req", maxlength: "@Resources.messages.validacion_desc_maxLen" },
+            input_parillas: { required: "@Resources.messages.validacion_desc_req", maxlength: "@Resources.messages.validacion_desc_maxLen" },
+            input_ubicacion: { required: "@Resources.messages.validacion_desc_req", maxlength: "@Resources.messages.validacion_desc_maxLen" },
+            input_dimension: { required: "@Resources.messages.validacion_desc_req", maxlength: "@Resources.messages.validacion_desc_maxLen" }
+        };
+
+        var messagesET = {
+            fecha_ini: { required: "@Resources.messages.validacion_req" },
+            fecha_final: { required: "@Resources.messages.validacion_req" },
+            select2_tienda: { required: "@Resources.messages.validacion_req" },
+            select_espacio: { required: "@Resources.messages.validacion_req" },
+            select_proveedor: { required: "@Resources.messages.validacion_req" },
+            select_categoria: { required: "@Resources.messages.validacion_req" },
+            select_productos: { required: "@Resources.messages.validacion_req" },
+            select2_iva: { required: "@Resources.messages.validacion_req" },
+            input_parrilla: { required: "@Resources.messages.validacion_req" },
+            input_puertas: { required: "@Resources.messages.validacion_req" },
+            input_porcentaje: { required: "@Resources.messages.validacion_req"}
+        };
+
+        var idEspaciosThread = null, idsCategsThread = "", idsProdsThread = "";
+
+        var estados = { 0: 'NO INICIADO', 1: 'ACTIVO', 2: 'FINALIZADO' };
+        var estadosColor = { 0: 'primary', 1: 'success', 2: 'secondary' };
+    </script>
+
+    @* Funciones *@
+<script>
+
+        /** Función initialize */
+        $(async function () {
+            $('.tab-tbls').on('shown.bs.tab', function (e) {
+                $($.fn.dataTable.tables(true)).DataTable()
+                    .columns.adjust()
+                    .responsive.recalc();
+            });
+            fillMenuItemsLayout();
+            $("#spn_modal_espacios").hide();
+            $(".select2").select2();
+            $('.select2bs4').select2({ theme: 'bootstrap4' });
+            $('[data-mask]').inputmask();
+            fillFormEspacio();
+            fillFormEspacioTienda();
+            StartLoadTable("tbl_content_espacios_frios", true);
+            EndLoadTable("@Name", "tbl_content_espacios_frios", true);
+            $("#select2_tienda").on('change', function (e) { onChangeSelectStore(); });
+            $("#select_proveedor").on('change', function (e) { onChangeSelectSupplier(); });
+            await getAllInfo();
+            await getAllItems();
+        });
+
+        function findStore(store_id) {
+            if (store_id && store_id > 0 && list_Store)
+                return list_Store.find(s => s.IDS === store_id);
+            else return null;
+        }
+
+        function findEspacios(ID) {
+            for (var i = 0; i < list_espaciosfrios.length; i++)
+                if (list_espaciosfrios[i].ID === ID)
+                    return list_espaciosfrios[i];
+            return null;
+        }
+
+        function findTax(id) {
+            if (id && id > 0 && list_tax)
+                return list_tax.find(t => t.ID === id);
+            else return null;
+        }
+
+        function findEspaciosXtienda(ID) {
+            for (var i = 0; i < list_espaciosfriosXTienda.length; i++)
+                if (list_espaciosfriosXTienda[i].ID === ID)
+                    return list_espaciosfriosXTienda[i];
+            return null;
+        }
+
+        function findCategoria(ID) {
+            for (var i = 0; i < list_categorias2.length; i++)
+                if (list_categorias2[i].ID === ID)
+                    return list_categorias2[i];
+            return null;
+        }
+
+        function findSupplier(id) {
+            if (id && id > 0 && list_Supplier)
+                return list_Supplier.find(sup => sup.ID === id);
+            else return null;
+        }
+
+        function findInList(list, fieldName, value) {
+            if (value && value > 0 && list)
+                return list.find(x => t[fieldName] === id);
+            else return null;
+        }
+
+        function findEspaciosAsig(id) {
+            if (id && id > 0 && list_espaciosfriostienda)
+                return list_espaciosfriostienda.find(x => x.ID === id);
+            else return null;
+        }
+
+        function espacioXtiendaToData() {
+            var data = list_cabecerasXtienda.map(c => { return { 'id': c.ID, 'text': c.Num } });
+            return data;
+        }
+
+        /** Clona la lista de categorias a otra lista data con elementos de {id, text} para el select2bs4*/
+        function storeToData() {
+            return list_Store.map(d => { return { 'id': d.IDS, 'text': d.NameS} });
+        }
+
+        function taxToData() {
+            return list_tax.map(d => { return { 'id': d.ID, 'text': d.Name} });
+        }
+
+        function supplierToData() {
+            return list_Supplier.map(d => { return { 'id': d.ID, 'text': d.Name } });
+        }
+
+        function espaciosToData() {
+            return list_espaciosfrios.map(d => { return { 'id': d.ID, 'text': d.Camara + " - " + d.Puerta + " - " + d.NumParrillas, 'parilla': d.NumParrillas } });
+        }
+
+        function espaciosXtiendaToData() {
+            return list_espaciosfriosXTienda.map(d => { return { 'id': d.ID, 'text': "Camara: " + d.Camara + ", " + "N° Puertas: " + d.Puerta + ", " + " N° Parrillas: " + d.NumParrilla, 'parrilla': d.NumParrillas } });
+        }
+
+        function categoriasToData() {
+            return list_categorias.map(d => { return { 'id': d.ID, 'text': d.Name } });
+        }
+
+        function productosToData() {
+            return list_productos.map(d => { return { 'id': d.ID, 'text': d.Description } });
+        }
+
+        async function getAllInfo() {
+            try {
+                await $.get(url_getAllEspacios).done(async function (data) {
+                    list_Store = data.Result.store;
+                    list_Supplier = data.Result.supplier;
+                    list_espaciosfrios = data.Result.espFrios;
+                    list_espaciosfriostienda = data.Result.espTienda;
+                    list_tax = data.Result.tax;
+
+                    fillSelectStore();
+                    fillSelectSupplier();
+                    fillSelectEspacio();
+                    fillSelectStoreE();
+                    getAllCatList();
+                    fillSelectTax();
+
+                    await fillEspaciosTable();
+                    await fillEspaciosTiendaTable();
+                });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        async function getRefresh() {
+            $("#spn_tbl_espacios").show();
+            try {
+                await $.get(url_refresh).done(async function (data) {
+                    list_espaciosfrios = data.Result.espFrios;
+                    list_espaciosfriostienda = data.Result.espTienda;
+
+                    await fillEspaciosTable();
+                    await fillEspaciosTiendaTable();
+
+                    $("#spn_tbl_espacios").hide();
+                }).fail(function () {
+                    error("Error al intentar obtener las asignaciones", "Error al intentar obtener las asignaciones");
+                    $("#spn_tbl_espacios").hide();
+                });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        async function getAllCatList() {
+            try {
+                await $.get(url_Categoriaslist).done(async function (data) { list_categorias2 = data.Result.categories; });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        async function getAllEspaciosFrios() {
+            try {
+                $("#spn_modal_espacios").show();
+                var val = $("#select2_tienda").val();
+                await $.get(url_Espacios + "?id=" + (val !== null ? val : '0')).done(function (data) {
+                    list_espaciosfriosXTienda = data.espacios;
+                    fillSelectEspacio();
+                    if (idEspaciosThread !== null) {
+                        $("#select_espacio").val(idEspaciosThread).trigger('change');
+                        idEspaciosThread = null;
+                    }
+                    $("#spn_modal_espacios").hide();
+                });
+            } catch (e) {
+                error(e, "@Resources.messages.error_obt_regs");
+                $("#spn_modal_espacios").hide();
+            }
+        }
+
+        async function getAllItems() {
+            try {
+                var val = $("#select_proveedor").val();
+                await $.get(url_Items + "?id=" + (val!==null ? val : '0')).done(async function (data) {
+                    list_productos = data.items;
+                    await fillSelectProductos();
+                    if (idsProdsThread) {
+                        $("#select_productos").val(idsProdsThread.split(',')).trigger("change");
+                        idsProdsThread = null;
+                    }
+                });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        async function getCategories() {
+            try {
+                var val = $("#select_proveedor").val();
+                await $.get(url_Categorias + "?supplierID=" + (val ? val : '0')).done(async function (data) {
+                    console.log(data);
+                    if (data.Status) {
+                        list_categorias = data.Result;
+                        await fillSelectCategories();
+                        if (idsCategsThread) {
+                            $("#select_categoria").val(idsCategsThread).trigger("change");
+                            idsCategsThread = null;
+                        }
+                    }
+                });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        /** Marca los items del menú del MainLayout para que se muestre en qué parte del menú se encuentra*/
+        function fillMenuItemsLayout() {
+            openMenu(["#nav-item-espacios"]);
+            activeItemMenu([".nav-item-espacios", "#nav-link-espacios-frios"])
+        }
+
+        function fillSelectProductos() {
+            $("#select_productos").val(null).trigger("change");
+            $("#select_productos").html(null).trigger("change");
+            $("#select_productos").select2("destroy");
+            select_productos = $("#select_productos").select2({ data: productosToData(), theme: 'bootstrap4', allowClear: true, closeOnSelect: false });
+        }
+
+        function fillSelectCategories() {
+            $("#select_categoria").val(null).trigger("change");
+            $("#select_categoria").html(null).trigger("change");
+            $("#select_categoria").select2("destroy");
+            select_categorias =  $("#select_categoria").select2({ data: categoriasToData(), theme: 'bootstrap4' });
+        }
+
+        function fillSelectTax() {
+            var data = taxToData();
+            $("#select2_iva").select2("destroy");
+            select_tax = $("#select2_iva").select2({ data: data, theme: 'bootstrap4' });
+        }
+
+        function fillSelectStore() {
+            $("#select_tienda").select2("destroy");
+            select_store = $("#select_tienda").select2({ data: storeToData(),  theme: 'bootstrap4' });
+        }
+
+        function fillSelectStoreE() {
+            var data = storeToData();
+            $("#select2_tienda").html(null).trigger("change");
+            $("#select2_tienda").select2("destroy");
+            select2_store = $("#select2_tienda").select2({ data: data, theme: 'bootstrap4' });
+            $("#select2_tienda").val(null).trigger("change");
+        }
+
+        function fillSelectSupplier() {
+            $("#select_proveedor").select2("destroy");
+            select_proveedor = $("#select_proveedor").select2({ data: supplierToData(), theme: 'bootstrap4' });
+        }
+
+        function fillSelectEspacio() {
+            $("#select_espacio").html(null).trigger("change");
+            $("#select_espacio").select2("destroy");
+            select_espaciosXtienda = $("#select_espacio").select2({ data: espaciosXtiendaToData(), theme: 'bootstrap4' });
+        }
+
+        function fillEspaciosTable() {
+            try {
+                StartLoadTable("tbl_content_espacios_frios", true);
+                $("#spn_tbl_espacios").show();
+                if (list_espaciosfrios) {
+                    $("#tbl_content_espacios_frios > table > tbody").html("");
+                    list_espaciosfrios.forEach(function (d) {
+                        var row = $("<tr />"), store = findStore(d.StoreId);
+                        $("#tbl_content_espacios_frios > table").append(row);
+                        row.append($("<td> " + (store ? store.NameS : "-@Resources.views.no_def-") + "</td>"));
+                        row.append($("<td> " + d.Camara + "</td>"));
+                        row.append($("<td> " + d.Puerta + "</td>"));
+                        row.append($("<td> " + d.NumParrillas + "</td>"));
+                        row.append($("<td> " + d.Dimension + "</td>"));
+                        row.append($("<td> " + d.Ubicacion + "</td>"));
+                        row.append($("<td> @CurrencySymbol" + numberWithCommas(d.Monto) + "</td>"));
+                        var title = "@Resources.views.editar Espacio Frío";
+                        row.append($("<td><button class='btn btn-primary' title='" + title + "' data-toggle='modal' data-target='' onClick='onClickBtnEditEspacio(" + d.ID + ")'> <i class='fa fa-edit' aria-hidden='true'></i></button></td>"));
+                    });
+                } else Toast.fire({ icon: 'warning', title: '@Resources.messages.msj_lista_vacia' });
+                EndLoadTable("@Name", "tbl_content_espacios_frios", true);
+                $("#spn_tbl_espacios").hide();
+            } catch (e) { error(e, "@Resources.messages.error_llenar_registros"); }
+        }
+
+        function fillEspaciosTiendaTable() {
+            try {
+                StartLoadTable("tbl_content_espaciosfrios_prov", true);
+                if (list_espaciosfriostienda) {
+                    $("#tbl_content_espaciosfrios_prov > table > tbody").html("");
+                    list_espaciosfriostienda.forEach(function (d) {
+                        var row = $("<tr />"),
+                            supp = findSupplier(d.SupplierId),
+                            store = findStore(d.StoreId),
+                            espacio = findEspacios(d.EspacioId),
+                            tax = findTax(d.TaxId),
+                            categoria = findCategoria(d.Categoria);
+                        $("#tbl_content_espaciosfrios_prov > table").append(row);
+                        row.append($("<td> " + store.NameS + "</td>"));
+                        row.append($("<td> " + espacio.Camara + "</td>"));
+                        row.append($("<td> " + d.NumPuerta + "</td>"));
+                        row.append($("<td> " + d.NumParrilla + "</td>"));
+                        row.append($("<td>" + d.Porcentaje + "%</td>"));
+                        row.append($("<td> " + supp.Name + "</td>"));
+                        row.append($("<td> " + d.FechaInicioAux + "</td>"));
+                        row.append($("<td> " + d.FechaFinAux + "</td>"));
+                        row.append($("<td> @CurrencySymbol" + numberWithCommas(espacio.Monto) + "</td>"));
+                        row.append($("<td> " + tax.Name + "</td>"));
+                        row.append($("<td> @CurrencySymbol" + numberWithCommas(d.Total) + "</td>"));
+
+                        var dateIni = new Date(moment(d.FechaInicioAux, "DD/MM/YYYY")),
+                            dateFin = new Date(moment(d.FechaFinAux, "DD/MM/YYYY")),
+                            dateActual = new Date();
+
+                        dateActual.setHours(0);
+                        dateActual.setMinutes(0);
+                        dateActual.setSeconds(0);
+                        dateActual.setMilliseconds(0);
+
+                        var estado = (dateActual > dateFin) ? 2 : (dateActual < dateIni) ? 0 : 1;
+
+                        row.append($("<td><span class='badge bg-" + estadosColor[estado] + "'>" + estados[estado] + "</span></td>"));
+                        var title = "@Resources.views.editar Asignación de Espacio Frío";
+                        row.append($("<td><button class='btn btn-primary' title='" + title + "' data-toggle='modal' data-target='' onClick='onClickBtnEditEspacioTienda(" + d.ID + ")'> <i class='fa fa-edit' aria-hidden='true'></i></button></td>"));
+                    });
+                } else Toast.fire({ icon: 'warning', title: '@Resources.messages.msj_lista_vacia' });
+                EndLoadTable("@Name", "tbl_content_espaciosfrios_prov", true);
+                $("#spn_tbl_espacios").hide();
+            } catch (e) { error(e, "@Resources.messages.error_llenar_registros"); }
+        }
+
+        function fillFormEspacioTienda() {
+            $.validator.setDefaults({ submitHandler: function () { GuardarEspacioTienda(); } });
+            $('#form_content_asignacion').validate({
+                rules: rulesET, messages: messagesET, errorElement: 'span',
+                errorPlacement: function (er, element) {
+                    er.addClass('invalid-feedback ml-2');
+                    element.closest('.form-group').append(er);
+                    error("Faltan campos", "@Resources.messages.validacion_campos_requeridos");
+                },
+                highlight: function (element, errorClass, validClass) { $(element).addClass('is-invalid'); },
+                unhighlight: function (element, errorClass, validClass) { $(element).removeClass('is-invalid'); }
+            });
+        }
+
+        function fillFormEspacio() {
+            $.validator.setDefaults({ submitHandler: function () { GuardarEspacio(); } });
+            $('#form_espaciosfrios').validate({
+                rules: rules, messages: messages, errorElement: 'span',
+                errorPlacement: function (er, element) {
+                    er.addClass('invalid-feedback ml-2');
+                    element.closest('.form-group').append(er);
+                    error("Faltan campos", "@Resources.messages.validacion_campos_requeridos");
+                },
+                highlight: function (element, errorClass, validClass) { $(element).addClass('is-invalid'); },
+                unhighlight: function (element, errorClass, validClass) { $(element).removeClass('is-invalid'); }
+            });
+        }
+
+        async function GuardarEspacioTienda() {
+            $("#spn_modal_espacios").show();
+            try {
+                var ct = getEspacioTiendaFromModal();
+                await $.ajax({
+                    url: url_SaveEspaciosTienda, type: 'post', dataType: 'json', contentType: 'application/json',
+                    data: JSON.stringify({ espfrio: ct }), cache: false,
+                    success: async function (result) {
+                        if (result.Status) {
+                            $("#spn_modal_espacios").show();
+                            $("#ETID").val(result.Result);
+                            $("#ck_editar").prop("checked", true);
+                            getRefresh();
+                            Toast.fire({ icon: 'success', title: result.Message });
+                            $("#spn_modal_espacios").hide();
+                        } else {
+                            $("#spn_modal_espacios").hide();
+                            error(result.InternalMessage, result.Message);
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        $("#spn_modal_espacios").hide();
+                        console.log("error al guardar");
+                        error(thrownError, "@Resources.messages.error_guardar");
+                    }
+                });
+            } catch (e) {
+                $("#spn_modal_espacios").hide();
+                error(e, "@Resources.messages.error_intento_guardar");
+            }
+        }
+
+        async function GuardarEspacio() {
+            $("#spn_modal_espacios").show();
+            var esp = getEspaciosFromModal();
+            try {
+                await $.ajax({
+                    url: url_SaveEspacios, type: 'post', dataType: 'json', contentType: 'application/json',
+                    data: JSON.stringify({ espfrio: esp }), cache: false,
+                    success: async function (result) {
+                        if (result.Status) {
+                            $("#spn_modal_espacios").show();
+                            $("#hfID").val(result.Result);
+                            await getRefresh();
+                            Toast.fire({ icon: 'success', title: result.Message });
+                            $("#spn_modal_espacios").hide();
+                        } else {
+                            $("#spn_modal_espacios").hide();
+                            error(result.InternalMessage, result.Message);
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        $("#spn_modal_espacios").hide();
+                        console.log("error al guardar");
+                        error(thrownError, "@Resources.messages.error_guardar");
+                    }
+                });
+            } catch (e) {
+                $("#spn_modal_islaSide").hide();
+                error(e, "@Resources.messages.error_intento_guardar");
+            }
+        }
+
+
+        function getEspacioTiendaFromModal() {
+            var monto = findEspacios(+$("#select_espacio").val()).Monto,
+                porcentaje = findTax(+$("#select2_iva").val()).Percentage,
+                porcUsabiliada = +$("#input_porcentaje").val(),
+                montoTotal = ((monto * (porcUsabiliada/100)) * (1 + (porcentaje / 100))),
+                fechaini = $('#fecha_ini').datetimepicker('date').toDate(),
+                fechafin = $('#fecha_final').datetimepicker('date').toDate(),
+                dataProds = "", dataCategs = "",
+                id = $('#ck_editar').is(":checked") ? $("#ETID").val() : 0;
+            $("#select_productos").select2('data').forEach(x => dataProds += (',' + x.id));
+            return {
+                ID: id,
+                StoreId: $("#select2_tienda").val(),
+                EspacioId: $("#select_espacio").val(),
+                NumParrilla: $("#input_parrilla").val(),
+                NumPuerta: $("#input_puertas").val(),
+                Porcentaje: $("#input_porcentaje").val(),
+                SupplierId: $("#select_proveedor").val(),
+                ListaProductos: dataProds,
+                Categoria: $("#select_categoria").val(),
+                FechaInicio: fechaini,
+                FechaFin: fechafin,
+                TaxId: $("#select2_iva").val(),
+                Total: Number(montoTotal)
+            };
+        }
+
+        function getEspaciosFromModal() {
+            return {
+                ID: $("#hfID").val(),
+                StoreId: $("#select_tienda").val(),
+                Camara: $("#input_camara").val(),
+                Puerta: $("#input_puerta").val(),
+                NumParrillas: $("#input_parillas").val(),
+                Dimension: $("#input_dimension").val(),
+                Ubicacion: $("#input_ubicacion").val(),
+                Monto: +($("#input_monto").val().replaceAll(",", ""))
+            };
+        }
+
+        function setEspacio(esp) {
+            try {
+                $("#hfID").val(esp.ID);
+                select_store.val(esp.StoreId).trigger('change');
+                $("#input_camara").val(esp.Camara);
+                $("#input_puerta").val(esp.Puerta);
+                $("#input_parillas").val(esp.NumParrillas);
+                $("#input_dimension").val(esp.Dimension);
+                $("#input_ubicacion").val(esp.Ubicacion);
+                $("#input_monto").val(esp.Monto);
+            } catch (e) { error(e, "@Resources.messages.error_mostrar_reg_edit"); }
+        }
+
+        function setAsignacionEspacio(esp) {
+            $("#ETID").val(esp.ID);
+            $('#fecha_ini').datetimepicker('date', moment(esp.FechaInicioAux, "DD/MM/YYYY"));
+            $('#fecha_final').datetimepicker('date', moment(esp.FechaFinAux, "DD/MM/YYYY"));
+
+            if ($("#select2_tienda").val() !== esp.StoreId) {
+                idEspaciosThread = esp.EspacioId;
+                $("#select2_tienda").val(esp.StoreId).trigger('change');
+            } else $("#select_espacio").val(esp.EspacioId).trigger('change');
+
+            if ($("#select_proveedor").val() !== esp.SupplierId) {
+                idsCategsThread = esp.Categoria;
+                idsProdsThread = esp.ListaProductos;
+                $("#select_proveedor").val(esp.SupplierId).trigger('change');
+            } else {
+                $("#select_categoria").val(esp.Categoria).trigger("change");
+                $("#select_productos").val(esp.ListaProductos.split(',')).trigger("change");
+            }
+
+            $("#select2_iva").val(esp.TaxId).trigger('change');
+            $("#input_parrilla").val(esp.NumParrilla);
+            $("#input_puertas").val(esp.NumPuerta);
+            $("#input_porcentaje").val(esp.Porcentaje);
+        }
+
+        function onClickBtnAddEspacio() {
+            $('#modal_espaciofrio').modal({ backdrop: 'static', keyboard: false });
+            $("#title_modal_espaciofrio").html('@Resources.views.agregar ' + '@Resources.views.espacio_frio');
+        }
+
+        function onClickBtnEditEspacio(ID) {
+            var esp = findEspacios(ID);
+            if (esp) {
+                setEspacio(esp);
+                $("#nav_tab_espacio").tab('show');
+                openModal(false);
+            } else Toast.fire({ icon: "warning", title: "@Resources.messages.error_reg_edit_inval" });
+        }
+
+        function onClickBtnEditEspacioTienda(id) {
+            var esp = findEspaciosAsig(id);
+            console.log(esp)
+            if (esp) {
+                setAsignacionEspacio(esp);
+                $("#nav_tab_asig_esp").tab('show');
+                $("#ck_editar").prop("checked", true);
+                openModal(false);
+            } else Toast.fire({ icon: "warning", title: "@Resources.messages.error_reg_edit_inval" });
+        }
+
+        function onClickBtnNewEspacio() {
+            Swal.fire({
+                title: "@Resources.messages.msj_continuar", html: "@Resources.messages.msj_campos_limpiar", icon: 'warning', showCancelButton: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $("#form_espaciosfrios input").val("");
+                    $("#select_tienda").val("").trigger('change');
+                    openModal(true);
+                }
+            });
+        }
+
+        function onClickBtnNewEspacioTienda() {
+            Swal.fire({
+                title: "@Resources.messages.msj_continuar", html: "@Resources.messages.msj_campos_limpiar", icon: 'warning', showCancelButton: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $("#form_content_asignacion input").val("");
+                    list_categorias = [];
+                    list_productos = [];
+                    fillSelectCategories();
+                    fillSelectProductos();
+
+                    $("#select2_iva").val(0).trigger('change');
+                    $("#select2_tienda").val(0).trigger('change');
+                    $("#select_proveedor").val(null).trigger('change');
+
+                }
+            });
+        }
+
+        function onChangeSelectStore() {
+            getAllEspaciosFrios();
+        }
+
+        function onChangeSelectEspacios() {
+            var esp = findEspacios(+$("#select_espacio").val());
+            if (esp) $("#input_parrilla").val(esp.NumParrillas);
+        }
+
+        async function onChangeSelectSupplier() {
+            $("#spn_modal_espacios").show();
+            await getAllItems();
+            await getCategories();
+            $("#spn_modal_espacios").hide();
+        }
+
+        /** Abre la modal */
+        function openModal(is_new) {
+            $("#title_modal_espaciofrio").html((is_new ? "@Resources.views.agregar" : "@Resources.views.editar") + " Espacio Frío");
+            $('#modal_espaciofrio').modal({ backdrop: 'static', keyboard: false });
+        }
+
+        function numberWithCommas(x) {
+            return x.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, "@CurrencyThousandSeparator");
+        }
+
+        function error(e, msg) {
+            Toast.fire({ icon: 'error', title: msg });
+            console.error(e);
+        }
+</script>
+</body>
+</html>

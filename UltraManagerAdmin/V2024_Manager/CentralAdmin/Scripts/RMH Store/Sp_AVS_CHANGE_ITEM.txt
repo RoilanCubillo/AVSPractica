@@ -1,0 +1,322 @@
+﻿
+/****** Object:  StoredProcedure [dbo].[AVS_CHANGE_ITEM_COST]    Script Date: 11/06/2024 13:45:56 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_COST] (@WorksheetID int,@STOREID int) 
+	AS
+BEGIN
+	update i 
+	set COST = CONVERT(money,TP.NuevoMonto)
+	from ItemDynamic i
+	JOIN
+	##TablaCost TP
+	on i.ItemID = (select i.id from Item i where i.ItemLookupCode = TP.ItemLookupCode) 
+	Where i.StoreID = @STOREID;
+
+	Insert into ItemValueLog(ID,ItemID,OldAmount,newAmount,AmountType,StoreID, LastUpdated)
+	select IDENT_CURRENT('ItemValueLog')+1, i.id,id.Cost,p.NuevoMonto,'P',id.StoreID,GETDATE()
+	from ItemDynamic id
+	join Item i on i.ID = id.ItemID
+	JOIN ##TablaCost p on i.ItemLookupCode = p.ItemLookupCode 
+	Where id.StoreID = @STOREID
+
+	INSERT INTO Worksheet_ItemUpdate(WorksheetID,ItemId)
+	select @WorksheetID,i.id 
+	from ##TablaCost as p
+	join Item i on i.ItemLookupCode= p.ItemLookupCode
+END
+GO
+/****** Object:  StoredProcedure [dbo].[AVS_CHANGE_ITEM_DEPARTMENT_CATEGORY]    Script Date: 11/06/2024 13:45:56 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_DEPARTMENT_CATEGORY] (@WorksheetID int) 
+	AS
+BEGIN
+	update it
+	set it.DepartmentID = CONVERT(int,TS1.NewDepartmentID),
+	    it.CategoryID = CONVERT(int,TS1.NewCategoryID)
+	from Item it
+	JOIN
+	##TablaDepCat TS1
+	on it.ID = (select it.id from Item it where it.ItemLookupCode = TS1.ItemLookupCode) 
+
+	INSERT INTO Worksheet_ItemUpdate(WorksheetID,ItemId)
+	select @WorksheetID,i.id 
+	from ##TablaDepCat as p
+	join Item i on i.ItemLookupCode= p.ItemLookupCode
+	
+END
+
+GO
+/****** Object:  StoredProcedure [dbo].[AVS_CHANGE_ITEM_DESCRIPTION]    Script Date: 11/06/2024 13:45:56 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_DESCRIPTION] (@WorksheetID int) 
+	AS
+BEGIN
+	update it
+	set [Description] = CONVERT(nvarchar(80),TS1.NuevaDes)
+	from Item it
+	JOIN
+	##TablaItemDes TS1
+	on it.ID = (select it.id from Item it where it.ItemLookupCode = TS1.ItemLookupCode) 
+
+	INSERT INTO Worksheet_ItemUpdate(WorksheetID,ItemId)
+	select @WorksheetID,i.id 
+	from ##TablaItemDes as p
+		join Item i on i.ItemLookupCode= p.ItemLookupCode
+		join WorksheetStore WS on WS.WorksheetID = @WorksheetID
+	where WS.StoreID in (SELECT C.StoreId FROM GlobalCatalog C WHERE C.SyncGuid = i.SyncGuid AND C.TableName = 'Item' AND C.IsActive = 1)
+END
+GO
+/****** Object:  StoredProcedure [dbo].[AVS_CHANGE_ITEM_EXTENDED_DESCRIPTION]    Script Date: 11/06/2024 13:45:56 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_EXTENDED_DESCRIPTION] (@WorksheetID int) 
+	AS
+BEGIN
+	update it
+	set it.ExtendedDescription = CONVERT(nvarchar(30),TS1.ExtendedDescription)
+	from Item it
+		JOIN ##TablaItemSub1 TS1 on it.ID = (select it.id from Item it where it.ItemLookupCode = TS1.ItemLookupCode) 
+
+	INSERT INTO Worksheet_ItemUpdate(WorksheetID,ItemId)
+	select @WorksheetID,i.id 
+	from ##TablaItemSub1 as p
+		join Item i on i.ItemLookupCode= p.ItemLookupCode
+		join WorksheetStore WS on WS.WorksheetID = @WorksheetID
+	where WS.StoreID in (SELECT C.StoreId FROM GlobalCatalog C WHERE C.SyncGuid = i.SyncGuid AND C.TableName = 'Item' AND C.IsActive = 1)
+	
+END
+GO
+/****** Object:  StoredProcedure [dbo].[AVS_CHANGE_ITEM_PRICES]    Script Date: 11/06/2024 13:45:56 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_PRICES] (@WorksheetID int, @StoreName nvarchar(50), @Tipo int) 
+	AS
+	BEGIN
+		DECLARE @STOREID INT
+		set @STOREID = (select ID FROM Store WHERE [Name] = @StoreName)
+		if @Tipo = 0
+			update i
+			set SalePrice = CONVERT(money,TP.NuevoMonto)
+			from ItemDynamic i
+		    JOIN
+			##TablaPrices TP
+			on i.ItemID = (select i.id from Item i where i.ItemLookupCode = TP.ItemLookupCode) 
+			Where i.StoreID = @STOREID
+
+		if @Tipo = 1
+		begin
+			update i 
+			set Price = CONVERT(money,TP.NuevoMonto)
+			from ItemDynamic i
+		    JOIN
+			##TablaPrices TP
+			on i.ItemID = (select i.id from Item i where i.ItemLookupCode = TP.ItemLookupCode) 
+			Where i.StoreID = @STOREID
+
+			Insert into ItemValueLog(ID,ItemID,OldAmount,newAmount,AmountType,StoreID, LastUpdated)
+			select IDENT_CURRENT('ItemValueLog')+1, i.id,id.Price,p.NuevoMonto,'P',id.StoreID,GETDATE()
+			from ItemDynamic id
+			join Item i on i.ID = id.ItemID
+			JOIN ##TablaPrices p on i.ItemLookupCode = p.ItemLookupCode 
+			Where id.StoreID = @STOREID
+		end
+
+		if @Tipo = 2
+			update i 
+			set PriceLevelA = CONVERT(money,TP.NuevoMonto)
+			from ItemDynamic i
+		    JOIN
+			##TablaPrices TP
+			on i.ItemID = (select i.id from Item i where i.ItemLookupCode = TP.ItemLookupCode) 
+			Where i.StoreID = @STOREID
+
+		if @Tipo = 3
+			update i 
+			set PriceLevelB = CONVERT(money,TP.NuevoMonto)
+			from ItemDynamic i
+		    JOIN
+			##TablaPrices TP
+			on i.ItemID = (select i.id from Item i where i.ItemLookupCode = TP.ItemLookupCode) 
+			Where i.StoreID = @STOREID
+
+		if @Tipo = 4
+			update i 
+			set PriceLevelC = CONVERT(money,TP.NuevoMonto)
+			from ItemDynamic i
+		    JOIN
+			##TablaPrices TP
+			on i.ItemID = (select i.id from Item i where i.ItemLookupCode = TP.ItemLookupCode) 
+			Where i.StoreID = @STOREID
+
+		INSERT INTO Worksheet_ItemUpdate(WorksheetID,ItemId)
+		select @WorksheetID,i.id 
+		from ##TablaPrices as p
+		join Item i on i.ItemLookupCode= p.ItemLookupCode
+	END
+GO
+/****** Object:  StoredProcedure [dbo].[AVS_CHANGE_ITEM_QUANTITY]    Script Date: 11/06/2024 13:45:56 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_QUANTITY] (@WorksheetID int,@StoreName nvarchar(50)) 
+	AS
+BEGIN
+	DECLARE @StoreID INT
+	set @STOREID = (select ID FROM Store WHERE [Name] = @StoreName)
+
+	update i 
+	set ReorderPoint = CONVERT(float,TP.NuevoRP),
+	RestockLevel = CONVERT(float,TP.NuevoRL)
+	from ItemDynamic i
+	JOIN
+	##TablaCantidades TP
+	on i.ItemID = (select i.id from Item i where i.ItemLookupCode = TP.ItemLookupCode) 
+	Where i.StoreID = @STOREID;
+
+	INSERT INTO Worksheet_ItemUpdate(WorksheetID,ItemId)
+	select @WorksheetID,i.id 
+	from ##TablaCantidades as p
+	join Item i on i.ItemLookupCode= p.ItemLookupCode
+END
+GO
+/****** Object:  StoredProcedure [dbo].[AVS_CHANGE_ITEM_STATUS]    Script Date: 11/06/2024 13:45:56 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_STATUS] (@WorksheetID int)
+	AS
+BEGIN
+	update i 
+	--set Inactive = case when CONVERT(int,TP.NuevoEstado) = 0 then 1 else 0 end
+	set Inactive = TP.NuevoEstado
+	from Item i 
+	JOIN
+	##TablaEstado TP
+	on i.ItemLookupCode = TP.ItemLookupCode WHERE TP.NuevoEstado IS NOT NULL;
+
+	INSERT INTO Worksheet_ItemUpdate(WorksheetID,ItemId)
+	select @WorksheetID,(select i.id from Item i where i.ItemLookupCode = p.ItemLookupCode)
+	from ##TablaEstado as p
+END
+GO
+/****** Object:  StoredProcedure [dbo].[AVS_CHANGE_ITEM_SUB_DESCRIPTION2]    Script Date: 11/06/2024 13:45:56 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_SUB_DESCRIPTION2] (@WorksheetID int) 
+	AS
+BEGIN
+	update it
+	set it.SubDescription2 = CONVERT(nvarchar(30),TS1.SubDescription2)
+	from Item it
+	JOIN
+	##TablaItemSub2 TS1
+	on it.ID = (select it.id from Item it where it.ItemLookupCode = TS1.ItemLookupCode) 
+
+	INSERT INTO Worksheet_ItemUpdate(WorksheetID,ItemId)
+	select @WorksheetID,i.id 
+	from ##TablaItemSub2 as p
+	join Item i on i.ItemLookupCode= p.ItemLookupCode
+	
+END
+GO
+/****** Object:  StoredProcedure [dbo].[AVS_CHANGE_ITEM_SUB_DESCRIPTION3]    Script Date: 11/06/2024 13:45:56 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_SUB_DESCRIPTION3] (@WorksheetID int) 
+	AS
+BEGIN
+	update it
+	set it.SubDescription3 = CONVERT(nvarchar(30),TS1.SubDescription3)
+	from Item it
+	JOIN
+	##TablaItemSub3 TS1
+	on it.ID = (select it.id from Item it where it.ItemLookupCode = TS1.ItemLookupCode) 
+
+	INSERT INTO Worksheet_ItemUpdate(WorksheetID,ItemId)
+	select @WorksheetID,i.id 
+	from ##TablaItemSub3 as p
+		join Item i on i.ItemLookupCode= p.ItemLookupCode
+		join WorksheetStore WS on WS.WorksheetID = @WorksheetID
+	where WS.StoreID in (SELECT C.StoreId FROM GlobalCatalog C WHERE C.SyncGuid = i.SyncGuid AND C.TableName = 'Item' AND C.IsActive = 1)
+	
+END
+GO
+/****** Object:  StoredProcedure [dbo].[AVS_CHANGE_ITEM_TAX]    Script Date: 11/06/2024 13:45:56 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [dbo].[AVS_CHANGE_ITEM_TAX] ( @WorksheetID int ) 
+AS
+BEGIN
+	------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- ACTUALIZAR IMPUESTO DE VENTA EN CATÁLOGO ÚNICO --
+	update i
+	set i.TaxID = (select top 1 t.ID from ItemTax t  --es un top 1 porque hay impuestos que tienen el porcentaje repetid
+						Join Tax on Tax.ID=t.TaxID01 
+						where Tax.[Percentage] = ti.TaxPercentage and t.[Description] not like '%Bonifica%')
+	from ##TablaItemTax ti
+		inner join Item i on i.ItemLookupCode = ti.ItemLookupCode
+	------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- ACTUALIZAR POA_Item DE LOS QUE YA EXISTEN --
+	UPDATE I_P
+	SET I_P.TaxGroupID = (select top 1 t.ID from ItemTax t  --es un top 1 porque hay impuestos que tienen el porcentaje repetid
+						Join Tax on Tax.ID=t.TaxID01 
+						where Tax.[Percentage] = TI.TaxPercentage and t.[Description] not like '%Bonifica%')
+	FROM POA_Item I_P
+		INNER JOIN Item I ON I_P.ID = I.ID
+		INNER JOIN ##TablaItemTax TI ON TI.ItemLookupCode = I.ItemLookupCode
+	------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- INGRESAR POA_Item DE LOS QUE NO EXISTEN --
+	INSERT INTO POA_Item (ID, LastUpdated, ExtCode, TaxGroupID, ChildReorder, UnitOfMeasure, PurchaseUOM, PurchUOMID1, PurchUOMID2, PurchUOMID3, PurchQtyUOM1, PurchQtyUOM2, PurchQtyUOM3, LineNumber, HQId)
+	SELECT I.ID, GETDATE(), '', (select top 1 t.ID from ItemTax t  --es un top 1 porque hay impuestos que tienen el porcentaje repetid
+						Join Tax on Tax.ID=t.TaxID01 
+						where Tax.[Percentage] = TI.TaxPercentage and t.[Description] not like '%Bonifica%'),
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	FROM ##TablaItemTax TI
+		INNER JOIN Item I ON I.ItemLookupCode = TI.ItemLookupCode
+	WHERE I.ID NOT IN (SELECT ID FROM POA_Item)
+	------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	-- AGREGAR PRODUCTO A LA HOJA DE TRABAJO --
+	INSERT INTO Worksheet_ItemTax (WorksheetID, ItemID, TaxID)
+	select @WorksheetID, i.id , 
+	(select top 1 t.ID from ItemTax t  --es un top 1 porque hay impuestos que tienen el porcentaje repetid
+		Join Tax on Tax.ID=t.TaxID01 
+		where Tax.[Percentage] = p.TaxPercentage and t.[Description] not like '%Bonifica%')
+	from ##TablaItemTax as p
+		join Item i on i.ItemLookupCode= p.ItemLookupCode
+		join WorksheetStore WS on WS.WorksheetID = @WorksheetID
+	where WS.StoreID in (SELECT C.StoreId FROM GlobalCatalog C WHERE C.SyncGuid = i.SyncGuid AND C.TableName = 'Item' AND C.IsActive = 1)
+END
+GO

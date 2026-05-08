@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title - UltraERP Inventario</title>
+    <link rel="stylesheet" href="~/Content/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/Content/Site.css" />
+</head>
+<body>
+    <div class="app-shell">
+        @if (Request.IsAuthenticated)
+        {
+            <aside class="app-sidebar">
+                <a class="brand" href="@Url.Action("Inicio", "DocumentosInventario")">
+                    <span class="brand-mark">U</span>
+                    <span>
+                        <strong>UltraERP</strong>
+                        <small>Inventario</small>
+                    </span>
+                </a>
+                <nav class="app-nav">
+                    <a class="@(ViewBag.ActiveMenu == "Documentos" ? "active" : "")" href="@Url.Action("Inicio", "DocumentosInventario")">Documentos</a>
+                    <a class="@(ViewBag.ActiveMenu == "Historico" ? "active" : "")" href="@Url.Action("Historico", "DocumentosInventario")">Historico de Ajustes</a>
+                </nav>
+                <div class="user-panel">
+                    <span>@User.Identity.Name</span>
+                    <a href="@Url.Action("Logout", "Account")">Cerrar sesion</a>
+                </div>
+            </aside>
+        }
+        <main class="app-main @(Request.IsAuthenticated ? "" : "app-main-login")">
+            @RenderBody()
+        </main>
+    </div>
+    <script src="~/Scripts/jquery-3.6.0.min.js"></script>
+    <script src="~/Scripts/bootstrap.bundle.min.js"></script>
+    @RenderSection("scripts", required: false)
+</body>
+</html>

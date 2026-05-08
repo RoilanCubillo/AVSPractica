@@ -1,0 +1,838 @@
+﻿@using CentralAdmin.AuthorizationManager.AuthorizationAttributes
+
+@{
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+    var culture = System.Threading.Thread.CurrentThread.CurrentCulture;
+    var CurrencySymbol = culture.NumberFormat.CurrencySymbol;
+    var CurrencyDecimalSeparator = culture.Name.ToUpper() == "ES-CR" ? "." : culture.NumberFormat.CurrencyDecimalSeparator;
+    var CurrencyThousandSeparator = culture.Name.ToUpper() == "ES-CR" ? "," : culture.NumberFormat.NumberGroupSeparator;
+    string Name = "Cambios Masivos Wizard";
+}
+
+<script>
+    var CultureInfo = {
+        culture: '@culture',
+        CurrencySymbol: '@CurrencySymbol',
+        CurrencyDecimalSeparator: '@CurrencyDecimalSeparator',
+        CurrencyThousandSeparator: '@CurrencyThousandSeparator'
+    }
+</script>
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <!-- BS Stepper -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/bs-stepper/css/bs-stepper.min.css">
+    <!-- dropzonejs -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/dropzone/min/dropzone.min.js">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    <!-- Select2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+    <!-- iCheck for checkboxes and radio inputs -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- Toastr -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/toastr/toastr.min.css">
+
+    <link rel="stylesheet" href="~/Content/AdminLTE/dist/css/adminlte.min.css">
+
+    <!-- moment.js -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/moment/locales.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- Select2 -->
+    <script src="~/Content/AdminLTE/plugins/select2/js/select2.full.min.js"></script>
+    <!-- BS-Stepper -->
+    <script src="~/Content/AdminLTE/plugins/bs-stepper/js/bs-stepper.min.js"></script>
+    <!-- dropzonejs -->
+    <script src="~/Content/AdminLTE/plugins/dropzone/min/dropzone.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+    <!-- jquery-csv -->
+    <script src="~/Content/AdminLTE/plugins/jquery-csv/jquery.csv.min.js"></script>
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- Toastr -->
+    <script src="~/Content/AdminLTE/plugins/toastr/toastr.min.js"></script>
+
+    <style>
+        .select2-container--open {
+            z-index: 99999999999999;
+        }
+    </style>
+
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6"><h1>@Name</h1></div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager", "Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">Cambios Masivos</li>
+                                <li class="breadcrumb-item active">Wizard</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Encabezado -->
+
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body overlay-wrapper">
+                                    <div id="spn" class="overlay align-content-center">
+                                        <div class="d-table-cell">
+                                            <i class="fas fa-3x fa-sync-alt fa-spin w-100 d-flex justify-content-center"></i>
+                                            <div id="txt_spn" class="text-bold pt-2">@Resources.views.cargando</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div id="stepper" class="bs-stepper">
+                                        <div class="bs-stepper-header overflow-auto" role="tablist">
+                                            <div class="step" data-target="#start-part">
+                                                <button type="button" class="step-trigger" role="tab" aria-controls="start-part" id="start-part-trigger">
+                                                    <span class="bs-stepper-circle">1</span>
+                                                    <span class="bs-stepper-label">Inicio</span>
+                                                </button>
+                                            </div>
+                                            <div class="line"></div>
+                                            <div class="step" data-target="#task-part">
+                                                <button type="button" class="step-trigger" role="tab" aria-controls="task-part" id="task-part-trigger">
+                                                    <span class="bs-stepper-circle">2</span>
+                                                    <span class="bs-stepper-label">Tarea</span>
+                                                </button>
+                                            </div>
+                                            <div class="line"></div>
+                                            <div class="step" data-target="#upload-part">
+                                                <button type="button" class="step-trigger" role="tab" aria-controls="upload-part" id="upload-part-trigger">
+                                                    <span class="bs-stepper-circle">3</span>
+                                                    <span class="bs-stepper-label">Cargar documento</span>
+                                                </button>
+                                            </div>
+                                            <div class="line"></div>
+                                            <div class="step" data-target="#apply-part">
+                                                <button type="button" class="step-trigger" role="tab" aria-controls="apply-part" id="apply-part-trigger">
+                                                    <span class="bs-stepper-circle">4</span>
+                                                    <span class="bs-stepper-label">Aplicar Cambios</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="bs-stepper-content">
+                                            <div id="start-part" class="content" role="tabpanel" aria-labelledby="start-part-trigger">
+                                                <h3>Asistente de inventario</h3>
+                                                <p>
+                                                    Utilice este asistente para realizar tareas de mantenimiento rápido.
+                                                    <br />
+                                                    Este asistente le ayudara a construir una lista de cambios múltiples de artículos en su base de datos en un solo paso.
+                                                    <br />
+                                                    Este asistente es configurable a nivel de roles de usuario, por lo que en dado caso no tenga acceso a alguna tienda, tarea e información adicional. Contáctese con el administrador a cargo para que revise el acceso.
+                                                    <br />
+                                                    <br />
+                                                    Para comenzar, haga click en Siguiente.
+
+                                                </p>
+                                                <div class="col-12 d-flex justify-content-end">
+                                                    <button class="btn btn-primary" onclick="onClickBtnStart()">Siguiente</button>
+                                                </div>
+                                            </div>
+                                            <div id="task-part" class="content" role="tabpanel" aria-labelledby="task-part-trigger">
+                                                <form id="form_task">
+                                                    <h3>Seleccionar Tarea</h3>
+                                                    <div class="row">
+                                                        <div class="col-sm-12">
+                                                            <div class="form-group" title="Si alguna tarea no se ve refleja en el listado, contacte al administrador para que verifique el acceso">
+                                                                <label for="task">Tarea:</label>
+                                                                <select class="form-control w-100 select2" id="task" name="task" data-placeholder="Seleccionar tarea" style="width: 100%;"></select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-sm-12">
+                                                            <div class="form-group" title="Si alguna tienda no se ve refleja en el listado, contacte al administrador para que verifique el acceso">
+                                                                <label for="task">Tienda:</label>
+                                                                <select class="form-control w-100 select2" id="group" name="group" data-placeholder="Seleccionar grupo de tienda" style="width: 100%;" multiple></select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="table-responsive">
+                                                        <table id="tbl_stores" class="table table-head-fixed table-striped" style="max-height:450px;">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>
+                                                                    </th>
+                                                                    <th>Tiendas</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody></tbody>
+                                                        </table>
+                                                    </div>
+                                                    <div class="col-12 d-flex justify-content-end">
+                                                        <button type="button" class="btn btn-danger mr-1" onclick="stepper.previous()">Anterior</button>
+                                                        <button type="submit" class="btn btn-primary ml-1">Siguiente</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                            <div id="upload-part" class="content" role="tabpanel" aria-labelledby="upload-part-trigger">
+                                                <h3>Carga de Archivos</h3>
+                                                <div class="mt-1">
+                                                    <div class="form-group row">
+                                                        <label for="separator" class="col-md-3 col-form-label text-truncate" title="Separador de columnas">Separador de columnas:</label>
+                                                        <div class="col-md-9">
+                                                            <select class="form-control select2" id="separator" name="separator" data-placeholder="Seleccionar separador de columnas">
+                                                                <option value=";">Punto y coma (;)</option>
+                                                                <option value=",">Coma (,)</option>
+                                                                <option value=" ">Espacio en blanco ( )</option>
+                                                                <option value="	">Tab</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div id="actions" class="row">
+                                                        <div class="col-12">
+                                                            <div class="btn-group w-100">
+                                                                <span class="btn btn-success col fileinput-button">
+                                                                    <i class="fas fa-plus"></i>
+                                                                    <span>Agregar archivo</span>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="table table-striped files" id="previews">
+                                                        <div id="template" class="row mt-2">
+                                                            <div class="col d-flex align-items-center">
+                                                                <p class="mb-0">
+                                                                    <span class="lead" data-dz-name></span>
+                                                                    (<span data-dz-size></span>)
+                                                                </p>
+                                                                <strong class="error text-danger" data-dz-errormessage></strong>
+                                                            </div>
+                                                            <div class="col-4 d-flex align-items-center">
+                                                                <div class="progress progress-striped active w-100" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                                                                    <div class="progress-bar progress-bar-success" style="width:0%;" data-dz-uploadprogress></div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-auto d-flex align-items-center">
+                                                                <div class="btn-group">
+                                                                    <button data-dz-remove class="btn btn-danger delete">
+                                                                        <i class="fas fa-trash"></i>
+                                                                        <span>Eliminar</span>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="csv-display" class="table-responsive" style="max-height:450px;">
+                                                    <table class="table table-condensed table-hover table-striped table-head-fixed table-bordered">
+                                                        <thead><tr id="th-csv-display"></tr></thead>
+                                                        <tbody id="tb-csv-display"></tbody>
+                                                    </table>
+                                                </div>
+                                                <div class="col-12 d-inline-flex">
+                                                    Filas totales: (<p id="txt_total">0</p>). Filas mostradas: (<p id="txt_show">0</p>).
+                                                </div>
+                                                <div class="col-12 d-flex justify-content-end mt-2">
+                                                    <button type="button" class="btn btn-danger mr-1" onclick="onClickBtnTaskPrevious()">Anterior</button>
+                                                    <button type="button" class="btn btn-primary ml-1" onclick="onClickBtnTaskNext()">Siguiente</button>
+                                                </div>
+                                            </div>
+                                            <div id="apply-part" class="content" role="tabpanel" aria-labelledby="apply-part-trigger">
+                                                <h3>Aplicación de Cambios</h3>
+                                                <div class="row">
+                                                    <div class="col-12 d-flex justify-content-end">
+                                                        <div class="d-inline-flex">
+                                                            <button type="button" class="btn btn-primary mr-1 text-nowrap" onclick="onClickBtnGetInfo()">Verificar</button>
+
+                                                            <button type="button" class="btn btn-success mr-1 text-nowrap" onclick="onClickBtnApplyChanges()">Aplicar Cambios</button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="table table-responsive my-4">
+                                                        <div id="div_content_tbl"></div>
+                                                    </div>
+                                                    <div class="col-12 d-flex justify-content-end">
+                                                        <button type="button" class="btn btn-danger" onclick="stepper.previous()">Anterior</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        var urls = {
+            init: "@Url.Action("GetInitData", "Wizard")",
+            storeBYGroup: "@Url.Action("GetAllStores_By_StoreGroupID", "Wizard")",
+            storeBYGroups: "@Url.Action("GetAllStores_By_StoreGroupsID", "Wizard")",
+            getItem: '@Url.Action("GetItemByItemLookupCode", "Wizard")',
+            getSuppliers: '@Url.Action("GetSuppliers", "Wizard")',
+        }
+        var lists = { tasks: [], groups: [], stores: [] };
+        var taskList = {
+            suppliers: [], quantityDiscounts: [], taxs: [], uoms: [],
+            families: [], departments: [], categories: [], subcategories: [], segments: [],
+            manufacturers: [], brands: [], purchasers: []
+        };
+        var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 5000 });
+        var taskConfig = {
+            task: 0, group: 0, stores: [],
+            columnsFile: {},
+            initsConfigs: {},
+            eventsApplyChanges: {},
+            eventsGetInfo: {},
+            eventOnSuccessUploadFile: function () { },
+            eventOnSubmitTask: {}
+        };
+        var validate = {
+            rules: { task: { required: true }, group: { required: true } },
+            messages: { task: { required: '@Resources.messages.validacion_req' }, group: { required: '@Resources.messages.validacion_req' } }
+        };
+        var previewNode, previewTemplate, myDropzone, dropFile;
+        const reader = new FileReader();
+        var csvData = [];
+        var columns = [{ title: 'undefined' }]; rows = ['undefined'];
+        var Table = null;
+        toastr.options = {
+            "closeButton": false, "debug": false, "newestOnTop": true, "progressBar": true,
+            "hideDuration": "700", "timeOut": "1700", "extendedTimeOut": "700",
+            "showEasing": "swing", "hideEasing": "linear", "showMethod": "fadeIn", "hideMethod": "fadeOut"
+        }
+    </script>
+
+    <script>
+        moment.locale('es-CR');
+
+        var stepper = new Stepper(document.querySelector('.bs-stepper'),{
+            linear: true, animation: true, selectors: {
+                steps: '.step',
+                trigger: '.step-trigger',
+                stepper: '.bs-stepper'
+            }
+        });
+
+        document.querySelector('.bs-stepper').addEventListener('show.bs-stepper', function (event) {
+            $($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
+        });
+
+        document.querySelector('.bs-stepper').addEventListener('shown.bs-stepper', function (event) {
+            $($.fn.dataTable.tables(true)).DataTable().columns.adjust().responsive.recalc();
+        });
+
+        initDropZone();
+
+        $(function () {
+            $(".select2").select2();
+            $("#spn").hide();
+            fillTableStores();
+            setOnChanges();
+            setValidationForm();
+            fillMenuItemsLayout();
+        });
+
+        function initTable(cols, ros) {
+            $("#div_content_tbl").html(null);
+            $("#div_content_tbl").append($('<table id="table" class="table table-striped table-bordered text-sm"></table>'));
+            Table = $("#table").DataTable({
+                data: ros, columns: cols, dom: "<'row' <'col-12'l><'col-12 col-sm-6 text-rigth'B><'col-12 col-sm-6 text-rigth'f>>" +
+                    "<'row' <'col-12'tr>>" +
+                    "<'row' <'col-12 col-md-6'i><'col-12 col-md-6'p>>",
+                language: dtable_i18n, paging: true, lengthChange: true, searching: true,
+                serverSide: false, autoWidth: false, ordering: true, destroy: true,
+                processing: true, responsive: true, buttons: ['excel', 'colvis']
+            });
+        }
+
+        function initDropZone() {
+            Dropzone.autoDiscover = false;
+            previewNode = document.querySelector("#template");
+            previewNode.id = "";
+            previewTemplate = previewNode.parentNode.innerHTML;
+            previewNode.parentNode.removeChild(previewNode);
+
+            myDropzone = new Dropzone(document.body, {
+                url: "@Url.Action("UploadFileWizard", "Wizard")",
+                previewTemplate: previewTemplate,
+                autoQueue: false,
+                previewsContainer: "#previews", // Define the container to display the previews
+                clickable: ".fileinput-button", // Define the element that should be used as click trigger to select files.
+                maxFiles: 1,
+                init: function () { this.on("sending", function (file, xhr, formData) { formData.append("taskCode", taskConfig.task); }); },
+                success: function (file, response) {
+                    $("#spn").hide();
+                    $("#txt_spn").html("cargando...");
+
+                    if (response.Status) taskConfig.eventOnSuccessUploadFile();
+                    else error(response.InternalMessage, response.Message);
+                },
+                error: function (file, response) {
+                    error(response, "No se pudieron cargar los archivos de bitácora. Contacte a soporte");
+                    $("#spn").hide();
+                    $("#txt_spn").html("cargando...");
+                }
+            });
+
+            myDropzone.on("addedfile", function (file) {
+                onAddedFile(file);
+            })
+        }
+
+        function fillMenuItemsLayout() {
+            openMenu(["#nav-item-camb-masivos"]);
+            activeItemMenu([".nav-item-camb-masivos", "#nav-link-camb-masivos-wizard"])
+        }
+
+        function fillTasks() {
+            var dt = lists.tasks.map(x => { return { 'id': x.Codigo, 'text': x.Descripcion } });
+            $("#task").html(null).trigger("change");
+            $("#task").val(null).trigger("change");
+            $("#task").select2("destroy");
+            $("#task").select2({ data: dt, allowClear: true, tags: true });
+        }
+
+        function fillGroups() {
+            var dt = lists.groups.map(x => { return { 'id': x.ID, 'text': (x.Code + "~" + x.Description) } });
+            $("#group").html(null).trigger("change");
+            $("#group").val(null).trigger("change");
+            $("#group").select2("destroy");
+            $("#group").select2({ data: dt, allowClear: true, tags: true, multiple: true });
+            $("#group").val(null).trigger("change");
+            onChangeSelectGroup();
+        }
+
+        async function fillTableStores() {
+            try {
+                $("#tbl_stores > tbody").html(null);
+                if (lists.stores.length > 0) {
+                    $("#spn").show();
+                    await lists.stores.forEach(function (i) {
+                        var row = $("<tr />");
+                        $("#tbl_stores").append(row);
+                        row.append($('<td><div class="icheck-primary clearfix text-center"><input type="checkbox" name="chk_store" id="' + i.IDS + '" checked disabled /><label for="' + i.IDS + '"></label></div></td>'));
+                        row.append($('<td>' + i.NameS + '</td>'))
+                    });
+                    setOnChangeChkStore();
+                    $("#spn").hide();
+                } else $("#tbl_stores > tbody").append($("<tr><td colspan='2'><span class='d-flex justify-content-center'>No hay registros</span></td></tr>"));
+            } catch (e) {
+                error(e, "@Resources.messages.error_llenar_registros");
+            }
+        }
+
+        function getInitData() {
+            try {
+                $("#spn").show();
+                $.get(urls.init).done(async function (data) {
+                    if (data.Status) {
+                        lists.groups = data.Result.groups;
+                        lists.tasks = data.Result.tasks;
+                        await fillTasks();
+                        await fillGroups();
+                    } else error(data.InternalMessage, data.Message);
+                    $("#spn").hide();
+                }).fail(function (data) {
+                    error(data, "@Resources.messages.error_obt_regs");
+                })
+            } catch (e) {
+                error(e, "@Resources.messages.error_obt_regs");
+            }
+        }
+
+        function getAskDataTask() {
+            return Swal.fire({
+                title: 'Hoja de Trabajo.',
+                html:
+                    '<div><label>Título:</label><input id="swal-task-title" class="swal2-input"></div>' +
+                    '<div><label>Notas:</label><textarea id="swal-task-note" class="swal2-input"></textarea></div>',
+                focusConfirm: false,
+                showCancelButton: true,
+                preConfirm: () => {
+                    return {
+                        title: document.getElementById('swal-task-title').value,
+                        note: document.getElementById('swal-task-note').value
+                    }
+                },
+            });
+        }
+
+        function getTitleNotesDateTask() {
+            return Swal.fire({
+                title: 'Hoja de Trabajo.',
+                html:
+                    '<div><label>Título: </label><input id="swal-task-title" class="swal2-input"></div>' +
+                    '<div><label>Notas: </label><textarea id="swal-task-note" class="swal2-input"></textarea></div>' +
+                    '<div><label>Fecha efectiva: </label><input type="date" id="swal-task-date" class="swal2-input"/></div>',
+                focusConfirm: false,
+                showCancelButton: true,
+                preConfirm: () => {
+                    return {
+                        title: document.getElementById('swal-task-title').value,
+                        note: document.getElementById('swal-task-note').value,
+                        date: document.getElementById('swal-task-date').value,
+                    }
+                },
+            });
+        }
+
+        function getNotesTask() {
+            return Swal.fire({
+                input: 'textarea',
+                inputLabel: 'Agregar notas',
+                inputPlaceholder: 'Escribe las notas aquí...',
+                inputAttributes: {
+                    'aria-label': 'Escribe las notas aquí',
+                    'rows': 4
+                },
+                inputValidator: (value) => {
+                    if (!value) return 'Debe ingresar algunas notas..!';
+                    else if (value.length > 255) return 'Las notas no pueden sobrepasar los 255 caracteres!';
+                },
+                showCancelButton: true,
+            });
+        }
+
+        function setOnChanges() {
+            $('#group').on('select2:select', function (e) { onChangeSelectGroup(); });
+            $('#group').on('select2:clear', function (e) { lists.stores = []; fillTableStores(); });
+            $('#group').on('select2:unselect', function (e) { onChangeSelectGroup(); });
+            $('#chk_all_stores').click(function () {
+                var status = $('#chk_all_stores').is(":checked");
+                $("#tbl_stores tbody input:checkbox" + (status ? ":not(:checked)" : ":checked")).prop("checked", status);
+            });
+        }
+
+        function setOnChangeChkStore() {
+            $("#tbl_stores tbody input:checkbox").click(function () {
+                if ($('#tbl_stores tbody input:checkbox:checked').length === $("#tbl_stores tbody input:checkbox").length)
+                    $('#chk_all_stores').prop("checked", true);
+                else $('#chk_all_stores').prop("checked", false);
+            });
+        }
+
+        function setValidationForm() {
+            $.validator.setDefaults({ submitHandler: function () { onSubmitTask(); } });
+
+            $('#form_task').validate({
+                rules: validate.rules, messages: validate.messages, errorElement: 'span',
+                errorPlacement: function (err, element) {
+                    err.addClass('invalid-feedback ml-2');
+                    element.closest('.form-group').append(err);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        }
+
+        function setDataTaskConfiguration(task, columns, eventStart, eventApply, eventGet) {
+            taskConfig.columnsFile[task] = columns;
+            taskConfig.initsConfigs[task] = eventStart;
+            taskConfig.eventsApplyChanges[task] = eventApply;
+            taskConfig.eventsGetInfo[task] = eventGet;
+        }
+
+        function onActionApplyTask(onSuccessUploadFile) {
+            $("#txt_spn").html("Subiendo archivo de bitácora...");
+            $("#spn").show();
+
+            taskConfig.eventOnSuccessUploadFile = onSuccessUploadFile;
+            myDropzone.processFile(dropFile);
+        }
+
+        function onClickBtnStart() {
+            stepper.next();
+            getInitData();
+        }
+
+        function onClickBtnTaskPrevious() {
+            $("#tb-csv-display").html(null);
+            $("#th-csv-display").html(null);
+            myDropzone.removeAllFiles();
+            stepper.previous();
+        }
+
+        async function onClickBtnTaskNext() {
+            if (myDropzone.getAcceptedFiles().length > 0) {
+                if (csvData.length > 0) {
+                    if (csvData[0].length === taskConfig.columnsFile[taskConfig.task].length) {
+                        $(async function () { $("#spn").show(); });
+                        $(async function () { taskConfig.initsConfigs[taskConfig.task](); });
+                    } else error("ERROR DATA COLUMN LOADED", "La información cargada no cumple con el número de columnas requeridas")
+                } else error("ERROR DATA ROW LOADED", "La información cargada no es correcta. Falta filas.")
+            } else error("NO DATA UPLOAD", "No hay datos cargados.");
+        }
+
+        async function onClickBtnApplyChanges() {
+            taskConfig.eventsApplyChanges[taskConfig.task]();
+        }
+
+        async function onClickBtnGetInfo() {
+            taskConfig.eventsGetInfo[taskConfig.task]();
+        }
+
+        function onChangeSelectGroup() {
+            if ($("#group").val()) {
+                $("#spn").show();
+                try {
+                    var data = $("#group").select2('data').map(x => { return x.id; } );
+                    $.post(urls.storeBYGroups, { storeGroupsID: data }, 'json').done(async function (data) {
+                    if (data.Status) {
+                        lists.stores = data.Result.stores;
+                        await fillTableStores();
+                    } else error(data.InternalMessage, data.Message);
+                    $("#spn").hide();
+                }).fail(function (data) {
+                    error(data, "@Resources.messages.error_obt_regs");
+                    $("#spn").hide();
+                });
+                } catch (e) {
+                    error(e, "@Resources.messages.error_obt_regs");
+                    $("#spn").hide();
+                }
+            }
+        }
+
+        async function onSubmitTask() {
+            if ($('#tbl_stores tbody input:checkbox:checked').length > 0) {
+                taskConfig.group = $("#group").val();
+                taskConfig.task = 'T'+$("#task").val();
+                taskConfig.stores = $('#tbl_stores tbody input:checkbox:checked').map(function () { return this.id; }).get();
+
+                var event = { cancel: false };
+                if (taskConfig.eventOnSubmitTask[taskConfig.task] !== undefined)
+                    await taskConfig.eventOnSubmitTask[taskConfig.task](event)
+
+                if (!event.cancel) {
+                    if (taskConfig.columnsFile[taskConfig.task] === undefined || taskConfig.columnsFile[taskConfig.task].length === undefined) {
+                        error("TAREA NO CONFIG", "Tarea no configurada. Consulte con soporte.");
+                    } else {
+                        showDataColumTask();
+                        stepper.next();
+                    }
+                }
+            } else error("NO STORES SELECTED", "Debe seleccionar una o varias tiendas para continuar.");
+        }
+
+        function onAddedFile(file) {
+            try {
+                if (file.status === 'added' && myDropzone.files.length === 1) {
+                    dropFile = file;
+                    reader.onload = () => {
+                        try {
+                            const fileAsBinaryString = reader.result;
+                            document.querySelector(".progress-bar").style.width = 50 + "%"
+                            csvData = $.csv.toArrays(fileAsBinaryString, { separator: $("#separator").val(), start: 2 });
+                            document.querySelector(".progress-bar").style.width = 80 + "%"
+                            if (showFileData(csvData) === null) error("DATA CSV NULL", "Error al mostrar archivo.");
+                            file.previewElement.querySelector(".delete").onclick = function () {
+                                $("#tb-csv-display").html(null);
+                                $('#txt_total').html(0);
+                                $('#txt_show').html(0);
+                            }
+                            document.querySelector(".progress-bar").style.width = 100 + "%"
+                        } catch (e) {
+                            error(e, " Documento con datos erroneos: " + e);
+                            myDropzone.removeFile(file);
+                        }
+                    };
+                    reader.onabort = () => error("ABORT", "Lectura de archivo abortada");
+                    reader.onerror = () => error("ERROR", "Lectura de archivo con errores");
+                    reader.readAsText(file);
+                } else {
+                    error("file not acepted", " Archivo no aceptado.");
+                    myDropzone.removeFile(file);
+                }
+            } catch (e) {
+                error(e, "Lectura de archivo con errores");
+                myDropzone.removeFile(file);
+            }
+
+        }
+
+        function showDataColumTask() {
+            taskConfig.columnsFile[taskConfig.task].forEach(function (x) {
+                $("#th-csv-display").append($("<th>" + x + "</th>"));
+            });
+        }
+
+        function showFileData(data) {
+            $('#tb-csv-display').html(null);
+            if (typeof (data[0]) === 'undefined') return null;
+            else {
+                var indexRow = 0;
+                data.forEach(function (row) {
+                    if (indexRow < 10) {
+                        var rowX = $("<tr/>");
+                        $("#tb-csv-display").append(rowX);
+                        row.forEach(function (rx) {
+                            rowX.append("<td>" + rx + "</td>")
+                        })
+                    } else return true;
+                    indexRow++;
+                });
+                $('#txt_total').html(data.length);
+                $('#txt_show').html(indexRow);
+            }
+        }
+
+        function numberToMoney(number) {
+            return CultureInfo.CurrencySymbol + number.toString().replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, CultureInfo.CurrencyThousandSeparator);
+        }
+
+        function moneyToNumber(money) {
+            var number = money.replaceAll(CultureInfo.CurrencySymbol, '');
+            number = number.replaceAll(CultureInfo.CurrencyThousandSeparator, '');
+            return number;
+        }
+
+        function error(e, msj) {
+            toastr.error(msj);
+            console.error(e);
+        }
+
+        function showErrorToasts(subtitle, body) {
+            showToasts('danger', 'Error', subtitle, body);
+        }
+
+        function showSuccesToasts(subtitle, body) {
+            showToasts('success', 'Completado', subtitle, body);
+        }
+
+        function showToasts(type, title, subtitle, body) {
+            $(document).Toasts('create', { class: `bg-${type}`, title: title, subtitle: subtitle, body: body });
+        }
+    </script>
+    @*
+        Nota: cada plugin debe ejecutar el método setDataTaskConfiguration para que se le puedan
+        asignar las configuraciones y eventos necesarios.
+        En caso de no ternerlo, no se aplicarían los respectivos eventos y configuracionesd de datos.
+
+        Es también inportante recalcar que los métodos que se declaren en cada plugin tengan un nombre
+        único en relación con las demás tareas para así no generar incosistencias.
+        Preferiblemente tener estandar T<code_task><name_function>
+    *@
+
+    @if (WizardAuthorizationAttribute.VerifyAuthorization(Session, "102"))
+    {
+        @* Tarea Codigo 102 - Cambio de Costos *@
+        <script src="~/Content/AdminLTE/plugins/avs-wizard/task-102/task-102.js"></script>
+    }
+
+    @if (WizardAuthorizationAttribute.VerifyAuthorization(Session, "104"))
+    {
+        @* Tarea Codigo 104 - Cambio de Impuestos *@
+        <script src="~/Content/AdminLTE/plugins/avs-wizard/task-104/task-104.js"></script>
+    }
+
+    @if (WizardAuthorizationAttribute.VerifyAuthorization(Session, "105"))
+    {
+        @* Tarea Codigo 105 - Cambio de Estados *@
+        <script src="~/Content/AdminLTE/plugins/avs-wizard/task-105/task-105.js"></script>
+    }
+
+    @if (WizardAuthorizationAttribute.VerifyAuthorization(Session, "107"))
+    {
+        @* Tarea Codigo 107 - Cambio de Estados *@
+        <script src="~/Content/AdminLTE/plugins/avs-wizard/task-107/task-107.js"></script>
+    }
+
+    @if (WizardAuthorizationAttribute.VerifyAuthorization(Session, "108"))
+    {
+        @* Tarea Codigo 108 - Cambios de Subdescripción 1 *@
+        <script src="~/Content/AdminLTE/plugins/avs-wizard/task-108/task-108.js"></script>
+    }
+
+    @if (WizardAuthorizationAttribute.VerifyAuthorization(Session, "109"))
+    {
+        @* Tarea Codigo 109 - Cambios de Subdescripción 2 *@
+        <script src="~/Content/AdminLTE/plugins/avs-wizard/task-109/task-109.js"></script>
+    }
+
+    @if (WizardAuthorizationAttribute.VerifyAuthorization(Session, "110"))
+    {
+        @* Tarea Codigo 110 - Cambios de Subdescripción 3 *@
+        <script src="~/Content/AdminLTE/plugins/avs-wizard/task-110/task-110.js"></script>
+    }
+
+    @if (WizardAuthorizationAttribute.VerifyAuthorization(Session, "120"))
+    {
+        @* Tarea Codigo 120 - Cambios Proveedor - Costo *@
+        <script src="~/Content/AdminLTE/plugins/avs-wizard/task-120/task-120.js"></script>
+    }
+
+    @if (WizardAuthorizationAttribute.VerifyAuthorization(Session, "121"))
+    {
+        @* Tarea Codigo 121 - Cambio de Precios: Dinámicas *@
+        <script src="~/Content/AdminLTE/plugins/avs-wizard/task-121/task-121.js"></script>
+    }
+
+    @if (WizardAuthorizationAttribute.VerifyAuthorization(Session, "122"))
+    {
+        @* Tarea Codigo 122 - Cambio de Precios: Promociones Compre X lleve Y *@
+        <script src="~/Content/AdminLTE/plugins/avs-wizard/task-122/task-122.js"></script>
+    }
+
+    @if (WizardAuthorizationAttribute.VerifyAuthorization(Session, "123"))
+    {
+        @* Tarea Codigo 123 - Cambio de Precios: Precio Regular *@
+        <script src="~/Content/AdminLTE/plugins/avs-wizard/task-123/task-123.js"></script>
+    }
+
+    @if (WizardAuthorizationAttribute.VerifyAuthorization(Session, "124"))
+    {
+        @* Tarea Codigo 124 - Cambio de Precios: Margen de Utilidad *@
+        <script src="~/Content/AdminLTE/plugins/avs-wizard/task-124/task-124.js"></script>
+    }
+
+    @if (WizardAuthorizationAttribute.VerifyAuthorization(Session, "130"))
+    {
+        @* Tarea Codigo 130 - Insertado masivo de productos *@
+        <script src="~/Content/AdminLTE/plugins/avs-wizard/task-130/task-130.js"></script>
+    }
+
+    @if (WizardAuthorizationAttribute.VerifyAuthorization(Session, "131"))
+    {
+        @* Tarea Codigo 131 - Activación masivo de productos *@
+        <script src="~/Content/AdminLTE/plugins/avs-wizard/task-131/task-131.js"></script>
+    }
+    @if (WizardAuthorizationAttribute.VerifyAuthorization(Session, "201"))
+    {
+        @* Tarea Codigo 201 - Cambio mazivo de propiedades *@
+        <script src="~/Content/AdminLTE/plugins/avs-wizard/task-201/task-201.js"></script>
+    }
+</body>
+</html>

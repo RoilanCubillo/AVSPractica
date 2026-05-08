@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="http://schemas.datacontract.org/2004/07/Analitic.Entities" elementFormDefault="qualified" targetNamespace="http://schemas.datacontract.org/2004/07/Analitic.Entities" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="ArrayOfEN_Graphics">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="EN_Graphics" nillable="true" type="tns:EN_Graphics" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfEN_Graphics" nillable="true" type="tns:ArrayOfEN_Graphics" />
+  <xs:complexType name="EN_Graphics">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Doc_Aceptados" type="xs:int" />
+      <xs:element minOccurs="0" name="Doc_Rechazados" type="xs:int" />
+      <xs:element minOccurs="0" name="Meses" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Tot_Doc_Aceptados" type="xs:int" />
+      <xs:element minOccurs="0" name="Tot_Doc_Rechazados" type="xs:int" />
+      <xs:element minOccurs="0" name="Total_Asientos" type="xs:int" />
+      <xs:element minOccurs="0" name="Total_Asientos_Error" type="xs:int" />
+      <xs:element minOccurs="0" name="Total_Asientos_No_Sync" type="xs:int" />
+      <xs:element minOccurs="0" name="Total_Asientos_Sync" type="xs:int" />
+      <xs:element minOccurs="0" name="Total_Compras" type="xs:int" />
+      <xs:element minOccurs="0" name="Total_Compras_Sync" type="xs:int" />
+      <xs:element minOccurs="0" name="Total_Depositos" type="xs:int" />
+      <xs:element minOccurs="0" name="Total_Depositos_Sync" type="xs:int" />
+      <xs:element minOccurs="0" name="Total_Docs_NoSync" type="xs:int" />
+      <xs:element minOccurs="0" name="Total_NcCompras" type="xs:int" />
+      <xs:element minOccurs="0" name="Total_NcCompras_Sync" type="xs:int" />
+      <xs:element minOccurs="0" name="Total_NcVentas" type="xs:int" />
+      <xs:element minOccurs="0" name="Total_NcVentas_Sync" type="xs:int" />
+      <xs:element minOccurs="0" name="Total_Ventas" type="xs:int" />
+      <xs:element minOccurs="0" name="Total_Ventas_Sync" type="xs:int" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="EN_Graphics" nillable="true" type="tns:EN_Graphics" />
+  <xs:complexType name="ArrayOfEN_Asientos">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="EN_Asientos" nillable="true" type="tns:EN_Asientos" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfEN_Asientos" nillable="true" type="tns:ArrayOfEN_Asientos" />
+  <xs:complexType name="EN_Asientos">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Descripcion" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Detalle_Sync" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Estado_Sync" type="xs:int" />
+      <xs:element minOccurs="0" name="Fecha_Asiento" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="Fecha_Sync" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="ID" type="xs:int" />
+      <xs:element minOccurs="0" name="Referencia" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="StoreId" type="xs:int" />
+      <xs:element minOccurs="0" name="StoreName" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="EN_Asientos" nillable="true" type="tns:EN_Asientos" />
+  <xs:complexType name="ArrayOfEN_DocumentosERP">
+    <xs:sequence>
+      <xs:element minOccurs="0" maxOccurs="unbounded" name="EN_DocumentosERP" nillable="true" type="tns:EN_DocumentosERP" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ArrayOfEN_DocumentosERP" nillable="true" type="tns:ArrayOfEN_DocumentosERP" />
+  <xs:complexType name="EN_DocumentosERP">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="Detalles_Envio" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Documento" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Fecha_Envio" nillable="true" type="xs:dateTime" />
+      <xs:element minOccurs="0" name="Respuesta_Envio" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Status" type="xs:int" />
+      <xs:element minOccurs="0" name="StoreId" type="xs:int" />
+      <xs:element minOccurs="0" name="StoreName" nillable="true" type="xs:string" />
+      <xs:element minOccurs="0" name="Tipo" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="EN_DocumentosERP" nillable="true" type="tns:EN_DocumentosERP" />
+</xs:schema>

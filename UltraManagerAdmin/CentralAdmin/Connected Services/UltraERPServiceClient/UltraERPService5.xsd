@@ -1,0 +1,2219 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="http://tempuri.org/" elementFormDefault="qualified" targetNamespace="http://tempuri.org/" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="http://localhost:49272/UltraERPService.svc?xsd=xsd2" namespace="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" />
+  <xs:import schemaLocation="http://localhost:49272/UltraERPService.svc?xsd=xsd3" namespace="http://schemas.microsoft.com/2003/10/Serialization/Arrays" />
+  <xs:import schemaLocation="http://localhost:49272/UltraERPService.svc?xsd=xsd4" namespace="http://schemas.datacontract.org/2004/07/System" />
+  <xs:element name="GetAllEspaciosFriosTienda">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllEspaciosFriosTiendaResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q1="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllEspaciosFriosTiendaResult" nillable="true" type="q1:ArrayOfEN_EspaciosFriosTienda" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveEspaciosFriosTienda">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q2="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="espFrio" nillable="true" type="q2:EN_EspaciosFriosTienda" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveEspaciosFriosTiendaResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q3="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="SaveEspaciosFriosTiendaResult" nillable="true" type="q3:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllEspaciosFriosXTienda">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="idStore" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllEspaciosFriosXTiendaResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q4="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllEspaciosFriosXTiendaResult" nillable="true" type="q4:ArrayOfEN_EspaciosFrios" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllUOMByInactive">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="inactive" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllUOMByInactiveResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q5="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllUOMByInactiveResult" nillable="true" type="q5:ArrayOfEN_UOM" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_WizardList">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_WizardListResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q6="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAll_WizardListResult" nillable="true" type="q6:ArrayOfEN_ExtCentral_WizardList" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task102">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storeID" type="xs:int" />
+        <xs:element minOccurs="0" name="title" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="notes" nillable="true" type="xs:string" />
+        <xs:element xmlns:q7="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="items" nillable="true" type="q7:ArrayOfEN_WizardStructs.TablaCost" />
+        <xs:element minOccurs="0" name="userID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task102Response">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q8="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Wizard_Task102Result" nillable="true" type="q8:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task104">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storeID" type="xs:int" />
+        <xs:element minOccurs="0" name="title" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="notes" nillable="true" type="xs:string" />
+        <xs:element xmlns:q9="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="items" nillable="true" type="q9:ArrayOfEN_WizardStructs.TablaItemTax" />
+        <xs:element minOccurs="0" name="userID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task104Response">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q10="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Wizard_Task104Result" nillable="true" type="q10:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task105">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storeID" type="xs:int" />
+        <xs:element minOccurs="0" name="title" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="notes" nillable="true" type="xs:string" />
+        <xs:element xmlns:q11="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="items" nillable="true" type="q11:ArrayOfEN_WizardStructs.TablaEstado" />
+        <xs:element minOccurs="0" name="userID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task105Response">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q12="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Wizard_Task105Result" nillable="true" type="q12:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task107">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storeID" type="xs:int" />
+        <xs:element minOccurs="0" name="title" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="notes" nillable="true" type="xs:string" />
+        <xs:element xmlns:q13="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="items" nillable="true" type="q13:ArrayOfEN_WizardStructs.TablaItemDes" />
+        <xs:element minOccurs="0" name="userID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task107Response">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q14="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Wizard_Task107Result" nillable="true" type="q14:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task108">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q15="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="stores" nillable="true" type="q15:ArrayOfint" />
+        <xs:element minOccurs="0" name="title" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="notes" nillable="true" type="xs:string" />
+        <xs:element xmlns:q16="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="items" nillable="true" type="q16:ArrayOfEN_WizardStructs.TablaItemSub1" />
+        <xs:element minOccurs="0" name="userID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task108Response">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q17="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Wizard_Task108Result" nillable="true" type="q17:ArrayOfRespuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task109">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storeID" type="xs:int" />
+        <xs:element minOccurs="0" name="title" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="notes" nillable="true" type="xs:string" />
+        <xs:element xmlns:q18="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="items" nillable="true" type="q18:ArrayOfEN_WizardStructs.TablaItemSub2" />
+        <xs:element minOccurs="0" name="userID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task109Response">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q19="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Wizard_Task109Result" nillable="true" type="q19:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task110">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storeID" type="xs:int" />
+        <xs:element minOccurs="0" name="title" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="notes" nillable="true" type="xs:string" />
+        <xs:element xmlns:q20="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="items" nillable="true" type="q20:ArrayOfEN_WizardStructs.TablaItemSub3" />
+        <xs:element minOccurs="0" name="userID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task110Response">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q21="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Wizard_Task110Result" nillable="true" type="q21:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task120">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q22="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="storesID" nillable="true" type="q22:ArrayOfint" />
+        <xs:element minOccurs="0" name="tittle" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="notes" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="effectiveDate" type="xs:dateTime" />
+        <xs:element xmlns:q23="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="items" nillable="true" type="q23:ArrayOfEN_WizardStructs.TablaItemProveedor" />
+        <xs:element minOccurs="0" name="userID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="workSheetContentID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task120Response">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q24="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Wizard_Task120Result" nillable="true" type="q24:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task121">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storeID" type="xs:int" />
+        <xs:element minOccurs="0" name="title" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="notes" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="effectiveDate" type="xs:dateTime" />
+        <xs:element xmlns:q25="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="items" nillable="true" type="q25:ArrayOfEN_WizardStructs.TablaItemPriceDynamic" />
+        <xs:element minOccurs="0" name="userID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task121Response">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q26="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Wizard_Task121Result" nillable="true" type="q26:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task122">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storeID" type="xs:int" />
+        <xs:element minOccurs="0" name="title" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="notes" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="quantityDiscountID" type="xs:int" />
+        <xs:element minOccurs="0" name="startDate" type="xs:dateTime" />
+        <xs:element minOccurs="0" name="endDate" type="xs:dateTime" />
+        <xs:element xmlns:q27="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="items" nillable="true" type="q27:ArrayOfEN_WizardStructs.TablaItemQuantityDiscount" />
+        <xs:element minOccurs="0" name="userID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task122Response">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q28="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Wizard_Task122Result" nillable="true" type="q28:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task123">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q29="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="storesID" nillable="true" type="q29:ArrayOfint" />
+        <xs:element minOccurs="0" name="title" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="notes" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="effectiveDate" type="xs:dateTime" />
+        <xs:element xmlns:q30="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="items" nillable="true" type="q30:ArrayOfEN_WizardStructs.TablaItemPriceRegular" />
+        <xs:element minOccurs="0" name="userID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task123Response">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q31="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Wizard_Task123Result" nillable="true" type="q31:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task124">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q32="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="stores" nillable="true" type="q32:ArrayOfint" />
+        <xs:element minOccurs="0" name="title" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="notes" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="effectiveDate" type="xs:dateTime" />
+        <xs:element xmlns:q33="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="items" nillable="true" type="q33:ArrayOfEN_WizardStructs.TablaMargenUtility" />
+        <xs:element minOccurs="0" name="userID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task124Response">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q34="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Wizard_Task124Result" nillable="true" type="q34:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task130">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q35="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="storesID" nillable="true" type="q35:ArrayOfint" />
+        <xs:element minOccurs="0" name="title" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="notes" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="effectiveDate" type="xs:dateTime" />
+        <xs:element minOccurs="0" name="fromDate" type="xs:dateTime" />
+        <xs:element xmlns:q36="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="items" nillable="true" type="q36:ArrayOfEN_WizardStructs.TablaItem" />
+        <xs:element minOccurs="0" name="userID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task130Response">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q37="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Wizard_Task130Result" nillable="true" type="q37:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task131">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q38="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="storesID" nillable="true" type="q38:ArrayOfint" />
+        <xs:element minOccurs="0" name="tittle" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="notes" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="effectiveDate" type="xs:dateTime" />
+        <xs:element xmlns:q39="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="items" nillable="true" type="q39:ArrayOfEN_WizardStructs.TablaItemActivate" />
+        <xs:element minOccurs="0" name="userID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="workSheetContentID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Task131Response">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q40="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Wizard_Task131Result" nillable="true" type="q40:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Download_Items_Stores">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q41="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="storesID" nillable="true" type="q41:ArrayOfint" />
+        <xs:element minOccurs="0" name="title" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="notes" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="effectiveDate" type="xs:dateTime" />
+        <xs:element minOccurs="0" name="fromDate" type="xs:dateTime" />
+        <xs:element xmlns:q42="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="items" nillable="true" type="q42:ArrayOfstring" />
+        <xs:element minOccurs="0" name="userID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="workSheetContentID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Wizard_Download_Items_StoresResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q43="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Wizard_Download_Items_StoresResult" nillable="true" type="q43:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_User_ValidateUser">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="userName" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="password" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_User_ValidateUserResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q44="http://schemas.datacontract.org/2004/07/System" minOccurs="0" name="EN_User_ValidateUserResult" type="q44:ValueTupleOfEN_Userintav_PxDHhx" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_GetAll">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="tasksCode" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="hqUsersID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="searchValue" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="orderColumn" type="xs:int" />
+        <xs:element minOccurs="0" name="orderDirection" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="skip" type="xs:int" />
+        <xs:element minOccurs="0" name="take" type="xs:int" />
+        <xs:element minOccurs="0" name="fromDate" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="toDate" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_GetAllResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q45="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="EN_Worksheet_GetAllResult" nillable="true" type="q45:ArrayOfEN_Worksheet" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_Get">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="tasksCode" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="users" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="worksheetID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_GetResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q46="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="EN_Worksheet_GetResult" nillable="true" type="q46:EN_Worksheet" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_GetCountRecord">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="tasksCode" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="hqUsersID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="searchValue" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="fromDate" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="toDate" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_GetCountRecordResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q47="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="EN_Worksheet_GetCountRecordResult" nillable="true" type="q47:ArrayOfKeyValueOfstringint" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_GetStores">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="tasksCode" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="users" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="worksheetID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_GetStoresResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q48="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="EN_Worksheet_GetStoresResult" nillable="true" type="q48:ArrayOfEN_Worksheet.WorksheetStore" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_GetHistories">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="tasksCode" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="users" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="worksheetID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_GetHistoriesResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q49="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="EN_Worksheet_GetHistoriesResult" nillable="true" type="q49:ArrayOfEN_Worksheet.WorksheetHistory" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_GetAll_WorksheetUpdateItemPrice">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="tasksCode" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="users" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="worksheetID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_GetAll_WorksheetUpdateItemPriceResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q50="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="EN_Worksheet_GetAll_WorksheetUpdateItemPriceResult" nillable="true" type="q50:ArrayOfEN_Worksheet.WorksheetUpdateItemPrice" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_GetAll_Worksheet_ItemUpdate">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="tasksCode" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="users" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="worksheetID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_GetAll_Worksheet_ItemUpdateResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q51="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="EN_Worksheet_GetAll_Worksheet_ItemUpdateResult" nillable="true" type="q51:ArrayOfEN_Worksheet.Worksheet_ItemUpdate" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_GetAll_Worksheet_ItemTax">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="tasksCode" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="users" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="worksheetID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_GetAll_Worksheet_ItemTaxResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q52="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="EN_Worksheet_GetAll_Worksheet_ItemTaxResult" nillable="true" type="q52:ArrayOfEN_Worksheet.Worksheet_ItemTax" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_Change_Status">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="stores" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="tasks" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="users" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="hqUserID" type="xs:int" />
+        <xs:element minOccurs="0" name="worksheetID" type="xs:int" />
+        <xs:element minOccurs="0" name="status" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_Change_StatusResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q53="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="EN_Worksheet_Change_StatusResult" nillable="true" type="q53:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_Get_WorksheetContent">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="worksheetContentID" type="xs:int" />
+        <xs:element minOccurs="0" name="worksheetID" type="xs:int" />
+        <xs:element minOccurs="0" name="stores" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="tasks" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="users" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_Get_WorksheetContentResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q54="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="EN_Worksheet_Get_WorksheetContentResult" nillable="true" type="q54:EN_Worksheet.WorksheetContent" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_Save_WorksheetContent">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q55="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="cont" nillable="true" type="q55:EN_Worksheet.WorksheetContent" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_Save_WorksheetContentResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q56="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="EN_Worksheet_Save_WorksheetContentResult" nillable="true" type="q56:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_Change_Item_Properties">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="stores" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="properties" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="dataContentID" type="xs:int" />
+        <xs:element minOccurs="0" name="userID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="tittle" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="notes" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="effectiveDate" type="xs:dateTime" />
+        <xs:element xmlns:q57="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="items" nillable="true" type="q57:ArrayOfEN_WizardStructs.TablaItemProperties" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_Worksheet_Change_Item_PropertiesResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q58="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="EN_Worksheet_Change_Item_PropertiesResult" nillable="true" type="q58:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetCustomProperty">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="propertiesAvailable" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetCustomPropertyResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q59="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetCustomPropertyResult" nillable="true" type="q59:ArrayOfEN_ItemCustomProperty" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetItemPropertiesByItem">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="itemID" type="xs:int" />
+        <xs:element minOccurs="0" name="storesAvailable" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="propertiesAvailable" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetItemPropertiesByItemResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q60="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetItemPropertiesByItemResult" nillable="true" type="q60:ArrayOfEN_ItemExt" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllItemsProperties">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storesAvailable" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="propertiesAvailable" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="searchValue" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="orderColumn" type="xs:int" />
+        <xs:element minOccurs="0" name="orderDirection" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="skip" type="xs:int" />
+        <xs:element minOccurs="0" name="take" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllItemsPropertiesResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q61="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllItemsPropertiesResult" nillable="true" type="q61:ArrayOfEN_ItemProperty" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Get_ItemProperties_CountRecord">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storesAvailable" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="searchValue" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Get_ItemProperties_CountRecordResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q62="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="Get_ItemProperties_CountRecordResult" nillable="true" type="q62:ArrayOfKeyValueOfstringint" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Save_ItemExtProperty">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="properties" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="itemID" type="xs:int" />
+        <xs:element minOccurs="0" name="propsAvailable" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="stores" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="hqUserID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Save_ItemExtPropertyResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q63="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Save_ItemExtPropertyResult" nillable="true" type="q63:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllItemsProperties_By_List">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="items" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="storesAvailable" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="propertiesAvailable" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllItemsProperties_By_ListResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q64="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllItemsProperties_By_ListResult" nillable="true" type="q64:ArrayOfEN_ItemProperty" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllDocsMH">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="hqUsersID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="searchValue" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="estadoHacienda" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="orderColumn" type="xs:int" />
+        <xs:element minOccurs="0" name="orderDirection" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="skip" type="xs:int" />
+        <xs:element minOccurs="0" name="take" type="xs:int" />
+        <xs:element minOccurs="0" name="fromDate" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="toDate" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllDocsMHResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q65="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllDocsMHResult" nillable="true" type="q65:ArrayOfEN_DocumentosMH" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetCountRecordDocsMH">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="hqUsersID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="searchValue" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="estadoHacienda" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="fromDate" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="toDate" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetCountRecordDocsMHResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q66="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="GetCountRecordDocsMHResult" nillable="true" type="q66:ArrayOfKeyValueOfstringint" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllGraphics">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storeID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="codSucursal" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="usersID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="busqueda" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="fromDate" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="toDate" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="tipo" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllGraphicsResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q67="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllGraphicsResult" nillable="true" type="q67:ArrayOfEN_Graphics" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AR_PaymentTerms_GetAll">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AR_PaymentTerms_GetAllResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q68="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="AR_PaymentTerms_GetAllResult" nillable="true" type="q68:ArrayOfEN_AR_PaymentTerms" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_AR_PAYMENTTERMS_SAVE">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q69="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="paymentTerms" nillable="true" type="q69:EN_AR_PaymentTerms" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_AR_PAYMENTTERMS_SAVEResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q70="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="EN_AR_PAYMENTTERMS_SAVEResult" nillable="true" type="q70:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AR_AccountGroup_GetAll">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AR_AccountGroup_GetAllResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q71="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="AR_AccountGroup_GetAllResult" nillable="true" type="q71:ArrayOfEN_AR_AccountGroup" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ExtCentral_AR_AccountGroup_GetAll">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ExtCentral_AR_AccountGroup_GetAllResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q72="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="ExtCentral_AR_AccountGroup_GetAllResult" nillable="true" type="q72:ArrayOfEN_ExtCentral_AR_AccountGroup" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AR_FinanceCharge_GetAll">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AR_FinanceCharge_GetAllResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q73="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="AR_FinanceCharge_GetAllResult" nillable="true" type="q73:ArrayOfEN_AR_FinanceCharge" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AR_AccountManager_GetAll">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AR_AccountManager_GetAllResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q74="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="AR_AccountManager_GetAllResult" nillable="true" type="q74:ArrayOfEN_AR_AccountManager" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AR_StatementType_GetAll">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AR_StatementType_GetAllResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q75="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="AR_StatementType_GetAllResult" nillable="true" type="q75:ArrayOfEN_AR_StatementType" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="RR_NumberSeries_GetAll">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="RR_NumberSeries_GetAllResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q76="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="RR_NumberSeries_GetAllResult" nillable="true" type="q76:ArrayOfEN_RR_NumberSeries" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_AR_ACCOUNTGROUP_SAVE">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q77="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="accountGroup" nillable="true" type="q77:EN_AR_AccountGroup" />
+        <xs:element xmlns:q78="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="extCentral_AR_AccountGroup" nillable="true" type="q78:EN_ExtCentral_AR_AccountGroup" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_AR_ACCOUNTGROUP_SAVEResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q79="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="EN_AR_ACCOUNTGROUP_SAVEResult" nillable="true" type="q79:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Customers_GetAll">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Customers_GetAllResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q80="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Customers_GetAllResult" nillable="true" type="q80:ArrayOfEN_Customer" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ExtCentral_Customer_GetAll">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ExtCentral_Customer_GetAllResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q81="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="ExtCentral_Customer_GetAllResult" nillable="true" type="q81:ArrayOfEN_ExtCentral_Customer" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="CustomCaption_GetAll">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="CustomCaption_GetAllResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q82="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="CustomCaption_GetAllResult" nillable="true" type="q82:ArrayOfEN_CustomCaption" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_CUSTOMER_SAVE">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="prefijo" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="accountGroupID" type="xs:int" />
+        <xs:element xmlns:q83="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="customer" nillable="true" type="q83:EN_Customer" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_CUSTOMER_SAVEResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q84="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="EN_CUSTOMER_SAVEResult" nillable="true" type="q84:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AR_Account_GetAll">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AR_Account_GetAllResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q85="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="AR_Account_GetAllResult" nillable="true" type="q85:ArrayOfEN_AR_Account" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AR_AccountBalance_GetAll">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AR_AccountBalance_GetAllResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q86="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="AR_AccountBalance_GetAllResult" nillable="true" type="q86:ArrayOfEN_AR_AccountBalance" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AR_CustomerBalance_GetAll">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="AR_CustomerBalance_GetAllResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q87="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="AR_CustomerBalance_GetAllResult" nillable="true" type="q87:ArrayOfEN_AR_CustomerBalance" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ExtCentral_AR_AccountDynamic_GetAll">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ExtCentral_AR_AccountDynamic_GetAllResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q88="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="ExtCentral_AR_AccountDynamic_GetAllResult" nillable="true" type="q88:ArrayOfEN_ExtCentral_AR_AccountDynamic" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_AR_ACCOUNT_SAVE">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q89="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="account" nillable="true" type="q89:EN_AR_Account" />
+        <xs:element xmlns:q90="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="accountDynamic" nillable="true" type="q90:EN_ExtCentral_AR_AccountDynamic" />
+        <xs:element xmlns:q91="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="accountLink" nillable="true" type="q91:EN_AR_AccountLink" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="EN_AR_ACCOUNT_SAVEResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q92="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="EN_AR_ACCOUNT_SAVEResult" nillable="true" type="q92:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ExtCentral_AR_AccountDynamic_GetStoreBalance">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="accountID" type="xs:int" />
+        <xs:element minOccurs="0" name="groupID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ExtCentral_AR_AccountDynamic_GetStoreBalanceResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q93="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="ExtCentral_AR_AccountDynamic_GetStoreBalanceResult" nillable="true" type="q93:ArrayOfEN_ExtCentral_AR_AccountDynamic" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_CXC_Proveedor">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_CXC_ProveedorResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q94="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAll_CXC_ProveedorResult" nillable="true" type="q94:ArrayOfEN_CXC_Proveedor" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_CXC_FormaRebajos">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_CXC_FormaRebajosResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q95="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAll_CXC_FormaRebajosResult" nillable="true" type="q95:ArrayOfEN_CXC_FormaRebajo" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_CXC_IDCTipo">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_CXC_IDCTipoResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q96="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAll_CXC_IDCTipoResult" nillable="true" type="q96:ArrayOfEN_Tipo" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_CXC_IICTipo">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_CXC_IICTipoResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q97="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAll_CXC_IICTipoResult" nillable="true" type="q97:ArrayOfEN_Tipo" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_CXC_FrecuenciasPago">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_CXC_FrecuenciasPagoResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q98="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAll_CXC_FrecuenciasPagoResult" nillable="true" type="q98:ArrayOfEN_Tipo" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_CXC_Negociaciones">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_CXC_NegociacionesResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q99="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAll_CXC_NegociacionesResult" nillable="true" type="q99:ArrayOfEN_Tipo" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_CXC_IIC">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="fichaID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_CXC_IICResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q100="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAll_CXC_IICResult" nillable="true" type="q100:ArrayOfEN_CXC_IIC" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_CXC_IDC">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="fichaID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_CXC_IDCResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q101="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAll_CXC_IDCResult" nillable="true" type="q101:ArrayOfEN_CXC_IDC" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Save_CXC_Proveedor">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q102="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="ficha" nillable="true" type="q102:EN_CXC_Proveedor" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Save_CXC_ProveedorResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q103="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="Save_CXC_ProveedorResult" nillable="true" type="q103:ArrayOfKeyValueOfstringanyType" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Save_CXC_IDC">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q104="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="idc" nillable="true" type="q104:EN_CXC_IDC" />
+        <xs:element minOccurs="0" name="CXC_ProveedorID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Save_CXC_IDCResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q105="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Save_CXC_IDCResult" nillable="true" type="q105:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Save_CXC_IIC">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q106="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="iic" nillable="true" type="q106:EN_CXC_IIC" />
+        <xs:element minOccurs="0" name="CXC_ProveedorID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Save_CXC_IICResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q107="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Save_CXC_IICResult" nillable="true" type="q107:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Delete_CXC_IDC">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="ID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Delete_CXC_IDCResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q108="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Delete_CXC_IDCResult" nillable="true" type="q108:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Delete_CXC_IIC">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="ID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Delete_CXC_IICResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q109="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Delete_CXC_IICResult" nillable="true" type="q109:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ChangeStatus_CXC_Proveedor">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="proveedorID" type="xs:int" />
+        <xs:element minOccurs="0" name="status" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ChangeStatus_CXC_ProveedorResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q110="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="ChangeStatus_CXC_ProveedorResult" nillable="true" type="q110:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_ExtCentral_Segment">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_ExtCentral_SegmentResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q111="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAll_ExtCentral_SegmentResult" nillable="true" type="q111:ArrayOfEN_ExtCentral_Segment" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Save_ExtCentral_Segment">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q112="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="segment" nillable="true" type="q112:EN_ExtCentral_Segment" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="Save_ExtCentral_SegmentResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q113="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="Save_ExtCentral_SegmentResult" nillable="true" type="q113:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllSegment_By_SubCategoryID">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="subCategoryID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllSegment_By_SubCategoryIDResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q114="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllSegment_By_SubCategoryIDResult" nillable="true" type="q114:ArrayOfEN_ExtCentral_Segment" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllPurchasers">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllPurchasersResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q115="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllPurchasersResult" nillable="true" type="q115:ArrayOfEN_Purchaser" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllPurchasersByInactive">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="inactive" type="xs:boolean" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllPurchasersByInactiveResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q116="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllPurchasersByInactiveResult" nillable="true" type="q116:ArrayOfEN_Purchaser" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SavePurchaser">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q117="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="purchaser" nillable="true" type="q117:EN_Purchaser" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SavePurchaserResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q118="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="SavePurchaserResult" nillable="true" type="q118:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllDepartments">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="busqueda" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="estado" type="xs:int" />
+        <xs:element minOccurs="0" name="cantidad" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllDepartmentsResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q119="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllDepartmentsResult" nillable="true" type="q119:ArrayOfEN_Department" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetDepartment">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="id" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetDepartmentResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q120="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetDepartmentResult" nillable="true" type="q120:EN_Department" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveDepartment">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q121="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="department" nillable="true" type="q121:EN_Department" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveDepartmentResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q122="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="SaveDepartmentResult" nillable="true" type="q122:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllCategories">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="busqueda" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="estado" type="xs:int" />
+        <xs:element minOccurs="0" name="cantidad" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllCategoriesResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q123="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllCategoriesResult" nillable="true" type="q123:ArrayOfEN_Category" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllCategory_Simple">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="supplierID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllCategory_SimpleResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q124="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllCategory_SimpleResult" nillable="true" type="q124:ArrayOfEN_Category" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveCategory">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q125="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="category" nillable="true" type="q125:EN_Category" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveCategoryResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q126="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="SaveCategoryResult" nillable="true" type="q126:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetCategory">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="ID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetCategoryResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q127="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetCategoryResult" nillable="true" type="q127:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllCategories_ByDepartmentID">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="departmentID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllCategories_ByDepartmentIDResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q128="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllCategories_ByDepartmentIDResult" nillable="true" type="q128:ArrayOfEN_Category" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllQuantityDiscounts">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="estado" type="xs:int" />
+        <xs:element minOccurs="0" name="cantidad" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllQuantityDiscountsResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q129="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllQuantityDiscountsResult" nillable="true" type="q129:ArrayOfEN_QuantityDiscount" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveQuantityDiscount">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q130="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="quantityDiscount" nillable="true" type="q130:EN_QuantityDiscount" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveQuantityDiscountResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q131="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="SaveQuantityDiscountResult" nillable="true" type="q131:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetQuantityDiscount">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="ID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetQuantityDiscountResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q132="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetQuantityDiscountResult" nillable="true" type="q132:EN_QuantityDiscount" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllSimpleQuantityDiscountsByType">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="type" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllSimpleQuantityDiscountsByTypeResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q133="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllSimpleQuantityDiscountsByTypeResult" nillable="true" type="q133:ArrayOfEN_QuantityDiscount" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllItemMessage">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="busqueda" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="estado" type="xs:int" />
+        <xs:element minOccurs="0" name="cantidad" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllItemMessageResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q134="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllItemMessageResult" nillable="true" type="q134:ArrayOfEN_ItemMessage" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveItemMessage">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q135="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="itemMessage" nillable="true" type="q135:EN_ItemMessage" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveItemMessageResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q136="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="SaveItemMessageResult" nillable="true" type="q136:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetItemMessage">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="ID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetItemMessageResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q137="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetItemMessageResult" nillable="true" type="q137:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllSchedules">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="busqueda" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="estado" type="xs:int" />
+        <xs:element minOccurs="0" name="cantidad" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllSchedulesResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q138="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllSchedulesResult" nillable="true" type="q138:ArrayOfEN_Schedule" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveSchedule">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q139="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="schedule" nillable="true" type="q139:EN_Schedule" />
+        <xs:element xmlns:q140="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="segments" nillable="true" type="q140:ArrayOfEN_ScheduleSegment" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveScheduleResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q141="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="SaveScheduleResult" nillable="true" type="q141:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetSchedule">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="ID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetScheduleResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q142="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetScheduleResult" nillable="true" type="q142:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllScheduleSegment">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllScheduleSegmentResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q143="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllScheduleSegmentResult" nillable="true" type="q143:ArrayOfEN_ScheduleSegment" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllScheduleSegmentByScheduleID">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="scheduleID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllScheduleSegmentByScheduleIDResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q144="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllScheduleSegmentByScheduleIDResult" nillable="true" type="q144:ArrayOfEN_ScheduleSegment" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllFamilies">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="busqueda" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="estado" type="xs:int" />
+        <xs:element minOccurs="0" name="cantidad" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllFamiliesResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q145="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllFamiliesResult" nillable="true" type="q145:ArrayOfEN_ExtCentral_Family" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveFamily">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q146="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="family" nillable="true" type="q146:EN_ExtCentral_Family" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveFamilyResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q147="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="SaveFamilyResult" nillable="true" type="q147:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetFamily">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="ID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetFamilyResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q148="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetFamilyResult" nillable="true" type="q148:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllSubCategories">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="busqueda" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="estado" type="xs:int" />
+        <xs:element minOccurs="0" name="cantidad" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllSubCategoriesResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q149="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllSubCategoriesResult" nillable="true" type="q149:ArrayOfEN_ExtCentral_SubCategory" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveSubCategories">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q150="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="subCategory" nillable="true" type="q150:EN_ExtCentral_SubCategory" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveSubCategoriesResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q151="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="SaveSubCategoriesResult" nillable="true" type="q151:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetSubCategories">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="ID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetSubCategoriesResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q152="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetSubCategoriesResult" nillable="true" type="q152:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllSubCategory_By_CategoryID">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="categoryID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllSubCategory_By_CategoryIDResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q153="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllSubCategory_By_CategoryIDResult" nillable="true" type="q153:ArrayOfEN_ExtCentral_SubCategory" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllBrands">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllBrandsResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q154="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllBrandsResult" nillable="true" type="q154:ArrayOfEN_ExtCentral_Brand" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveBrand">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="id" type="xs:int" />
+        <xs:element minOccurs="0" name="description" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveBrandResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q155="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="SaveBrandResult" nillable="true" type="q155:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllManufacturers">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllManufacturersResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q156="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllManufacturersResult" nillable="true" type="q156:ArrayOfEN_ExtCentral_Manufacturer" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveManufacturer">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="id" type="xs:int" />
+        <xs:element minOccurs="0" name="description" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveManufacturerResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q157="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="SaveManufacturerResult" nillable="true" type="q157:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllItems">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="valorBusqueda" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="estado" type="xs:int" />
+        <xs:element minOccurs="0" name="resultCount" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllItemsResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="GetAllItemsResult" nillable="true">
+          <xs:complexType>
+            <xs:annotation>
+              <xs:appinfo>
+                <ActualType Name="DataSet" Namespace="http://schemas.datacontract.org/2004/07/System.Data" xmlns="http://schemas.microsoft.com/2003/10/Serialization/" />
+              </xs:appinfo>
+            </xs:annotation>
+            <xs:sequence>
+              <xs:element ref="xs:schema" />
+              <xs:any />
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllItemsList">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="valorBusqueda" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="estado" type="xs:int" />
+        <xs:element minOccurs="0" name="resultCount" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllItemsListResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q158="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllItemsListResult" nillable="true" type="q158:ArrayOfEN_Item" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllItemsDynamicList">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="SearchValue" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="OrderColumn" type="xs:int" />
+        <xs:element minOccurs="0" name="OrderDirection" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="Skip" type="xs:int" />
+        <xs:element minOccurs="0" name="Take" type="xs:int" />
+        <xs:element xmlns:q159="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="famsIDs" nillable="true" type="q159:ArrayOfint" />
+        <xs:element xmlns:q160="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="depsIDs" nillable="true" type="q160:ArrayOfint" />
+        <xs:element xmlns:q161="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="catsIDs" nillable="true" type="q161:ArrayOfint" />
+        <xs:element xmlns:q162="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="subcatsIDs" nillable="true" type="q162:ArrayOfint" />
+        <xs:element xmlns:q163="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="segsIDs" nillable="true" type="q163:ArrayOfint" />
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllItemsDynamicListResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q164="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllItemsDynamicListResult" nillable="true" type="q164:ArrayOfEN_Item" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetItemsCountRecords">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="SearchValue" nillable="true" type="xs:string" />
+        <xs:element xmlns:q165="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="famsIDs" nillable="true" type="q165:ArrayOfint" />
+        <xs:element xmlns:q166="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="depsIDs" nillable="true" type="q166:ArrayOfint" />
+        <xs:element xmlns:q167="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="catsIDs" nillable="true" type="q167:ArrayOfint" />
+        <xs:element xmlns:q168="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="subcatsIDs" nillable="true" type="q168:ArrayOfint" />
+        <xs:element xmlns:q169="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="segsIDs" nillable="true" type="q169:ArrayOfint" />
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetItemsCountRecordsResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q170="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="GetItemsCountRecordsResult" nillable="true" type="q170:ArrayOfKeyValueOfstringint" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllItem_Simple">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="supplierID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllItem_SimpleResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q171="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllItem_SimpleResult" nillable="true" type="q171:ArrayOfEN_Item" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllItem_ItemStore">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="itemID" type="xs:int" />
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllItem_ItemStoreResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q172="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllItem_ItemStoreResult" nillable="true" type="q172:ArrayOfEN_ItemStore" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveItem">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q173="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="item" nillable="true" type="q173:EN_Item" />
+        <xs:element minOccurs="0" name="title" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="userID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveItemResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q174="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="SaveItemResult" nillable="true" type="q174:ArrayOfKeyValueOfstringanyType" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetItemByItemLookupCode">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="itemLookupCode" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetItemByItemLookupCodeResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q175="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetItemByItemLookupCodeResult" nillable="true" type="q175:EN_Item" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetItemByItemLookupCodebyLista">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="itemLookupCode" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetItemByItemLookupCodebyListaResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q176="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetItemByItemLookupCodebyListaResult" nillable="true" type="q176:ArrayOfEN_Item" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ValidateItemExists">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="itemLookupCode" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ValidateItemExistsResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q177="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="ValidateItemExistsResult" nillable="true" type="q177:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ValidateItemsExistsList">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q178="http://schemas.microsoft.com/2003/10/Serialization/Arrays" minOccurs="0" name="itemLookupCode" nillable="true" type="q178:ArrayOfstring" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ValidateItemsExistsListResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q179="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="ValidateItemsExistsListResult" nillable="true" type="q179:ArrayOfRespuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllSupplierListByItemID">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="itemID" type="xs:int" />
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllSupplierListByItemIDResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q180="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllSupplierListByItemIDResult" nillable="true" type="q180:ArrayOfEN_SupplierList" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllPOC_ItemPriceByItemID">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="itemID" type="xs:int" />
+        <xs:element minOccurs="0" name="storesID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllPOC_ItemPriceByItemIDResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q181="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllPOC_ItemPriceByItemIDResult" nillable="true" type="q181:ArrayOfEN_POC_ItemPrice" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllStore">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="busqueda" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="estado" type="xs:int" />
+        <xs:element minOccurs="0" name="cantidad" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllStoreResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q182="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllStoreResult" nillable="true" type="q182:ArrayOfEN_Store" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetStore">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="ID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetStoreResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q183="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetStoreResult" nillable="true" type="q183:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllStore_By_StoreGroupID">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="storeGroupID" type="xs:int" />
+        <xs:element minOccurs="0" name="stores_Id" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllStore_By_StoreGroupIDResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q184="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllStore_By_StoreGroupIDResult" nillable="true" type="q184:ArrayOfEN_Store" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetStores_ItemStatus">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="itemID" type="xs:int" />
+        <xs:element minOccurs="0" name="storesAvailable" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetStores_ItemStatusResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q185="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetStores_ItemStatusResult" nillable="true" type="q185:ArrayOfEN_Store" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_StoreGroup">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="stores_Id" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_StoreGroupResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q186="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAll_StoreGroupResult" nillable="true" type="q186:ArrayOfEN_StoreGroup" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllSupplier">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="stores_ID" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="busqueda" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="estado" type="xs:int" />
+        <xs:element minOccurs="0" name="cantidad" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllSupplierResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q187="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllSupplierResult" nillable="true" type="q187:ArrayOfEN_Supplier" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetSupplier">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="ID" type="xs:int" />
+        <xs:element minOccurs="0" name="stores_ID" nillable="true" type="xs:string" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetSupplierResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q188="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetSupplierResult" nillable="true" type="q188:EN_Supplier" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllTax">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="busqueda" nillable="true" type="xs:string" />
+        <xs:element minOccurs="0" name="estado" type="xs:int" />
+        <xs:element minOccurs="0" name="cantidad" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllTaxResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q189="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllTaxResult" nillable="true" type="q189:ArrayOfEN_Tax" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetTax">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="ID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetTaxResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q190="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetTaxResult" nillable="true" type="q190:EN_Tax" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_ItemTax">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAll_ItemTaxResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q191="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAll_ItemTaxResult" nillable="true" type="q191:ArrayOfEN_ItemTax" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllCabeceras">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllCabecerasResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q192="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllCabecerasResult" nillable="true" type="q192:ArrayOfEN_Cabeceras" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveCabecera">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q193="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="cabecera" nillable="true" type="q193:EN_Cabeceras" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveCabeceraResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q194="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="SaveCabeceraResult" nillable="true" type="q194:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetCabecera">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="ID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetCabeceraResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q195="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetCabeceraResult" nillable="true" type="q195:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllCabecerasTienda">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllCabecerasTiendaResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q196="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllCabecerasTiendaResult" nillable="true" type="q196:ArrayOfEN_CabecerasTienda" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveCabeceraTienda">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q197="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="cabecera" nillable="true" type="q197:EN_CabecerasTienda" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveCabeceraTiendaResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q198="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="SaveCabeceraTiendaResult" nillable="true" type="q198:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllCabecerasXTienda">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="idStore" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllCabecerasXTiendaResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q199="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllCabecerasXTiendaResult" nillable="true" type="q199:ArrayOfEN_Cabeceras" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllIslasSideKick">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllIslasSideKickResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q200="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllIslasSideKickResult" nillable="true" type="q200:ArrayOfEN_IslasSideKick" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveIslasSideKick">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q201="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="islasSideKick" nillable="true" type="q201:EN_IslasSideKick" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveIslasSideKickResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q202="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="SaveIslasSideKickResult" nillable="true" type="q202:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetIslasSideKick">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" name="ID" type="xs:int" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetIslasSideKickResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q203="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetIslasSideKickResult" nillable="true" type="q203:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllEspaciosFrios">
+    <xs:complexType>
+      <xs:sequence />
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="GetAllEspaciosFriosResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q204="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="GetAllEspaciosFriosResult" nillable="true" type="q204:ArrayOfEN_EspaciosFrios" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveEspaciosFrios">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q205="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="espFrio" nillable="true" type="q205:EN_EspaciosFrios" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="SaveEspaciosFriosResponse">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element xmlns:q206="http://schemas.datacontract.org/2004/07/UltraERP.BusinessEntities" minOccurs="0" name="SaveEspaciosFriosResult" nillable="true" type="q206:Respuesta" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

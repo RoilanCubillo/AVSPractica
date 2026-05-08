@@ -1,0 +1,921 @@
+﻿
+/****** Object:  Table [dbo].[Worksheet]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[Style] [int] NULL,
+	[EffectiveDate] [datetime] NULL,
+	[Status] [int] NULL,
+	[Notes] [nvarchar](255) NULL,
+	[Title] [nvarchar](50) NULL,
+	[FromDate] [datetime] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet] PRIMARY KEY NONCLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_DelGlobalCustomers]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_DelGlobalCustomers](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[CustomerID] [int] NULL,
+	[AccountNumber] [nvarchar](20) NULL,
+	[LastName] [nvarchar](50) NULL,
+	[FirstName] [nvarchar](30) NULL,
+	[Company] [nvarchar](50) NULL,
+	[LastUpdated] [datetime] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet_DelGlobalCustomers] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_GlobalAccountAdjustment]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_GlobalAccountAdjustment](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NOT NULL,
+	[StoreID] [int] NOT NULL,
+	[CustomerID] [int] NOT NULL,
+	[Date] [datetime] NOT NULL,
+	[AccountReceivableID] [int] NOT NULL,
+	[HistoryType] [int] NOT NULL,
+	[Amount] [money] NOT NULL,
+	[Comment] [nvarchar](50) NOT NULL,
+	[TransferARID] [int] NOT NULL,
+	[ReasonCodeID] [int] NOT NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_InventoryTransfer]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_InventoryTransfer](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[ItemID] [int] NULL,
+	[DetailID] [int] NULL,
+	[QuantityToTransfer] [float] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet_InventoryTransfer] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_ItemBlockSales]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_ItemBlockSales](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[ItemID] [int] NULL,
+	[BlockSalesType] [int] NOT NULL,
+	[BlockSalesReason] [nvarchar](30) NOT NULL,
+	[BlockSalesScheduleID] [int] NOT NULL,
+	[BlockSalesBeforeDate] [datetime] NULL,
+	[BlockSalesAfterDate] [datetime] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet_ItemBlockSales] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_ItemCost]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_ItemCost](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[ItemID] [int] NULL,
+	[Cost] [money] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet_ItemCost] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_ItemDiscount]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_ItemDiscount](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[ItemID] [int] NULL,
+	[QuantityDiscountID] [int] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet_ItemDiscount] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_ItemPrice]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_ItemPrice](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[ItemID] [int] NULL,
+	[DetailID] [int] NULL,
+	[Price] [money] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet_ItemPrice] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_ItemPriceLevel]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_ItemPriceLevel](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[ItemID] [int] NULL,
+	[PriceA] [money] NULL,
+	[PriceB] [money] NULL,
+	[PriceC] [money] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet_ItemPriceLevel] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_ItemPriceLimit]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_ItemPriceLimit](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[ItemID] [int] NULL,
+	[PriceUpperBound] [money] NULL,
+	[PriceLowerBound] [money] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet_ItemPriceLimit] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_ItemQuantity]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_ItemQuantity](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[ItemID] [int] NULL,
+	[DetailID] [int] NULL,
+	[Quantity] [float] NULL,
+	[QuantityCommitted] [float] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet_ItemQuantity] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_ItemRestock]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_ItemRestock](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[ItemID] [int] NULL,
+	[ReorderPoint] [float] NULL,
+	[RestockLevel] [float] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet_ItemRestock] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_ItemTax]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_ItemTax](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[ItemID] [int] NULL,
+	[TaxID] [int] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet_ItemTax] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_ItemUpdate]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_ItemUpdate](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[ItemID] [int] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet_ItemUpdate] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_POLaterDisburse]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_POLaterDisburse](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[StoreID] [int] NULL,
+	[Status] [int] NULL,
+	[Originator] [smallint] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[PlannerType] [nvarchar](5) NULL,
+	[SyncGuid] [uniqueidentifier] NULL
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_PurchaseOrder]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_PurchaseOrder](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[ItemDescription] [nvarchar](80) NULL,
+	[QuantityOrdered] [float] NULL,
+	[ItemID] [int] NULL,
+	[DetailID] [int] NULL,
+	[OrderNumber] [nvarchar](25) NOT NULL,
+	[Price] [money] NULL,
+	[StoreID] [int] NULL,
+	[TaxRate] [float] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet_PurchaseOrder] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_SalePrices]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_SalePrices](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[ItemID] [int] NULL,
+	[SalePrice] [money] NULL,
+	[SaleStartDate] [datetime] NOT NULL,
+	[SaleEndDate] [datetime] NOT NULL,
+	[DetailID] [int] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet_SalePrices] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_SQL]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_SQL](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[SQLCommand] [nvarchar](4000) NULL,
+	[Priority] [int] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet_SQL] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_SupplierList]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_SupplierList](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[SupplierListID] [int] NULL,
+	[MinimumOrder] [float] NULL,
+	[Cost] [money] NULL,
+	[ReorderNumber] [nvarchar](25) NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[MasterPackQuantity] [int] NOT NULL,
+	[TaxRate] [float] NOT NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet_SupplierList] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Worksheet_SupplierUpdate]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Worksheet_SupplierUpdate](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[SupplierID] [int] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_Worksheet_SupplierUpdate] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[WorksheetHeader_MasterPO]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[WorksheetHeader_MasterPO](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[MasterPO] [nvarchar](20) NOT NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_WorksheetHeader_MasterPO] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[WorksheetHeader_PurchaseOrder]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[WorksheetHeader_PurchaseOrder](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[PONumber] [nvarchar](20) NULL,
+	[DateCreated] [datetime] NULL,
+	[To] [nvarchar](255) NULL,
+	[ShipTo] [nvarchar](255) NULL,
+	[Requisitioner] [nvarchar](20) NULL,
+	[ShipVia] [nvarchar](20) NULL,
+	[FOBPoint] [nvarchar](20) NULL,
+	[Terms] [nvarchar](20) NULL,
+	[TaxRate] [float] NULL,
+	[Shipping] [money] NULL,
+	[Freight] [nvarchar](20) NULL,
+	[RequiredDate] [datetime] NOT NULL,
+	[ConfirmingTo] [nvarchar](20) NULL,
+	[Remarks] [nvarchar](30) NULL,
+	[SupplierID] [int] NULL,
+	[CurrencyID] [int] NULL,
+	[ExchangeRate] [float] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[OtherFees] [money] NOT NULL,
+	[MasterPOID] [int] NOT NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_WorksheetHeader_PurchaseOrder] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[WorksheetHistory]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[WorksheetHistory](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[Status] [int] NULL,
+	[HistoryDate] [datetime] NULL,
+	[HQEntry] [bit] NOT NULL,
+	[StoreID] [int] NULL,
+	[Comment] [nvarchar](255) NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_WorksheetHistory] PRIMARY KEY NONCLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[WorksheetStore]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[WorksheetStore](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[StoreID] [int] NULL,
+	[Status] [int] NULL,
+	[DateProcessed] [datetime] NULL,
+	[Originator] [smallint] NULL,
+	[DBTimeStamp] [timestamp] NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_WorksheetStore] PRIMARY KEY NONCLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[WorksheetStoreJob]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[WorksheetStoreJob](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetStoreID] [int] NOT NULL,
+	[WorksheetStyle] [int] NOT NULL,
+	[WorksheetRecordID] [int] NULL,
+	[JobSyncGuid] [uniqueidentifier] NOT NULL,
+	[Status] [int] NOT NULL,
+	[StoreID] [int] NOT NULL,
+	[SyncGuid] [uniqueidentifier] NOT NULL,
+	[WorksheetRecordID2] [int] NOT NULL,
+ CONSTRAINT [PK_WorksheetStoreJob] PRIMARY KEY NONCLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[WorksheetUpdateItemPrices]    Script Date: 11/06/2024 13:33:40 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[WorksheetUpdateItemPrices](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[WorksheetID] [int] NULL,
+	[ItemID] [int] NULL,
+	[Price] [money] NULL,
+	[Cost] [money] NULL,
+	[PriceLevelA] [money] NULL,
+	[PriceLevelB] [money] NULL,
+	[PriceLevelC] [money] NULL,
+	[MSRP] [money] NULL,
+	[SalePrice] [money] NULL,
+	[SaleStartDate] [datetime] NULL,
+	[SaleEndDate] [datetime] NULL,
+	[LowerBound] [money] NULL,
+	[UpperBound] [money] NULL,
+	[BuydownPrice] [money] NULL,
+	[BuydownQuantity] [float] NULL,
+	[DBTimeStamp] [timestamp] NOT NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+ CONSTRAINT [PK_WorksheetUpdateItemPrices] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[Worksheet] ADD  CONSTRAINT [DF_Worksheet_Style]  DEFAULT (0) FOR [Style]
+GO
+ALTER TABLE [dbo].[Worksheet] ADD  CONSTRAINT [DF_Worksheet_EffectiveDate]  DEFAULT (getdate()) FOR [EffectiveDate]
+GO
+ALTER TABLE [dbo].[Worksheet] ADD  CONSTRAINT [DF_Worksheet_Status]  DEFAULT (0) FOR [Status]
+GO
+ALTER TABLE [dbo].[Worksheet] ADD  CONSTRAINT [DF_Worksheet_Notes]  DEFAULT ('') FOR [Notes]
+GO
+ALTER TABLE [dbo].[Worksheet] ADD  CONSTRAINT [DF_Worksheet_Title]  DEFAULT ('') FOR [Title]
+GO
+ALTER TABLE [dbo].[Worksheet] ADD  CONSTRAINT [DF_Worksheet_FromDate]  DEFAULT (getdate()) FOR [FromDate]
+GO
+ALTER TABLE [dbo].[Worksheet] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_DelGlobalCustomers] ADD  CONSTRAINT [DF_Worksheet_DelGlobalCustomers_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[Worksheet_DelGlobalCustomers] ADD  CONSTRAINT [DF_Worksheet_DelGlobalCustomers_CustomerID]  DEFAULT (0) FOR [CustomerID]
+GO
+ALTER TABLE [dbo].[Worksheet_DelGlobalCustomers] ADD  CONSTRAINT [DF_Worksheet_DelGlobalCustomers_AccountNumber]  DEFAULT ('') FOR [AccountNumber]
+GO
+ALTER TABLE [dbo].[Worksheet_DelGlobalCustomers] ADD  CONSTRAINT [DF_Worksheet_DelGlobalCustomers_LastName]  DEFAULT ('') FOR [LastName]
+GO
+ALTER TABLE [dbo].[Worksheet_DelGlobalCustomers] ADD  CONSTRAINT [DF_Worksheet_DelGlobalCustomers_FirstName]  DEFAULT ('') FOR [FirstName]
+GO
+ALTER TABLE [dbo].[Worksheet_DelGlobalCustomers] ADD  CONSTRAINT [DF_Worksheet_DelGlobalCustomers_Company]  DEFAULT ('') FOR [Company]
+GO
+ALTER TABLE [dbo].[Worksheet_DelGlobalCustomers] ADD  CONSTRAINT [DF_Worksheet_DelGlobalCustomers_LastUpdated]  DEFAULT (getdate()) FOR [LastUpdated]
+GO
+ALTER TABLE [dbo].[Worksheet_DelGlobalCustomers] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_GlobalAccountAdjustment] ADD  CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[Worksheet_GlobalAccountAdjustment] ADD  CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_StoreID]  DEFAULT (0) FOR [StoreID]
+GO
+ALTER TABLE [dbo].[Worksheet_GlobalAccountAdjustment] ADD  CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_CustomerID]  DEFAULT (0) FOR [CustomerID]
+GO
+ALTER TABLE [dbo].[Worksheet_GlobalAccountAdjustment] ADD  CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_Date]  DEFAULT (getdate()) FOR [Date]
+GO
+ALTER TABLE [dbo].[Worksheet_GlobalAccountAdjustment] ADD  CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_AccountReceivableID]  DEFAULT (0) FOR [AccountReceivableID]
+GO
+ALTER TABLE [dbo].[Worksheet_GlobalAccountAdjustment] ADD  CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_HistoryTypeID]  DEFAULT (0) FOR [HistoryType]
+GO
+ALTER TABLE [dbo].[Worksheet_GlobalAccountAdjustment] ADD  CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_AmountID]  DEFAULT (0) FOR [Amount]
+GO
+ALTER TABLE [dbo].[Worksheet_GlobalAccountAdjustment] ADD  CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_Comment]  DEFAULT ('') FOR [Comment]
+GO
+ALTER TABLE [dbo].[Worksheet_GlobalAccountAdjustment] ADD  CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_TransferARID]  DEFAULT (0) FOR [TransferARID]
+GO
+ALTER TABLE [dbo].[Worksheet_GlobalAccountAdjustment] ADD  CONSTRAINT [DF_Worksheet_GlobalAccountAdjustment_ReasonCodeID]  DEFAULT (0) FOR [ReasonCodeID]
+GO
+ALTER TABLE [dbo].[Worksheet_GlobalAccountAdjustment] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_InventoryTransfer] ADD  CONSTRAINT [DF_Worksheet_InventoryTransfer_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[Worksheet_InventoryTransfer] ADD  CONSTRAINT [DF_Worksheet_InventoryTransfer_ItemID]  DEFAULT (0) FOR [ItemID]
+GO
+ALTER TABLE [dbo].[Worksheet_InventoryTransfer] ADD  CONSTRAINT [DF_Worksheet_InventoryTransfer_DetailID]  DEFAULT (0) FOR [DetailID]
+GO
+ALTER TABLE [dbo].[Worksheet_InventoryTransfer] ADD  CONSTRAINT [DF_Worksheet_InventoryTransfer_QuantityToTransfer]  DEFAULT (0) FOR [QuantityToTransfer]
+GO
+ALTER TABLE [dbo].[Worksheet_InventoryTransfer] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemBlockSales] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemCost] ADD  CONSTRAINT [DF_Worksheet_ItemCost_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemCost] ADD  CONSTRAINT [DF_Worksheet_ItemCost_ItemID]  DEFAULT (0) FOR [ItemID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemCost] ADD  CONSTRAINT [DF_Worksheet_ItemCost_Cost]  DEFAULT (0) FOR [Cost]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemCost] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemDiscount] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemPrice] ADD  CONSTRAINT [DF_Worksheet_ItemPrice_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemPrice] ADD  CONSTRAINT [DF_Worksheet_ItemPrice_ItemID]  DEFAULT (0) FOR [ItemID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemPrice] ADD  CONSTRAINT [DF_Worksheet_ItemPrice_DetailID]  DEFAULT (0) FOR [DetailID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemPrice] ADD  CONSTRAINT [DF_Worksheet_ItemPrice_Price]  DEFAULT (0) FOR [Price]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemPrice] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemPriceLevel] ADD  CONSTRAINT [DF_Worksheet_ItemPriceLevel_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemPriceLevel] ADD  CONSTRAINT [DF_Worksheet_ItemPriceLevel_ItemID]  DEFAULT (0) FOR [ItemID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemPriceLevel] ADD  CONSTRAINT [DF_Worksheet_ItemPriceLevel_PriceA]  DEFAULT (0) FOR [PriceA]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemPriceLevel] ADD  CONSTRAINT [DF_Worksheet_ItemPriceLevel_PriceB]  DEFAULT (0) FOR [PriceB]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemPriceLevel] ADD  CONSTRAINT [DF_Worksheet_ItemPriceLevel_PriceC]  DEFAULT (0) FOR [PriceC]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemPriceLevel] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemPriceLimit] ADD  CONSTRAINT [DF_Worksheet_ItemPriceLimit_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemPriceLimit] ADD  CONSTRAINT [DF_Worksheet_ItemPriceLimit_ItemID]  DEFAULT (0) FOR [ItemID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemPriceLimit] ADD  CONSTRAINT [DF_Worksheet_ItemPriceLimit_PriceUpperBound]  DEFAULT (0) FOR [PriceUpperBound]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemPriceLimit] ADD  CONSTRAINT [DF_Worksheet_ItemPriceLimit_PriceLowerBound]  DEFAULT (0) FOR [PriceLowerBound]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemPriceLimit] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemQuantity] ADD  CONSTRAINT [DF_Worksheet_ItemQuantity_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemQuantity] ADD  CONSTRAINT [DF_Worksheet_ItemQuantity_ItemID]  DEFAULT (0) FOR [ItemID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemQuantity] ADD  CONSTRAINT [DF_Worksheet_ItemQuantity_DetailID]  DEFAULT (0) FOR [DetailID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemQuantity] ADD  CONSTRAINT [DF_Worksheet_ItemQuantity_Quantity]  DEFAULT (0) FOR [Quantity]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemQuantity] ADD  CONSTRAINT [DF_Worksheet_ItemQuantity_QuantityCommitted]  DEFAULT (0) FOR [QuantityCommitted]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemQuantity] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemRestock] ADD  CONSTRAINT [DF_Worksheet_ItemRestock_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemRestock] ADD  CONSTRAINT [DF_Worksheet_ItemRestock_ItemID]  DEFAULT (0) FOR [ItemID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemRestock] ADD  CONSTRAINT [DF_Worksheet_ItemRestock_ReorderPoint]  DEFAULT (0) FOR [ReorderPoint]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemRestock] ADD  CONSTRAINT [DF_Worksheet_ItemRestock_RestockLevel]  DEFAULT (0) FOR [RestockLevel]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemRestock] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemTax] ADD  CONSTRAINT [DF_Worksheet_ItemTax_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemTax] ADD  CONSTRAINT [DF_Worksheet_ItemTax_ItemID]  DEFAULT (0) FOR [ItemID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemTax] ADD  CONSTRAINT [DF_Worksheet_ItemTax_TaxID]  DEFAULT (0) FOR [TaxID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemTax] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemUpdate] ADD  CONSTRAINT [DF_Worksheet_ItemUpdate_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemUpdate] ADD  CONSTRAINT [DF_Worksheet_ItemUpdate_ItemID]  DEFAULT (0) FOR [ItemID]
+GO
+ALTER TABLE [dbo].[Worksheet_ItemUpdate] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_POLaterDisburse] ADD  DEFAULT (NULL) FOR [PlannerType]
+GO
+ALTER TABLE [dbo].[Worksheet_POLaterDisburse] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_PurchaseOrder] ADD  CONSTRAINT [DF_Worksheet_PurchaseOrder_WorksheetID]  DEFAULT ((0)) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[Worksheet_PurchaseOrder] ADD  CONSTRAINT [DF_Worksheet_PurchaseOrder_ItemDescription]  DEFAULT ('') FOR [ItemDescription]
+GO
+ALTER TABLE [dbo].[Worksheet_PurchaseOrder] ADD  CONSTRAINT [DF_Worksheet_PurchaseOrder_QuantityOrdered]  DEFAULT ((0)) FOR [QuantityOrdered]
+GO
+ALTER TABLE [dbo].[Worksheet_PurchaseOrder] ADD  CONSTRAINT [DF_Worksheet_PurchaseOrder_ItemID]  DEFAULT ((0)) FOR [ItemID]
+GO
+ALTER TABLE [dbo].[Worksheet_PurchaseOrder] ADD  CONSTRAINT [DF_Worksheet_PurchaseOrder_DetailID]  DEFAULT ((0)) FOR [DetailID]
+GO
+ALTER TABLE [dbo].[Worksheet_PurchaseOrder] ADD  CONSTRAINT [DF_Worksheet_PurchaseOrder_OrderNumber]  DEFAULT ('') FOR [OrderNumber]
+GO
+ALTER TABLE [dbo].[Worksheet_PurchaseOrder] ADD  CONSTRAINT [DF_Worksheet_PurchaseOrder_Price]  DEFAULT ((0)) FOR [Price]
+GO
+ALTER TABLE [dbo].[Worksheet_PurchaseOrder] ADD  CONSTRAINT [DF_Worksheet_PurchaseOrder_StoreID]  DEFAULT ((0)) FOR [StoreID]
+GO
+ALTER TABLE [dbo].[Worksheet_PurchaseOrder] ADD  CONSTRAINT [DF_Worksheet_PurchaseOrder_TaxRate]  DEFAULT ((0)) FOR [TaxRate]
+GO
+ALTER TABLE [dbo].[Worksheet_PurchaseOrder] ADD  CONSTRAINT [DF__Worksheet__SyncG__6CB8F890]  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_SalePrices] ADD  CONSTRAINT [DF_Worksheet_SalePrices_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[Worksheet_SalePrices] ADD  CONSTRAINT [DF_Worksheet_SalePrices_ItemID]  DEFAULT (0) FOR [ItemID]
+GO
+ALTER TABLE [dbo].[Worksheet_SalePrices] ADD  CONSTRAINT [DF_Worksheet_SalePrices_SalePrice]  DEFAULT (0) FOR [SalePrice]
+GO
+ALTER TABLE [dbo].[Worksheet_SalePrices] ADD  CONSTRAINT [DF_Worksheet_SalePrices_DetailID]  DEFAULT (0) FOR [DetailID]
+GO
+ALTER TABLE [dbo].[Worksheet_SalePrices] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_SQL] ADD  CONSTRAINT [DF_Worksheet_SQL_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[Worksheet_SQL] ADD  CONSTRAINT [DF_Worksheet_SQL_SQLCommand]  DEFAULT ('') FOR [SQLCommand]
+GO
+ALTER TABLE [dbo].[Worksheet_SQL] ADD  CONSTRAINT [DF_Worksheet_SQL_Priority]  DEFAULT (0) FOR [Priority]
+GO
+ALTER TABLE [dbo].[Worksheet_SQL] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_SupplierList] ADD  CONSTRAINT [DF_Worksheet_SupplierList_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[Worksheet_SupplierList] ADD  CONSTRAINT [DF_Worksheet_SupplierList_SupplierListID]  DEFAULT (0) FOR [SupplierListID]
+GO
+ALTER TABLE [dbo].[Worksheet_SupplierList] ADD  CONSTRAINT [DF_Worksheet_SupplierList_MinimumOrder]  DEFAULT (0) FOR [MinimumOrder]
+GO
+ALTER TABLE [dbo].[Worksheet_SupplierList] ADD  CONSTRAINT [DF_Worksheet_SupplierList_Cost]  DEFAULT (0) FOR [Cost]
+GO
+ALTER TABLE [dbo].[Worksheet_SupplierList] ADD  CONSTRAINT [DF_Worksheet_SupplierList_ReorderNumber]  DEFAULT ('') FOR [ReorderNumber]
+GO
+ALTER TABLE [dbo].[Worksheet_SupplierList] ADD  CONSTRAINT [DF__Worksheet__Maste__4984CAEC]  DEFAULT (0) FOR [MasterPackQuantity]
+GO
+ALTER TABLE [dbo].[Worksheet_SupplierList] ADD  CONSTRAINT [DF__Worksheet__TaxRa__4A78EF25]  DEFAULT (0) FOR [TaxRate]
+GO
+ALTER TABLE [dbo].[Worksheet_SupplierList] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[Worksheet_SupplierUpdate] ADD  CONSTRAINT [DF_Worksheet_SupplierUpdate_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[Worksheet_SupplierUpdate] ADD  CONSTRAINT [DF_Worksheet_SupplierUpdate_SupplierID]  DEFAULT (0) FOR [SupplierID]
+GO
+ALTER TABLE [dbo].[Worksheet_SupplierUpdate] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_MasterPO] ADD  DEFAULT ('') FOR [MasterPO]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_MasterPO] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_PONumber]  DEFAULT ('') FOR [PONumber]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_DateCreated]  DEFAULT (getdate()) FOR [DateCreated]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_To]  DEFAULT ('') FOR [To]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_ShipTo]  DEFAULT ('') FOR [ShipTo]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_Requisitioner]  DEFAULT ('') FOR [Requisitioner]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_ShipVia]  DEFAULT ('') FOR [ShipVia]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_FOBPoint]  DEFAULT ('') FOR [FOBPoint]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_Terms]  DEFAULT ('') FOR [Terms]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_TaxRate]  DEFAULT (0) FOR [TaxRate]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_Shipping]  DEFAULT (0) FOR [Shipping]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_Freight]  DEFAULT ('') FOR [Freight]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_ConfirmingTo]  DEFAULT ('') FOR [ConfirmingTo]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_Remarks]  DEFAULT ('') FOR [Remarks]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_SupplierID]  DEFAULT (0) FOR [SupplierID]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_CurrencyID]  DEFAULT (0) FOR [CurrencyID]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_ExchangeRate]  DEFAULT (1) FOR [ExchangeRate]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  CONSTRAINT [DF_WorksheetHeader_PurchaseOrder_OtherFees]  DEFAULT ((0)) FOR [OtherFees]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  DEFAULT ((0)) FOR [MasterPOID]
+GO
+ALTER TABLE [dbo].[WorksheetHeader_PurchaseOrder] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[WorksheetHistory] ADD  CONSTRAINT [DF_WorksheetHistory_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[WorksheetHistory] ADD  CONSTRAINT [DF_WorksheetHistory_Status]  DEFAULT (0) FOR [Status]
+GO
+ALTER TABLE [dbo].[WorksheetHistory] ADD  CONSTRAINT [DF_WorksheetHistory_HistoryDate]  DEFAULT (getdate()) FOR [HistoryDate]
+GO
+ALTER TABLE [dbo].[WorksheetHistory] ADD  CONSTRAINT [DF_WorksheetHistory_HQEntry]  DEFAULT (0) FOR [HQEntry]
+GO
+ALTER TABLE [dbo].[WorksheetHistory] ADD  CONSTRAINT [DF_WorksheetHistory_StoreID]  DEFAULT (0) FOR [StoreID]
+GO
+ALTER TABLE [dbo].[WorksheetHistory] ADD  CONSTRAINT [DF_WorksheetHistory_Comment]  DEFAULT ('') FOR [Comment]
+GO
+ALTER TABLE [dbo].[WorksheetHistory] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[WorksheetStore] ADD  CONSTRAINT [DF_WorksheetStore_WorksheetID]  DEFAULT (0) FOR [WorksheetID]
+GO
+ALTER TABLE [dbo].[WorksheetStore] ADD  CONSTRAINT [DF_WorksheetStore_StoreID]  DEFAULT (0) FOR [StoreID]
+GO
+ALTER TABLE [dbo].[WorksheetStore] ADD  CONSTRAINT [DF_WorksheetStore_Status]  DEFAULT (0) FOR [Status]
+GO
+ALTER TABLE [dbo].[WorksheetStore] ADD  CONSTRAINT [DF_WorksheetStore_DateProcessed]  DEFAULT (getdate()) FOR [DateProcessed]
+GO
+ALTER TABLE [dbo].[WorksheetStore] ADD  CONSTRAINT [DF_WorksheetStore_Originator]  DEFAULT (0) FOR [Originator]
+GO
+ALTER TABLE [dbo].[WorksheetStore] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[WorksheetStoreJob] ADD  DEFAULT ('00000000-0000-0000-0000-000000000000') FOR [JobSyncGuid]
+GO
+ALTER TABLE [dbo].[WorksheetStoreJob] ADD  DEFAULT ((0)) FOR [Status]
+GO
+ALTER TABLE [dbo].[WorksheetStoreJob] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[WorksheetStoreJob] ADD  DEFAULT ((0)) FOR [WorksheetRecordID2]
+GO
+ALTER TABLE [dbo].[WorksheetUpdateItemPrices] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+
+/****** Object:  Table [dbo].[EXTCENTRAL_WIZARD_LOG]    Script Date: 11/06/2024 11:14:02 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[EXTCENTRAL_WIZARD_LOG](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[TASK_NAME] [varchar](120) NULL,
+	[TASK_CODE] [varchar](20) NULL,
+	[DATE] [datetime] NULL,
+	[STORES] [varchar](max) NULL,
+	[ITEM_ERROR] [varchar](50) NULL,
+	[MESSAGE_ERROR] [varchar](max) NULL,
+	[MESSAGE_NUMBER] [int] NULL,
+	[LAST_ACTION] [varchar](max) NULL,
+	[RESPUESTA] [varchar](max) NULL,
+	[SyncGuid] [uniqueidentifier] NULL,
+	[TASK_DETAILS] [varchar](max) NULL,
+ CONSTRAINT [PK_EXTCENTRAL_WIZARD_LOG] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ExtCentral_WizardLista]    Script Date: 11/06/2024 11:14:03 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ExtCentral_WizardLista](
+	[Codigo] [varchar](50) NOT NULL,
+	[Descripcion] [varchar](150) NOT NULL,
+	[Estado] [char](1) NOT NULL,
+	[WizardTask] [bit] NOT NULL,
+	[SyncGuid] [uniqueidentifier] NULL
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ExtCentral_Worksheet]    Script Date: 11/06/2024 11:14:03 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ExtCentral_Worksheet](
+	[WorksheetID] [int] NOT NULL,
+	[HQUserID] [int] NOT NULL,
+	[WorksheetContentID] [int] NOT NULL,
+	[WorksheetType] [int] NOT NULL,
+	[WizardTaskCode] [varchar](50) NOT NULL,
+	[WorsheetTitle] [varchar](50) NULL,
+	[Stores] [varchar](1000) NOT NULL,
+	[Date] [datetime] NOT NULL,
+ CONSTRAINT [PK_ExtCentral_Worsheet] PRIMARY KEY CLUSTERED 
+(
+	[WorksheetID] ASC,
+	[HQUserID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ExtCentral_WorksheetContent]    Script Date: 11/06/2024 11:14:03 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ExtCentral_WorksheetContent](
+	[ID] [int] IDENTITY(1,1) NOT NULL,
+	[HQUserID] [int] NOT NULL,
+	[DateApplied] [datetime] NOT NULL,
+	[TaskCode] [varchar](30) NOT NULL,
+	[FileName] [varchar](500) NOT NULL,
+	[ContentType] [varchar](50) NOT NULL,
+	[ContentLenght] [bigint] NOT NULL,
+	[ContentData] [varbinary](max) NOT NULL,
+ CONSTRAINT [PK_ExtCentral_WorksheetContent] PRIMARY KEY CLUSTERED 
+(
+	[ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[ExtCentral_WorksheetHistory]    Script Date: 11/06/2024 11:14:03 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[ExtCentral_WorksheetHistory](
+	[WorksheetID] [int] NULL,
+	[WorksheetHistoryID] [int] NULL,
+	[HQUserID] [int] NULL
+) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[EXTCENTRAL_WIZARD_LOG] ADD  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[ExtCentral_WizardLista] ADD  CONSTRAINT [DF_ExtCentral_WizardLista_WizardTask]  DEFAULT ((1)) FOR [WizardTask]
+GO
+ALTER TABLE [dbo].[ExtCentral_WizardLista] ADD  CONSTRAINT [DF__ExtCentra__SyncG__46142CBB]  DEFAULT ([dbo].[GenerateSyncGuid]()) FOR [SyncGuid]
+GO
+ALTER TABLE [dbo].[ExtCentral_Worksheet] ADD  CONSTRAINT [DF_ExtCentral_Worksheet_WorksheetContentID]  DEFAULT ((0)) FOR [WorksheetContentID]
+GO
+ALTER TABLE [dbo].[ExtCentral_Worksheet] ADD  CONSTRAINT [DF_ExtCentral_Worksheet_Date]  DEFAULT (getdate()) FOR [Date]
+GO

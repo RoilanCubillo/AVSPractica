@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReferenceGroup xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ID="d43b532d-4fb0-4437-829b-b0d4d4a4b186" xmlns="urn:schemas-microsoft-com:xml-wcfservicemap">
+  <ClientOptions>
+    <GenerateAsynchronousMethods>false</GenerateAsynchronousMethods>
+    <EnableDataBinding>true</EnableDataBinding>
+    <ExcludedTypes />
+    <ImportXmlTypes>false</ImportXmlTypes>
+    <GenerateInternalTypes>false</GenerateInternalTypes>
+    <GenerateMessageContracts>false</GenerateMessageContracts>
+    <NamespaceMappings />
+    <CollectionMappings />
+    <GenerateSerializableTypes>true</GenerateSerializableTypes>
+    <Serializer>Auto</Serializer>
+    <UseSerializerForFaults>true</UseSerializerForFaults>
+    <ReferenceAllAssemblies>true</ReferenceAllAssemblies>
+    <ReferencedAssemblies />
+    <ReferencedDataContractTypes />
+    <ServiceContractMappings />
+  </ClientOptions>
+  <MetadataSources>
+    <MetadataSource Address="http://192.168.137.219:7580/UltraERP_Security/SecurityServices.svc" Protocol="http" SourceId="1" />
+  </MetadataSources>
+  <Metadata>
+    <MetadataFile FileName="SecurityServices1.disco" MetadataType="Disco" ID="1fd58391-639e-4560-b9c6-1cc844dec465" SourceId="1" SourceUrl="http://192.168.137.219:7580/UltraERP_Security/SecurityServices.svc?disco" />
+    <MetadataFile FileName="SecurityServices4.xsd" MetadataType="Schema" ID="7d70320d-1065-4e90-9069-73e08ff20f5a" SourceId="1" SourceUrl="http://192.168.137.219:7580/UltraERP_Security/SecurityServices.svc?xsd=xsd3" />
+    <MetadataFile FileName="SecurityServices5.xsd" MetadataType="Schema" ID="0f79f479-c5fe-4949-9f75-5e2d9ba3fe72" SourceId="1" SourceUrl="http://192.168.137.219:7580/UltraERP_Security/SecurityServices.svc?xsd=xsd2" />
+    <MetadataFile FileName="SecurityServices6.xsd" MetadataType="Schema" ID="29741fe6-ca34-4da0-8523-6d6a6f1f944c" SourceId="1" SourceUrl="http://192.168.137.219:7580/UltraERP_Security/SecurityServices.svc?xsd=xsd1" />
+    <MetadataFile FileName="SecurityServices7.xsd" MetadataType="Schema" ID="5bc23a3f-e773-4d79-848f-da8d4593866c" SourceId="1" SourceUrl="http://192.168.137.219:7580/UltraERP_Security/SecurityServices.svc?xsd=xsd0" />
+    <MetadataFile FileName="SecurityServices1.wsdl" MetadataType="Wsdl" ID="50dd2f88-9842-4af5-9950-72b4ca6ad9ec" SourceId="1" SourceUrl="http://192.168.137.219:7580/UltraERP_Security/SecurityServices.svc?wsdl" />
+  </Metadata>
+  <Extensions>
+    <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />
+    <ExtensionFile FileName="configuration.svcinfo" Name="configuration.svcinfo" />
+  </Extensions>
+</ReferenceGroup>

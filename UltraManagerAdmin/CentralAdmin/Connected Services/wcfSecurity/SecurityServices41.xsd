@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema xmlns:tns="http://schemas.datacontract.org/2004/07/System" elementFormDefault="qualified" targetNamespace="http://schemas.datacontract.org/2004/07/System" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:import schemaLocation="http://localhost/DemoSecurityService/SecurityServices.svc?xsd=xsd3" namespace="http://schemas.datacontract.org/2004/07/Security.Entities" />
+  <xs:import schemaLocation="http://localhost/DemoSecurityService/SecurityServices.svc?xsd=xsd1" namespace="http://schemas.microsoft.com/2003/10/Serialization/" />
+  <xs:complexType name="ValueTupleOfEN_SC_UserintstringegmrjvJZ">
+    <xs:annotation>
+      <xs:appinfo>
+        <GenericType Name="ValueTupleOf{0}{1}{2}{#}" Namespace="http://schemas.datacontract.org/2004/07/System" xmlns="http://schemas.microsoft.com/2003/10/Serialization/">
+          <GenericParameter Name="EN_SC_User" Namespace="http://schemas.datacontract.org/2004/07/Security.Entities" />
+          <GenericParameter Name="int" Namespace="http://www.w3.org/2001/XMLSchema" />
+          <GenericParameter Name="string" Namespace="http://www.w3.org/2001/XMLSchema" />
+        </GenericType>
+        <IsValueType xmlns="http://schemas.microsoft.com/2003/10/Serialization/">true</IsValueType>
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element xmlns:q1="http://schemas.datacontract.org/2004/07/Security.Entities" name="Item1" nillable="true" type="q1:EN_SC_User" />
+      <xs:element name="Item2" type="xs:int" />
+      <xs:element name="Item3" nillable="true" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ValueTupleOfEN_SC_UserintstringegmrjvJZ" nillable="true" type="tns:ValueTupleOfEN_SC_UserintstringegmrjvJZ" />
+  <xs:complexType name="ValueTupleOfSC_Enum.ESystemValidateStatusbooleanvlk_Ponk6">
+    <xs:annotation>
+      <xs:appinfo>
+        <GenericType Name="ValueTupleOf{0}{1}{#}" Namespace="http://schemas.datacontract.org/2004/07/System" xmlns="http://schemas.microsoft.com/2003/10/Serialization/">
+          <GenericParameter Name="SC_Enum.ESystemValidateStatus" Namespace="http://schemas.datacontract.org/2004/07/Security.Entities" />
+          <GenericParameter Name="boolean" Namespace="http://www.w3.org/2001/XMLSchema" />
+        </GenericType>
+        <IsValueType xmlns="http://schemas.microsoft.com/2003/10/Serialization/">true</IsValueType>
+      </xs:appinfo>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element xmlns:q2="http://schemas.datacontract.org/2004/07/Security.Entities" name="Item1" type="q2:SC_Enum.ESystemValidateStatus" />
+      <xs:element name="Item2" type="xs:boolean" />
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="ValueTupleOfSC_Enum.ESystemValidateStatusbooleanvlk_Ponk6" nillable="true" type="tns:ValueTupleOfSC_Enum.ESystemValidateStatusbooleanvlk_Ponk6" />
+</xs:schema>

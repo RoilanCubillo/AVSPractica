@@ -1,0 +1,377 @@
+﻿
+@{
+    ViewBag.Title = Resources.views.categs;
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+    ViewBag.Name = Resources.views.mant_categs;
+    ViewBag.Lang = System.Threading.Thread.CurrentThread.CurrentCulture.Name;
+}
+
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>@ViewBag.Title</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    <!-- Select2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- Select2 -->
+    <script src="~/Content/AdminLTE/plugins/select2/js/select2.full.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <!-- Encabezado -->
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>@ViewBag.Name</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager","Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">@Resources.views.inventario</li>
+                                <li class="breadcrumb-item active">@Resources.views.categs</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Encabezado -->
+            <!-- Muestra de Categorías -->
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="overlay-wrapper">
+                                        <div id="spn_tbl_category" class="overlay justify-content-center">
+                                            <i class="fas fa-3x fa-sync-alt fa-spin"></i>
+                                            <div class="text-bold pt-2">@Resources.views.cargando</div>
+                                        </div>
+                                        <div class="col-md-12 mb-3" style="overflow: auto;">
+                                            <div class="row-cols-md-6">
+                                                <button type="button" class="btn btn-primary float-right fa-pull-right" onclick="onClickBtnAddCategory()"><i class="fa fa-plus"> </i> @Resources.views.agregar</button>
+                                            </div>
+                                        </div>
+                                        <div id="tbl_content_categories" class="dataTables_wrapper dt-bootstrap4">
+                                            <table class="table table-bordered table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>@Resources.views.cod</th>
+                                                        <th>@Resources.views.nom</th>
+                                                        <th>@Resources.views.nom_depart</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section> <!-- Muestra de Categorías -->
+            <!-- Modal de categorias -->
+            <div class="modal fade" id="modal_category">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div id="spn_modal_category" class="overlay">
+                            <i class="fas fa-2x fa-sync fa-spin"></i>
+                        </div>
+                        <div class="modal-header">
+                            <h4 id="title_modal_category" class="modal-title"></h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="form_modal_category">
+                                <div class="form-group">
+                                    <label for="input_cat_code" class="col-sm-2 control-label">@Resources.views.cod</label>
+                                    <input type="text" class="form-control" name="input_cat_code" id="input_cat_code" placeholder="@Resources.views.ingresar_cod">
+                                </div>
+                                <div class="form-group">
+                                    <label for="input_cat_name" class="col-sm-2 control-label">@Resources.views.nom</label>
+                                    <input type="text" class="form-control" name="input_cat_name" id="input_cat_name" placeholder="@Resources.views.ingresar_nom">
+                                </div>
+                                <div class="form-group">
+                                    <label for="select2_cat_department" class="col-sm-2 control-label">@Resources.views.depart</label>
+                                    <select id="select2_cat_department" name="select2_cat_department" class="form-control select2bs4" style="width: 100%;">
+                                    </select>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-success"> <i class="fa fa-save"></i> @Resources.views.guardar</button>
+                                    <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- Modal de categorias -->
+        </div>
+    </div>
+
+    <script>
+        var url_getAllCategories = '@Url.Action("GetAll", "Categorias")'; // URL del evento obtener categorías y departamentos
+        var url_saveCategory = '@Url.Action("Save", "Categorias")'; // URL del evento guardar categoría
+        var list_departments = []; // Almacena los departamentos obtennidos
+        var list_categories = []; // Almacena las categorías obtenidas
+        var id_edit = 0; // ID de la categoría a editar
+        var select_departments; // Componente Select
+        var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4000 }); // Variable para mostrar los mensajes.
+        var rules = {
+            input_cat_code: { required: true, maxlength: 17},
+            input_cat_name: { required: true, maxlength: 30},
+            select2_cat_department: {required:true}
+        }; // Roles que cumplirán los componentes del formulario
+        var messages = {
+            input_cat_code: {
+                required: "@Resources.messages.validacion_cod_req",
+                maxlength: "@Resources.messages.validacion_cod_max" },
+            input_cat_name: {
+                required: "@Resources.messages.validacion_nom_req",
+                maxlength: "@Resources.messages.validacion_nom_max" },
+            select2_cat_department: { required: "@Resources.messages.validacion_depart_req"},
+        }; // Ménsajes de error para el formulario
+
+        /** Función initialize */
+        $(function () {
+            fillFormCategories();
+            $("#spn_modal_category").hide();
+            StartLoadTable("tbl_content_categories", true);
+            EndLoadTable("@ViewBag.Name", "tbl_content_categories", true);
+            getAllCategories();
+            fillMenuItemsLayout();
+        });
+
+        /**
+         * Busca y retorna el departamento a buscar dentro de la lista
+         *
+         * department_id = ID del departamento
+         */
+        function findDepartment(department_id) {
+            if (department_id && department_id > 0 && list_departments)
+                return list_departments.find(d => d.ID === department_id);
+            else return null;
+        }
+
+        /**
+         * Busca y retorna la categoría a buscar dentro de la lista
+         *
+         * category_id = ID de la categoría
+         */
+        function findCategory(category_id) {
+            if (category_id && category_id > 0 && list_categories)
+                return list_categories.find(c => c.ID === category_id);
+            else return null;
+        }
+
+        /** Clona la lista de departamentos a otra lista data con elementos de {id, text} para el select2bs4*/
+        function departmentsToData() {
+            return list_departments.map(d => { return { 'id': d.ID, 'text': d.Name } });
+        }
+
+        /**
+         * Método encargado de consultar al servidor por la lista de categorías y departamentos.
+         */
+        async function getAllCategories() {
+            try {
+                await $.ajax({
+                    url: url_getAllCategories, type: 'post', dataType: 'json',
+                    contentType: 'application/json', data: {}, cache: false,
+                    success: async function (data) {
+                        if (data.Status) {
+                            list_departments = data.Result.departments;
+                            list_categories = data.Result.categories;
+                            await fillTableCategories(list_categories);
+                        } else {
+                            error(data.InternalMessage, data.Message);
+                            $("#spn_tbl_category").hide();
+                        }
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        error(thrownError, '@Resources.messages.error_obt_regs');
+                    }
+                });
+            } catch (e) {
+                error(e, '@Resources.messages.error_obt_regs');
+            }
+        }
+
+        /** Marca los items del menú del MainLayout para que se muestre en qué parte del menú se encuentra*/
+        function fillMenuItemsLayout() {
+            openMenu(["#nav-item-inventarios"]);
+            activeItemMenu([".nav-item-inventarios", "#nav-link-inventarios-categorias"])
+        }
+
+        /**
+         * Método encargado de recibir una lista de categorías, cargar la tabla con los DataTables
+         * y mostrar la lista en dicha tabla.
+         *
+         * data = lista de categorías a mostrar en la tabla
+         */
+        function fillTableCategories(data) {
+            StartLoadTable("tbl_content_categories", true);
+            $("#spn_tbl_category").show();
+            if (data) {
+                $("#tbl_content_categories > table > tbody").html("");
+                data.forEach(function (d) {
+                    var row = $("<tr />"), dep = findDepartment(d.DepartmentID);
+                    $("#tbl_content_categories > table").append(row);
+                    row.append($("<td> " + d.Code + "</td>"));
+                    row.append($("<td> " + d.Name + "</td>"));
+                    row.append($("<td> " + (dep ? dep.Name : "-@Resources.views.no_def-") + "</td>"));
+                    row.append($("<td><button class='btn btn-primary' title='@Resources.views.editar' data-toggle='modal' data-target='#modal_category' onClick='onClickBtnEditCategory(" + d.ID + ")'> <i class='fa fa-edit' aria-hidden='true'></i></button></td>"));
+                });
+                fillSelect2Departments();
+            } else {
+                Toast.fire({ icon: 'warning', title: '@Resources.messages.msj_lista_vacia' });
+            }
+            EndLoadTable("@ViewBag.Name", "tbl_content_categories", true);
+            $("#spn_tbl_category").hide();
+        }
+
+        /**
+         * Se encarga de cargar el componente select con el plugin select2bs4
+         */
+        function fillSelect2Departments() {
+            select_departments = $('.select2bs4').select2({
+                placeholder: '@Resources.views.selec_depart', data: departmentsToData(), language: "@ViewBag.Lang", theme: 'bootstrap4'
+            });
+        }
+
+        /**
+         *  Se encarga de cargar el componente <form> con sus respectivos roles,
+         *  mensajes de error y accionar del botón guardar
+         */
+        function fillFormCategories() {
+            $.validator.setDefaults({ submitHandler: function () { onClickBtnSave(); } });
+            $('#form_modal_category').validate({
+                rules: rules, messages: messages, errorElement: 'span',
+                errorPlacement: function (err, element) {
+                    err.addClass('invalid-feedback ml-2');
+                    element.closest('.form-group').append(err);
+                    error("Faltan campos", "@Resources.messages.validacion_campos_requeridos");
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        }
+
+        /**
+         * Método encargado de settear los datos de la categoría a ediitar en los campos de la modal.
+         *
+         * category_id = ID de la categoría
+         */
+        function setCategoryOnModal(category_id) {
+            var category = findCategory(category_id);
+            if (category) {
+                CleanForm("form_modal_category");
+                $("#input_cat_code").val(category.Code);
+                $("#input_cat_name").val(category.Name);
+                select_departments.val(category.DepartmentID).trigger('change');
+            } else {
+                Toast.fire({ icon: 'error', title: '@Resources.messages.error_reg_edit_inval' });
+            }
+        }
+
+        /**
+         * Método encargado de preparar la modal cuando se va editar una categoría.
+         *
+         * category_id = ID de la categoría
+         */
+        function onClickBtnEditCategory(category_id) {
+            if (category_id && category_id > 0) {
+                id_edit = category_id;
+                $("#title_modal_category").html("@Resources.views.editar " + "@Resources.views.categ");
+                setCategoryOnModal(category_id);
+            } else {
+                id_edit = 0;
+                Toast.fire({ icon: 'error', title: '@Resources.messages.error_reg_edit_inval' });
+            }
+        }
+
+        /**
+         * Método encargardo de acomodar la #modal_category para agregar una nueva categoría.
+         */
+        function onClickBtnAddCategory() {
+            $('#modal_category').modal({ backdrop: 'static', keyboard: false });
+            id_edit = 0;
+            $("#title_modal_category").html('@Resources.views.agregar ' + '@Resources.views.categ');
+            CleanForm("form_modal_category");
+        }
+
+        /**
+         * Método encargado de guardar o editar una categoría.
+         * Es accionado al dar click al botón Guardar de #modal_category.
+         */
+        async function onClickBtnSave() {
+            $("#spn_modal_category").show();
+            try {
+                var en_category = { ID: id_edit, Code: $("#input_cat_code").val(), Name: $("#input_cat_name").val(), DepartmentID: select_departments.val() };
+                await $.ajax({
+                    url: url_saveCategory, type: 'post', dataType: 'json', contentType: 'application/json',
+                    data: JSON.stringify({ category: en_category }), cache: false,
+                    success: async function (data) {
+                        if (data.Status) {
+                            Toast.fire({ icon: 'success', title: data.Message });
+                            $("#spn_tbl_category").show();
+                            onClickBtnAddCategory();
+                            await getAllCategories();
+                        } else {
+                            error(data.InternalMessage, data.Message);
+                            onClickBtnAddCategory();
+                        }
+                        $("#spn_modal_category").hide();
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        $("#spn_modal_category").hide();
+                        error(thrownError, '@Resources.messages.error_guardar');
+                    }
+                });
+            } catch (e) {
+                $("#spn_modal_category").hide();
+                error(e, '@Resources.messages.error_intento_guardar');
+            }
+        }
+
+        /** Muestra un error, recibe excepcion para mostrar en consola y el mensaje para el usuario. */
+        function error(e, msg) {
+            Toast.fire({ icon: 'error', title: msg });
+            console.error(e);
+        }
+    </script>
+</body>
+</html>

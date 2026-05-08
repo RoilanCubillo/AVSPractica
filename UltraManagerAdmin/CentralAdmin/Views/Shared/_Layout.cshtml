@@ -1,0 +1,31 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogIn - AVS | Central Manager</title>
+
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+
+</head>
+<body>
+    <div class="">
+
+        @RenderBody()
+
+        <hr />
+        <footer class="d-flex justify-content-center">
+            <div class="">
+                <p>Copyright &copy; 2014-@DateTime.Now.Year - AVS | Central Manager.</p>
+                <p class="d-flex justify-content-center"><b>Version </b> @ViewContext.Controller.GetType().Assembly.GetName().Version.ToString()</p>
+            </div>
+        </footer>
+    </div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+
+</body>
+</html>

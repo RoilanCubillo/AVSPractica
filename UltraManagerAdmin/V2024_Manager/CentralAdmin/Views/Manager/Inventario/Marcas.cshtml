@@ -1,0 +1,315 @@
+﻿
+@{
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+    var Name = "Mantenimiento de Marcas";
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+
+    @* < CSS > *@
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    @* < CSS / >*@
+
+    @* < SCRIPTS > *@
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+    @* < SCRIPTS / >*@
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <!-- Encabezado -->
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>@Name</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager","Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">@Resources.views.inventario</li>
+                                <li class="breadcrumb-item active">Marcas</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Encabezado -->
+            <!-- Muestra de Marcas -->
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="overlay-wrapper">
+                                        <div id="spn_tbl" class="overlay justify-content-center">
+                                            <i class="fas fa-3x fa-sync-alt fa-spin"></i>
+                                            <div class="text-bold pt-2">@Resources.views.cargando</div>
+                                        </div>
+                                        <div class="col-12 d-flex justify-content-end">
+                                            <button type="button" class="btn btn-primary float-right fa-pull-right" onclick="onClickBtnAddBrand()"><i class="fa fa-plus"> </i> @Resources.views.agregar</button>
+                                        </div>
+                                        <div id="tbl" class="dataTables_wrapper dt-bootstrap4">
+                                            <table class="table table-bordered table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>@Resources.views.cod</th>
+                                                        <th>@Resources.views.descripcion</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section> <!-- Muestra de Marcas -->
+            <!-- Modal -->
+            <div id="modal" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <form id="form" class="modal-content">
+                        <!-- Spinner Modal -->
+                        <div id="spn_modal" class="overlay">
+                            <i class="fas fa-2x fa-sync fa-spin"></i>
+                        </div><!-- Spinner Modal -->
+                        <!-- Encabezado Modal -->
+                        <div class="modal-header text-center">
+                            <h4 id="title_modal" class="modal-title"></h4>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div><!-- Encabezado Modal -->
+                        <!-- Cuerpo Modal -->
+                        <div class="modal-body" style="overflow: auto">
+                            <input type="hidden" id="id" />
+                            <div class="form-group">
+                                <label for="code" class="col-sm-2 control-label">@Resources.views.cod</label>
+                                <input disabled id="code" name="code" type="text" class="form-control" placeholder="@Resources.views.ingresar_cod" />
+                            </div>
+                            <div class="form-group">
+                                <label for="description" class="col-sm-2 control-label">@Resources.views.descripcion</label>
+                                <input id="description" name="description" type="text" class="form-control" placeholder="@Resources.views.ingresar_desc" />
+                            </div>
+                        </div><!-- Cuerpo Modal -->
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="onClickBtnNewBrand()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                            <button type="submit" class="btn btn-success"> <i class="fa fa-save"></i> @Resources.views.guardar</button>
+                            <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                        </div>
+                    </form><!-- Modal content-->
+                </div>
+            </div><!-- Modal -->
+        </div>
+    </div>
+
+    @* Variables *@
+    <script>
+        var urls = {
+            init: '@Url.Action("GetInitData", "Marcas")',
+            save: '@Url.Action("Save", "Marcas")',
+        };
+        var elements = {
+            div_table: "tbl", spn_table: "spn_tbl",
+            spn_modal: "spn_modal", modal: "modal",
+            title_modal: "title_modal", form: "form"
+        };
+        var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4000 }); // Variable para mostrar los mensajes.
+        var lists = { brands: [] }
+        var rules = {
+            description: { required: true, maxlength: 50 },
+        }; // Roles que cumplirán los componentes del formulario
+        var messages = {
+            description: {
+                required: "@Resources.messages.validacion_desc_req",
+                maxlength: "@Resources.messages.validacion_desc_maxLen"
+            },
+        }; // Ménsajes de error para el formulario
+    </script>
+
+    <script>
+        $(function () {
+            fillMenuItemsLayout();
+            applyInitPlugins();
+            hideInitElements();
+            getInitialData();
+        });
+
+        function applyInitPlugins() {
+            StartLoadTable(elements.div_table, true);
+            EndLoadTable("@Name", elements.div_table, true);
+            setValidationForm();
+        }
+
+        function hideInitElements() {
+            $("#" + elements.spn_modal).hide();
+        }
+
+        function findBrand(id) {
+            return lists.brands.find(x => x.ID === id);
+        }
+
+        function fillMenuItemsLayout() {
+            openMenu(["#nav-item-inventarios"]);
+            activeItemMenu([".nav-item-inventarios", "#nav-link-inventarios-brands"])
+        }
+
+        function fillTable() {
+            try {
+                StartLoadTable(elements.div_table, true);
+                $("#" + elements.spn_table).show();
+                if (lists.brands) {
+                    $("#" + elements.div_table + " > table > tbody").html("");
+                    lists.brands.forEach(function (d) {
+                        var row = $("<tr />");
+                        $("#" + elements.div_table + " > table").append(row);
+                        row.append($("<td> " + d.ID + "</td>"));
+                        row.append($("<td> " + d.Description + "</td>"));
+                        var title = "@Resources.views.editar Marca";
+                        row.append($("<td><button class='btn btn-primary' title='" + title + "' data-toggle='modal' data-target='' onClick='onClickBtnEditBrand(" + d.ID + ")'> <i class='fa fa-edit' aria-hidden='true'></i></button></td>"));
+                    });
+                } else Toast.fire({ icon: 'warning', title: '@Resources.messages.msj_lista_vacia' });
+                EndLoadTable("@ViewBag.Head", elements.div_table, true);
+                $("#" + elements.spn_table).hide();
+            } catch (e) { error(e, "@Resources.messages.error_llenar_registros"); }
+        }
+
+        async function getInitialData() {
+            try {
+                $("#" + elements.spn_table).show();
+                await $.get(urls.init).done(async function (data) {
+                    if (data.Status) {
+                        lists.brands = data.Result.brands;
+                        await fillTable();
+                        $("#" + elements.spn_table).hide();
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#" + elements.spn_table).hide();
+                    }
+                }).fail(function (data) { error(data, "@Resources.messages.error_obt_regs"); });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        function getBrandFromModal() {
+            var data = {
+                ID: $("#id").val(),
+                Description: $("#description").val()
+            }
+
+            return data;
+        }
+
+        function setBrandInModal(brand) {
+            try {
+                $("#id").val(brand.ID);
+                $("#code").val(brand.ID);
+                $("#description").val(brand.Description);
+            } catch (e) {
+                error(e, "@Resources.messages.error_mostrar_reg_edit");
+            }
+        }
+
+        function setValidationForm() {
+            $.validator.setDefaults({ submitHandler: function () { onSubmitSave(); } });
+
+            $('#' + elements.form).validate({
+                rules: rules, messages: messages, errorElement: 'span',
+                errorPlacement: function (err, element) {
+                    err.addClass('invalid-feedback ml-2');
+                    element.closest('.form-group').append(err);
+                },
+                highlight: function (element, errorClass, validClass) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element, errorClass, validClass) {
+                    $(element).removeClass('is-invalid');
+                }
+            });
+        }
+
+        function onClickBtnAddBrand() {
+            if ($("#id").val() !== "") openModal(false);
+            else openModal(true);
+        }
+
+        function onClickBtnEditBrand(id) {
+            var brand = findBrand(id);
+            if (brand) {
+                setBrandInModal(brand);
+                openModal(false);
+            } else Toast.fire({ icon: "warning", title: "@Resources.messages.error_reg_edit_inval" });
+        }
+
+        function onClickBtnNewBrand() {
+            Swal.fire({
+                title: "@Resources.messages.msj_continuar", html: "@Resources.messages.msj_campos_limpiar", icon: 'warning', showCancelButton: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    openModal(true);
+                    limpiarModal();
+                }
+            });
+        }
+
+        async function onSubmitSave() {
+            try {
+                var brand = getBrandFromModal();
+                $("#" + elements.spn_modal).show();
+                $.post(urls.save, { 'brand': brand }, "json").done(async function (data) {
+                    Toast.fire({ icon: (data.Status ? 'success' : 'error'), title: data.Message });
+                    if (data.Status) {
+                        $("#id").val(data.Result);
+                        $("#code").val(data.Result);
+                        await getInitialData();
+                        $("#" + elements.spn_modal).hide();
+                    }
+                    $("#" + elements.spn_modal).hide();
+                }).fail(function () {
+                    error("ERROR GUARDAR", "@Resources.messages.error_intento_guardar");
+                    $("#" + elements.spn_modal).hide();
+                });
+            } catch (e) { error(e, "@Resources.messages.error_intento_guardar"); }
+        }
+
+        function limpiarModal() {
+            $("#" + elements.form + " input").val("");
+        }
+
+        /** Abre la modal */
+        function openModal(is_new) {
+            $("#" + elements.title_modal).html((is_new ? "@Resources.views.agregar" : "@Resources.views.editar") + " Marca");
+            $('#' + elements.modal).modal({ backdrop: 'static', keyboard: false });
+        }
+    </script>
+</body>
+</html>

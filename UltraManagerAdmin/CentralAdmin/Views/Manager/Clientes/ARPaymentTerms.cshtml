@@ -1,0 +1,374 @@
+﻿
+@{
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+    var culture = System.Threading.Thread.CurrentThread.CurrentCulture;
+    var CurrencySymbol = culture.NumberFormat.CurrencySymbol;
+    var CurrencyDecimalSeparator = culture.Name.ToUpper() == "ES-CR" ? "." : culture.NumberFormat.CurrencyDecimalSeparator;
+    var CurrencyThousandSeparator = culture.Name.ToUpper() == "ES-CR" ? "," : culture.NumberFormat.NumberGroupSeparator;
+    var Name = Resources.views.mant_arts;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    <!-- Tempusdominus Bootstrap 4 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
+    <!-- Select2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+    <!-- iCheck for checkboxes and radio inputs -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/dist/css/adminlte.min.css">
+
+    <!-- moment.js -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- Select2 -->
+    <script src="~/Content/AdminLTE/plugins/select2/js/select2.full.min.js"></script>
+    <!-- Tempusdominus Bootstrap 4 -->
+    <script src="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+    <!-- InputMask -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/inputmask/jquery.inputmask.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6"><h1>Términos de Pago</h1></div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager", "Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">@Resources.views.clientes</li>
+                                <li class="breadcrumb-item active">@Resources.views.termPago</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Encabezado -->
+            <!-- Muestra de Artículos -->
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="col-md-12 mb-3" style="overflow: auto;">
+                                        <div class="row-cols-md-6">
+                                            <button type="button" class="btn btn-primary float-right fa-pull-right" onclick="onClickBtnAddMsgItem()"><i class="fa fa-plus"> </i> @Resources.views.agregar</button>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div id="tbl_paymentterms" class="dataTables_wrapper dt-bootstrap4 col-12">
+                                            <table id="PaymentTable" class="table table-bordered table-striped">
+                                            </table>
+                                        </div><!-- Table msg -->
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Modal -->
+            <div class="modal fade" id="modal_paymentterms">
+                <div class="modal-dialog modal-dialog-scrollable">
+                    <form id="form_paymentterms" class="modal-content">
+                        <!-- Encabezado Modal -->
+                        <div class="modal-header">
+                            <h4 id="title_modal_paymentterms" class="modal-title"></h4>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Cerrar"><span aria-hidden="true">&times;</span></button>
+                        </div><!-- Encabezado Modal -->
+                        <!-- Content of the modal goes here -->
+                        <!-- Cuerpo Modal -->
+                        <div class="modal-body">
+                            <input type="hidden" id="PayID" />
+                            <div class="form-group">
+                                <label for="PayCode" class="col-sm-1 control-label">@Resources.views.cod</label>
+                                <input id="PayCode" name="PayCode" type="text" class="form-control" placeholder="@Resources.views.ingresar_cod" />
+                            </div>
+                            <div class="form-group">
+                                <label for="PayName" class="col-sm-1 control-label">@Resources.views.nom</label>
+                                <input id="PayName" name="PayName" type="text" class="form-control" placeholder="@Resources.views.ingresar_nom" />
+                            </div>
+                            <div class="icheck-primary ml-3">
+                                <label for="chk_pay_inactivo">@Resources.views.inactivo</label>
+                                <input type="checkbox" id="chk_pay_inactivo" name="chk_pay_inactivo">
+                            </div>
+                            <div class="form-group">
+                                <label for="PayTFechaV" class="col-sm-12 control-label">@Resources.views.tipoFechaVecimento</label>
+                                <select id="PayTFechaV" name="PayTFechaV" class="form-control select2bs4" style="width: 100%;">
+                                    <option value="1">Factura</option>
+                                    <option value="0">Cierre</option> 
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="PayPariodo" class="col-sm-12 control-label">@Resources.views.periodoGracia</label>
+                                <input id="PayPariodo" name="PayPariodo" type="text" class="form-control" placeholder="@Resources.views.ingresar_periodoGracia" />
+                            </div>
+
+                            <div class="form-group">
+                                <label for="PayPagoM" class="col-sm-12 control-label">@Resources.views.pagoMinimo</label>
+                                <input id="PayPagoM" name="PayPagoM" type="text" class="form-control" placeholder="@Resources.views.ingresar_pagoMinimo" />
+                            </div>
+                        </div><!-- Cuerpo Modal -->
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="onClickBtnNewMsgItem()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                            <button type="submit" class="btn btn-success" onclick="setValidationForPaymentTermsForm()"> <i class="fa fa-save"></i> @Resources.views.guardar</button>
+                            <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                        </div>
+                    </form><!-- Form Modal Content -->
+                </div><!-- Modal Dialog -->
+            </div><!-- Modal -->
+
+        </div><!-- Cierre de content-wrapper -->
+    </div><!-- Cierre de wrapper -->
+
+</body>
+</html>
+
+@* Variables *@
+<script>
+    var url_getAllPaymentTerms = '@Url.Action("GetAll", "ARPaymentTerms")'; // URL del evento obtener PaymenteTerms
+    var url_savePaymentTerms = '@Url.Action("Save", "ARPaymentTerms")'; // URL del evento guardar PaymentTerms
+    var list_paymentterms = [];
+
+    var DataPaymenterms = null;
+    var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4000 }); // Variable para mostrar los mensajes.
+
+    //var elements = { div_table: "tbl_content_family", spn_table: "spn_tbl_family", spn_modal: "spn_modal_family", modal: "modal_family", title_modal: "title_modal_family", form: "form_modal_family" };
+
+</script>
+
+@* Funciones *@
+<script>
+    $(function () {
+        initDataTable();
+        getAllPaymentTerms();
+    });
+
+
+    function initDataTable() {
+
+        DataPaymenterms = $("#PaymentTable").DataTable({
+            columns: [
+                { title: "Código", data: "Code" },
+                { title: "Nombre", data: "Name" },
+                { title: "Inactivo", data: "Inactive" },
+                { title: "Tipo de Fecha de Vencimiento", data: "DateDueType" },
+                { title: "Período de Gracia", data: "GracePeriod" },
+                { title: "Pago Mínimo", data: "MinimunPayment" },
+                {
+                    orderable: false, // Para que no se pueda ordenar esta columna
+                    data: "Code", // La propiedad de tus datos que se utilizará para esta columna
+                    render: function (data, type, row, meta) {
+                        var title = "Editar";
+                        return type === 'display' ?
+                            `<button class='btn btn-primary' title="${title}" onClick='onClickBtnEditPaymentTerm("${data}")'>
+                            <i class='fa fa-pencil' aria-hidden='true'></i>
+                            </button>` : data;
+                    }
+                }
+
+
+            ],
+            language: dtable_i18n, paging: true, lengthChange: true,
+            autoWidth: false, ordering: true,
+            responsive: true, buttons: ['colvis', 'pdf', 'excel'],
+            data:[]
+        })
+    }
+
+
+    function onClickBtnAddMsgItem() {
+        newModal(true);
+    }
+
+    function findPayterm(code) {
+        return list_paymentterms.find(x => x.Code === code);
+    }
+
+    function onClickBtnEditPaymentTerm(code) {
+        var paymentTermData = findPayterm(code);
+        if (paymentTermData) {
+            newModal(false);
+            setPaymentTermInModal(paymentTermData);
+        } else Toast.fire({ icon: "warning", title: "@Resources.messages.error_reg_edit_inval" });
+    }
+
+
+    function onClickBtnNewMsgItem() {
+            Swal.fire({
+                title: '@Resources.messages.msj_continuar', html: "@Resources.messages.msj_campos_limpiar", icon: 'warning', showCancelButton: true,
+            }).then((result) => { if (result.isConfirmed) newModal(true); });
+    }
+    /** Limpia la modal. is_new ? "Agregar Registro" : "Editar Registro" */
+    function newModal(is_new) {
+        CleanForm("form_paymentterms");
+        $("#title_modal_paymentterms").html((is_new ? "@Resources.views.agregarTermPag " : "@Resources.views.editTermpag ") + "@ViewBag.Title");
+        $('#modal_paymentterms').modal({ backdrop: 'static', keyboard: false });
+    }
+
+    function setPaymentTermInModal(paymentTermData) {
+        try {
+            $("#PayCode").val(paymentTermData.Code);
+            $("#PayName").val(paymentTermData.Name);
+            $("#chk_pay_inactivo").prop("checked", paymentTermData.Inactive);
+            $("#PayTFechaV").val(paymentTermData.DateDueType).trigger("change");
+            $("#PayPariodo").val(paymentTermData.GracePeriod);
+            $("#PayPagoM").val(paymentTermData.MinimunPayment);
+        }
+        catch (e) {
+            error(e, "@Resources.messages.error_mostrar_reg_edit");
+        }
+    }
+
+
+    function getPaymentTermFromModal() {
+        var data = {
+            Code: $("#PayCode").val(),
+            Name: $("#PayName").val(),
+            Inactive: $("#chk_pay_inactivo").is(":checked"),
+            DateDueType: $("#PayTFechaV").val(),
+            GracePeriod: $("#PayPariodo").val(),
+            MinimunPayment: $("#PayPagoM").val(),
+        }
+
+        return data;
+    }
+
+    /** Método encargado de consultar al servidor por la lista de Payment Terms */
+    async function getAllPaymentTerms() {
+        try {
+                await $.get(url_getAllPaymentTerms).done(async function (data) {
+                    if (data.Status) {
+                        list_paymentterms = data.Result;
+                        await DataPaymenterms.clear().rows.add(list_paymentterms).draw();
+                        $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#" + elements.spn_table).hide();
+                    }
+                }).fail(function (data) { error(data, "@Resources.messages.error_obt_regs"); });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+    }
+
+    async function SavePaymentTerm() {
+        try {
+            var paymentTermData = getPaymentTermFromModal();
+            await $.post(url_savePaymentTerms, paymentTermData, "json")
+            .done(function (data) {
+                if (data.Status) {
+                    Toast.fire({ icon: 'success', title: data.Message });
+                    $('#modal_paymentterms').modal('hide');
+                    getAllPaymentTerms();
+                } else {
+                    Toast.fire({ icon: 'error', title: data.Message });
+                }
+            })
+            .fail(function () {
+                error("ERROR AL GUARDAR", "@Resources.messages.error_intento_guardar");
+            })
+            .always(function () {
+            });
+        } catch (e) { error(e, "@Resources.messages.error_intento_guardar"); }
+    }
+
+
+    function setValidationForPaymentTermsForm() {
+        var rules = {
+            PayCode: {
+                required: true,
+                pattern: /^(1000|[1-9]\d{0,2})[A-Za-z]$/,
+            },
+            PayName: {
+                required: true,
+                pattern: /^[A-Za-z0-9\sáéíóúÁÉÍÓÚüÜñÑ]+$/,
+            },
+            chk_pay_inactivo: {
+            },
+            PayPariodo: {
+                required: true,
+                number: true 
+            },
+            PayPagoM: {
+                required: true,
+                number: true 
+            }
+        };
+        var messages = {
+            PayCode: {
+                required: "El código es obligatorio.",
+                pattern: "El código debe ser un número seguido de una letra."
+            },
+            PayName: {
+                required: "El nombre es obligatorio.",
+                pattern: "El nombre solo puede contener letras, números y espacios."
+            },
+            PayPariodo: {
+                required: "El período de gracia es obligatorio.",
+                number: "Ingrese solo números en el período de gracia."
+            },
+            PayPagoM: {
+                required: "El pago mínimo es obligatorio.",
+                number: "Ingrese solo números en el pago mínimo."
+            },
+        };
+        $.validator.setDefaults({
+            submitHandler: function () {
+                SavePaymentTerm();
+            }
+        });
+        $('#form_paymentterms').validate({
+            rules: rules,
+            messages: messages,
+            errorElement: 'span',
+            errorPlacement: function (err, element) {
+                err.addClass('invalid-feedback ml-2');
+                element.closest('.form-group').append(err);
+            },
+            highlight: function (element, errorClass, validClass) {
+                $(element).addClass('is-invalid');
+            },
+            unhighlight: function (element, errorClass, validClass) {
+                $(element).removeClass('is-invalid');
+            }
+        });
+    }
+
+</script>
+
+

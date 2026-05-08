@@ -1,0 +1,2162 @@
+﻿
+
+@{
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+    var culture = System.Threading.Thread.CurrentThread.CurrentCulture;
+    var CurrencySymbol = culture.NumberFormat.CurrencySymbol;
+    var CurrencyDecimalSeparator = culture.Name.ToUpper() == "ES-CR" ? "." : culture.NumberFormat.CurrencyDecimalSeparator;
+    var CurrencyThousandSeparator = culture.Name.ToUpper() == "ES-CR" ? "," : culture.NumberFormat.NumberGroupSeparator;
+    string Name = "Monitoreo de Datos";
+}
+
+<script>
+    var CultureInfo = {
+        culture: '@culture',
+        CurrencySymbol: '@CurrencySymbol',
+        CurrencyDecimalSeparator: '@CurrencyDecimalSeparator',
+        CurrencyThousandSeparator: '@CurrencyThousandSeparator'
+    }
+</script>
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    <!-- Tempusdominus Bootstrap 4 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
+    <!-- Select2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+    <!-- daterange picker -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/daterangepicker/daterangepicker.css">
+    <!-- iCheck for checkboxes and radio inputs -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/dist/css/adminlte.min.css">
+    <!--ionicons-->
+    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+
+    <!-- moment.js -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- Select2 -->
+    <script src="~/Content/AdminLTE/plugins/select2/js/select2.full.min.js"></script>
+    <!-- Tempusdominus Bootstrap 4 -->
+    <script src="~/Content/AdminLTE/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+    <!-- InputMask -->
+    <script src="~/Content/AdminLTE/plugins/moment/moment.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/inputmask/jquery.inputmask.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+    <!-- jQuery -->
+    <!--<script src="~/Content/AdminLTE/plugins/jquery/jquery.min.js"></script>--><!-- jQuery UI 1.11.4 -->
+    <script src="~/Content/AdminLTE/plugins/jquery-ui/jquery-ui.min.js"></script><!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
+    <script>$.widget.bridge('uibutton', $.ui.button)</script>
+
+    <!-- ChartJS -->
+    <script src="~/Content/AdminLTE/plugins/chart.js/Chart.min.js"></script>
+    <!-- Daterangepicker JS -->
+    <script src="~/Content/AdminLTE/plugins/daterangepicker/daterangepicker.js"></script>
+    <!-- Bootstrap 4 -->
+    <script src="~/Content/AdminLTE/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+
+
+
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6"><h1>@Name</h1></div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager", "Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">@Resources.views.inventario</li>
+                                <li class="breadcrumb-item active">@Name</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Vista principal -->
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <section class="content">
+                                <div class="container-fluid">
+
+                                    @*Documentos Enviados Ministerio de Hacienda*@
+                                    <div class="card card-secondary">
+                                        <div class="card-header">
+                                            <h3 class="card-title">Documentos Enviados Ministerio de Hacienda</h3>
+                                            <div class="card-tools">
+                                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                                    <i class="fas fa-minus"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-9">
+
+                                                    @*Rango Fechas*@
+                                                    <div class="container">
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <button type="button" class="btn btn-default float-right" id="dtpDocsMH">
+                                                                    <i class="fa fa-calendar-alt"></i>&nbsp;
+                                                                    <span></span> <i class="fa fa-caret-down"></i>
+                                                                </button>
+                                                            </div>
+                                                            <script type="text/javascript">
+                                                                $(function () {
+                                                                    var start = moment().subtract(29, 'days');
+                                                                    var end = moment();
+
+                                                                    function cb(start, end) {
+                                                                        $('#dtpDocsMH span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
+                                                                    }
+
+                                                                    $('#dtpDocsMH').daterangepicker({
+                                                                        startDate: start,
+                                                                        endDate: end,
+                                                                        ranges: {
+                                                                            'Hoy': [moment(), moment()],
+                                                                            'Ayer': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                                                                            'Últimos 7 Días': [moment().subtract(6, 'days'), moment()],
+                                                                            'Últimos 30 Días': [moment().subtract(29, 'days'), moment()],
+                                                                            'Este Mes': [moment().startOf('month'), moment().endOf('month')],
+                                                                            'El Mes Pasado': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                                                                        }
+                                                                    }, cb);
+                                                                    // The event listener.
+                                                                    $('#dtpDocsMH').on('apply.daterangepicker', (e, picker) => {
+                                                                        chartDocsMH_getInfo();
+                                                                    });
+                                                                    cb(start, end);
+                                                                });
+                                                            </script>
+
+                                                            @*Tiendas*@
+                                                            <div class="col-md-5">
+                                                                <div class="input-group mb-6">
+                                                                    <div class="input-group-prepend" style="width: 100%;">
+                                                                        <span class="input-group-text"><i class="fas fa-store"></i></span>
+                                                                        <select id="select_store" name="select_tienda" class="form-control select2bs4" style="width: 100%;">
+                                                                            <option value="0">Todas</option>
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    @*Grafico Docs MH*@
+                                                    <div class="chart" id="chartContainer">
+                                                        <div class="chartjs-size-monitor">
+                                                            <div class="chartjs-size-monitor-expand">
+                                                                <div class=""></div>
+                                                            </div>
+                                                            <div class="chartjs-size-monitor-shrink">
+                                                                <div class=""></div>
+                                                            </div>
+                                                        </div>
+                                                        <canvas id="barChartMH" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%; display: block; width: 337px; margin-top: 17px;" width="337" height="250" class="chartjs-render-monitor"></canvas>
+                                                    </div>
+                                                </div>
+
+                                                @*Small Box Docs MH*@
+                                                <div class="col-md-3">
+                                                    <div class="row">
+                                                        <div class="col-lg-12 col-6">
+                                                            <div class="small-box bg-success">
+                                                                <div class="inner">
+                                                                    <h3 id="Docs_aceptados">0</h3>
+                                                                    <p>Documentos Aceptados</p>
+                                                                </div>
+                                                                <div class="icon">
+                                                                    <i class="ion ion-document-text"></i>
+                                                                </div>
+                                                                <a href="#" class="small-box-footer" onclick="onClickDocsAceptados()">Más información <i class="fas fa-arrow-circle-right"></i></a>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                    <div class="row">
+                                                        <div class="col-lg-12 col-6">
+                                                            <div class="small-box bg-danger">
+                                                                <div class="inner">
+                                                                    <h3 id="Docs_rechazados">0</h3>
+                                                                    <p>Documentos Rechazados</p>
+                                                                </div>
+                                                                <div class="icon">
+                                                                    <i class="ion ion-document-text"></i>
+                                                                </div>
+                                                                <a href="#" class="small-box-footer" onclick="onClickDocsRechazados()">Más información <i class="fas fa-arrow-circle-right"></i></a>
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+
+                                                </div>
+                                            </div>
+
+                                            @*Codigo para Helpdesk*@
+
+
+                                            @*End Codigo para HelpDesk*@
+
+                                        </div>
+
+                                    </div>
+
+                                    @*Sincronización Documentos ERP*@
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="card card-secondary">
+                                                <div class="card-header">
+                                                    <h5 class="card-title">Sincronización Documentos ERP</h5>
+                                                    <div class="card-tools">
+                                                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                                            <i class="fas fa-minus"></i>
+                                                        </button>
+
+                                                        <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <div class="col-md-8">
+                                                            @*Rango Fechas*@
+                                                            <div class="container">
+                                                                <div class="row">
+                                                                    <div class="col-md-6">
+                                                                        <button type="button" class="btn btn-default float-right" id="dtpDocsERP">
+                                                                            <i class="fa fa-calendar-alt"></i>&nbsp;
+                                                                            <span></span> <i class="fa fa-caret-down"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                    <script type="text/javascript">
+                                                                        $(function () {
+                                                                            var start = moment().subtract(29, 'days');
+                                                                            var end = moment();
+
+                                                                            function cb(start, end) {
+                                                                                $('#dtpDocsERP span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
+                                                                            }
+
+                                                                            $('#dtpDocsERP').daterangepicker({
+                                                                                startDate: start,
+                                                                                endDate: end,
+                                                                                ranges: {
+                                                                                    'Hoy': [moment(), moment()],
+                                                                                    'Ayer': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                                                                                    'Últimos 7 Días': [moment().subtract(6, 'days'), moment()],
+                                                                                    'Últimos 30 Días': [moment().subtract(29, 'days'), moment()],
+                                                                                    'Este Mes': [moment().startOf('month'), moment().endOf('month')],
+                                                                                    'El Mes Pasado': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                                                                                }
+                                                                            }, cb);
+                                                                            // The event listener.
+                                                                            $('#dtpDocsERP').on('apply.daterangepicker', (e, picker) => {
+                                                                                chartDocsERP_getInfo();
+                                                                            });
+                                                                            cb(start, end);
+                                                                        });
+                                                                    </script>
+
+                                                                    @*Tiendas*@
+                                                                    <div class="col-md-5">
+                                                                        <div class="input-group mb-6">
+                                                                            <div class="input-group-prepend" style="width: 100%;">
+                                                                                <span class="input-group-text"><i class="fas fa-store"></i></span>
+                                                                                <select id="select_storeDocsERP" name="select_storeDocsERP" class="form-control select2bs4" style="width: 100%;">
+                                                                                    <option value="0">Todas</option>
+                                                                                </select>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <p class="text-center">
+                                                                <strong></strong>
+                                                            </p>
+                                                            <div class="chart" id="chartPieContainer">
+                                                                <div class="chartjs-size-monitor">
+                                                                    <div class="chartjs-size-monitor-expand">
+                                                                        <div class=""></div>
+                                                                    </div>
+                                                                    <div class="chartjs-size-monitor-shrink">
+                                                                        <div class=""></div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <canvas id="barChartDocsERP" height="180" style="height: 180px; display: block; width: 484px;" width="484" class="chartjs-render-monitor"></canvas>
+                                                            </div>
+
+                                                        </div>
+
+                                                        <div class="col-md-4">
+                                                            <p class="text-center">
+                                                                <strong>Sincronización de Documentos ERP</strong>
+                                                            </p>
+                                                            <div class="progress-group">
+                                                                Ventas
+                                                                <span class="float-right" id="spVentas"><b>0</b>/</span>
+                                                                <div class="progress progress-sm">
+                                                                    <div class="progress-bar bg-primary" id="progressbarVentas"></div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="progress-group">
+                                                                Notas Crédito Ventas
+                                                                <span class="float-right" id="spNcVentas"><b>0</b>/</span>
+                                                                <div class="progress progress-sm">
+                                                                    <div class="progress-bar bg-cyan" id="progressbarNcVentas"></div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="progress-group">
+                                                                Compras
+                                                                <span class="float-right" id="spCompras"><b>0</b>/</span>
+                                                                <div class="progress progress-sm">
+                                                                    <div class="progress-bar bg-success" id="progressbarCompras"></div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="progress-group">
+                                                                Notas Crédito Compras
+                                                                <span class="float-right" id="spNcCompras"><b>0</b>/</span>
+                                                                <div class="progress progress-sm">
+                                                                    <div class="progress-bar bg-olive" id="progressbarNcCompras"></div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="progress-group">
+                                                                Depósitos Bancarios
+                                                                <span class="float-right" id="spDepositosB"><b>0</b>/</span>
+                                                                <div class="progress progress-sm">
+                                                                    <div class="progress-bar bg-warning" id="progressbarDepositos"></div>
+                                                                </div>
+                                                            </div>
+
+                                                        </div>
+
+                                                    </div>
+
+                                                </div>
+
+                                                <div class="card-footer">
+                                                    <div class="row">
+                                                        <div class="col-sm-2 col-6">
+                                                            <div class="description-block border-right">
+                                                                <span class="description-percentage">@*<i class="fas fa-caret-up"></i> 17%*@</span>
+                                                                <h5 class="description-header" id="ventasErp">0</h5>
+                                                                <a href="#" class="nav-link" onclick="onClickDocsERP('ventas')">Ventas <i class="fas fa-chevron-circle-right"></i></a>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-sm-2 col-6">
+                                                            <div class="description-block border-right">
+                                                                <span class="description-percentage text-warning">@*<i class="fas fa-caret-left"></i> 0%*@</span>
+                                                                <h5 class="description-header" id="ncVentasErp">0</h5>
+                                                                <a href="#" class="nav-link" onclick="onClickDocsERP('ncventas')">NC Ventas <i class="fas fa-chevron-circle-right"></i></a>
+                                                            </div>
+
+                                                        </div>
+
+                                                        <div class="col-sm-2 col-6">
+                                                            <div class="description-block border-right">
+                                                                <span class="description-percentage text-success">@*<i class="fas fa-caret-up"></i> 20%*@</span>
+                                                                <h5 class="description-header" id="comprasErp">0</h5>
+                                                                <a href="#" class="nav-link" onclick="onClickDocsERP('compras')">Compras <i class="fas fa-chevron-circle-right"></i></a>
+                                                            </div>
+
+                                                        </div>
+
+                                                        <div class="col-sm-2 col-6">
+                                                            <div class="description-block border-right">
+                                                                <span class="description-percentage text-danger">@*<i class="fas fa-caret-down"></i> 18%*@</span>
+                                                                <h5 class="description-header" id="nccomprasErp">0</h5>
+                                                                <a href="#" class="nav-link" onclick="onClickDocsERP('nccompras')">NC Compras <i class="fas fa-chevron-circle-right"></i></a>
+                                                            </div>
+
+                                                        </div>
+
+                                                        <div class="col-sm-2 col-6">
+                                                            <div class="description-block">
+                                                                <span class="description-percentage text-danger">@*<i class="fas fa-caret-down"></i> 18%*@</span>
+                                                                <h5 class="description-header" id="depositosErp">0</h5>
+                                                                <a href="#" class="nav-link" onclick="onClickDocsERP('depositos')">Dep. Bancarios <i class="fas fa-chevron-circle-right"></i></a>
+                                                            </div>
+
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                    @*Sincronización Asientos ERP*@
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="card card-secondary">
+                                                <div class="card-header">
+                                                    <h5 class="card-title">Sincronización Asientos ERP</h5>
+                                                    <div class="card-tools">
+                                                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                                                            <i class="fas fa-minus"></i>
+                                                        </button>
+
+                                                        <button type="button" class="btn btn-tool" data-card-widget="remove">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                <div class="card-body">
+                                                    <div class="row">
+
+
+
+
+                                                        <div class="col-md-9">
+                                                            @*<div class="card card-info">
+
+                                                                    <div class="card-body p-0">
+                                                                        <div class="table-responsive">
+                                                                            <table class="table m-0">
+                                                                                <thead>
+                                                                                    <tr>
+                                                                                        <th>ID</th>
+                                                                                        <th>Descripción</th>
+                                                                                        <th>Estado</th>
+                                                                                        <th>Fecha</th>
+                                                                                    </tr>
+                                                                                </thead>
+                                                                                <tbody>
+                                                                                    <tr>
+                                                                                        <td><a href="pages/examples/invoice.html">OR9842</a></td>
+                                                                                        <td>COMPRAS DE CONTADO Y CREDITO</td>
+                                                                                        <td><span class="badge badge-success">Enviado</span></td>
+                                                                                        <td>
+                                                                                            <div class="sparkbar" data-color="#00a65a" data-height="20">2022-03-22</div>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                    <tr>
+                                                                                        <td><a href="pages/examples/invoice.html">OR1848</a></td>
+                                                                                        <td>BONIFICACIÓN COMPRAS CONTADO Y CREDITO</td>
+                                                                                        <td><span class="badge badge-success">Enviado</span></td>
+                                                                                        <td>
+                                                                                            <div class="sparkbar" data-color="#00a65a" data-height="20">2022-03-22</div>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                    <tr>
+                                                                                        <td><a href="pages/examples/invoice.html">OR7429</a></td>
+                                                                                        <td>DEVOLUCIONES DE CONTADO Y CREDITO</td>
+                                                                                        <td><span class="badge badge-success">Enviado</span></td>
+                                                                                        <td>
+                                                                                            <div class="sparkbar" data-color="#00a65a" data-height="20">2022-03-22</div>
+                                                                                        </td>
+                                                                                    </tr>
+
+                                                                                    <tr>
+                                                                                        <td><a href="pages/examples/invoice.html">OR7429</a></td>
+                                                                                        <td>SALIDA DE INVENTARIO</td>
+                                                                                        <td><span class="badge badge-danger">Error</span></td>
+                                                                                        <td>
+                                                                                            <div class="sparkbar" data-color="#f56954" data-height="20">2022-03-22</div>
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </div>
+
+                                                                    </div>
+
+                                                                    <div class="card-footer clearfix">
+                                                                        <a href="javascript:void(0)" class="btn btn-sm btn-info float-left">Place New Order</a>
+                                                                        <a href="javascript:void(0)" class="btn btn-sm btn-secondary float-right">View All Orders</a>
+                                                                    </div>
+
+                                                                </div>*@
+                                                            <div class="card">
+                                                                <div class="card-body">
+                                                                    <div class="row">
+                                                                        @*<div class="form-group col-md-4">
+                                                                                <label>Registro Desde:</label>
+                                                                                <div id="div_date_desde" class="input-group date" data-target-input="nearest">
+                                                                                    <input id="fecha_desdeAsientos" type="text" class="form-control datetimepicker-input" data-target="#fecha_desde" placeholder="Ingresar fecha" />
+                                                                                    <div class="input-group-append" data-target="#fecha_desdeAsientos" data-toggle="datetimepicker">
+                                                                                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="form-group col-md-4">
+                                                                                <label>Registro Hasta:</label>
+                                                                                <div id="div_date_hasta" class="input-group date" data-target-input="nearest">
+                                                                                    <input id="fecha_hastaAsientos" type="text" class="form-control datetimepicker-input" data-target="#fecha_hasta" placeholder="Ingresar fecha" />
+                                                                                    <div class="input-group-append" data-target="#fecha_hastaAsientos" data-toggle="datetimepicker">
+                                                                                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>*@
+                                                                        <div class="form-group col-md-4">
+                                                                            @*<label>Buscar:</label>*@
+                                                                            <div class="input-group">
+                                                                                <input id="inputSearchAsientos" type="text" class="form-control" placeholder="Buscar...">
+                                                                                <div class="input-group-append">
+                                                                                    <button type="button" class="btn btn-default" onclick="onClickBtnSearchAsientos()"><i class="fas fa-search"></i></button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        @*Estados Asiento*@
+                                                                        <div class="col-md-3">
+                                                                            <div class="input-group mb-2">
+                                                                                <div class="input-group-prepend" style="width: 100%;">
+                                                                                    <span class="input-group-text"><i class="fas fa-filter"></i></span>
+                                                                                    <select id="select_estadoAsientosERP" name="select_estadoAsientosERP" class="form-control" style="width: 100%;">
+                                                                                        <option value="Todos">Todos</option>
+                                                                                        <option value="Enviados">Enviados</option>
+                                                                                        <option value="Sin Enviar">Sin Enviar</option>
+                                                                                        <option value="Con Error">Con Error</option>
+                                                                                    </select>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        @*Tiendas*@
+                                                                        <div class="col-md-5">
+                                                                            <div class="input-group mb-6">
+                                                                                <div class="input-group-prepend" style="width: 100%;">
+                                                                                    <span class="input-group-text"><i class="fas fa-store"></i></span>
+                                                                                    <select id="select_storeAsientosERP" name="select_storeAsientosERP" class="form-control select2bs4" style="width: 100%;">
+                                                                                        <option value="0">Todas</option>
+                                                                                    </select>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                    </div>
+                                                                    <div id="tbl_content_sync_asientos" class="dataTables_wrapper dt-bootstrap4">
+                                                                        <table class="table table-striped table-bordered text-nowrap"></table>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="col-md-3">
+                                                            @*Rango Fechas*@
+                                                            <div class="col-sm-12">
+                                                                <div class="form-group">
+                                                                    <div class="input-group">
+                                                                        <button type="button" class="btn btn-default float-right" id="dtpAsientosERP">
+                                                                            <i class="fa fa-calendar-alt"></i>&nbsp;
+                                                                            <span></span> <i class="fa fa-caret-down"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <script type="text/javascript">
+                                                                $(function () {
+                                                                    var start = moment().subtract(29, 'days');
+                                                                    var end = moment();
+
+                                                                    function cb(start, end) {
+                                                                        $('#dtpAsientosERP span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
+                                                                    }
+
+                                                                    $('#dtpAsientosERP').daterangepicker({
+                                                                        startDate: start,
+                                                                        endDate: end,
+                                                                        ranges: {
+                                                                            'Hoy': [moment(), moment()],
+                                                                            'Ayer': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                                                                            'Últimos 7 Días': [moment().subtract(6, 'days'), moment()],
+                                                                            'Últimos 30 Días': [moment().subtract(29, 'days'), moment()],
+                                                                            'Este Mes': [moment().startOf('month'), moment().endOf('month')],
+                                                                            'El Mes Pasado': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                                                                        }
+                                                                    }, cb);
+                                                                    // The event listener.
+                                                                    //$('#dtpAsientosERP').on('apply.daterangepicker', (e, picker) => {
+                                                                    //    chartAsientosERP_getInfo();
+                                                                    //});
+                                                                    cb(start, end);
+                                                                });
+                                                            </script>
+
+
+                                                            <p class="text-center">
+                                                                <strong>Sincronización de Asientos ERP</strong>
+                                                            </p>
+                                                            <div class="chart" id="chartDonutContainer">
+                                                                <div class="chartjs-size-monitor">
+                                                                    <div class="chartjs-size-monitor-expand">
+                                                                        <div class=""></div>
+                                                                    </div>
+                                                                    <div class="chartjs-size-monitor-shrink">
+                                                                        <div class=""></div>
+                                                                    </div>
+                                                                </div>
+
+                                                                @*<canvas id="barChartAsientosERP" height="180" style="height: 180px; display: block; width: 484px;" width="484" class="chartjs-render-monitor"></canvas>*@
+                                                                <canvas id="donutChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%; display: block; width: 565px;" width="565" height="250" class="chartjs-render-monitor"></canvas>
+                                                            </div>
+
+                                                            <div class="card-footer p-0">
+                                                                <ul class="nav nav-pills flex-column">
+                                                                    <li class="nav-fill" style="background-color: #ffffff;">
+                                                                        <a href="#" class="nav-link">
+                                                                            Enviados
+                                                                            <span class="float-right text-success" id="spAsientosEnviados">
+                                                                                <i class="fas fa-check text-sm"></i> 0
+                                                                            </span>
+                                                                        </a>
+                                                                    </li>
+                                                                    <li class="nav-fill" style="background-color: #ffffff;">
+                                                                        <a href="#" class="nav-link">
+                                                                            Sin Enviar
+                                                                            <span class="float-right text-warning" id="spAsientosSinEnviar">
+                                                                                <i class="fas fa-times text-sm"></i> 0
+                                                                            </span>
+                                                                        </a>
+                                                                    </li>
+
+                                                                    <li class="nav-fill" style="background-color: #ffffff;">
+                                                                        <a href="#" class="nav-link">
+                                                                            Con Error
+                                                                            <span class="float-right text-danger" id="spAsientosConError">
+                                                                                <i class="fas fa-times text-sm"></i> 0
+                                                                            </span>
+                                                                        </a>
+                                                                    </li>
+
+                                                                </ul>
+                                                            </div>
+
+                                                        </div>
+
+
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Modal Docs MH-->
+            <div class="modal fade" id="modal_docs_MH">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <!-- Spinner Modal -->
+                        <!--<div id="spn_modal_docs_hacienda" class="overlay">
+                            <div class="d-table-cell justify-content-center">
+                                <i class="fas fa-2x fa-sync fa-spin d-flex justify-content-center"></i>
+                                <h3 id="spn_modal_text">Cargando...</h3>
+                            </div>
+                        </div>-->
+                        <!-- Spinner Modal -->
+                        <!-- Encabezado Modal -->
+                        <div class="modal-header text-center">
+                            <h4 id="modal_title" class="modal-title">Documentos Hacienda</h4>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div><!-- Encabezado Modal -->
+                        @**@
+                        <div class="modal-body">
+                            <section class="content">
+                                <div class="container-fluid">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <div class="form-group col-md-3">
+                                                            <label>Registro Desde:</label>
+                                                            <div id="div_date_desde" class="input-group date" data-target-input="nearest">
+                                                                <input id="fecha_desde" type="text" class="form-control datetimepicker-input" data-target="#fecha_desde" placeholder="Ingresar fecha" />
+                                                                <div class="input-group-append" data-target="#fecha_desde" data-toggle="datetimepicker">
+                                                                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group col-md-3">
+                                                            <label>Registro Hasta:</label>
+                                                            <div id="div_date_hasta" class="input-group date" data-target-input="nearest">
+                                                                <input id="fecha_hasta" type="text" class="form-control datetimepicker-input" data-target="#fecha_hasta" placeholder="Ingresar fecha" />
+                                                                <div class="input-group-append" data-target="#fecha_hasta" data-toggle="datetimepicker">
+                                                                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        @*Tiendas*@
+                                                        <div class="form-group col-md-3">
+                                                            <label>Tienda:</label>
+                                                            <div class="input-group mb-6">
+                                                                <div class="input-group-prepend" style="width: 100%;">
+                                                                    <span class="input-group-text"><i class="fas fa-store"></i></span>
+                                                                    <select id="select_storeAsientosERPModal" name="select_storeAsientosERPModal" class="form-control select2bs4" style="width: 100%;">
+                                                                        <option value="0">Todas</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="form-group col-md-3">
+                                                            <label>Buscar:</label>
+                                                            <div class="input-group">
+                                                                <input id="inputSearch" type="text" class="form-control" placeholder="Buscar...">
+                                                                <div class="input-group-append">
+                                                                    <button type="button" class="btn btn-default" onclick="onClickBtnSearch()"><i class="fas fa-search"></i></button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div id="tbl_content_sync_docsmh" class="dataTables_wrapper dt-bootstrap4">
+                                                        <table class="table table-striped table-bordered"></table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                        @**@
+                        <div class="modal-footer">
+                            @*<button type="button" class="btn btn-primary" onclick="onClickBtnNewItem()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                                <button type="button" class="btn btn-success" onclick="onClickBtnSaveItem()"> <i class="fa fa-save"></i> @Resources.views.guardar</button>*@
+                            <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Docs Erp-->
+            <div class="modal fade" id="modal_docs_erp">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <!-- Spinner Modal -->
+                        <!--<div id="spn_modal_docs_hacienda" class="overlay">
+                            <div class="d-table-cell justify-content-center">
+                                <i class="fas fa-2x fa-sync fa-spin d-flex justify-content-center"></i>
+                                <h3 id="spn_modal_text">Cargando...</h3>
+                            </div>
+                        </div>-->
+                        <!-- Spinner Modal -->
+                        <!-- Encabezado Modal -->
+                        <div class="modal-header text-center">
+                            <h4 id="modal_title_erp" class="modal-title">Sincronización Documentos ERP</h4>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div><!-- Encabezado Modal -->
+                        @**@
+                        <div class="modal-body">
+                            <section class="content">
+                                <div class="container-fluid">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <div class="form-group col-md-3">
+                                                            <label>Registro Desde:</label>
+                                                            <div id="div_dateERP_desde" class="input-group date" data-target-input="nearest">
+                                                                <input id="fecha_desdeDocsERP" type="text" class="form-control datetimepicker-input" data-target="#fecha_desdeDocsERP" placeholder="Ingresar fecha" />
+                                                                <div class="input-group-append" data-target="#fecha_desdeDocsERP" data-toggle="datetimepicker">
+                                                                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group col-md-3">
+                                                            <label>Registro Hasta:</label>
+                                                            <div id="div_dateERP_hasta" class="input-group date" data-target-input="nearest">
+                                                                <input id="fecha_hastaDocsERP" type="text" class="form-control datetimepicker-input" data-target="#fecha_hastaDocsERP" placeholder="Ingresar fecha" />
+                                                                <div class="input-group-append" data-target="#fecha_hastaDocsERP" data-toggle="datetimepicker">
+                                                                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        @*Tiendas*@
+                                                        <div class="form-group col-md-3">
+                                                            <label>Tienda:</label>
+                                                            <div class="input-group mb-6">
+                                                                <div class="input-group-prepend" style="width: 100%;">
+                                                                    <span class="input-group-text"><i class="fas fa-store"></i></span>
+                                                                    <select id="select_storeDocsERPModal" name="select_storeDocsERPModal" class="form-control select2bs4" style="width: 100%;">
+                                                                        <option value="0">Todas</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="form-group col-md-3">
+                                                            <label>Buscar:</label>
+                                                            <div class="input-group">
+                                                                <input id="inputSearchDocsERP" type="text" class="form-control" placeholder="Buscar...">
+                                                                <div class="input-group-append">
+                                                                    <button type="button" class="btn btn-default" onclick="onClickBtnSearchDocsERP()"><i class="fas fa-search"></i></button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div id="tbl_content_sync_docserp" class="dataTables_wrapper dt-bootstrap4">
+                                                        <table class="table table-striped table-bordered"></table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                        @**@
+                        <div class="modal-footer">
+                            @*<button type="button" class="btn btn-primary" onclick="onClickBtnNewItem()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                                <button type="button" class="btn btn-success" onclick="onClickBtnSaveItem()"> <i class="fa fa-save"></i> @Resources.views.guardar</button>*@
+                            <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+
+
+    @* VARIABLES *@
+    <script>
+        var urls = {
+            GetAll_Store: '@Url.Action("GetAllStore", "MonitoreoDatos")',
+            GetAll_DocsMH: '@Url.Action("GetAll_DocsMH", "MonitoreoDatos")',
+            GetAll_DocsERP: '@Url.Action("GetAll_DocsERP", "MonitoreoDatos")',
+            GetAll_Asientos: '@Url.Action("GetAll_Asientos", "MonitoreoDatos")',
+            GetAll_BarChart: '@Url.Action("GetAll_Graphics_DocsMH", "MonitoreoDatos")',
+            GetAll_PieChart: '@Url.Action("GetAll_Graphics_DocsERP", "MonitoreoDatos")',
+            GetAll_DonutChart: '@Url.Action("GetAll_Graphics_AsientosERP", "MonitoreoDatos")'
+        };
+        var elementsIDs = {
+            div_table_docsmh: 'tbl_content_sync_docsmh',
+            div_table_docserp: 'tbl_content_sync_docserp',
+            div_table_asientos: 'tbl_content_sync_asientos',
+            modal: 'modal_docs_MH',
+            modal_docsErp: 'modal_docs_erp',
+            spinner_modal: 'spn_modal_docs_hacienda',
+            title_modal: 'modal_title',
+            title_modalDocsERP: 'modal_title_erp',
+        }
+
+        var dtd;
+        var list_details = [];
+        var list_Store = []; // Almacena las tiendas obtenidas
+        var select_store; // Componente Select
+        var select_storeDocsERP;
+        var select_storeAsientosERP;
+        var select_storeAsientosERPModal;
+        var select_storeDocsERPModal;
+
+        var progressBar = {
+            progressVentas : 0,
+            progressNcVentas : 0,
+            progressCompras : 0,
+            progressNcCompras : 0,
+            progressDepositos : 0
+        }
+
+        var modalActiveDocsERP = {
+            ventas : false,
+            ncventas: false,
+            compras: false,
+            nccompras: false,
+            depositos: false
+        }
+
+
+        var elementsObj = {
+            dataTableDocsMH: null,
+            dataTableDocsERP: null,
+            dataTableAsientos: null
+        }
+
+        var IsmodalActiveDocsAceptados = false;
+
+        var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4000 });
+        var dataView = {
+            styles: {
+                251: 'Actualizar Inventario - Precio de Producto',
+                261: 'Descarga de Productos',
+                320: 'Ajuste de Impuestos'
+            },
+            statusText: ['Suspendido', 'Sin aprobar', 'Aprobado', 'En proceso', 'Completado con éxito', 'Completado con errores', 'Completado con Advertencias', 'Reconocido y grabado', 'Completado sin Cambios'],
+            statusColor: ['info', 'light', 'blue', 'yellow', 'success', 'danger', 'purple', 'info', 'success'],
+            dataTableWorksheetContentColums: {
+                251: [
+                    {
+                        data: 'StoreAvailibity', render: function (data, type, row, meta) {
+                            return type === 'display' ? `<span class="badge bg-${data ? 'success' : 'danger'}">${row.StoreName}</span>` : data;
+                        }
+                    },
+                    { title: 'Cód. Producto', data: 'ItemLookupcode' },
+                    { title: 'Descrip. Corta', data: 'Description' },
+                    { title: 'Descrip. Extendida', data: 'ExtendedDescription' },
+                    { title: 'Precio Liquidación', data: 'SalePrice' },
+                    { title: 'Inicio de Liquidación', data: 'SaleStartDateString' },
+                    { title: 'Fin de Liquidación', data: 'SaleEndDateString' },
+                    { title: 'Límite Inferior', data: 'LowerBound', visible: false },
+                    { title: 'Límite Superior', data: 'UpperBound', visible: false },
+                    { title: 'Precio Liquidación Cantidad', data: 'BuydownPrice' },
+                    { title: 'Cantidad en Liquidación', data: 'BuydownQuantity' },
+                ],
+                261: [
+                    {
+                        data: 'StoreAvailibity', render: function (data, type, row, meta) {
+                            return type === 'display' ? `<span class="badge bg-${data ? 'success' : 'danger'}">${row.StoreName}</span>` : data;
+                        }
+                    },
+                    { title: 'Cód. Producto', data: 'ItemLookupcode' },
+                    { title: 'Descrip. Corta', data: 'Description' },
+                    { title: 'Descrip. Extendida', data: 'ExtendedDescription' },
+                ],
+                320: [
+                    {
+                        data: 'StoreAvailibity', render: function (data, type, row, meta) {
+                            return type === 'display' ? `<span class="badge bg-${data ? 'success' : 'danger'}">${row.StoreName}</span>` : data;
+                        }
+                    },
+                    { title: 'Cód. Producto', data: 'ItemLookupcode' },
+                    { title: 'Descrip. Corta', data: 'Description' },
+                    { title: 'Descrip. Extendida', data: 'ExtendedDescription' },
+                    { title: 'Impuesto', data: 'ItemTaxDescription' },
+                ]
+            }
+        };
+        var dataViewAsientos = {
+            styles: {
+                251: 'Actualizar Inventario - Precio de Producto',
+                261: 'Descarga de Productos',
+                320: 'Ajuste de Impuestos'
+            },
+            statusText: ['Sin Enviar','Enviado', 'Con Error'],
+            statusColor: ['yellow','success','danger'],
+
+        };
+
+        var dataViewDepositos = {
+            statusText: ['Sin Enviar', 'Sin Enviar', 'Enviado', 'Con Error', 'Enviado'],
+            statusColor: ['yellow', 'yellow', 'success', 'danger', 'success'],
+
+        };
+
+    </script>
+
+    @* FUNCIONES *@
+    <script>
+         $(async function () {
+            initMenuItemsLayout();
+             initDataPlugins();
+             await getAllStores();
+        });
+
+        function initMenuItemsLayout() {
+            openMenu(["#nav-analitica"]);
+            activeItemMenu([".nav-analitica", "#nav-analitica-monitoreo"])
+        }
+
+        function initDataPlugins() {
+            $('#fecha_desde').datetimepicker({ format: 'DD/MM/YYYY', defaultDate: new Date() });
+            $('#fecha_hasta').datetimepicker({ format: 'DD/MM/YYYY', defaultDate: new Date() });
+
+            $('#fecha_desdeDocsERP').datetimepicker({ format: 'DD/MM/YYYY', defaultDate: new Date() });
+            $('#fecha_hastaDocsERP').datetimepicker({ format: 'DD/MM/YYYY', defaultDate: new Date() });
+
+
+
+            initDataTableDocsMH();
+            initDataTableDocsERP();
+            initDataTableAsientos();
+
+            $(document).on('shown.bs.modal', function (e) {
+                $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+            });
+            $('a[data-toggle="pill"]').on('shown.bs.tab', function (e) {
+                $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
+            });
+            $('#inputSearch').keyup(function (e) { if (e.keyCode == 13) onClickBtnSearch(); });
+            $('#fecha_desde').keyup(function (e) { if (e.keyCode == 13) onClickBtnSearch(); });
+            $('#fecha_hasta').keyup(function (e) { if (e.keyCode == 13) onClickBtnSearch(); });
+
+            $('#inputSearchAsientos').keyup(function (e) { if (e.keyCode == 13) onClickBtnSearchAsientos(); });
+            //$('#fecha_desdeAsientos').keyup(function (e) { if (e.keyCode == 13) onClickBtnSearchAsientos(); });
+            //$('#fecha_hastaAsientos').keyup(function (e) { if (e.keyCode == 13) onClickBtnSearchAsientos(); });
+
+            $('#inputSearchDocsERP').keyup(function (e) { if (e.keyCode == 13) onClickBtnSearchDocsERP(); });
+            $('#fecha_desdeDocsERP').keyup(function (e) { if (e.keyCode == 13) onClickBtnSearchDocsERP(); });
+            $('#fecha_hastaDocsERP').keyup(function (e) { if (e.keyCode == 13) onClickBtnSearchDocsERP(); });
+
+            chartDocsMH_getInfo();
+            chartDocsERP_getInfo();
+            onClickBtnSearchAsientos();
+        }
+
+
+
+        async function initDataTableDocsMH() {
+            elementsObj.dataTableDocsMH = $("#" + elementsIDs.div_table_docsmh + " > table").DataTable({
+                ajax: {
+                    url: urls.GetAll_DocsMH, type: 'POST', datatype: 'json',
+                    data: function (d) {
+                        var data = $.extend({}, d, {
+                            searchValue: $('#inputSearch').val(),
+                            comprobanteTipo: IsmodalActiveDocsAceptados == true ? "04" : "03",
+                            fromDate: $('#fecha_desde').datetimepicker('date') == null ? '' : $('#fecha_desde').datetimepicker('date').toDate().toDateString(),
+                            toDate: $('#fecha_hasta').datetimepicker('date') == null ? '' : $('#fecha_hasta').datetimepicker('date').toDate().toDateString(),
+                            idStore: $("#select_storeAsientosERPModal").val()
+                        });
+                        console.log(document.getElementsByClassName("modal_title"));
+                        return data;
+                    },
+                },
+                columns: [
+                    { title: 'Ref #', data: 'TransactionNumber' },
+                    { title: '# Factura', data: 'TransactionNumber' },
+                    //{
+                    //    title: 'Estado', data: 'Estado_Hacienda', render: function (data, type, row, meta) {
+                    //        return type === 'display'
+                    //            ? `<span class="badge bg-${dataView.statusColor[data]}">${dataView.statusText[data]}</span>`
+                    //            : dataView.statusText[data];
+                    //    }
+                    //},
+                    { title: 'Cód. Tiendas', data: 'StoreId', visible: false },
+                    { title: 'Tienda', data: 'StoreName' },
+                    { title: 'Cliente', data: 'Cliente' },
+                    { title: 'Cód. Cliente', data: 'Cod_Cliente' },
+                    { title: 'Clave50', data: 'Clave50' },
+                    { title: 'Clave20', data: 'Clave20', visible: false },
+                    { title: 'Fecha', data: 'Fecha_TransacString' },
+                    { title: 'Fecha Hacienda', data: 'Fecha_HaciendaString', visible: false },
+                    { title: 'NC_Referencia', data: 'NC_Referencia', visible: false },
+                    { title: 'NC_Referencia_Fecha', data: 'NC_Referencia_FechaString', visible: false },
+                    { title: 'Comprobante_Tipo', data: 'Comprobante_Tipo' },
+                    { title: 'Estado_Hacienda', data: 'Estado_Hacienda', visible: false },
+                    { title: 'XML_Respuesta', data: 'XML_Respuesta' }
+                ],
+                order: [[0, 'desc']],
+                dom: `<'row' <'col-md-6'l><'#dtButtons.col-md-6'B>>
+                    <'row' <'col-12'tr>>
+                    <'row' <'col-12 col-md-6'i><'col-12 col-md-6'p>>`,
+                language: dtable_i18n, paging: true, lengthChange: true,
+                serverSide: true, autoWidth: false, ordering: true,
+                processing: true, responsive: true, deferLoading: 0,
+                buttons: ['colvis', 'pdf', 'excel'],
+            });
+            $(".dataTables_filter").html($(`<div class="input-group justify-content-end p-0 mb-2 mb-md-0">
+                                        <input id="inputSearch" type="text" name="table_search" class="form-control" placeholder="Buscar..." style="max-width:450px">
+                                        <button id="btnClearSearch" class="btn bg-transparent position-absolute mr-5" style="z-index: 100;" onclick="onClickCBtnClearSearch()"><i class="fa fa-times"></i></button>
+                                        <div class="input-group-append">
+                                            <button type="button" class="btn btn-default" onclick="onClickBtnSearch()"><i class="fas fa-search"></i></button>
+                                        </div>
+                                    </div>`));
+            $('#inputSearch').keyup(function (e) { if (e.keyCode == 13) onClickBtnSearch(); });
+    }
+
+        async function initDataTableDocsERP() {
+
+            elementsObj.dataTableDocsERP = $("#" + elementsIDs.div_table_docserp + " > table").DataTable({
+                ajax: {
+                    url: urls.GetAll_DocsERP, type: 'POST', datatype: 'json',
+                    data: function (d) {
+                        var data = $.extend({}, d, {
+                            searchValue: $('#inputSearchDocsERP').val(),
+                            comprobanteTipo: getTipoComprobante(modalActiveDocsERP),
+                            fromDate: $('#fecha_desdeDocsERP').datetimepicker('date') == null ? '' : $('#fecha_desdeDocsERP').datetimepicker('date').toDate().toDateString(),
+                            toDate: $('#fecha_hastaDocsERP').datetimepicker('date') == null ? '' : $('#fecha_hastaDocsERP').datetimepicker('date').toDate().toDateString(),
+                            idStore: $("#select_storeDocsERPModal").val()
+                        });
+                        return data;
+                    },
+                },
+                columns: [
+                    { title: 'Cód. Tiendas', data: 'StoreId', visible: false },
+                    { title: 'Tiendas', data: 'StoreName' },
+                    { title: '# Documento', data: 'Documento' },
+                    {
+                        title: 'Estado', data: 'Status', render: function (data, type, row, meta) {
+                            if (getTipoComprobante(modalActiveDocsERP) == 'depositos') {
+                                return type === 'display'
+                                    ? `<span class="badge bg-${dataViewDepositos.statusColor[data]}">${dataViewDepositos.statusText[data]}</span>`
+                                    : dataViewDepositos.statusText[data];
+                            } else {
+                                return type === 'display'
+                                    ? `<span class="badge bg-${dataViewAsientos.statusColor[data]}">${dataViewAsientos.statusText[data]}</span>`
+                                    : dataViewAsientos.statusText[data];
+                            }
+
+                        }
+                    },
+                    { title: 'Fecha Envio', data: 'Fecha_EnvioString' },
+                    { title: 'Respuesta Envio', data: 'Respuesta_Envio' },
+                    { title: 'Detalles Envio', data: 'Detalles_Envio' },
+                    { title: 'Status', data: 'Status' },
+                    { title: 'Tipo', data: 'Tipo' }
+                ],
+                order: [[0, 'desc']],
+                dom: `<'row' <'col-md-6'l><'#dtButtons.col-md-6'B>>
+                    <'row' <'col-12'tr>>
+                    <'row' <'col-12 col-md-6'i><'col-12 col-md-6'p>>`,
+                language: dtable_i18n, paging: true, lengthChange: true,
+                serverSide: true, autoWidth: false, ordering: true,
+                processing: true, responsive: true, deferLoading: 0,
+                buttons: ['colvis', 'pdf', 'excel'],
+            });
+            $('#dtButtons > .dt-buttons').addClass('float-right');
+    }
+
+        async function initDataTableAsientos() {
+            elementsObj.dataTableAsientos = $("#" + elementsIDs.div_table_asientos + " > table").DataTable({
+                ajax: {
+                    url: urls.GetAll_Asientos, type: 'POST', datatype: 'json',
+                    data: function (d) {
+                        var data = $.extend({}, d, {
+                            searchValue: $('#inputSearchAsientos').val(),
+                            estadoAsiento: $("#select_estadoAsientosERP").val(),
+                            fromDate: $('#dtpAsientosERP').data('daterangepicker').startDate._d == null ? '' : $('#dtpAsientosERP').data('daterangepicker').startDate._d,
+                            toDate: $('#dtpAsientosERP').data('daterangepicker').endDate._d == null ? '' : $('#dtpAsientosERP').data('daterangepicker').endDate._d,
+                            idStore: $("#select_storeAsientosERP").val()
+                        });
+                        return data;
+                    },
+                },
+                columns: [
+                    { title: 'Ref #', data: 'ID' },
+                  /*  { title: 'Estilo', data: 'Style', visible: false },*/
+                    {
+                        title: 'Estado', data: 'Estado_Sync', render: function (data, type, row, meta) {
+                            return type === 'display'
+                                ? `<span class="badge bg-${dataViewAsientos.statusColor[data]}">${dataViewAsientos.statusText[data]}</span>`
+                                : dataViewAsientos.statusText[data];
+                        }
+                    },
+                    { title: 'Descripción', data: 'Descripcion' },
+                    { title: 'Fecha Asiento', data: 'Fecha_AsientoString' },
+                    { title: 'Fecha Sincronización', data: 'Fecha_AsientoSyncString' },
+                    { title: 'Cód. Tiendas', data: 'StoreId', visible: false },
+                    { title: 'Tienda', data: 'StoreName' },
+                    { title: 'Detalle Sincronización', data: 'Detalle_Sync', visible: false },
+                    @*{
+                        orderable: false, data: 'ID', render: function (data, type, row, meta) {
+                            var title = "Ver Hoja de Trabajo";
+                            return type == 'display' ? `<td>
+                                                            <button class='btn btn-primary' title="${title}"
+                                                                onClick='onClickBtnEditWorksheet(${data})'>
+                                                                <i class='fa fa-eye' aria-hidden='true'></i>
+                                                            </button>
+                                                            ${row.WorksheetContentID > 0 ? `<a class='btn btn-success' target="_blank"
+                                                                href='@Url.Action("DownloadFile", "HojasTrabajo")?worksheetContentID=${row.WorksheetContentID}&worksheetID=${data}'>
+                                                                <i class='fa fa-download' aria-hidden='true'></i>
+                                                            </button>` : ''}
+                                                        </td>` : data;
+                        }
+                    }*@
+                ],
+                order: [[0, 'desc']],
+                dom: `<'row' <'col-md-6'l><'#dtButtons.col-md-6'B>>
+                    <'row' <'col-12'tr>>
+                    <'row' <'col-12 col-md-6'i><'col-12 col-md-6'p>>`,
+                language: dtable_i18n, paging: true, lengthChange: true,
+                serverSide: true, autoWidth: false, ordering: true,
+                processing: true, responsive: true, deferLoading: 0,
+                buttons: ['colvis', 'pdf', 'excel'],
+            });
+            $('#dtButtons > .dt-buttons').addClass('float-right');
+        }
+
+
+        function onClickBtnSearch(flag = true) {
+            elementsObj.dataTableDocsMH.ajax.reload();
+        }
+
+
+        function onClickBtnSearchDocsERP(flag = true) {
+            elementsObj.dataTableDocsERP.ajax.reload();
+        }
+
+        function onClickBtnSearchAsientos(flag = true) {
+            chartAsientosERP_getInfo();
+            elementsObj.dataTableAsientos.ajax.reload();
+        }
+
+
+        function clearObjectWorksheet() {
+            elementsObj.worksheet = null;
+            elementsObj.worksheetStores = [];
+            elementsObj.worksheetHistory = [];
+            elementsObj.worksheetContents = [];
+        }
+
+        function clearModal() {
+            $(`#${elementsIDs.modal} input`).val("");
+            $("#tbl_content_sync_docsmh > tbody").html(null);
+        }
+
+
+        function onClickDocsAceptados() {
+            IsmodalActiveDocsAceptados = true;
+            openModal(true);
+            clearModalDocsMH();
+        }
+
+        function onClickDocsRechazados() {
+            IsmodalActiveDocsAceptados = false;
+            openModal(false);
+            clearModalDocsMH();
+        }
+
+        function onClickDocsERP(val) {
+
+            for (var prop in modalActiveDocsERP) {
+                if (modalActiveDocsERP.hasOwnProperty(prop)) {
+                    if (prop = val) {
+                        modalActiveDocsERP[prop] = true;
+                    }
+                    else{
+                        modalActiveDocsERP[prop] = false;
+                    }
+                }
+            }
+            clearModalDocsERP();
+            openModalDocsERP(val);
+        }
+
+        function onClickCBtnClearSearch() {
+            $('#inputSearch').val('');
+        }
+
+        function clearModalDocsMH() {
+            $(`#${elementsIDs.modal} input`).val("");
+            $("#tbl_content_sync_docsmh > tbody").html(null);
+            $('#DataTables_Table_0 >tbody').empty();
+        }
+
+        function clearModalDocsERP() {
+            $(`#${elementsIDs.modal_docsErp} input`).val("");
+            $("#tbl_content_sync_docserp > tbody").html(null);
+            $('#DataTables_Table_1>tbody').empty();
+            $('#DataTables_Table_1_wrapper>tbody').empty();
+
+        }
+
+
+        /** Abre la modal docs MH */
+        function openModal(is_new) {
+            $("#" + elementsIDs.title_modal).html((is_new ? "Documentos Aceptados" : "Documentos Rechazados") + " Ministerio de Hacienda");
+            $('#' + elementsIDs.modal).modal({ backdrop: 'static', keyboard: false });
+        }
+
+        /** Abre la modal docs ERP */
+        function openModalDocsERP(val) {
+            if (val == 'ventas') {
+                $("#" + elementsIDs.title_modalDocsERP).html(("Sincronización Documentos Ventas") + " - ERP");
+            }else if(val == 'ncventas') {
+                $("#" + elementsIDs.title_modalDocsERP).html(("Sincronización Documentos NC Ventas") + " - ERP");
+            }else if(val == 'compras') {
+                $("#" + elementsIDs.title_modalDocsERP).html(("Sincronización Documentos Compras") + " - ERP");
+            } else if (val == 'nccompras') {
+                $("#" + elementsIDs.title_modalDocsERP).html(("Sincronización Documentos NC Compras") + " - ERP");
+            } else if (val == 'depositos') {
+                $("#" + elementsIDs.title_modalDocsERP).html(("Sincronización Documentos Depósitos") + " - ERP");
+            }
+
+            $('#' + elementsIDs.modal_docsErp).modal({ backdrop: 'static', keyboard: false });
+        }
+
+        /** Indica cual tipo de documento se va a mostrar en la ventana modal */
+        function getTipoComprobante(modalActiveDocsERP) {
+            var tipoComprobante = "";
+            for (var key in modalActiveDocsERP) {
+                if (modalActiveDocsERP.hasOwnProperty(key) && modalActiveDocsERP[key]) {
+                    tipoComprobante = key;
+                }
+            }
+            return tipoComprobante;
+        }
+
+        /** Clona la lista de categorias a otra lista data con elementos de {id, text} para el select2bs4*/
+        function storeToData() {
+            return list_Store.map(d => { return { 'id': d.IDS, 'text': d.NameS } });
+        }
+
+        async function getAllStores() {
+                try {
+                   /* $("#" + elements.spn_modal).show();*/
+                    await $.get(urls.GetAll_Store).done(async function (data) {
+                        list_Store = data.store;
+                        fillSelectStores();
+                        fillSelectStore();
+                    });
+                } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+
+        /** Clona la lista de departamentos a otra lista data con elementos de {id, text} para el select2bs4*/
+        function storesToData() {
+            return list_Store.map(d => { return { 'id': d.ID, 'text': d.Description } });
+        }
+
+        /**
+         * Se encarga de cargar el componente select con el plugin select2bs4
+         */
+        function fillSelectStores() {
+            select_store= $('.select2bs4').select2({
+                placeholder: '@Resources.views.selec_depart', data: storesToData(), language: "@ViewBag.Lang", theme: 'bootstrap4'
+            });
+
+            select_storeDocsERP= $('.select2bs4').select2({
+                placeholder: '@Resources.views.selec_depart', data: storesToData(), language: "@ViewBag.Lang", theme: 'bootstrap4'
+            });
+
+            select_storeAsientosERP= $('.select2bs4').select2({
+                placeholder: '@Resources.views.selec_depart', data: storesToData(), language: "@ViewBag.Lang", theme: 'bootstrap4'
+            });
+        }
+
+        function fillSelectStore() {
+            $("#select_store").select2("destroy");
+            select_store = $("#select_store").select2({
+                data: storesToData(), theme: 'bootstrap4'
+            });
+
+            $("#select_storeDocsERP").select2("destroy");
+            select_storeDocsERP = $("#select_storeDocsERP").select2({
+                data: storesToData(), theme: 'bootstrap4'
+            });
+
+            $("#select_storeAsientosERP").select2("destroy");
+            select_storeAsientosERP = $("#select_storeAsientosERP").select2({
+                data: storesToData(), theme: 'bootstrap4'
+            });
+        }
+
+    </script>
+
+    @*CHART*@
+
+    <script>
+
+        //-------------
+        //- BAR CHART - Documentos Enviados Ministerio de Hacienda
+        //-------------
+        function chartDocsMH_getInfo() {
+        //var x = document.getElementById("reportrange").value;
+            var fechaInicio = $('#dtpDocsMH').data('daterangepicker').startDate._d;
+            var fechaFin = $('#dtpDocsMH').data('daterangepicker').endDate._d;
+            var id = $("#select_store").val();
+
+            $.get(urls.GetAll_BarChart + "?fromDate=" + fechaInicio + "&toDate=" + fechaFin + "&idStore=" + (id !== null ? id : '0')).done(async function (data) {
+                    if (data.Status) {
+                        var arrayMeses = [];
+                        var arrayDocAceptados = [];
+                        var arrayDocRechazados = [];
+
+                        document.getElementById("Docs_aceptados").innerHTML = data.Result.graphics[0].Tot_Doc_Aceptados;
+                        document.getElementById("Docs_rechazados").innerHTML = data.Result.graphics[0].Tot_Doc_Rechazados;
+
+                        for (var i = 0; i < data.Result.graphics.length; i++) {
+
+                            arrayMeses.push(data.Result.graphics[i].Meses)
+                            arrayDocAceptados.push(data.Result.graphics[i].Doc_Aceptados)
+                            arrayDocRechazados.push(data.Result.graphics[i].Doc_Rechazados)
+                        }
+
+                        var controlBar1 = document.getElementById("barChartMH");
+                        var barChartOptions = {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            datasetFill: false
+                        }
+
+                        var graficoBar1 = null;
+
+                        /*Limpiar grafico*/
+                        if (controlBar1 != null) {
+                            var BarChartContent = document.getElementById('chartContainer');
+                                BarChartContent.innerHTML = '&nbsp;';
+                                $('#chartContainer').append('<canvas id="barChartMH" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%; display: block; width: 337px; margin-top: 17px;" width="337" height="250" class="chartjs-render-monitor"></canvas>');
+                                controlBar1 = $("#barChartMH").get(0).getContext("2d");
+                        }
+
+                         graficoBar1 = new Chart(controlBar1, {
+                            type: 'bar',
+                            data: {
+                                labels: arrayMeses,
+                                datasets: [{
+                                    label: 'Docs. Aceptados',
+                                    backgroundColor: '#28a745',//Green
+                                    borderColor: 'rgba(60,141,188,0.8)',
+                                    pointRadius: false,
+                                    pointColor: '#3b8bba',
+                                    pointStrokeColor: 'rgba(60,141,188,1)',
+                                    pointHighlightFill: '#fff',
+                                    pointHighlightStroke: 'rgba(60,141,188,1)',
+                                    data: arrayDocAceptados,
+                                },
+                                {
+                                    label: 'Docs. Rechazados',
+                                    backgroundColor: '#dc3535',//Red
+                                    borderColor: 'rgba(210, 214, 222, 1)',
+                                    pointRadius: false,
+                                    pointColor: 'rgba(210, 214, 222, 1)',
+                                    pointStrokeColor: '#c1c7d1',
+                                    pointHighlightFill: '#fff',
+                                    pointHighlightStroke: 'rgba(220,220,220,1)',
+                                    data: arrayDocRechazados
+                                },
+                                ],
+                            },
+                            options: barChartOptions
+                        });
+
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        //$("#" + elements.spn_table).hide();
+                    }
+                }).fail(function (data) {
+                    error(data, "@Resources.messages.error_obt_regs");
+                    //$("#" + elements.spn_table).hide();
+                    //$("#spn_modal_text").html("");
+                });
+
+        }
+
+       
+        //-------------
+        //- PIE CHART - Sincronización Documentos ERP
+        //-------------
+        function chartDocsERP_getInfo() {
+
+            var fechaInicio = $('#dtpDocsERP').data('daterangepicker').startDate._d;
+            var fechaFin = $('#dtpDocsERP').data('daterangepicker').endDate._d;
+            var id = $("#select_storeDocsERP").val();
+
+            $.get(urls.GetAll_PieChart + "?fromDate=" + fechaInicio + "&toDate=" + fechaFin + "&idStore=" + (id !== null ? id : '0')).done(async function (data) {
+                    if (data.Status) {
+                        var arrayDocumentos = [];
+
+                        /*Total Documentos*/
+                        document.getElementById("spVentas").innerHTML = "<b>" + data.Result.graphics[0].Total_Ventas_Sync + "</b>/" + data.Result.graphics[0].Total_Ventas;
+                        document.getElementById("spNcVentas").innerHTML = "<b>" + data.Result.graphics[0].Total_NcVentas_Sync + "</b>/" + data.Result.graphics[0].Total_NcVentas;
+                        document.getElementById("spCompras").innerHTML = "<b>" + data.Result.graphics[0].Total_Compras_Sync + "</b>/" + data.Result.graphics[0].Total_Compras;
+                        document.getElementById("spNcCompras").innerHTML = "<b>" + data.Result.graphics[0].Total_NcCompras_Sync + "</b>/" + data.Result.graphics[0].Total_NcCompras;
+                        document.getElementById("spDepositosB").innerHTML = "<b>" + data.Result.graphics[0].Total_Depositos_Sync + "</b>/" + data.Result.graphics[0].Total_Depositos;
+
+                        /*Total Documentos Menu Inferior*/
+                        document.getElementById("ventasErp").innerHTML = data.Result.graphics[0].Total_Ventas_Sync;
+                        document.getElementById("ncVentasErp").innerHTML = data.Result.graphics[0].Total_NcVentas_Sync;
+                        document.getElementById("comprasErp").innerHTML = data.Result.graphics[0].Total_Compras_Sync;
+                        document.getElementById("nccomprasErp").innerHTML = data.Result.graphics[0].Total_NcCompras_Sync;
+                        document.getElementById("depositosErp").innerHTML = data.Result.graphics[0].Total_Depositos_Sync;
+
+                        /*Grafico Documentos*/
+                        arrayDocumentos.push(data.Result.graphics[0].Total_Ventas_Sync)
+                        arrayDocumentos.push(data.Result.graphics[0].Total_NcVentas_Sync)
+                        arrayDocumentos.push(data.Result.graphics[0].Total_Compras_Sync)
+                        arrayDocumentos.push(data.Result.graphics[0].Total_NcCompras_Sync)
+                        arrayDocumentos.push(data.Result.graphics[0].Total_Depositos_Sync)
+                        arrayDocumentos.push(data.Result.graphics[0].Total_Docs_NoSync)
+
+                        /*ProgressBar Documentos*/
+                        progressBar.progressVentas = (data.Result.graphics[0].Total_Ventas_Sync / data.Result.graphics[0].Total_Ventas) * 100;
+                        document.getElementById("progressbarVentas").style.width = progressBar.progressVentas + "%";
+                        progressBar.progressNcVentas = (data.Result.graphics[0].Total_NcVentas_Sync / data.Result.graphics[0].Total_NcVentas) * 100;
+                        document.getElementById("progressbarNcVentas").style.width = progressBar.progressNcVentas + "%";
+                        progressBar.progressCompras = (data.Result.graphics[0].Total_Compras_Sync / data.Result.graphics[0].Total_Compras) * 100;
+                        document.getElementById("progressbarCompras").style.width = progressBar.progressCompras + "%";
+                        progressBar.progressNcCompras = (data.Result.graphics[0].Total_NcCompras_Sync / data.Result.graphics[0].Total_NcCompras) * 100;
+                        document.getElementById("progressbarNcCompras").style.width = progressBar.progressNcCompras + "%";
+                        progressBar.progressDepositos = (data.Result.graphics[0].Total_Depositos_Sync / data.Result.graphics[0].Total_Depositos) * 100;
+                        document.getElementById("progressbarDepositos").style.width = progressBar.progressDepositos + "%";
+
+                        var controlPie = document.getElementById("barChartDocsERP");
+                        var graficoPie = null;
+
+                        /*Limpiar grafico*/
+                        if (controlPie != null) {
+                            var PieChartContent = document.getElementById('chartPieContainer');
+                            PieChartContent.innerHTML = '&nbsp;';
+                            $('#chartPieContainer').append('<canvas id="barChartDocsERP" height="180" style="height: 180px; display: block; width: 484px;" width="484" class="chartjs-render-monitor"></canvas>');
+                            controlPie = $("#barChartDocsERP").get(0).getContext("2d");
+                        }
+
+                         graficoPie = new Chart(controlPie, {
+                            type: 'pie',
+                            data: {
+                                labels: ["Ventas", "NC Ventas", "Compras", "NC Compras", "Depósitos Bancarios","No Sincronizado"],
+                                datasets: [{
+                                    data: arrayDocumentos,
+                                    backgroundColor: ['#007bff', '#17A2B8', '#28a745', '#3D9970', '#ffc107','#e9ecef'],
+                                }],
+                            },
+                        });
+
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        //$("#" + elements.spn_table).hide();
+                    }
+                }).fail(function (data) {
+                    error(data, "@Resources.messages.error_obt_regs");
+                    //$("#" + elements.spn_table).hide();
+                    //$("#spn_modal_text").html("");
+                });
+
+        }
+
+
+        //-------------
+        //- DONUT CHART - Sincronización de Asientos ERP
+        //-------------
+        function chartAsientosERP_getInfo() {
+
+            var fechaInicio = $('#dtpAsientosERP').data('daterangepicker').startDate._d;
+            var fechaFin = $('#dtpAsientosERP').data('daterangepicker').endDate._d;
+            var id = $("#select_storeAsientosERP").val();
+
+            $.get(urls.GetAll_DonutChart + "?fromDate=" + fechaInicio + "&toDate=" + fechaFin + "&idStore=" + (id !== null ? id : '0')).done(async function (data) {
+                    if (data.Status) {
+                        var arrayAsientos = [];
+
+                        document.getElementById("spAsientosEnviados").innerHTML = data.Result.graphics[0].Total_Asientos_Sync;
+                        document.getElementById("spAsientosSinEnviar").innerHTML = data.Result.graphics[0].Total_Asientos_No_Sync;
+                        document.getElementById("spAsientosConError").innerHTML = data.Result.graphics[0].Total_Asientos_Error;
+
+                        arrayAsientos.push(data.Result.graphics[0].Total_Asientos_Sync)
+                        arrayAsientos.push(data.Result.graphics[0].Total_Asientos_No_Sync)
+                        arrayAsientos.push(data.Result.graphics[0].Total_Asientos_Error)
+
+                        var donutChartCanvas = $('#donutChart').get(0).getContext('2d')
+                        var donutData = null;
+
+                        /*Limpiar grafico*/
+                        if (donutChartCanvas != null) {
+                            var BarChartContent = document.getElementById('chartDonutContainer');
+                            BarChartContent.innerHTML = '&nbsp;';
+                            $('#chartDonutContainer').append('<canvas id="donutChart" style="min-height: 250px; height: 250px; max-height: 250px; max-width: 100%; display: block; width: 565px;" width="565" height="250" class="chartjs-render-monitor"></canvas>');
+                            donutChartCanvas = $("#donutChart").get(0).getContext("2d");
+                        }
+
+
+                        var donutData = {
+                            labels: [
+                                'Enviados',
+                                'Sin Enviar',
+                                'Con Error',
+                            ],
+                            datasets: [
+                                {
+                                    data: arrayAsientos,
+                                    backgroundColor: ['#00a65a','#ffc107','#f56954'],
+                                }
+                            ]
+                        }
+                        var donutOptions = {
+                            maintainAspectRatio: false,
+                            responsive: true,
+                        }
+                        //Create pie or douhnut chart
+                        // You can switch between pie and douhnut using the method below.
+                        new Chart(donutChartCanvas, {
+                            type: 'doughnut',
+                            data: donutData,
+                            options: donutOptions
+                        })
+
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        //$("#" + elements.spn_table).hide();
+                    }
+                }).fail(function (data) {
+                    error(data, "@Resources.messages.error_obt_regs");
+                    //$("#" + elements.spn_table).hide();
+                    //$("#spn_modal_text").html("");
+                });
+
+        }
+
+
+
+    </script>
+
+    @*TEST*@
+    <script>
+
+
+            //$('.connectedSortable').sortable({
+            //    placeholder: 'sort-highlight',
+            //    connectWith: '.connectedSortable',
+            //    handle: '.card-header, .nav-tabs',
+            //    forcePlaceholderSize: true,
+            //    zIndex: 999999
+            //})
+            //$('.connectedSortable .card-header').css('cursor', 'move')
+            //// jQuery UI sortable for the todo list
+            //$('.todo-list').sortable({
+            //    placeholder: 'sort-highlight',
+            //    handle: '.handle',
+            //    forcePlaceholderSize: true,
+            //    zIndex: 999999
+            //})
+
+            ////-----------
+            ///* Custom Dragula JS */
+            //dragula([
+            //    document.getElementById("to-do"),
+            //    document.getElementById("doing"),
+            //    document.getElementById("done"),
+            //    document.getElementById("trash")
+            //]);
+            //removeOnSpill: false
+            //    .on("drag", function (el) {
+            //        el.className.replace("ex-moved", "");
+            //    })
+            //    .on("drop", function (el) {
+            //        el.className += "ex-moved";
+            //    })
+            //    .on("over", function (el, container) {
+            //        container.className += "ex-over";
+            //    })
+            //    .on("out", function (el, container) {
+            //        container.className.replace("ex-over", "");
+            //    });
+
+            ///* Vanilla JS to add a new task */
+            //function addTask() {
+            //    /* Get task text from input */
+            //    var inputTask = document.getElementById("taskText").value;
+            //    /* Add task to the 'To Do' column */
+            //    document.getElementById("to-do").innerHTML +=
+            //        "<li class='task'><p>" + inputTask + "</p></li>";
+            //    /* Clear task text from input after adding task */
+            //    document.getElementById("taskText").value = "";
+            //}
+
+            ///* Vanilla JS to delete tasks in 'Trash' column */
+            //function emptyTrash() {
+            //    /* Clear tasks from 'Trash' column */
+            //    document.getElementById("trash").innerHTML = "";
+            //}
+
+
+    </script>
+
+    <script>
+        //// Bar Chart Example
+        //var controlBar = document.getElementById("barChartDocsERP");
+
+        //var graficoBar = new Chart(controlBar, {
+        //    type: 'bar',
+        //    data: {
+        //        labels: ["January", "February", "March", "April", "May", "June"],
+        //        datasets: [{
+        //            label: "Revenue",
+        //            backgroundColor: "#BB2100",
+        //            borderColor: "rgba(2,117,216,1)",
+        //            data: [4215, 5312, 6251, 7841, 9821, 14984],
+
+        //            backgroundColor: ["#BB2100", "#03B100", "#0083B1", "#0800B1", "#EBFA00", "#FA00D8"],
+        //            borderColor: "#000000",
+        //            borderWidth: 0,
+        //            data: [4215, 5312, 6251, 7841, 9821, 14984],
+        //        }],
+        //    },
+        //    options: {
+        //        scales: {
+        //            xAxes: [{
+        //                time: {
+        //                    unit: 'month'
+        //                },
+        //                gridLines: {
+        //                    display: true
+        //                },
+        //                ticks: {
+        //                    maxTicksLimit: 6 //=> cuantos puntos X aparareceran
+        //                }
+        //            }],
+        //            yAxes: [{
+        //                ticks: {
+        //                    min: 0,
+        //                    max: 15000,
+        //                    maxTicksLimit: 4 //=> cuantos puntos Y aparareceran
+        //                },
+        //                gridLines: {
+        //                    display: true
+        //                }
+        //            }],
+        //        },
+        //        legend: {
+        //            display: false // => activalo si deseas ver leyenda
+        //        }
+        //    }
+        //});
+
+        //// Bar Chart Example
+        //var controlBar = document.getElementById("barChartAsientosERP");
+
+        //var graficoBar = new Chart(controlBar, {
+        //    type: 'bar',
+        //    data: {
+        //        labels: ["Error", "Sincronizados"],
+        //        datasets: [{
+        //            label: "Revenue",
+        //            backgroundColor: "#BB2100",
+        //            borderColor: "rgba(2,117,216,1)",
+        //            data: [15, 312],
+
+        //            backgroundColor: ["#BB2100", "#03B100"],
+        //            borderColor: "#000000",
+        //            borderWidth: 0,
+        //            data: [5, 532],
+        //        }],
+        //    },
+        //    options: {
+        //        scales: {
+        //            xAxes: [{
+        //                time: {
+        //                    unit: 'day'
+        //                },
+        //                gridLines: {
+        //                    display: true
+        //                },
+        //                ticks: {
+        //                    maxTicksLimit: 6 //=> cuantos puntos X aparareceran
+        //                }
+        //            }],
+        //            yAxes: [{
+        //                ticks: {
+        //                    min: 0,
+        //                    max: 1000,
+        //                    maxTicksLimit: 6 //=> cuantos puntos Y aparareceran
+        //                },
+        //                gridLines: {
+        //                    display: true
+        //                }
+        //            }],
+        //        },
+        //        legend: {
+        //            display: false // => activalo si deseas ver leyenda
+        //        }
+        //    }
+        //});
+
+
+        //--------------
+        //- AREA CHART -
+        //--------------
+
+
+        //var areaChartData = {
+        //    labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
+        //    datasets: [
+        //        {
+        //            label: 'Docs. Aceptados',
+        //            backgroundColor: '#28a745',
+        //            borderColor: 'rgba(60,141,188,0.8)',
+        //            pointRadius: false,
+        //            pointColor: '#3b8bba',
+        //            pointStrokeColor: 'rgba(60,141,188,1)',
+        //            pointHighlightFill: '#fff',
+        //            pointHighlightStroke: 'rgba(60,141,188,1)',
+        //            data: [28, 3348, 40, 19, 1186, 27, 190]
+        //        },
+        //        {
+        //            label: 'Docs. Rechazados',
+        //            backgroundColor: '#dc3545',
+        //            borderColor: 'rgba(210, 214, 222, 1)',
+        //            pointRadius: false,
+        //            pointColor: 'rgba(210, 214, 222, 1)',
+        //            pointStrokeColor: '#c1c7d1',
+        //            pointHighlightFill: '#fff',
+        //            pointHighlightStroke: 'rgba(220,220,220,1)',
+        //            data: [5, 9, 8, 1, 6, 5, 0]
+        //        },
+        //    ]
+        //}
+
+        //var areaChartOptions = {
+        //    maintainAspectRatio: false,
+        //    responsive: true,
+        //    legend: {
+        //        display: false
+        //    },
+        //    scales: {
+        //        xAxes: [{
+        //            gridLines: {
+        //                display: false,
+        //            }
+        //        }],
+        //        yAxes: [{
+        //            gridLines: {
+        //                display: false,
+        //            }
+        //        }]
+        //    }
+        //}
+
+
+
+        ////-------------
+        ////- BAR CHART -
+        ////-------------
+        //var barChartCanvas = $('#barChartMH').get(0).getContext('2d')
+        //var barChartData = $.extend(true, {}, areaChartData)
+        //var temp0 = areaChartData.datasets[0]
+        //var temp1 = areaChartData.datasets[1]
+        //barChartData.datasets[0] = temp1
+        //barChartData.datasets[1] = temp0
+
+        //var barChartOptions = {
+        //    responsive: true,
+        //    maintainAspectRatio: false,
+        //    datasetFill: false
+        //}
+
+        //new Chart(barChartCanvas, {
+        //    type: 'bar',
+        //    data: barChartData,
+        //    options: barChartOptions
+        //})
+
+
+        //copia y pega el json no lo construyas - ahorra tiempo
+
+        //jQuery.ajax({
+        //        url: '',
+        //        type: "GET",
+        //        dataType: "json",
+        //        contentType: "application/json; charset=utf-8",
+        //        success: function (data) {
+
+        //        },
+        //        error: function (error) {
+        //            console.log(error)
+        //        }
+        //    });
+
+
+
+
+
+        @* jQuery.ajax({
+            url: '@Url.Action("ReporteProductos", "Home")',
+            type: "GET",
+            dataType: "json",
+            contentType: "application/json; charset=utf-8",
+            success: function (data) {
+
+                /*console.log(data);*/
+
+                var arrayProductos = [];
+                var arrayCantidad = [];
+
+                for (var i = 0; i < data.length; i++) {
+
+                    /*console.log(data[i].producto)*/
+                    arrayProductos.push(data[i].producto)
+                    arrayCantidad.push(data[i].cantidad)
+                }
+
+
+                var controlPie1 = document.getElementById("myPieChart");
+                var graficoPie1 = new Chart(controlPie1, {
+                    type: 'pie',
+                    data: {
+                        labels: arrayProductos,
+                        datasets: [{
+                            data: arrayCantidad,
+                            backgroundColor: ['#007bff', '#dc3545', '#ffc107', '#28a745'],
+                        }],
+                    },
+                });
+
+            },
+            error: function (error) {
+                console.log(error)
+            }
+        });*@
+    //--------------------------------------------------
+        //  //Pie Chart Example
+        //var controlPie = document.getElementById("barChartDocsERP");
+        //var graficoPie = new Chart(controlPie, {
+        //    type: 'pie',
+        //    data: {
+        //        labels: ["Ventas", "NC Ventas", "Compras", "NC Compras", "Depósitos Bancarios"],
+        //        datasets: [{
+        //            data: [12.21, 15.58, 11.25, 8.32, 8.32],
+        //            backgroundColor: ['#007bff', '#17A2B8', '#28a745', '#3D9970', '#ffc107'],
+        //        }],
+        //    },
+        //});
+
+    </script>
+
+    <script>
+        /*Prueba HelpDesk*/
+
+            //<div class="row">
+            //    Main node for this component
+            //    <div class="col-md-12">
+            //        <div class="card card-secondary shadow-none">
+            //            <div class="card-header">
+            //                <h3 class="card-title">Shadow </h3>
+            //                <div class="card-tools">
+            //                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+            //                        <i class="fas fa-minus"></i>
+            //                    </button>
+            //                </div>
+            //            </div>
+
+            //            <div class="card-body">
+            //                <div class="col-md-12" style="background-color: #6c757d;">
+
+            //                    <div class="card card-secondary card-outline direct-chat direct-chat-primary shadow-none">
+            //                        <div class="card-header" style="background-color: #6c757d;">
+            //                            <h3 class="card-title">Shadow - None</h3>
+            //                            <div class="card-tools">
+            //                                <span title="3 New Messages" class="badge bg-primary">3</span>
+            //                                <button type="button" class="btn btn-tool" data-card-widget="collapse">
+            //                                    <i class="fas fa-minus"></i>
+            //                                </button>
+            //                                <button type="button" class="btn btn-tool" title="Contacts" data-widget="chat-pane-toggle">
+            //                                    <i class="fas fa-comments"></i>
+            //                                </button>
+            //                                <button type="button" class="btn btn-tool" data-card-widget="remove">
+            //                                    <i class="fas fa-times"></i>
+            //                                </button>
+            //                            </div>
+            //                        </div>
+
+            //                        <div class="card-body">
+
+            //                            <div class="direct-chat-messages" style="background-color: #ffffff;">
+
+            //                                <div class="direct-chat-msg">
+            //                                    <div class="direct-chat-infos clearfix">
+            //                                        <span class="direct-chat-name float-left">Alexander Pierce</span>
+            //                                        <span class="direct-chat-timestamp float-right">23 Jan 2:00 pm</span>
+            //                                    </div>
+
+            //                                    <img class="direct-chat-img" src="../dist/img/user1-128x128.jpg" alt="Message User Image">
+
+            //                                        <div class="direct-chat-text">
+            //                                            Is this template really for free? That's unbelievable!
+            //                                        </div>
+
+            //                                                                    </div>
+
+
+            //                                    <div class="direct-chat-msg right">
+            //                                        <div class="direct-chat-infos clearfix">
+            //                                            <span class="direct-chat-name float-right">Sarah Bullock</span>
+            //                                            <span class="direct-chat-timestamp float-left">23 Jan 2:05 pm</span>
+            //                                        </div>
+
+            //                                        <img class="direct-chat-img" src="../dist/img/user3-128x128.jpg" alt="Message User Image">
+
+            //                                            <div class="direct-chat-text">
+            //                                                You better believe it!
+            //                                            </div>
+
+            //                                                                    </div>
+
+            //                                    </div>
+
+
+            //                                    <div class="direct-chat-contacts">
+            //                                        <ul class="contacts-list">
+            //                                            <li>
+            //                                                <a href="#">
+            //                                                    <img class="contacts-list-img" src="../dist/img/user1-128x128.jpg" alt="User Avatar">
+            //                                                        <div class="contacts-list-info">
+            //                                                            <span class="contacts-list-name">
+            //                                                                Count Dracula
+            //                                                                <small class="contacts-list-date float-right">2/28/2015</small>
+            //                                                            </span>
+            //                                                            <span class="contacts-list-msg">How have you been? I was...</span>
+            //                                                        </div>
+
+            //                                                                            </a>
+            //                                                                        </li>
+
+            //                                                                    </ul>
+
+            //                                                                </div>
+
+            //                                    </div>
+
+            //                                    <div class="card-footer">
+            //                                        <form action="#" method="post">
+            //                                            <div class="input-group">
+            //                                                <input type="text" name="message" placeholder="Type Message ..." class="form-control">
+            //                                                    <span class="input-group-append">
+            //                                                        <button type="submit" class="btn btn-primary">Send</button>
+            //                                                    </span>
+            //                                                                    </div>
+            //                                                                </form>
+            //                                                            </div>
+
+            //                                    </div>
+
+            //                                </div>
+
+            //                            </div>
+
+            //                            <div class="card-body">
+            //                                <ul class="todo-list ui-sortable" data-widget="todo-list" id="to-do">
+
+            //                                    <li class="done">
+            //                                        <span class="handle ui-sortable-handle">
+            //                                            <i class="fas fa-ellipsis-v"></i>
+            //                                            <i class="fas fa-ellipsis-v"></i>
+            //                                        </span>
+            //                                        <div class="icheck-primary d-inline ml-2">
+            //                                            <input type="checkbox" value="" name="todo2" id="todoCheck2" checked="">
+            //                                                <label for="todoCheck2"></label>
+            //                                                            </div>
+            //                                            <span class="text">Make the theme responsive</span>
+            //                                            <small class="badge badge-info"><i class="far fa-clock"></i> 4 hours</small>
+            //                                            <div class="tools">
+            //                                                <i class="fas fa-edit"></i>
+            //                                                <i class="fas fa-trash-o"></i>
+            //                                            </div>
+            //                                                        </li>
+            //                                        <li class="" style="">
+
+            //                                            <span class="handle ui-sortable-handle">
+            //                                                <i class="fas fa-ellipsis-v"></i>
+            //                                                <i class="fas fa-ellipsis-v"></i>
+            //                                            </span>
+
+            //                                            <div class="icheck-primary d-inline ml-2">
+            //                                                <input type="checkbox" value="" name="todo1" id="todoCheck1">
+            //                                                    <label for="todoCheck1"></label>
+            //                                                            </div>
+
+            //                                                <span class="text">Design a nice theme</span>
+
+            //                                                <small class="badge badge-danger"><i class="far fa-clock"></i> 2 mins</small>
+
+            //                                                <div class="tools">
+            //                                                    <i class="fas fa-edit"></i>
+            //                                                    <i class="fas fa-trash-o"></i>
+            //                                                </div>
+            //                                                        </li>
+
+            //                                            <li>
+            //                                                <span class="handle ui-sortable-handle">
+            //                                                    <i class="fas fa-ellipsis-v"></i>
+            //                                                    <i class="fas fa-ellipsis-v"></i>
+            //                                                </span>
+            //                                                <div class="icheck-primary d-inline ml-2">
+            //                                                    <input type="checkbox" value="" name="todo6" id="todoCheck6">
+            //                                                        <label for="todoCheck6"></label>
+            //                                                            </div>
+            //                                                    <span class="text">Let theme shine like a star</span>
+            //                                                    <small class="badge badge-secondary"><i class="far fa-clock"></i> 1 month</small>
+            //                                                    <div class="tools">
+            //                                                        <i class="fas fa-edit"></i>
+            //                                                        <i class="fas fa-trash-o"></i>
+            //                                                    </div>
+            //                                                        </li>
+            //                                                    </ul>
+
+            //                                            <div class="card-body">
+            //                                                <form action="#" method="post">
+            //                                                    <div class="input-group">
+            //                                                        <input type="text" name="message" id="taskText" placeholder="Type Message ..." class="form-control" onkeydown="if (event.keyCode == 13)
+            //                                        document.getElementById('add').click()">
+            //                                                            <span class="input-group-append">
+            //                                                                <button type="button" class="btn btn-primary" onclick="addTask()">Send</button>
+            //                                                            </span>
+            //                                                            </div>
+            //                                                        </form>
+
+            //                                                    <div class="add-task-container">
+            //                                                        <input type="text" maxlength="12" id="taskText2" placeholder="New Task..." onkeydown="if (event.keyCode == 13)
+            //                                        document.getElementById('add').click()">
+            //                                                            <button id="add" class="button add-button" onclick="addTask()">Add New Task</button>
+            //                                                        </div>
+
+            //                                                    </div>
+
+            //                                                </div>
+
+            //                                            </div>
+
+            //                                        </div>
+
+            //                                    </div>
+            //                                    </ul>
+            //                            </div>
+            //                        </div>
+            //                    </div>
+            //                </div>
+            //            </div>
+
+            //        </div>
+            //    </div>
+            //</div>
+
+    </script>
+
+</body>
+</html>

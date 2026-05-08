@@ -1,0 +1,378 @@
+﻿
+@{
+    Layout = "~/Views/Layout/MainLayout.cshtml";
+    var Name = Resources.views.mant_subcats;
+    var Title = Resources.views.subCategoria;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+
+    @* < CSS > *@
+    <!-- DataTables -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
+    <!-- SweetAlert2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/sweetalert2-theme-bootstrap-4/bootstrap-4.min.css">
+    <!-- Select2 -->
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="~/Content/AdminLTE/plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+    @* < CSS / >*@
+
+    @* < SCRIPTS > *@
+    <!-- DataTables  & Plugins -->
+    <script src="~/Content/AdminLTE/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jszip/jszip.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="~/Content/AdminLTE/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <!-- Select2 -->
+    <script src="~/Content/AdminLTE/plugins/select2/js/select2.full.min.js"></script>
+    <!-- jquery-validation -->
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/AdminLTE/plugins/jquery-validation/additional-methods.min.js"></script>
+    @* < SCRIPTS / >*@
+</head>
+<body class="hold-transition sidebar-mini">
+    <div class="wrapper">
+        <div class="content-wrapper">
+            <!-- Encabezado -->
+            <section class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1>@ViewBag.Name</h1>
+                        </div>
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li class="breadcrumb-item"><a href="@Url.Action("Manager","Inicio")">@Resources.views.inicio</a></li>
+                                <li class="breadcrumb-item active">@Resources.views.inventario</li>
+                                <li class="breadcrumb-item active">@Resources.views.subCategorias</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </section><!-- Encabezado -->
+            <!-- Muestra de Categorías -->
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="overlay-wrapper">
+                                        <div id="spn_tbl_subcategory" class="overlay justify-content-center">
+                                            <i class="fas fa-3x fa-sync-alt fa-spin"></i>
+                                            <div class="text-bold pt-2">@Resources.views.cargando</div>
+                                        </div>
+                                        <div class="col-md-12 mb-3" style="overflow: auto;">
+                                            <div class="row-cols-md-6">
+                                                <button type="button" class="btn btn-primary float-right fa-pull-right" onclick="onClickBtnAddSubCategory()"><i class="fa fa-plus"> </i> @Resources.views.agregar</button>
+                                            </div>
+                                        </div>
+                                        <div id="tbl_content_subcategory" class="dataTables_wrapper dt-bootstrap4">
+                                            <table class="table table-bordered table-striped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>@Resources.views.cod</th>
+                                                        <th>@Resources.views.descripcion</th>
+                                                        <th>@Resources.views.categ</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section> <!-- Muestra de Categorías -->
+            <!-- Modal -->
+            <div id="modal_subcategory" class="modal fade" role="dialog">
+                <div class="modal-dialog">
+                    <!-- Modal content-->
+                    <form id="form_modal_subcategory" class="modal-content">
+                        <!-- Spinner Modal -->
+                        <div id="spn_modal_subcategory" class="overlay">
+                            <i class="fas fa-2x fa-sync fa-spin"></i>
+                        </div><!-- Spinner Modal -->
+                        <!-- Encabezado Modal -->
+                        <div class="modal-header text-center">
+                            <h4 id="title_modal_subcategory" class="modal-title"></h4>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div><!-- Encabezado Modal -->
+                        <!-- Cuerpo Modal -->
+                        <div class="modal-body" style="overflow: auto">
+                            <input type="hidden" id="subID" />
+                            <div class="form-group">
+                                <label for="subCode" class="col-sm-2 control-label">@Resources.views.cod</label>
+                                <input id="subCode" name="subCode" type="text" class="form-control" placeholder="@Resources.views.ingresar_cod" />
+                            </div>
+                            <div class="form-group">
+                                <label for="subDesc" class="col-sm-2 control-label">@Resources.views.descripcion</label>
+                                <input id="subDesc" name="subDesc" type="text" class="form-control" placeholder="@Resources.views.ingresar_desc" />
+                            </div>
+                            <div class="form-group">
+                                <label for="sub_categoria" class="col-sm-2 control-label">@Resources.views.categ</label>
+                                <select id="sub_categoria" name="sub_categoria" class="form-control select2bs4" style="width: 100%;"></select>
+                            </div>
+                        </div><!-- Cuerpo Modal -->
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary" onclick="onClickBtnNewSubCategory()"> <i class="fa fa-plus"></i> @Resources.views.nuevo</button>
+                            <button type="submit" class="btn btn-success"> <i class="fa fa-save"></i> @Resources.views.guardar</button>
+                            <button type="button" class="btn btn-danger" data-dismiss="modal"> <i class="fa fa-ban"></i> @Resources.views.cerrar</button>
+                        </div>
+                    </form><!-- Modal content-->
+                </div>
+            </div><!-- Modal -->
+        </div>
+    </div>
+
+    <script>
+        var url_getAllSubCategories = '@Url.Action("GetAll", "Subcategorias")'; // URL del evento obtener SubCategorías
+        var url_saveSubCategory = '@Url.Action("Save", "Subcategorias")'; // URL del evento guardar subcategorías
+        var list_subs = [], list_categs = [];
+        var elements = { div_table: "tbl_content_subcategory", spn_table: "spn_tbl_subcategory", spn_modal: "spn_modal_subcategory", modal: "modal_subcategory", title_modal: "title_modal_subcategory", form: "form_modal_subcategory" };
+        var Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 4000 }); // Variable para mostrar los mensajes.
+        var select_categs; // Componente Select de categorías
+        var rules = {
+            subCode: { required: true, maxlength: 17 },
+            subDesc: { required: true, maxlength: 80 },
+            sub_categoria: { required: true, number: true }
+        }; // Roles que cumplirán los componentes del formulario
+        var messages = {
+            subCode: {
+                required: "@Resources.messages.validacion_cod_req",
+                maxlength: "@Resources.messages.validacion_cod_max"
+            },
+            subDesc: {
+                required: "@Resources.messages.validacion_desc_req",
+                maxlength: "@Resources.messages.validacion_desc_maxLen"
+            },
+            sub_categoria: { required: "@Resources.messages.validacion_categ_req" }
+        }; // Ménsajes de error para el formulario
+    </script>
+
+    <script>
+        $(function () {
+            $("#" + elements.spn_modal).hide();
+            fillMenuItemsLayout();
+            StartLoadTable(elements.div_table, true);
+            EndLoadTable("@Name", elements.div_table, true);
+            getAllSubCategories();
+            setValidationForm();
+        });
+
+        function findCategory(ID) {
+            for (var i = 0; i < list_categs.length; i++)
+                if (list_categs[i].ID === ID)
+                    return list_categs[i];
+            return null;
+        }
+
+        function findSubCategory(ID) {
+            for (var i = 0; i < list_categs.length; i++)
+                if (list_subs[i].ID === ID)
+                    return list_subs[i];
+            return null;
+        }
+
+        /** Marca los items del menú del MainLayout para que se muestre en qué parte del menú se encuentra*/
+        function fillMenuItemsLayout() {
+            openMenu(["#nav-item-inventarios"]);
+            activeItemMenu([".nav-item-inventarios", "#nav-link-inventarios-subcategorias"])
+        }
+
+        /** Carga el DataTable con la lista de subcategorias */
+        function fillTableSubCategories() {
+            try {
+                StartLoadTable(elements.div_table, true);
+                $("#" + elements.spn_table).show();
+                if (list_subs) {
+                    $("#" + elements.div_table + " > table > tbody").html("");
+                    list_subs.forEach(function (d) {
+                        var row = $("<tr />"), categ = findCategory(d.CategoryID);;
+                        $("#" + elements.div_table + " > table").append(row);
+                        row.append($("<td> " + d.Code + "</td>"));
+                        row.append($("<td> " + d.Description + "</td>"));
+                        row.append($("<td> " + (categ ? categ.Name : "-@Resources.views.no_def-" ) + "</td>"));
+                        var title = "@Resources.views.editar @Resources.views.categ";
+                        row.append($("<td><button class='btn btn-primary' title='" + title + "' data-toggle='modal' data-target='' onClick='onClickBtnEditSubCategory(" + d.ID + ")'> <i class='fa fa-edit' aria-hidden='true'></i></button></td>"));
+                    });
+                } else Toast.fire({ icon: 'warning', title: '@Resources.messages.msj_lista_vacia' });
+                EndLoadTable("@ViewBag.Head", elements.div_table, true);
+                $("#" + elements.spn_table).hide();
+            } catch (e) { error(e, "@Resources.messages.error_llenar_registros"); }
+        }
+
+        /** Se encarga de cargar el componente select con el plugin select2bs4 */
+        function fillSelect2Categories() {
+            var aux = $("<p/>")
+            aux.html('@Resources.views.selec_categ');
+            select_categs = $('#sub_categoria').select2({
+                placeholder: aux.text(),
+                data: getCategoriesToDataSelect2(),
+                theme: 'bootstrap4'
+            });
+        }
+
+        /** Clona la lista de categorías a otra lista data con elementos de {id, text} para el select2bs4*/
+        function getCategoriesToDataSelect2() {
+            return list_categs.map(d => { return { 'id': d.ID, 'text': d.Name } });
+        }
+
+        /** Método encargado de consultar al servidor por la lista de subcategorias y categorías*/
+        async function getAllSubCategories() {
+            try {
+                await $.get(url_getAllSubCategories).done(async function (data) {
+                    if (data.Status) {
+                        list_categs = data.Result.list_categories;
+                        list_subs = data.Result.list_subCategories;
+                        await fillTableSubCategories();
+                        await fillSelect2Categories();
+                    } else {
+                        error(data.InternalMessage, data.Message);
+                        $("#" + elements.spn_table).hide();
+                    }
+                }).fail(function (data) { error(data, "@Resources.messages.error_obt_regs"); });
+            } catch (e) { error(e, "@Resources.messages.error_obt_regs"); }
+        }
+
+        function getSubCategoryFromModal() {
+            return {
+                ID: $("#subID").val(),
+                Code: $("#subCode").val(),
+                Description: $("#subDesc").val(),
+                CategoryID: select_categs.val(),
+            }
+        }
+
+        function setSubCategoryInModal(sub) {
+            try {
+                $("#subID").val(sub.ID);
+                $("#subCode").val(sub.Code);
+                $("#subDesc").val(sub.Description);
+                select_categs.val(sub.CategoryID).trigger('change');
+            } catch (e) {
+                error(e, "@Resources.messages.error_mostrar_reg_edit");
+            }
+        }
+
+        /** Settea las configuraciones de validación al formulario */
+        function setValidationForm() {
+            $.validator.setDefaults({
+                submitHandler: function () {
+                    if (!validateCode()) onActionSaveSubCategory();
+                    else error("CODE DUPLICADO", "@Resources.messages.error_cod_igual");
+                }
+            });
+            $('#' + elements.form).validate({
+                rules: rules, messages: messages, errorElement: 'span',
+                errorPlacement: function (er, element) {
+                    er.addClass('invalid-feedback ml-2');
+                    element.closest('.form-group').append(er);
+                    error("Faltan campos", "@Resources.messages.validacion_campos_requeridos");
+                },
+                highlight: function (element, errorClass, validClass) { $(element).addClass('is-invalid'); },
+                unhighlight: function (element, errorClass, validClass) { $(element).removeClass('is-invalid'); }
+            });
+        }
+
+        function onClickBtnAddSubCategory() {
+            if ($("#subID").val() !== "") openModal(false);
+            else openModal(true);
+        }
+
+        function onClickBtnEditSubCategory(ID) {
+            var sub = findSubCategory(ID);
+            if (sub) {
+                setSubCategoryInModal(sub);
+                openModal(false);
+            } else Toast.fire({ icon: "warning", title: "@Resources.messages.error_reg_edit_inval" });
+        }
+
+        function onClickBtnNewSubCategory() {
+            Swal.fire({
+                title: "@Resources.messages.msj_continuar", html: "@Resources.messages.msj_campos_limpiar", icon: 'warning', showCancelButton: true,
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $("#" + elements.form + " input").val("");
+                    $("#sub_categoria").val("").trigger('change');
+                    openModal(true);
+                }
+            });
+        }
+
+        async function onActionSaveSubCategory() {
+            $("#" + elements.spn_modal).show();
+            try {
+                var sub = getSubCategoryFromModal();
+                if (sub !== null) {
+                    await $.ajax({
+                        url: url_saveSubCategory, type: 'post', dataType: 'json', contentType: 'application/json',
+                        data: JSON.stringify({ subCategory: sub }), cache: false,
+                        success: async function (data) {
+                            if (data.Status) {
+                                Toast.fire({ icon: 'success', title: data.Message });
+                                $("#" + elements.spn_table).hide();
+                                await getAllSubCategories();
+                                onClickBtnEditSubCategory(data.Result);
+                            } else error(data.InternalMessage, data.Message);
+                            $("#" + elements.spn_modal).hide();
+                        },
+                        error: function (xhr, ajaxOptions, thrownError) {
+                            error(thrownError, "@Resources.messages.error_guardar");
+                            $("#" + elements.spn_modal).hide();
+                        }
+                    });
+                } else {
+                    error("Descuento a guardar: NULL", "@Resources.messages.error_accion");
+                    $("#" + elements.spn_modal).hide();
+                }
+            } catch (e) {
+                error(e, "@Resources.messages.error_intento_guardar");
+                $("#" + elements.spn_modal).hide();
+            }
+        }
+
+        function validateCode() {
+            flag = null;
+            for (var i = 0; i < list_subs.length; i++)
+                if (list_subs[i].Code === $("#subCode").val())
+                    flag = list_subs[i];
+            if (flag != null && $("#subID").val() != flag.ID) return true;
+            return false;
+        }
+
+        /** Abre la modal */
+        function openModal(is_new) {
+            $("#" + elements.title_modal).html((is_new ? "@Resources.views.agregar" : "@Resources.views.editar") + " @Resources.views.categ");
+            $('#' + elements.modal).modal({ backdrop: 'static', keyboard: false });
+        }
+
+        /** Muestra un error, recibe excepcion para mostrar en consola y el mensaje para el usuario. */
+        function error(e, msj) {
+            Toast.fire({ icon: 'error', title: msj });
+            console.error(e);
+        }
+    </script>
+</body>
+</html>

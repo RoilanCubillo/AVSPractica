@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ReferenceGroup xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ID="dc69fba9-134f-4788-b090-134993ab6720" xmlns="urn:schemas-microsoft-com:xml-wcfservicemap">
+  <ClientOptions>
+    <GenerateAsynchronousMethods>false</GenerateAsynchronousMethods>
+    <EnableDataBinding>true</EnableDataBinding>
+    <ExcludedTypes />
+    <ImportXmlTypes>false</ImportXmlTypes>
+    <GenerateInternalTypes>false</GenerateInternalTypes>
+    <GenerateMessageContracts>false</GenerateMessageContracts>
+    <NamespaceMappings />
+    <CollectionMappings />
+    <GenerateSerializableTypes>true</GenerateSerializableTypes>
+    <Serializer>Auto</Serializer>
+    <UseSerializerForFaults>true</UseSerializerForFaults>
+    <ReferenceAllAssemblies>true</ReferenceAllAssemblies>
+    <ReferencedAssemblies />
+    <ReferencedDataContractTypes />
+    <ServiceContractMappings />
+  </ClientOptions>
+  <MetadataSources>
+    <MetadataSource Address="http://localhost:49272/UltraERPService.svc" Protocol="http" SourceId="1" />
+  </MetadataSources>
+  <Metadata>
+    <MetadataFile FileName="UltraERPService1.xsd" MetadataType="Schema" ID="658fe364-1431-4ba0-b1fc-8998891326c3" SourceId="1" SourceUrl="http://localhost:49272/UltraERPService.svc?xsd=xsd1" />
+    <MetadataFile FileName="UltraERPService2.wsdl" MetadataType="Wsdl" ID="4f1c88dc-8693-48c3-bec5-319c6af4cb7c" SourceId="1" SourceUrl="http://localhost:49272/UltraERPService.svc?wsdl" />
+    <MetadataFile FileName="UltraERPService1.disco" MetadataType="Disco" ID="8b5f1a0a-afe7-4ee9-90b9-fff300d9d5d1" SourceId="1" SourceUrl="http://localhost:49272/UltraERPService.svc?disco" />
+    <MetadataFile FileName="UltraERPService6.xsd" MetadataType="Schema" ID="fc44f452-3d12-4a44-b48a-fcf6c838087e" SourceId="1" SourceUrl="http://localhost:49272/UltraERPService.svc?xsd=xsd2" />
+    <MetadataFile FileName="UltraERPService7.xsd" MetadataType="Schema" ID="bab1a6db-a6f7-47a7-833d-2554b3741dc4" SourceId="1" SourceUrl="http://localhost:49272/UltraERPService.svc?xsd=xsd4" />
+    <MetadataFile FileName="UltraERPService8.xsd" MetadataType="Schema" ID="5314f3cb-d2dd-45bb-b2e9-eda28a421333" SourceId="1" SourceUrl="http://localhost:49272/UltraERPService.svc?xsd=xsd3" />
+    <MetadataFile FileName="UltraERPService10.xsd" MetadataType="Schema" ID="096435df-5e3c-4083-b744-0433dadd5df5" SourceId="1" SourceUrl="http://localhost:49272/UltraERPService.svc?xsd=xsd0" />
+  </Metadata>
+  <Extensions>
+    <ExtensionFile FileName="configuration91.svcinfo" Name="configuration91.svcinfo" />
+    <ExtensionFile FileName="configuration.svcinfo" Name="configuration.svcinfo" />
+  </Extensions>
+</ReferenceGroup>
