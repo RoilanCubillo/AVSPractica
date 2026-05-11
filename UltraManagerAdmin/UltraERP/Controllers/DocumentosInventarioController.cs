@@ -12,6 +12,13 @@ namespace UltraERP.Controllers
     public class DocumentosInventarioController : Controller
     {
         private static readonly object SyncRoot = new object();
+        private static readonly List<ProveedorCatalogo> Proveedores = new List<ProveedorCatalogo>
+        {
+            new ProveedorCatalogo("00129", "CONEJO DORADO S.R.L.", 30),
+            new ProveedorCatalogo("00210", "Distribuidora Central", 15),
+            new ProveedorCatalogo("00345", "Comercial La Union", 45)
+        };
+
         private static readonly List<DocumentoInventarioViewModel> Documentos = new List<DocumentoInventarioViewModel>
         {
             CreateDocumento(
@@ -175,35 +182,28 @@ namespace UltraERP.Controllers
                 if (model == null)
                     return Json(new JsonResponse("Datos invalidos.", "No se recibio el encabezado del documento.", null, false));
 
-                if (String.IsNullOrWhiteSpace(model.TipoDocumento) ||
-                    String.IsNullOrWhiteSpace(model.ProveedorBusqueda) ||
-                    String.IsNullOrWhiteSpace(model.PersonaSolicita))
+                var validationMessage = ValidateEncabezado(model, accion);
+                if (!String.IsNullOrWhiteSpace(validationMessage))
                 {
-                    return Json(new JsonResponse("Campos requeridos.", "Complete tipo de documento, proveedor y persona solicita.", null, false));
-                }
-
-                if (String.Equals(model.TipoDocumento, "Salida de Inventario", StringComparison.OrdinalIgnoreCase) &&
-                    (String.IsNullOrWhiteSpace(model.TipoSalida) || String.IsNullOrWhiteSpace(model.JustificacionSalida)))
-                {
-                    return Json(new JsonResponse("Campos requeridos.", "Complete tipo y justificacion de salida.", null, false));
-                }
-
-                if (String.Equals(model.TipoDocumento, "Entrada de Inventario", StringComparison.OrdinalIgnoreCase) &&
-                    String.IsNullOrWhiteSpace(model.JustificacionEntrada))
-                {
-                    return Json(new JsonResponse("Campos requeridos.", "Complete la justificacion de entrada.", null, false));
+                    return Json(new JsonResponse("Validacion de encabezado.", validationMessage, null, false));
                 }
 
                 lock (SyncRoot)
                 {
                     var detalleLineas = ParseDetalleLineas(model.DetalleLineasJson);
+                    var detalleValidationMessage = ValidateDetalleLineas(detalleLineas);
+                    if (!String.IsNullOrWhiteSpace(detalleValidationMessage))
+                    {
+                        return Json(new JsonResponse("Validacion de detalle.", detalleValidationMessage, null, false));
+                    }
+
                     var lineasEspeciales = BuildLineasEspeciales(detalleLineas);
                     var nextId = Documentos.Count == 0 ? 1 : Documentos.Max(x => x.ID) + 1;
 
                     var documento = new DocumentoInventarioViewModel
                     {
                         ID = nextId,
-                        Numero = String.IsNullOrWhiteSpace(model.NumeroDocumento) ? GetNextNumero(model.TipoDocumento) : model.NumeroDocumento,
+                        Numero = GetNextNumero(model.TipoDocumento),
                         Tipo = ToListTipo(model.TipoDocumento),
                         Proveedor = !String.IsNullOrWhiteSpace(model.NombreProveedor) ? model.NombreProveedor : model.ProveedorBusqueda,
                         Producto = "",
@@ -225,7 +225,12 @@ namespace UltraERP.Controllers
                         ResumenAuditoria = BuildResumenAuditoria(lineasEspeciales)
                     };
 
-                    ApplyEstadoFromAccion(documento, accion);
+                    var transitionMessage = ApplyEstadoFromAccion(documento, accion);
+                    if (!String.IsNullOrWhiteSpace(transitionMessage))
+                    {
+                        return Json(new JsonResponse("Cambio de estado no permitido.", transitionMessage, null, false));
+                    }
+
                     documento.Producto = BuildResumenProducto(detalleLineas, lineasEspeciales);
 
                     Documentos.Add(documento);
@@ -320,14 +325,21 @@ namespace UltraERP.Controllers
                     var nextId = Documentos.Max(x => x.ID) + 1;
                     var copy = Clone(source);
                     copy.ID = nextId;
-                    copy.Numero = "DOC-" + nextId.ToString("000000");
+                    copy.Numero = GetNextNumero(copy.Tipo);
                     copy.Estado = "Borrador";
+                    copy.FacturaRef = "";
                     copy.FechaSolicitud = DateTime.Today;
                     copy.FechaEntrega = null;
                     copy.FechaAplicacion = null;
+                    copy.LineasEspeciales = BuildLineasEspeciales(copy.DetalleLineas);
+                    copy.CantidadLineasDetalle = copy.DetalleLineas == null ? 0 : copy.DetalleLineas.Count;
+                    copy.CantidadLineasEspeciales = copy.LineasEspeciales.Count;
+                    copy.TotalLineasEspeciales = copy.LineasEspeciales.Sum(x => x.Cantidad * x.Costo);
+                    copy.ResumenAuditoria = BuildResumenAuditoria(copy.LineasEspeciales);
+                    copy.Producto = BuildResumenProducto(copy.DetalleLineas, copy.LineasEspeciales);
                     Documentos.Add(copy);
 
-                    return Json(new JsonResponse("", "Documento duplicado correctamente.", ToGrid(copy), true), JsonRequestBehavior.AllowGet);
+                    return Json(new JsonResponse("", "Documento duplicado como borrador. Revise factura y fechas antes de enviarlo.", ToGrid(copy), true), JsonRequestBehavior.AllowGet);
                 }
             }
             catch (Exception e)
@@ -347,21 +359,10 @@ namespace UltraERP.Controllers
                     if (documento == null)
                         return Json(new JsonResponse("Documento no encontrado.", "No se encontro el documento seleccionado.", null, false), JsonRequestBehavior.AllowGet);
 
-                    switch ((accion ?? "").ToLowerInvariant())
+                    var transitionMessage = ApplyEstadoFromAccion(documento, accion);
+                    if (!String.IsNullOrWhiteSpace(transitionMessage))
                     {
-                        case "enviar":
-                            documento.Estado = "Enviada";
-                            break;
-                        case "recibir":
-                            documento.Estado = "Recibida";
-                            documento.FechaEntrega = DateTime.Today;
-                            break;
-                        case "cerrar":
-                            documento.Estado = "Cerrada";
-                            documento.FechaAplicacion = DateTime.Today;
-                            break;
-                        default:
-                            return Json(new JsonResponse("Accion no valida.", "La accion solicitada no es valida.", null, false), JsonRequestBehavior.AllowGet);
+                        return Json(new JsonResponse("Cambio de estado no permitido.", transitionMessage, null, false), JsonRequestBehavior.AllowGet);
                     }
 
                     return Json(new JsonResponse("", "Documento actualizado correctamente.", ToGrid(documento), true), JsonRequestBehavior.AllowGet);
@@ -616,6 +617,14 @@ namespace UltraERP.Controllers
                         var descuentoPorcentaje = x.DescuentoPorcentaje < 0 ? 0 : x.DescuentoPorcentaje;
                         var descuentoMonto = x.DescuentoMonto < 0 ? 0 : x.DescuentoMonto;
                         var impuestoPorcentaje = x.ImpuestoPorcentaje < 0 ? 0 : x.ImpuestoPorcentaje;
+                        var subtotal = cantidad * costoUnitario;
+                        descuentoPorcentaje = Math.Min(descuentoPorcentaje, 100m);
+                        if (descuentoMonto <= 0 && descuentoPorcentaje > 0)
+                        {
+                            descuentoMonto = subtotal * (descuentoPorcentaje / 100m);
+                        }
+
+                        descuentoMonto = Math.Min(descuentoMonto, subtotal);
                         return new DocumentoDetalleLineaViewModel
                         {
                             Codigo = (x.Codigo ?? "").Trim(),
@@ -637,6 +646,42 @@ namespace UltraERP.Controllers
             {
                 return new List<DocumentoDetalleLineaViewModel>();
             }
+        }
+
+        private static string ValidateDetalleLineas(List<DocumentoDetalleLineaViewModel> detalleLineas)
+        {
+            if (detalleLineas == null || detalleLineas.Count == 0)
+                return "Agregue al menos una linea de producto.";
+
+            for (var i = 0; i < detalleLineas.Count; i++)
+            {
+                var linea = detalleLineas[i];
+                var rowLabel = "Linea " + (i + 1).ToString(CultureInfo.InvariantCulture) + ": ";
+
+                if (String.IsNullOrWhiteSpace(linea.Codigo) || String.IsNullOrWhiteSpace(linea.Descripcion))
+                    return rowLabel + "complete codigo y descripcion.";
+
+                if (linea.Cantidad <= 0)
+                    return rowLabel + "la cantidad debe ser mayor a cero.";
+
+                if (!linea.Regalia && linea.CostoUnitario <= 0)
+                    return rowLabel + "el costo unitario debe ser mayor a cero.";
+
+                if (linea.DescuentoPorcentaje < 0 || linea.DescuentoPorcentaje > 100)
+                    return rowLabel + "el descuento porcentual debe estar entre 0 y 100.";
+
+                var subtotal = linea.Cantidad * linea.CostoUnitario;
+                if (linea.DescuentoMonto < 0 || linea.DescuentoMonto > subtotal)
+                    return rowLabel + "el descuento monto no puede superar el subtotal.";
+
+                if (linea.ImpuestoPorcentaje < 0 || linea.ImpuestoPorcentaje > 100)
+                    return rowLabel + "el impuesto debe estar entre 0 y 100.";
+
+                if (linea.Regalia && String.IsNullOrWhiteSpace(linea.Observacion))
+                    return rowLabel + "las regalias requieren observacion para auditoria.";
+            }
+
+            return "";
         }
 
         private static List<DocumentoLineaEspecialViewModel> BuildLineasEspeciales(List<DocumentoDetalleLineaViewModel> detalleLineas)
@@ -679,30 +724,135 @@ namespace UltraERP.Controllers
         private static decimal CalculateTotalLinea(decimal cantidad, decimal costoUnitario, decimal descuentoPorcentaje, decimal descuentoMonto, decimal impuestoPorcentaje)
         {
             var subtotal = cantidad * costoUnitario;
-            var descuentoCalculado = subtotal * (descuentoPorcentaje / 100m);
-            var baseImponible = Math.Max(0m, subtotal - descuentoCalculado - descuentoMonto);
+            var descuentoCalculado = descuentoMonto > 0 ? descuentoMonto : subtotal * (descuentoPorcentaje / 100m);
+            var baseImponible = Math.Max(0m, subtotal - descuentoCalculado);
             var impuesto = baseImponible * (impuestoPorcentaje / 100m);
             return Math.Round(baseImponible + impuesto, 2);
         }
 
-        private static void ApplyEstadoFromAccion(DocumentoInventarioViewModel documento, string accion)
+        private static string ValidateEncabezado(DocumentoInventarioRegistroViewModel model, string accion)
         {
-            switch ((accion ?? "").Trim())
+            if (String.IsNullOrWhiteSpace(model.TipoDocumento))
+                return "Seleccione el tipo de documento.";
+
+            if (model.FechaSolicitud == DateTime.MinValue)
+                return "Ingrese una fecha de solicitud valida.";
+
+            if (model.FechaEntrega.HasValue && model.FechaEntrega.Value.Date < model.FechaSolicitud.Date)
+                return "La fecha de entrega no puede ser menor a la fecha de solicitud.";
+
+            if (model.FechaAplicacion.HasValue && model.FechaAplicacion.Value.Date < model.FechaSolicitud.Date)
+                return "La fecha de aplicacion no puede ser menor a la fecha de solicitud.";
+
+            if (String.IsNullOrWhiteSpace(model.PersonaSolicita))
+                return "Ingrese la persona que solicita el documento.";
+
+            var proveedor = FindProveedor(model);
+            if (proveedor == null)
+                return "Seleccione un proveedor valido desde la busqueda.";
+
+            model.CodigoProveedor = proveedor.Codigo;
+            model.NombreProveedor = proveedor.Nombre;
+            model.PlazoCredito = proveedor.PlazoCredito;
+
+            if (String.Equals(model.TipoDocumento, "Salida de Inventario", StringComparison.OrdinalIgnoreCase) &&
+                (String.IsNullOrWhiteSpace(model.TipoSalida) || String.IsNullOrWhiteSpace(model.JustificacionSalida)))
+                return "Complete tipo y justificacion de salida.";
+
+            if (String.Equals(model.TipoDocumento, "Entrada de Inventario", StringComparison.OrdinalIgnoreCase) &&
+                String.IsNullOrWhiteSpace(model.JustificacionEntrada))
+                return "Complete la justificacion de entrada.";
+
+            var normalizedAction = NormalizeAccion(accion);
+            if ((normalizedAction == "Enviar" || normalizedAction == "Recibir" || normalizedAction == "Cerrar") &&
+                String.IsNullOrWhiteSpace(model.FacturaRef))
+                return "Ingrese el numero de factura o referencia antes de avanzar el documento.";
+
+            return "";
+        }
+
+        private static ProveedorCatalogo FindProveedor(DocumentoInventarioRegistroViewModel model)
+        {
+            var codigo = NormalizeLookup(model.CodigoProveedor);
+            var nombre = NormalizeLookup(model.NombreProveedor);
+            var busqueda = NormalizeLookup(model.ProveedorBusqueda);
+
+            return Proveedores.FirstOrDefault(x =>
+                NormalizeLookup(x.Codigo) == codigo ||
+                NormalizeLookup(x.Nombre) == nombre ||
+                NormalizeLookup(x.Key) == busqueda ||
+                NormalizeLookup(x.Codigo) == busqueda ||
+                NormalizeLookup(x.Nombre) == busqueda);
+        }
+
+        private static string NormalizeLookup(string value)
+        {
+            return (value ?? "").Trim().ToUpperInvariant();
+        }
+
+        private static string ApplyEstadoFromAccion(DocumentoInventarioViewModel documento, string accion)
+        {
+            var normalizedAction = NormalizeAccion(accion);
+            var estadoActual = documento.Estado ?? "Borrador";
+
+            if (normalizedAction == "Borrador")
             {
-                case "Enviar":
-                    documento.Estado = "Enviada";
-                    break;
-                case "Recibir":
-                    documento.Estado = "Recibida";
-                    documento.FechaEntrega = documento.FechaEntrega ?? DateTime.Today;
-                    break;
-                case "Cerrar":
-                    documento.Estado = "Cerrada";
-                    documento.FechaAplicacion = documento.FechaAplicacion ?? DateTime.Today;
-                    break;
+                if (!String.Equals(estadoActual, "Borrador", StringComparison.OrdinalIgnoreCase))
+                    return "Solo los documentos en Borrador pueden guardarse como borrador.";
+
+                documento.Estado = "Borrador";
+                return "";
+            }
+
+            if (normalizedAction == "Enviar")
+            {
+                if (!String.Equals(estadoActual, "Borrador", StringComparison.OrdinalIgnoreCase))
+                    return "Solo los documentos en Borrador pueden enviarse.";
+
+                documento.Estado = "Enviada";
+                return "";
+            }
+
+            if (normalizedAction == "Recibir")
+            {
+                if (!String.Equals(estadoActual, "Enviada", StringComparison.OrdinalIgnoreCase) &&
+                    !String.Equals(estadoActual, "Parcial", StringComparison.OrdinalIgnoreCase))
+                    return "Solo los documentos Enviados o Parciales pueden recibirse.";
+
+                documento.Estado = "Recibida";
+                documento.FechaEntrega = documento.FechaEntrega ?? DateTime.Today;
+                return "";
+            }
+
+            if (normalizedAction == "Cerrar")
+            {
+                if (!String.Equals(estadoActual, "Recibida", StringComparison.OrdinalIgnoreCase))
+                    return "Solo los documentos Recibidos pueden cerrarse.";
+
+                documento.Estado = "Cerrada";
+                documento.FechaAplicacion = documento.FechaAplicacion ?? DateTime.Today;
+                return "";
+            }
+
+            return "La accion solicitada no es valida.";
+        }
+
+        private static string NormalizeAccion(string accion)
+        {
+            switch ((accion ?? "").Trim().ToLowerInvariant())
+            {
+                case "enviar":
+                    return "Enviar";
+                case "recibir":
+                case "aplicar":
+                    return "Recibir";
+                case "cerrar":
+                    return "Cerrar";
+                case "borrador":
+                case "":
+                    return "Borrador";
                 default:
-                    documento.Estado = "Borrador";
-                    break;
+                    return "";
             }
         }
 
@@ -724,13 +874,46 @@ namespace UltraERP.Controllers
 
         private static string GetNextNumero(string tipoDocumento)
         {
+            var prefix = GetNumeroPrefix(tipoDocumento);
+            var seed = GetNumeroSeed(tipoDocumento);
+            var max = seed - 1;
+
+            lock (SyncRoot)
+            {
+                foreach (var numero in Documentos.Select(x => x.Numero))
+                {
+                    if (String.IsNullOrWhiteSpace(numero) ||
+                        !numero.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    int value;
+                    if (Int32.TryParse(numero.Substring(prefix.Length), out value) && value > max)
+                    {
+                        max = value;
+                    }
+                }
+            }
+
+            return prefix + (max + 1).ToString("00000000", CultureInfo.InvariantCulture);
+        }
+
+        private static string GetNumeroPrefix(string tipoDocumento)
+        {
             if (String.Equals(tipoDocumento, "Entrada de Inventario", StringComparison.OrdinalIgnoreCase))
-                return "EN00000125";
+                return "EN";
 
             if (String.Equals(tipoDocumento, "Salida de Inventario", StringComparison.OrdinalIgnoreCase))
-                return "SA00000125";
+                return "SA";
 
-            return "PO00040337";
+            return "PO";
+        }
+
+        private static int GetNumeroSeed(string tipoDocumento)
+        {
+            if (String.Equals(tipoDocumento, "Compra", StringComparison.OrdinalIgnoreCase))
+                return 40337;
+
+            return 125;
         }
 
         private static string ToListTipo(string tipoDocumento)
@@ -807,6 +990,21 @@ namespace UltraERP.Controllers
                 Value = x,
                 Selected = String.Equals(x, selected, StringComparison.OrdinalIgnoreCase)
             });
+        }
+
+        private class ProveedorCatalogo
+        {
+            public ProveedorCatalogo(string codigo, string nombre, int plazoCredito)
+            {
+                Codigo = codigo;
+                Nombre = nombre;
+                PlazoCredito = plazoCredito;
+            }
+
+            public string Codigo { get; private set; }
+            public string Nombre { get; private set; }
+            public int PlazoCredito { get; private set; }
+            public string Key { get { return Codigo + " - " + Nombre; } }
         }
     }
 }

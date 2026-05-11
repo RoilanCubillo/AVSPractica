@@ -264,8 +264,11 @@
         }
 
         function getHistoricoAuditoriaBadge(documento) {
-            if (!documento.CantidadLineasEspeciales) return "<span class='status-badge draft'>Sin linea</span>";
-            return "<span class='audit-pill'>" + escapeHtml(documento.ResumenAuditoria || "Lineas auditadas") + "</span>";
+            if (!documento.CantidadLineasEspeciales) {
+                return "<span class='status-badge draft'>" + formatNumber(documento.CantidadLineasDetalle || 0) + " lineas</span>";
+            }
+
+            return "<span class='audit-pill'>" + escapeHtml(documento.ResumenAuditoria || "Regalias auditadas") + "</span>";
         }
 
         function renderHistoricoHeaderBadges(documento) {
@@ -285,14 +288,18 @@
                 { label: "Producto", value: documento.Producto || "-" },
                 { label: "Factura Ref.", value: documento.FacturaRef || "-" },
                 { label: "Fecha Aplicacion", value: documento.FechaAplicacion || "-" },
-                { label: "Usuario", value: documento.PersonaSolicita || "-" }
+                { label: "Usuario", value: documento.PersonaSolicita || "-" },
+                { label: "Lineas", value: documento.CantidadLineasDetalle || 0 },
+                { label: "Regalias", value: documento.CantidadLineasEspeciales || 0 }
             ];
 
             $("#hist_view_summary").html(renderViewGrid(items));
         }
 
         function renderHistoricoAuditoria(documento) {
-            var html = "<div class='document-view-callout'>" + escapeHtml(documento.ResumenAuditoria || "Sin lineas especiales") + "</div>";
+            var html = "<div class='document-view-callout'>" +
+                escapeHtml(buildHistoricoAuditSummaryText(documento)) +
+                "</div>";
 
             if (documento.LineasEspeciales && documento.LineasEspeciales.length) {
                 html += "<div class='document-view-subsection'><h4>Lineas especiales</h4>" +
@@ -304,6 +311,13 @@
             }
 
             $("#hist_view_audit").html(html);
+        }
+
+        function buildHistoricoAuditSummaryText(documento) {
+            var lineas = Number(documento.CantidadLineasDetalle || 0);
+            var especiales = Number(documento.CantidadLineasEspeciales || 0);
+            if (!especiales) return lineas + " lineas aplicadas. Sin regalias auditables.";
+            return lineas + " lineas aplicadas. " + (documento.ResumenAuditoria || (especiales + " regalias auditables")) + ".";
         }
 
         function renderHistoricoTipoDocumento(documento) {

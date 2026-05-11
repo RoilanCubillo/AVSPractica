@@ -615,6 +615,18 @@
                 return;
             }
 
+            var validationMessage = validateHeaderBeforeSave(accion);
+            if (validationMessage) {
+                showToast(validationMessage);
+                return;
+            }
+
+            var detailValidationMessage = validateDetailBeforeSave();
+            if (detailValidationMessage) {
+                showToast(detailValidationMessage);
+                return;
+            }
+
             var payload = $("#documentoForm").serializeArray();
             payload.push({ name: "accion", value: accion });
 
@@ -635,12 +647,73 @@
                 });
         }
 
+        function validateHeaderBeforeSave(accion) {
+            var tipo = $("#tipoDocumento").val();
+            var fechaSolicitud = $("#fechaSolicitud").val();
+            var fechaEntrega = $("#fechaEntrega").val();
+            var fechaAplicacion = $("#fechaAplicacion").val();
+
+            if (!tipo) return "Seleccione el tipo de documento.";
+            if (!fechaSolicitud) return "Ingrese la fecha de solicitud.";
+            if (!String($("#personaSolicita").val() || "").trim()) return "Ingrese la persona que solicita.";
+            if (!String($("#codigoProveedor").val() || "").trim()) return "Seleccione un proveedor valido desde la busqueda.";
+            if (fechaEntrega && fechaEntrega < fechaSolicitud) return "La fecha de entrega no puede ser menor a la solicitud.";
+            if (fechaAplicacion && fechaAplicacion < fechaSolicitud) return "La fecha de aplicacion no puede ser menor a la solicitud.";
+
+            if (tipo === "Salida de Inventario" && (!$("#tipoSalida").val() || !$("#justificacionSalida").val())) {
+                return "Complete tipo y justificacion de salida.";
+            }
+
+            if (tipo === "Entrada de Inventario" && !$("#justificacionEntrada").val()) {
+                return "Complete la justificacion de entrada.";
+            }
+
+            if ((accion === "Enviar" || accion === "Recibir" || accion === "Cerrar") &&
+                !String($("#facturaRef").val() || "").trim()) {
+                return "Ingrese el numero de factura o referencia antes de avanzar.";
+            }
+
+            if (accion === "Recibir" || accion === "Cerrar") {
+                return "Primero guarde o envie el documento. Las acciones de recibir y cerrar se ejecutan desde la lista segun el estado.";
+            }
+
+            return "";
+        }
+
+        function validateDetailBeforeSave() {
+            var realLines = detalleLineas.filter(function (linea) {
+                return String(linea.Codigo || "").trim() || String(linea.Descripcion || "").trim();
+            });
+
+            if (!realLines.length) return "Agregue al menos una linea de producto.";
+
+            for (var i = 0; i < realLines.length; i++) {
+                var linea = realLines[i];
+                normalizeLine(linea);
+                var subtotal = round2(toNumber(linea.Cantidad, 1) * toNumber(linea.CostoUnitario, 0));
+                var label = "Linea " + (i + 1) + ": ";
+
+                if (!String(linea.Codigo || "").trim() || !String(linea.Descripcion || "").trim()) return label + "complete codigo y descripcion.";
+                if (linea.Cantidad <= 0) return label + "la cantidad debe ser mayor a cero.";
+                if (!linea.Regalia && linea.CostoUnitario <= 0) return label + "el costo debe ser mayor a cero.";
+                if (linea.DescuentoPorcentaje < 0 || linea.DescuentoPorcentaje > 100) return label + "el descuento % debe estar entre 0 y 100.";
+                if (linea.DescuentoMonto < 0 || linea.DescuentoMonto > subtotal) return label + "el descuento monto no puede superar el subtotal.";
+                if (linea.ImpuestoPorcentaje < 0 || linea.ImpuestoPorcentaje > 100) return label + "el impuesto debe estar entre 0 y 100.";
+                if (linea.Regalia && !String(linea.Observacion || "").trim()) return label + "las regalias requieren observacion.";
+            }
+
+            detalleLineas = realLines;
+            syncDetalleLineas();
+            return "";
+        }
+
         function refreshTipoDocumento() {
             var tipo = $("#tipoDocumento").val();
             $("#numeroDocumento").val(numerosPorTipo[tipo] || numerosPorTipo.Compra);
             $("#tipoInfoTitle").text(tipo);
             $("#salidaFields").toggle(tipo === "Salida de Inventario");
             $("#entradaFields").toggle(tipo === "Entrada de Inventario");
+            refreshActionButtons();
 
             if (tipo === "Salida de Inventario") {
                 $("#tipoInfoText").text("Este documento reduce inventario y requiere tipo de salida y justificacion.");
@@ -649,6 +722,14 @@
             } else {
                 $("#tipoInfoText").text("Este documento corresponde a una compra. No se requieren campos adicionales.");
             }
+        }
+
+        function refreshActionButtons() {
+            var estado = $("#estadoDocumento").val() || "Borrador";
+            $("#btnGuardarBorrador").prop("disabled", estado !== "Borrador");
+            $("#btnEnviarDocumento").prop("disabled", estado !== "Borrador");
+            $("#btnRecibirDocumento").prop("disabled", true);
+            $("#btnCerrarDocumento").prop("disabled", true);
         }
 
         function fillProveedor() {
@@ -973,6 +1054,10 @@
             linea.DescuentoPorcentaje = toNumber(linea.DescuentoPorcentaje, 0);
             linea.DescuentoMonto = toNumber(linea.DescuentoMonto, 0);
             linea.ImpuestoPorcentaje = toNumber(linea.ImpuestoPorcentaje, 0);
+            linea.Cantidad = Math.max(linea.Cantidad, 0);
+            linea.CostoUnitario = Math.max(linea.CostoUnitario, 0);
+            linea.DescuentoPorcentaje = clamp(linea.DescuentoPorcentaje, 0, 100);
+            linea.ImpuestoPorcentaje = clamp(linea.ImpuestoPorcentaje, 0, 100);
             linea.Unidad = linea.Unidad || "UND";
             linea.Codigo = linea.Codigo || "";
             linea.Descripcion = linea.Descripcion || "";
@@ -987,7 +1072,7 @@
                 return;
             }
 
-            if (triggerField === "DescuentoMonto") {
+            if (triggerField === "DescuentoMonto" || (!triggerField && linea.DescuentoMonto > 0)) {
                 linea.DescuentoMonto = clamp(round2(linea.DescuentoMonto), 0, subtotal);
                 linea.DescuentoPorcentaje = round2((linea.DescuentoMonto / subtotal) * 100);
                 return;
@@ -1463,8 +1548,8 @@
             var costo = toNumber($("#regaliaCosto").val(), 0);
             var observacion = ($("#regaliaObservacion").val() || "").trim();
 
-            if (!codigo || !descripcion || cantidad <= 0 || costo < 0) {
-                showToast("Complete codigo, descripcion, cantidad y costo validos.");
+            if (!codigo || !descripcion || cantidad <= 0 || costo < 0 || !observacion) {
+                showToast("Complete codigo, descripcion, cantidad, costo y observacion validos.");
                 return;
             }
 
@@ -1687,6 +1772,7 @@
         function syncDetalleLineas() {
             detalleLineas.forEach(function (linea) {
                 normalizeLine(linea);
+                syncLineDiscounts(linea);
                 linea.TotalLinea = calculateLineTotal(linea);
             });
 
@@ -1726,8 +1812,8 @@
             var descuentoMonto = toNumber(linea.DescuentoMonto, 0);
             var impuestoPorcentaje = toNumber(linea.ImpuestoPorcentaje, 0);
             var subtotal = cantidad * costoUnitario;
-            var descuentoCalculado = subtotal * (descuentoPorcentaje / 100);
-            var baseImponible = Math.max(0, subtotal - descuentoCalculado - descuentoMonto);
+            var descuentoCalculado = descuentoMonto > 0 ? descuentoMonto : subtotal * (descuentoPorcentaje / 100);
+            var baseImponible = Math.max(0, subtotal - descuentoCalculado);
             var impuesto = baseImponible * (impuestoPorcentaje / 100);
             return round2(baseImponible + impuesto);
         }
@@ -1749,7 +1835,7 @@
                 var descuentoMonto = toNumber(linea.DescuentoMonto, 0);
                 var impuestoPorcentaje = toNumber(linea.ImpuestoPorcentaje, 0);
                 var subtotalLinea = round2(cantidad * costoUnitario);
-                var descuentoLinea = round2((subtotalLinea * (descuentoPorcentaje / 100)) + descuentoMonto);
+                var descuentoLinea = round2(descuentoMonto > 0 ? descuentoMonto : subtotalLinea * (descuentoPorcentaje / 100));
                 var baseImponible = round2(Math.max(0, subtotalLinea - descuentoLinea));
                 var impuestoLinea = round2(baseImponible * (impuestoPorcentaje / 100));
                 var totalLinea = round2(baseImponible + impuestoLinea);
@@ -1966,7 +2052,6 @@
                 draft.proveedorBusqueda,
                 draft.codigoProveedor,
                 draft.nombreProveedor,
-                draft.personaSolicita,
                 draft.facturaRef,
                 draft.comentario,
                 draft.claveHacienda,

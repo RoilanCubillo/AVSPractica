@@ -246,7 +246,7 @@
                     "<td>" + getAuditoriaBadge(d) + "</td>" +
                     "<td>" + formatMoney(d.Total) + "</td>" +
                     "<td>" + escapeHtml(d.PersonaSolicita) + "</td>" +
-                    "<td>" + getActionButtons(d.ID) + "</td>" +
+                    "<td>" + getActionButtons(d) + "</td>" +
                     "</tr>";
             }).join("");
 
@@ -254,16 +254,29 @@
             $("#documentos_body").html(html || "<tr><td colspan='12' class='empty-state'>Sin documentos para los filtros aplicados.</td></tr>");
         }
 
-        function getActionButtons(id) {
-            return "<div class='action-stack'>" +
-                "<button class='icon-button info' title='Ver' onclick='onVer(" + id + ")'>Ver</button>" +
-                "<button class='icon-button primary' title='Editar' onclick='onEditar(" + id + ")'>Editar</button>" +
-                "<button class='icon-button neutral' title='Duplicar' onclick='onDuplicar(" + id + ")'>Duplicar</button>" +
-                "<button class='icon-button neutral' title='Imprimir' onclick='onImprimir(" + id + ")'>Imprimir</button>" +
-                "<button class='icon-button warning' title='Enviar' onclick='onAccion(" + id + ", \"enviar\")'>Enviar</button>" +
-                "<button class='icon-button success' title='Recibir' onclick='onAccion(" + id + ", \"recibir\")'>Recibir</button>" +
-                "<button class='icon-button danger' title='Cerrar' onclick='onAccion(" + id + ", \"cerrar\")'>Cerrar</button>" +
-                "</div>";
+        function getActionButtons(documento) {
+            var id = documento.ID;
+            var estado = documento.Estado || "";
+            var buttons = [
+                "<button class='icon-button info' title='Ver' onclick='onVer(" + id + ")'>Ver</button>",
+                "<button class='icon-button neutral' title='Duplicar' onclick='onDuplicar(" + id + ")'>Duplicar</button>",
+                "<button class='icon-button neutral' title='Imprimir' onclick='onImprimir(" + id + ")'>Imprimir</button>"
+            ];
+
+            if (estado === "Borrador") {
+                buttons.splice(1, 0, "<button class='icon-button primary' title='Editar' onclick='onEditar(" + id + ")'>Editar</button>");
+                buttons.push("<button class='icon-button warning' title='Enviar' onclick='onAccion(" + id + ", \"enviar\")'>Enviar</button>");
+            }
+
+            if (estado === "Enviada" || estado === "Parcial") {
+                buttons.push("<button class='icon-button success' title='Recibir' onclick='onAccion(" + id + ", \"recibir\")'>Recibir</button>");
+            }
+
+            if (estado === "Recibida") {
+                buttons.push("<button class='icon-button danger' title='Cerrar' onclick='onAccion(" + id + ", \"cerrar\")'>Cerrar</button>");
+            }
+
+            return "<div class='action-stack'>" + buttons.join("") + "</div>";
         }
 
         function getEstadoBadge(estado) {
@@ -299,9 +312,19 @@
         }
 
         function onDuplicar(id) {
+            var documento = findDocumento(id);
+            if (!documento || !confirm("Desea duplicar " + documento.Numero + " como un nuevo borrador?")) return;
+
             $.post(urls.duplicar, { id: id }).done(function (data) {
+                if (!data.Status) {
+                    showToast(data.Message || "No se pudo duplicar.");
+                    return;
+                }
+
                 showToast(data.Message || "Documento duplicado.");
                 getDocumentos();
+            }).fail(function () {
+                showToast("No se pudo duplicar el documento.");
             });
         }
 
@@ -315,8 +338,15 @@
             if (!documento || !confirm("Desea " + accion + " el documento " + documento.Numero + "?")) return;
 
             $.post(urls.accion, { id: id, accion: accion }).done(function (data) {
+                if (!data.Status) {
+                    showToast(data.Message || "No se pudo actualizar el documento.");
+                    return;
+                }
+
                 showToast(data.Message || "Documento actualizado.");
                 getDocumentos();
+            }).fail(function () {
+                showToast("No se pudo actualizar el documento.");
             });
         }
 
@@ -333,8 +363,11 @@
         }
 
         function getAuditoriaBadge(documento) {
-            if (!documento.CantidadLineasEspeciales) return "<span class='status-badge draft'>Sin linea</span>";
-            return "<span class='audit-pill'>" + escapeHtml(documento.ResumenAuditoria || "Lineas auditadas") + "</span>";
+            if (!documento.CantidadLineasEspeciales) {
+                return "<span class='status-badge draft'>" + formatNumber(documento.CantidadLineasDetalle || 0) + " lineas</span>";
+            }
+
+            return "<span class='audit-pill'>" + escapeHtml(documento.ResumenAuditoria || "Regalias auditadas") + "</span>";
         }
 
         function renderDocumentoHeaderBadges(documento) {
@@ -358,7 +391,9 @@
         }
 
         function renderAuditDetail(documento) {
-            var html = "<div class='document-view-callout'>" + escapeHtml(documento.ResumenAuditoria || "Sin lineas especiales") + "</div>";
+            var html = "<div class='document-view-callout'>" +
+                escapeHtml(buildAuditSummaryText(documento)) +
+                "</div>";
 
             if (documento.LineasEspeciales && documento.LineasEspeciales.length) {
                 html += "<div class='document-view-subsection'><h4>Lineas especiales</h4>" +
@@ -370,6 +405,13 @@
             }
 
             $("#doc_view_audit").html(html);
+        }
+
+        function buildAuditSummaryText(documento) {
+            var lineas = Number(documento.CantidadLineasDetalle || 0);
+            var especiales = Number(documento.CantidadLineasEspeciales || 0);
+            if (!especiales) return lineas + " lineas de detalle. Sin regalias auditables.";
+            return lineas + " lineas de detalle. " + (documento.ResumenAuditoria || (especiales + " regalias auditables")) + ".";
         }
 
         function renderTipoDocumentoDetail(documento) {
