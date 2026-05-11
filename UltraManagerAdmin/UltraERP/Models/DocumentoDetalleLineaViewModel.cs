@@ -6,6 +6,9 @@ namespace UltraERP.Models
         public string Descripcion { get; set; }
         public string Unidad { get; set; }
         public decimal Cantidad { get; set; }
+        public decimal CantidadSolicitada { get; set; }
+        public decimal CantidadRecibida { get; set; }
+        public decimal CantidadPendiente { get; set; }
         public decimal CostoUnitario { get; set; }
         public decimal DescuentoPorcentaje { get; set; }
         public decimal DescuentoMonto { get; set; }

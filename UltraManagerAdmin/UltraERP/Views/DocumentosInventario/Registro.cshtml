@@ -15,6 +15,7 @@
         <a class="btn btn-outline-secondary" href="@Url.Action("Inicio", "DocumentosInventario")">Cancelar</a>
         <button id="btnGuardarBorrador" class="btn btn-outline-primary" type="button">Guardar Borrador</button>
         <button id="btnEnviarDocumento" class="btn btn-primary" type="button">Enviar documento</button>
+        <button id="btnGuardarRecepcionParcial" class="btn btn-outline-warning" type="button">Guardar parcial</button>
         <button id="btnRecibirDocumento" class="btn btn-outline-success" type="button">Recibir / Aplicar</button>
         <button id="btnCerrarDocumento" class="btn btn-outline-dark" type="button">Cerrar documento</button>
     </div>
@@ -72,7 +73,7 @@
                 @Html.ValidationMessageFor(m => m.ProveedorBusqueda, "", new { @class = "text-danger small" })
                 <div class="provider-card">
                     <div>
-                        <span>Codigo</span>
+                        <span>C&oacute;digo</span>
                         @Html.TextBoxFor(m => m.CodigoProveedor, new { @class = "plain-input", id = "codigoProveedor", @readonly = "readonly", placeholder = "-" })
                     </div>
                     <div>
@@ -224,10 +225,13 @@
                 <thead>
                     <tr>
                         <th>#</th>
-                        <th>Codigo</th>
+                        <th>C&oacute;digo</th>
                         <th>Nombre / Descripcion</th>
                         <th>Unidad</th>
                         <th>Cantidad</th>
+                        <th>Solicitada</th>
+                        <th>Recibida</th>
+                        <th>Pendiente</th>
                         <th>Costo Unitario</th>
                         <th>Descuento %</th>
                         <th>Descuento Monto</th>
@@ -321,7 +325,7 @@
                     <table class="table align-middle mb-0 product-search-table">
                         <thead>
                             <tr>
-                                <th>Codigo</th>
+                                <th>C&oacute;digo</th>
                                 <th>Descripcion</th>
                                 <th>Unidad</th>
                                 <th>Costo</th>
@@ -462,6 +466,8 @@
         var detalleLineas = parseInitialDetalleLineas();
         var selectedRowIndex = detalleLineas.length ? 0 : -1;
         var isEditingExisting = Number($("#documentoId").val() || 0) > 0;
+        var currentEstado = $("#estadoDocumento").val() || "Borrador";
+        var isReceptionMode = currentEstado === "Enviada" || currentEstado === "Parcial";
         var initialNumeroDocumento = $("#numeroDocumento").val();
         var regaliasModal;
         var productoModal;
@@ -527,6 +533,7 @@
             $("#btnImportarDesdeXml").on("click", importFromXml);
             $("#btnGuardarBorrador").on("click", function () { guardarEncabezado("Borrador"); });
             $("#btnEnviarDocumento").on("click", function () { guardarEncabezado("Enviar"); });
+            $("#btnGuardarRecepcionParcial").on("click", function () { guardarEncabezado("Parcial"); });
             $("#btnRecibirDocumento").on("click", function () { guardarEncabezado("Recibir"); });
             $("#btnCerrarDocumento").on("click", function () { guardarEncabezado("Cerrar"); });
             $("#regaliaCodigo, #regaliaDescripcion")
@@ -666,6 +673,10 @@
         }
 
         function validateHeaderBeforeSave(accion) {
+            if (isReceptionMode && (accion === "Parcial" || accion === "Recibir")) {
+                return "";
+            }
+
             var tipo = $("#tipoDocumento").val();
             var fechaSolicitud = $("#fechaSolicitud").val();
             var fechaEntrega = $("#fechaEntrega").val();
@@ -686,13 +697,17 @@
                 return "Complete la justificacion de entrada.";
             }
 
-            if ((accion === "Enviar" || accion === "Recibir" || accion === "Cerrar") &&
+            if ((accion === "Enviar" || accion === "Parcial" || accion === "Recibir" || accion === "Cerrar") &&
                 !String($("#facturaRef").val() || "").trim()) {
                 return "Ingrese el numero de factura o referencia antes de avanzar.";
             }
 
-            if (accion === "Recibir" || accion === "Cerrar") {
-                return "Primero guarde o envie el documento. Las acciones de recibir y cerrar se ejecutan desde la lista segun el estado.";
+            if (accion === "Recibir" && !isReceptionMode) {
+                return "Primero envie el documento para registrar recepcion.";
+            }
+
+            if (accion === "Cerrar") {
+                return "La accion de cerrar se ejecuta desde la lista cuando el documento esta recibido.";
             }
 
             return "";
@@ -713,6 +728,8 @@
 
                 if (!String(linea.Codigo || "").trim() || !String(linea.Descripcion || "").trim()) return label + "complete codigo y descripcion.";
                 if (linea.Cantidad <= 0) return label + "la cantidad debe ser mayor a cero.";
+                if (linea.CantidadSolicitada <= 0) return label + "la cantidad solicitada debe ser mayor a cero.";
+                if (linea.CantidadRecibida < 0 || linea.CantidadRecibida > linea.CantidadSolicitada) return label + "la cantidad recibida debe estar entre cero y la solicitada.";
                 if (!linea.Regalia && linea.CostoUnitario <= 0) return label + "el costo debe ser mayor a cero.";
                 if (linea.DescuentoPorcentaje < 0 || linea.DescuentoPorcentaje > 100) return label + "el descuento % debe estar entre 0 y 100.";
                 if (linea.DescuentoMonto < 0 || linea.DescuentoMonto > subtotal) return label + "el descuento monto no puede superar el subtotal.";
@@ -727,6 +744,8 @@
 
         function refreshTipoDocumento() {
             var tipo = $("#tipoDocumento").val();
+            currentEstado = $("#estadoDocumento").val() || "Borrador";
+            isReceptionMode = currentEstado === "Enviada" || currentEstado === "Parcial";
             if (isEditingExisting) {
                 $("#numeroDocumento").val(initialNumeroDocumento);
             } else {
@@ -751,7 +770,8 @@
             var estado = $("#estadoDocumento").val() || "Borrador";
             $("#btnGuardarBorrador").prop("disabled", estado !== "Borrador");
             $("#btnEnviarDocumento").prop("disabled", estado !== "Borrador");
-            $("#btnRecibirDocumento").prop("disabled", true);
+            $("#btnGuardarRecepcionParcial").prop("disabled", estado !== "Enviada" && estado !== "Parcial").toggle(estado === "Enviada" || estado === "Parcial");
+            $("#btnRecibirDocumento").prop("disabled", estado !== "Enviada" && estado !== "Parcial").toggle(estado === "Enviada" || estado === "Parcial");
             $("#btnCerrarDocumento").prop("disabled", true);
         }
 
@@ -763,13 +783,19 @@
 
             $("#documentoForm")
                 .find("input, select, textarea")
-                .not("#documentoId, #estadoDocumento, #detalleLineasJson, #lineasEspecialesJson")
+                .not("input[name='__RequestVerificationToken'], #documentoId, #estadoDocumento, #detalleLineasJson, #lineasEspecialesJson, .detalle-input[data-field='CantidadRecibida']")
                 .prop("disabled", true);
 
             $("#btnAgregarLinea, #btnEliminarLinea, #btnBuscarProducto, #btnAbrirRegalias, #btnAplicarDescuento, #btnImportarDesdeXml, #btnCargarXml")
                 .prop("disabled", true);
 
-            showToast("Documento en estado " + estado + ": visualizacion solamente. Las acciones se ejecutan desde la lista.");
+            if (isReceptionMode) {
+                $(".detalle-input[data-field='CantidadRecibida']").prop("disabled", false);
+                showToast("Modo recepcion: edite Cantidad o Recibida para registrar lo recibido.");
+                focusDetalleField(0, "CantidadRecibida", true);
+            } else {
+                showToast("Documento en estado " + estado + ": visualizacion solamente. Las acciones se ejecutan desde la lista.");
+            }
         }
 
         function fillProveedor() {
@@ -974,6 +1000,9 @@
                 Descripcion: "",
                 Unidad: "UND",
                 Cantidad: 1,
+                CantidadSolicitada: 1,
+                CantidadRecibida: 0,
+                CantidadPendiente: 1,
                 CostoUnitario: 0,
                 DescuentoPorcentaje: 0,
                 DescuentoMonto: 0,
@@ -1026,20 +1055,29 @@
             if (!detalleLineas.length) ensureAtLeastOneLine();
 
             var html = detalleLineas.map(function (linea, index) {
+                normalizeLine(linea);
                 var selectedClass = index === selectedRowIndex ? " grid-row-selected" : "";
+                var editState = getDetalleInputState();
+                var receiveState = isReceptionMode ? "" : "disabled='disabled'";
+                var cantidadField = isReceptionMode ? "CantidadRecibida" : "Cantidad";
+                var cantidadValue = isReceptionMode ? linea.CantidadRecibida : linea.Cantidad;
+                var cantidadState = isReceptionMode ? "" : editState;
                 return "<tr data-index='" + index + "' class='" + selectedClass.trim() + "'>" +
                     "<td>" + (index + 1) + "</td>" +
-                    "<td><div class='grid-inline-action'><input class='form-control form-control-sm detalle-input' data-field='Codigo' data-index='" + index + "' list='productosCodigoList' autocomplete='off' placeholder='Codigo o prefijo' value='" + escapeHtml(linea.Codigo) + "' /><button class='btn btn-sm btn-outline-secondary btn-row-product' type='button'>...</button></div></td>" +
-                    "<td><input class='form-control form-control-sm detalle-input' data-field='Descripcion' data-index='" + index + "' list='productosDescripcionList' autocomplete='off' placeholder='Nombre del producto' value='" + escapeHtml(linea.Descripcion) + "' /></td>" +
-                    "<td><input class='form-control form-control-sm detalle-input' data-field='Unidad' data-index='" + index + "' placeholder='UND' value='" + escapeHtml(linea.Unidad) + "' /></td>" +
-                    "<td><input type='number' min='0.01' step='0.01' class='form-control form-control-sm detalle-input' data-field='Cantidad' data-index='" + index + "' value='" + escapeHtml(linea.Cantidad) + "' /></td>" +
-                    "<td><input type='number' min='0' step='0.01' class='form-control form-control-sm detalle-input' data-field='CostoUnitario' data-index='" + index + "' value='" + escapeHtml(linea.CostoUnitario) + "' /></td>" +
-                    "<td><input type='number' min='0' step='0.01' class='form-control form-control-sm detalle-input' data-field='DescuentoPorcentaje' data-index='" + index + "' value='" + escapeHtml(linea.DescuentoPorcentaje) + "' /></td>" +
-                    "<td><input type='number' min='0' step='0.01' class='form-control form-control-sm detalle-input' data-field='DescuentoMonto' data-index='" + index + "' value='" + escapeHtml(linea.DescuentoMonto) + "' /></td>" +
-                    "<td><input type='number' min='0' step='0.01' class='form-control form-control-sm detalle-input' data-field='ImpuestoPorcentaje' data-index='" + index + "' value='" + escapeHtml(linea.ImpuestoPorcentaje) + "' /></td>" +
-                    "<td><input class='form-control form-control-sm readonly-control' readonly='readonly' value='" + formatMoney(linea.TotalLinea) + "' /></td>" +
-                    "<td class='text-center'><input type='checkbox' class='form-check-input detalle-input' data-field='Regalia' data-index='" + index + "' " + (linea.Regalia ? "checked='checked'" : "") + " /></td>" +
-                    "<td><input class='form-control form-control-sm detalle-input' data-field='Observacion' data-index='" + index + "' placeholder='Comentario por linea' value='" + escapeHtml(linea.Observacion) + "' /></td>" +
+                    "<td><div class='grid-inline-action'><input class='form-control form-control-sm detalle-input' data-field='Codigo' data-index='" + index + "' list='productosCodigoList' autocomplete='off' placeholder='Codigo o prefijo' value='" + escapeHtml(linea.Codigo) + "' " + editState + " /><button class='btn btn-sm btn-outline-secondary btn-row-product' type='button' " + editState + ">...</button></div></td>" +
+                    "<td><input class='form-control form-control-sm detalle-input' data-field='Descripcion' data-index='" + index + "' list='productosDescripcionList' autocomplete='off' placeholder='Nombre del producto' value='" + escapeHtml(linea.Descripcion) + "' " + editState + " /></td>" +
+                    "<td><input class='form-control form-control-sm detalle-input' data-field='Unidad' data-index='" + index + "' placeholder='UND' value='" + escapeHtml(linea.Unidad) + "' " + editState + " /></td>" +
+                    "<td><input type='number' min='0' step='0.01' class='form-control form-control-sm detalle-input' data-field='" + cantidadField + "' data-index='" + index + "' value='" + escapeHtml(cantidadValue) + "' " + cantidadState + " /></td>" +
+                    "<td><input class='form-control form-control-sm readonly-control' data-readonly-field='CantidadSolicitada' readonly='readonly' value='" + formatNumber(linea.CantidadSolicitada) + "' /></td>" +
+                    "<td><input type='number' min='0' step='0.01' class='form-control form-control-sm detalle-input' data-field='CantidadRecibida' data-index='" + index + "' value='" + escapeHtml(linea.CantidadRecibida) + "' " + receiveState + " /></td>" +
+                    "<td><input class='form-control form-control-sm readonly-control' data-readonly-field='CantidadPendiente' readonly='readonly' value='" + formatNumber(linea.CantidadPendiente) + "' /></td>" +
+                    "<td><input type='number' min='0' step='0.01' class='form-control form-control-sm detalle-input' data-field='CostoUnitario' data-index='" + index + "' value='" + escapeHtml(linea.CostoUnitario) + "' " + editState + " /></td>" +
+                    "<td><input type='number' min='0' step='0.01' class='form-control form-control-sm detalle-input' data-field='DescuentoPorcentaje' data-index='" + index + "' value='" + escapeHtml(linea.DescuentoPorcentaje) + "' " + editState + " /></td>" +
+                    "<td><input type='number' min='0' step='0.01' class='form-control form-control-sm detalle-input' data-field='DescuentoMonto' data-index='" + index + "' value='" + escapeHtml(linea.DescuentoMonto) + "' " + editState + " /></td>" +
+                    "<td><input type='number' min='0' step='0.01' class='form-control form-control-sm detalle-input' data-field='ImpuestoPorcentaje' data-index='" + index + "' value='" + escapeHtml(linea.ImpuestoPorcentaje) + "' " + editState + " /></td>" +
+                    "<td><input class='form-control form-control-sm readonly-control' data-readonly-field='TotalLinea' readonly='readonly' value='" + formatMoney(linea.TotalLinea) + "' /></td>" +
+                    "<td class='text-center'><input type='checkbox' class='form-check-input detalle-input' data-field='Regalia' data-index='" + index + "' " + (linea.Regalia ? "checked='checked'" : "") + " " + editState + " /></td>" +
+                    "<td><input class='form-control form-control-sm detalle-input' data-field='Observacion' data-index='" + index + "' placeholder='Comentario por linea' value='" + escapeHtml(linea.Observacion) + "' " + editState + " /></td>" +
                     "</tr>";
             }).join("");
 
@@ -1049,6 +1087,10 @@
             if (focusTarget) {
                 focusDetalleField(focusTarget.index, focusTarget.field, focusTarget.selectText);
             }
+        }
+
+        function getDetalleInputState() {
+            return currentEstado === "Borrador" ? "" : "disabled='disabled'";
         }
 
         function onDetalleInputFocus() {
@@ -1071,6 +1113,11 @@
             linea[field] = field === "Regalia" ? $(this).is(":checked") : $(this).val();
 
             normalizeLine(linea);
+            if (field === "Cantidad") {
+                linea.CantidadSolicitada = linea.Cantidad;
+                linea.CantidadPendiente = Math.max(0, round2(linea.CantidadSolicitada - linea.CantidadRecibida));
+            }
+
             syncLineDiscounts(linea, field);
             if (field === "Codigo" || field === "Descripcion") {
                 updateProductQuickPick(this);
@@ -1083,6 +1130,7 @@
 
             linea.TotalLinea = calculateLineTotal(linea);
             updateDetalleRowDiscounts(index, field);
+            updateDetalleRowReception(index);
             updateDetalleRowTotal(index);
             syncDetalleLineas();
             scheduleLocalDraftSave();
@@ -1090,11 +1138,17 @@
 
         function normalizeLine(linea) {
             linea.Cantidad = toNumber(linea.Cantidad, 1);
+            linea.CantidadSolicitada = toNumber(linea.CantidadSolicitada, linea.Cantidad);
+            linea.CantidadRecibida = toNumber(linea.CantidadRecibida, 0);
             linea.CostoUnitario = toNumber(linea.CostoUnitario, 0);
             linea.DescuentoPorcentaje = toNumber(linea.DescuentoPorcentaje, 0);
             linea.DescuentoMonto = toNumber(linea.DescuentoMonto, 0);
             linea.ImpuestoPorcentaje = toNumber(linea.ImpuestoPorcentaje, 0);
             linea.Cantidad = Math.max(linea.Cantidad, 0);
+            if (linea.CantidadSolicitada <= 0) linea.CantidadSolicitada = linea.Cantidad || 1;
+            if (!isReceptionMode) linea.CantidadSolicitada = linea.Cantidad;
+            linea.CantidadRecibida = clamp(linea.CantidadRecibida, 0, linea.CantidadSolicitada);
+            linea.CantidadPendiente = Math.max(0, round2(linea.CantidadSolicitada - linea.CantidadRecibida));
             linea.CostoUnitario = Math.max(linea.CostoUnitario, 0);
             linea.DescuentoPorcentaje = clamp(linea.DescuentoPorcentaje, 0, 100);
             linea.ImpuestoPorcentaje = clamp(linea.ImpuestoPorcentaje, 0, 100);
@@ -1223,7 +1277,14 @@
         }
 
         function updateDetalleRowTotal(index) {
-            $("#detalleGridBody tr[data-index='" + index + "'] input.readonly-control").val(formatMoney(detalleLineas[index].TotalLinea));
+            $("#detalleGridBody tr[data-index='" + index + "'] input[data-readonly-field='TotalLinea']").val(formatMoney(detalleLineas[index].TotalLinea));
+        }
+
+        function updateDetalleRowReception(index) {
+            var row = $("#detalleGridBody tr[data-index='" + index + "']");
+            if (!row.length) return;
+            row.find("input[data-readonly-field='CantidadSolicitada']").val(formatNumber(detalleLineas[index].CantidadSolicitada));
+            row.find("input[data-readonly-field='CantidadPendiente']").val(formatNumber(detalleLineas[index].CantidadPendiente));
         }
 
         function updateDetalleRowDiscounts(index, activeField) {
@@ -1598,6 +1659,9 @@
                 Descripcion: descripcion,
                 Unidad: unidad,
                 Cantidad: cantidad,
+                CantidadSolicitada: cantidad,
+                CantidadRecibida: 0,
+                CantidadPendiente: cantidad,
                 CostoUnitario: costo,
                 DescuentoPorcentaje: 0,
                 DescuentoMonto: 0,
@@ -1775,6 +1839,9 @@
                     Descripcion: descripcion || "Linea importada desde XML",
                     Unidad: unidad,
                     Cantidad: cantidad,
+                    CantidadSolicitada: cantidad,
+                    CantidadRecibida: 0,
+                    CantidadPendiente: cantidad,
                     CostoUnitario: costo,
                     DescuentoPorcentaje: 0,
                     DescuentoMonto: descuentoMonto,

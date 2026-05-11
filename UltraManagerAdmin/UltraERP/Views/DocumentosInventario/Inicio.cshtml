@@ -35,6 +35,7 @@
                 <option value="Parcial">Parcial</option>
                 <option value="Recibida">Recibida</option>
                 <option value="Cerrada">Cerrada</option>
+                <option value="Anulada">Anulada</option>
             </select>
         </div>
         <div class="col-12 col-md-3">
@@ -50,11 +51,11 @@
             <input id="filter_proveedor" type="text" class="form-control" />
         </div>
         <div class="col-12 col-md-3">
-            <label for="filter_numero" class="form-label">Numero de documento</label>
+            <label for="filter_numero" class="form-label">N&uacute;mero de documento</label>
             <input id="filter_numero" type="text" class="form-control" />
         </div>
         <div class="col-12 col-md-3">
-            <label for="filter_factura" class="form-label">Numero Factura Ref.</label>
+            <label for="filter_factura" class="form-label">N&uacute;mero Factura Ref.</label>
             <input id="filter_factura" type="text" class="form-control" />
         </div>
         <div class="col-12 col-md-3">
@@ -95,13 +96,13 @@
         <table class="table align-middle document-table inventory-list-table">
             <thead>
                 <tr>
-                    <th>Numero</th>
+                    <th>N&uacute;mero</th>
                     <th>Tipo</th>
                     <th>Proveedor</th>
                     <th>Factura Ref.</th>
                     <th>Fecha Solicitud</th>
                     <th>Fecha Entrega</th>
-                    <th>Fecha Aplicacion</th>
+                    <th>Fecha Aplicaci&oacute;n</th>
                     <th>Estado</th>
                     <th>Auditoria</th>
                     <th>Total</th>
@@ -273,6 +274,7 @@
             }
 
             if (estado === "Enviada" || estado === "Parcial") {
+                buttons.splice(1, 0, "<button class='icon-button primary' title='Recepcion por linea' onclick='onEditar(" + id + ")'>Recepcion</button>");
                 if (estado === "Enviada") {
                     buttons.push("<button class='icon-button warning' title='Marcar parcial' onclick='onAccion(" + id + ", \"parcial\")'>Parcial</button>");
                 }
@@ -284,6 +286,10 @@
                 buttons.push("<button class='icon-button danger' title='Cerrar' onclick='onAccion(" + id + ", \"cerrar\")'>Cerrar</button>");
             }
 
+            if (estado === "Borrador" || estado === "Enviada" || estado === "Parcial") {
+                buttons.push("<button class='icon-button danger' title='Anular' onclick='onAccion(" + id + ", \"anular\")'>Anular</button>");
+            }
+
             return "<div class='action-stack'>" + buttons.join("") + "</div>";
         }
 
@@ -293,6 +299,7 @@
             else if (estado === "Enviada") css += "sent";
             else if (estado === "Recibida") css += "received";
             else if (estado === "Parcial") css += "applied";
+            else if (estado === "Anulada") css += "closed";
             else css += "closed";
             return "<span class='" + css + "'>" + escapeHtml(estado) + "</span>";
         }
@@ -305,6 +312,7 @@
             $("#doc_view_title").text(documento.Numero);
             $("#doc_view_subtitle").text(documento.Tipo + " gestionado para " + (documento.Proveedor || "Proveedor no definido") + ".");
             $("#doc_view_total").text(formatMoney(documento.Total));
+            $("#doc_view_total").closest(".document-view-total").toggleClass("voided-total", documento.Estado === "Anulada");
             renderDocumentoHeaderBadges(documento);
             renderDocumentoSummary(documento);
             renderTipoDocumentoDetail(documento);
@@ -316,8 +324,8 @@
         function onEditar(id) {
             var documento = findDocumento(id);
             if (!documento) return;
-            if (documento.Estado !== "Borrador") {
-                showToast("Solo los documentos en Borrador pueden editarse.");
+            if (documento.Estado !== "Borrador" && documento.Estado !== "Enviada" && documento.Estado !== "Parcial") {
+                showToast("Solo Borrador permite edicion completa. Enviada y Parcial permiten recepcion por linea.");
                 return;
             }
 
@@ -354,12 +362,21 @@
                 enviar: "enviar",
                 parcial: "marcar como parcial",
                 recibir: "recibir/aplicar",
-                cerrar: "cerrar"
+                cerrar: "cerrar",
+                anular: "anular"
             }[accion] || accion;
 
             if (!confirm("Desea " + accionTexto + " el documento " + documento.Numero + "?")) return;
+            var motivo = "";
+            if (accion === "anular") {
+                motivo = prompt("Indique el motivo de anulacion para " + documento.Numero + ":") || "";
+                if (!motivo.trim()) {
+                    showToast("La anulacion requiere motivo.");
+                    return;
+                }
+            }
 
-            $.post(urls.accion, { id: id, accion: accion }).done(function (data) {
+            $.post(urls.accion, { id: id, accion: accion, motivo: motivo }).done(function (data) {
                 if (!data.Status) {
                     showToast(data.Message || "No se pudo actualizar el documento.");
                     return;
@@ -386,10 +403,10 @@
 
         function getAuditoriaBadge(documento) {
             if (!documento.CantidadLineasEspeciales) {
-                return "<span class='status-badge draft'>" + formatNumber(documento.CantidadLineasDetalle || 0) + " lineas</span>";
+                return "<span class='status-badge draft'>" + escapeHtml(formatLineCount(documento.CantidadLineasDetalle || 0)) + "</span>";
             }
 
-            return "<span class='audit-pill'>" + escapeHtml(documento.ResumenAuditoria || "Regalias auditadas") + "</span>";
+            return "<span class='audit-pill'>" + escapeHtml(documento.ResumenAuditoria || "Regal\u00edas auditadas") + "</span>";
         }
 
         function renderDocumentoHeaderBadges(documento) {
@@ -398,16 +415,22 @@
 
         function renderDocumentoSummary(documento) {
             var items = [
-                { label: "Numero", value: documento.Numero },
+                { label: "N\u00famero", value: documento.Numero },
                 { label: "Tipo", value: documento.Tipo },
                 { label: "Proveedor", value: documento.Proveedor || "-" },
                 { label: "Factura Ref.", value: documento.FacturaRef || "-" },
                 { label: "Estado", value: documento.Estado || "-" },
                 { label: "Fecha Solicitud", value: documento.FechaSolicitud || "-" },
                 { label: "Fecha Entrega", value: documento.FechaEntrega || "-" },
-                { label: "Fecha Aplicacion", value: documento.FechaAplicacion || "-" },
+                { label: "Fecha Aplicaci\u00f3n", value: documento.FechaAplicacion || "-" },
                 { label: "Persona solicita", value: documento.PersonaSolicita || "-" }
             ];
+
+            if (documento.Estado === "Anulada") {
+                items.push({ label: "Motivo anulaci\u00f3n", value: documento.MotivoAnulacion || "-" });
+                items.push({ label: "Usuario anula", value: documento.UsuarioAnula || "-" });
+                items.push({ label: "Fecha anulaci\u00f3n", value: documento.FechaHoraAnula || "-" });
+            }
 
             $("#doc_view_summary").html(renderViewGrid(items));
         }
@@ -418,10 +441,19 @@
                 "</div>";
 
             if (documento.LineasEspeciales && documento.LineasEspeciales.length) {
-                html += "<div class='document-view-subsection'><h4>Lineas especiales</h4>" +
-                    "<div class='document-view-table'><table class='table table-sm align-middle mb-0'><thead><tr><th>Codigo</th><th>Descripcion</th><th>Cantidad</th><th>Costo</th></tr></thead><tbody>" +
+                html += "<div class='document-view-subsection'><h4>L\u00edneas especiales</h4>" +
+                    "<div class='document-view-table'><table class='table table-sm align-middle mb-0'><thead><tr><th>C\u00f3digo</th><th>Descripci\u00f3n</th><th>Cantidad</th><th>Costo</th></tr></thead><tbody>" +
                     documento.LineasEspeciales.map(function (linea) {
                         return "<tr><td>" + escapeHtml(linea.CodigoProducto) + "</td><td>" + escapeHtml(linea.Descripcion) + "</td><td>" + formatNumber(linea.Cantidad) + "</td><td>" + formatMoney(linea.Costo) + "</td></tr>";
+                    }).join("") +
+                    "</tbody></table></div></div>";
+            }
+
+            if (documento.EventosAuditoria && documento.EventosAuditoria.length) {
+                html += "<div class='document-view-subsection'><h4>Eventos</h4>" +
+                    "<div class='document-view-table'><table class='table table-sm align-middle mb-0'><thead><tr><th>Evento</th><th>Usuario</th><th>Fecha hora</th><th>Comentario</th></tr></thead><tbody>" +
+                    documento.EventosAuditoria.map(function (evento) {
+                        return "<tr><td>" + escapeHtml(evento.Evento) + "</td><td>" + escapeHtml(evento.Usuario) + "</td><td>" + escapeHtml(evento.FechaHora) + "</td><td>" + escapeHtml(evento.Comentario) + "</td></tr>";
                     }).join("") +
                     "</tbody></table></div></div>";
             }
@@ -432,14 +464,24 @@
         function buildAuditSummaryText(documento) {
             var lineas = Number(documento.CantidadLineasDetalle || 0);
             var especiales = Number(documento.CantidadLineasEspeciales || 0);
-            if (!especiales) return lineas + " lineas de detalle. Sin regalias auditables.";
-            return lineas + " lineas de detalle. " + (documento.ResumenAuditoria || (especiales + " regalias auditables")) + ".";
+            if (!especiales) return formatLineCount(lineas) + " de detalle. Sin regal\u00edas auditables.";
+            return formatLineCount(lineas) + " de detalle. " + (documento.ResumenAuditoria || formatRegaliaCount(especiales) + " auditables") + ".";
+        }
+
+        function formatLineCount(value) {
+            var count = Number(value || 0);
+            return count === 1 ? "1 l\u00ednea" : formatNumber(count) + " l\u00edneas";
+        }
+
+        function formatRegaliaCount(value) {
+            var count = Number(value || 0);
+            return count === 1 ? "1 regal\u00eda" : formatNumber(count) + " regal\u00edas";
         }
 
         function renderTipoDocumentoDetail(documento) {
             var items = [];
 
-            if (documento.TipoSalida) {
+            if (documento.Tipo === "Salida de Inventario" && documento.TipoSalida) {
                 items.push({ label: "Tipo salida", value: documento.TipoSalida });
             }
 
@@ -455,13 +497,13 @@
 
         function renderDetalleLineas(documento) {
             if (!documento.DetalleLineas || !documento.DetalleLineas.length) {
-                $("#doc_view_lines").html("<div class='document-view-empty'>Sin lineas registradas.</div>");
+                $("#doc_view_lines").html("<div class='document-view-empty'>Sin l\u00edneas registradas.</div>");
                 return;
             }
 
-            var table = "<div class='document-view-table'><table class='table table-sm align-middle mb-0'><thead><tr><th>Codigo</th><th>Descripcion</th><th>Unidad</th><th>Cantidad</th><th>Total</th><th>Regalia</th></tr></thead><tbody>" +
+            var table = "<div class='document-view-table'><table class='table table-sm align-middle mb-0'><thead><tr><th>C\u00f3digo</th><th>Descripci\u00f3n</th><th>Unidad</th><th>Solicitada</th><th>Recibida</th><th>Pendiente</th><th>Total</th><th>Regal\u00eda</th></tr></thead><tbody>" +
                 documento.DetalleLineas.map(function (linea) {
-                    return "<tr><td>" + escapeHtml(linea.Codigo) + "</td><td>" + escapeHtml(linea.Descripcion) + "</td><td>" + escapeHtml(linea.Unidad) + "</td><td>" + formatNumber(linea.Cantidad) + "</td><td>" + formatMoney(linea.TotalLinea) + "</td><td>" + getBooleanBadge(linea.Regalia) + "</td></tr>";
+                    return "<tr><td>" + escapeHtml(linea.Codigo) + "</td><td>" + escapeHtml(linea.Descripcion) + "</td><td>" + escapeHtml(linea.Unidad) + "</td><td>" + formatNumber(linea.CantidadSolicitada || linea.Cantidad) + "</td><td>" + formatNumber(linea.CantidadRecibida || 0) + "</td><td>" + formatNumber(linea.CantidadPendiente || 0) + "</td><td>" + formatMoney(linea.TotalLinea) + "</td><td>" + getBooleanBadge(linea.Regalia) + "</td></tr>";
                 }).join("") +
                 "</tbody></table></div>";
 

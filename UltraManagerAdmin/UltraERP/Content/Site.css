@@ -897,6 +897,21 @@ body {
     line-height: 1.1;
 }
 
+.document-view-total.voided-total {
+    background: #f7f7f4;
+    border-color: rgba(107, 114, 128, 0.28);
+}
+
+.document-view-total.voided-total span {
+    color: #6b7280;
+}
+
+.document-view-total.voided-total strong {
+    color: #6b7280;
+    text-decoration: line-through;
+    text-decoration-thickness: 2px;
+}
+
 .document-view-badges {
     display: flex;
     flex-wrap: wrap;
@@ -1255,37 +1270,40 @@ body {
     }
 
     .detail-grid-table td:nth-child(1)::before { content: "#"; }
-    .detail-grid-table td:nth-child(2)::before { content: "Codigo"; }
+    .detail-grid-table td:nth-child(2)::before { content: "Código"; }
     .detail-grid-table td:nth-child(3)::before { content: "Producto"; }
     .detail-grid-table td:nth-child(4)::before { content: "Unidad"; }
     .detail-grid-table td:nth-child(5)::before { content: "Cantidad"; }
-    .detail-grid-table td:nth-child(6)::before { content: "Costo"; }
-    .detail-grid-table td:nth-child(7)::before { content: "Desc. %"; }
-    .detail-grid-table td:nth-child(8)::before { content: "Desc. Monto"; }
-    .detail-grid-table td:nth-child(9)::before { content: "Impuesto"; }
-    .detail-grid-table td:nth-child(10)::before { content: "Total"; }
-    .detail-grid-table td:nth-child(11)::before { content: "Regalia"; }
-    .detail-grid-table td:nth-child(12)::before { content: "Observacion"; }
+    .detail-grid-table td:nth-child(6)::before { content: "Solicitada"; }
+    .detail-grid-table td:nth-child(7)::before { content: "Recibida"; }
+    .detail-grid-table td:nth-child(8)::before { content: "Pendiente"; }
+    .detail-grid-table td:nth-child(9)::before { content: "Costo"; }
+    .detail-grid-table td:nth-child(10)::before { content: "Desc. %"; }
+    .detail-grid-table td:nth-child(11)::before { content: "Desc. Monto"; }
+    .detail-grid-table td:nth-child(12)::before { content: "Impuesto"; }
+    .detail-grid-table td:nth-child(13)::before { content: "Total"; }
+    .detail-grid-table td:nth-child(14)::before { content: "Regalia"; }
+    .detail-grid-table td:nth-child(15)::before { content: "Observacion"; }
 
-    .inventory-list-table td:nth-child(1)::before { content: "Numero"; }
+    .inventory-list-table td:nth-child(1)::before { content: "Número"; }
     .inventory-list-table td:nth-child(2)::before { content: "Tipo"; }
     .inventory-list-table td:nth-child(3)::before { content: "Proveedor"; }
     .inventory-list-table td:nth-child(4)::before { content: "Factura"; }
     .inventory-list-table td:nth-child(5)::before { content: "Solicitud"; }
     .inventory-list-table td:nth-child(6)::before { content: "Entrega"; }
-    .inventory-list-table td:nth-child(7)::before { content: "Aplicacion"; }
+    .inventory-list-table td:nth-child(7)::before { content: "Aplicación"; }
     .inventory-list-table td:nth-child(8)::before { content: "Estado"; }
     .inventory-list-table td:nth-child(9)::before { content: "Auditoria"; }
     .inventory-list-table td:nth-child(10)::before { content: "Total"; }
     .inventory-list-table td:nth-child(11)::before { content: "Solicita"; }
     .inventory-list-table td:nth-child(12)::before { content: "Acciones"; }
 
-    .history-list-table td:nth-child(1)::before { content: "Numero"; }
+    .history-list-table td:nth-child(1)::before { content: "Número"; }
     .history-list-table td:nth-child(2)::before { content: "Tipo"; }
     .history-list-table td:nth-child(3)::before { content: "Proveedor"; }
     .history-list-table td:nth-child(4)::before { content: "Producto"; }
     .history-list-table td:nth-child(5)::before { content: "Factura"; }
-    .history-list-table td:nth-child(6)::before { content: "Aplicacion"; }
+    .history-list-table td:nth-child(6)::before { content: "Aplicación"; }
     .history-list-table td:nth-child(7)::before { content: "Estado"; }
     .history-list-table td:nth-child(8)::before { content: "Auditoria"; }
     .history-list-table td:nth-child(9)::before { content: "Total"; }

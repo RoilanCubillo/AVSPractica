@@ -7,7 +7,7 @@
     <div class="page-header-copy">
         <span class="eyebrow">Consulta historica</span>
         <h1>Historico de Ajustes de Inventario</h1>
-        <p>Revise documentos cerrados, detecte lineas especiales y valide la aplicacion final del movimiento.</p>
+        <p>Revise documentos cerrados, detecte l&iacute;neas especiales y valide la aplicacion final del movimiento.</p>
     </div>
     <a class="btn btn-outline-primary" href="@Url.Action("Inicio", "DocumentosInventario")">Volver a documentos</a>
 </section>
@@ -24,12 +24,12 @@
             </select>
         </div>
         <div class="col-12 col-md-4 col-xl-2">
-            <label for="hist_fecha_aplicacion" class="form-label">Fecha Aplicacion</label>
+            <label for="hist_fecha_aplicacion" class="form-label">Fecha Aplicaci&oacute;n</label>
             <input id="hist_fecha_aplicacion" type="date" class="form-control" />
         </div>
         <div class="col-12 col-md-4 col-xl-2">
             <label for="hist_proveedor" class="form-label">Proveedor</label>
-            <input id="hist_proveedor" type="text" class="form-control" placeholder="Codigo o nombre" />
+            <input id="hist_proveedor" type="text" class="form-control" placeholder="C&oacute;digo o nombre" />
         </div>
         <div class="col-12 col-md-4 col-xl-2">
             <label for="hist_usuario" class="form-label">Usuario</label>
@@ -77,12 +77,12 @@
         <table class="table align-middle document-table history-list-table">
             <thead>
                 <tr>
-                    <th>Numero</th>
+                    <th>N&uacute;mero</th>
                     <th>Tipo</th>
                     <th>Proveedor</th>
                     <th>Producto</th>
                     <th>Factura Ref.</th>
-                    <th>Fecha Aplicacion</th>
+                    <th>Fecha Aplicaci&oacute;n</th>
                     <th>Estado</th>
                     <th>Auditoria</th>
                     <th>Total</th>
@@ -238,6 +238,7 @@
             $("#hist_view_title").text(documento.Numero);
             $("#hist_view_subtitle").text(documento.Tipo + " registrado para " + (documento.Proveedor || "Proveedor no definido") + ".");
             $("#hist_view_total").text(formatMoney(documento.Total));
+            $("#hist_view_total").closest(".document-view-total").toggleClass("voided-total", documento.Estado === "Anulada");
             renderHistoricoHeaderBadges(documento);
             renderHistoricoSummary(documento);
             renderHistoricoTipoDocumento(documento);
@@ -265,10 +266,10 @@
 
         function getHistoricoAuditoriaBadge(documento) {
             if (!documento.CantidadLineasEspeciales) {
-                return "<span class='status-badge draft'>" + formatNumber(documento.CantidadLineasDetalle || 0) + " lineas</span>";
+                return "<span class='status-badge draft'>" + escapeHtml(formatLineCount(documento.CantidadLineasDetalle || 0)) + "</span>";
             }
 
-            return "<span class='audit-pill'>" + escapeHtml(documento.ResumenAuditoria || "Regalias auditadas") + "</span>";
+            return "<span class='audit-pill'>" + escapeHtml(documento.ResumenAuditoria || "Regal\u00edas auditadas") + "</span>";
         }
 
         function renderHistoricoHeaderBadges(documento) {
@@ -282,16 +283,22 @@
 
         function renderHistoricoSummary(documento) {
             var items = [
-                { label: "Numero", value: documento.Numero },
+                { label: "Número", value: documento.Numero },
                 { label: "Tipo", value: documento.Tipo },
                 { label: "Proveedor", value: documento.Proveedor || "-" },
                 { label: "Producto", value: documento.Producto || "-" },
                 { label: "Factura Ref.", value: documento.FacturaRef || "-" },
-                { label: "Fecha Aplicacion", value: documento.FechaAplicacion || "-" },
+                { label: "Fecha Aplicación", value: documento.FechaAplicacion || "-" },
                 { label: "Usuario", value: documento.PersonaSolicita || "-" },
-                { label: "Lineas", value: documento.CantidadLineasDetalle || 0 },
-                { label: "Regalias", value: documento.CantidadLineasEspeciales || 0 }
+                { label: "Líneas", value: documento.CantidadLineasDetalle || 0 },
+                { label: "Regalías", value: documento.CantidadLineasEspeciales || 0 }
             ];
+
+            if (documento.Estado === "Anulada") {
+                items.push({ label: "Motivo anulación", value: documento.MotivoAnulacion || "-" });
+                items.push({ label: "Usuario anula", value: documento.UsuarioAnula || "-" });
+                items.push({ label: "Fecha anulación", value: documento.FechaHoraAnula || "-" });
+            }
 
             $("#hist_view_summary").html(renderViewGrid(items));
         }
@@ -302,10 +309,19 @@
                 "</div>";
 
             if (documento.LineasEspeciales && documento.LineasEspeciales.length) {
-                html += "<div class='document-view-subsection'><h4>Lineas especiales</h4>" +
-                    "<div class='document-view-table'><table class='table table-sm align-middle mb-0'><thead><tr><th>Codigo</th><th>Descripcion</th><th>Cantidad</th><th>Costo</th></tr></thead><tbody>" +
+                html += "<div class='document-view-subsection'><h4>L\u00edneas especiales</h4>" +
+                    "<div class='document-view-table'><table class='table table-sm align-middle mb-0'><thead><tr><th>C\u00f3digo</th><th>Descripci\u00f3n</th><th>Cantidad</th><th>Costo</th></tr></thead><tbody>" +
                     documento.LineasEspeciales.map(function (linea) {
                         return "<tr><td>" + escapeHtml(linea.CodigoProducto) + "</td><td>" + escapeHtml(linea.Descripcion) + "</td><td>" + formatNumber(linea.Cantidad) + "</td><td>" + formatMoney(linea.Costo) + "</td></tr>";
+                    }).join("") +
+                    "</tbody></table></div></div>";
+            }
+
+            if (documento.EventosAuditoria && documento.EventosAuditoria.length) {
+                html += "<div class='document-view-subsection'><h4>Eventos</h4>" +
+                    "<div class='document-view-table'><table class='table table-sm align-middle mb-0'><thead><tr><th>Evento</th><th>Usuario</th><th>Fecha hora</th><th>Comentario</th></tr></thead><tbody>" +
+                    documento.EventosAuditoria.map(function (evento) {
+                        return "<tr><td>" + escapeHtml(evento.Evento) + "</td><td>" + escapeHtml(evento.Usuario) + "</td><td>" + escapeHtml(evento.FechaHora) + "</td><td>" + escapeHtml(evento.Comentario) + "</td></tr>";
                     }).join("") +
                     "</tbody></table></div></div>";
             }
@@ -316,14 +332,24 @@
         function buildHistoricoAuditSummaryText(documento) {
             var lineas = Number(documento.CantidadLineasDetalle || 0);
             var especiales = Number(documento.CantidadLineasEspeciales || 0);
-            if (!especiales) return lineas + " lineas aplicadas. Sin regalias auditables.";
-            return lineas + " lineas aplicadas. " + (documento.ResumenAuditoria || (especiales + " regalias auditables")) + ".";
+            if (!especiales) return formatLineCount(lineas) + " aplicadas. Sin regal\u00edas auditables.";
+            return formatLineCount(lineas) + " aplicadas. " + (documento.ResumenAuditoria || formatRegaliaCount(especiales) + " auditables") + ".";
+        }
+
+        function formatLineCount(value) {
+            var count = Number(value || 0);
+            return count === 1 ? "1 l\u00ednea" : formatNumber(count) + " l\u00edneas";
+        }
+
+        function formatRegaliaCount(value) {
+            var count = Number(value || 0);
+            return count === 1 ? "1 regal\u00eda" : formatNumber(count) + " regal\u00edas";
         }
 
         function renderHistoricoTipoDocumento(documento) {
             var items = [];
 
-            if (documento.TipoSalida) {
+            if (documento.Tipo === "Salida de Inventario" && documento.TipoSalida) {
                 items.push({ label: "Tipo salida", value: documento.TipoSalida });
             }
 
@@ -339,13 +365,13 @@
 
         function renderHistoricoDetalleLineas(documento) {
             if (!documento.DetalleLineas || !documento.DetalleLineas.length) {
-                $("#hist_view_lines").html("<div class='document-view-empty'>Sin lineas registradas.</div>");
+                $("#hist_view_lines").html("<div class='document-view-empty'>Sin l\u00edneas registradas.</div>");
                 return;
             }
 
-            var table = "<div class='document-view-table'><table class='table table-sm align-middle mb-0'><thead><tr><th>Codigo</th><th>Descripcion</th><th>Unidad</th><th>Cantidad</th><th>Total</th><th>Regalia</th></tr></thead><tbody>" +
+            var table = "<div class='document-view-table'><table class='table table-sm align-middle mb-0'><thead><tr><th>C\u00f3digo</th><th>Descripci\u00f3n</th><th>Unidad</th><th>Solicitada</th><th>Recibida</th><th>Pendiente</th><th>Total</th><th>Regal\u00eda</th></tr></thead><tbody>" +
                 documento.DetalleLineas.map(function (linea) {
-                    return "<tr><td>" + escapeHtml(linea.Codigo) + "</td><td>" + escapeHtml(linea.Descripcion) + "</td><td>" + escapeHtml(linea.Unidad) + "</td><td>" + formatNumber(linea.Cantidad) + "</td><td>" + formatMoney(linea.TotalLinea) + "</td><td>" + getBooleanBadge(linea.Regalia) + "</td></tr>";
+                    return "<tr><td>" + escapeHtml(linea.Codigo) + "</td><td>" + escapeHtml(linea.Descripcion) + "</td><td>" + escapeHtml(linea.Unidad) + "</td><td>" + formatNumber(linea.CantidadSolicitada || linea.Cantidad) + "</td><td>" + formatNumber(linea.CantidadRecibida || 0) + "</td><td>" + formatNumber(linea.CantidadPendiente || 0) + "</td><td>" + formatMoney(linea.TotalLinea) + "</td><td>" + getBooleanBadge(linea.Regalia) + "</td></tr>";
                 }).join("") +
                 "</tbody></table></div>";
 

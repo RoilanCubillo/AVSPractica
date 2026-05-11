@@ -15,6 +15,9 @@ namespace UltraERP.Models
         public DateTime? FechaEntrega { get; set; }
         public DateTime? FechaAplicacion { get; set; }
         public string Estado { get; set; }
+        public string MotivoAnulacion { get; set; }
+        public string UsuarioAnula { get; set; }
+        public DateTime? FechaHoraAnula { get; set; }
         public decimal Total { get; set; }
         public string PersonaSolicita { get; set; }
         public string TipoSalida { get; set; }
@@ -26,5 +29,6 @@ namespace UltraERP.Models
         public int CantidadLineasEspeciales { get; set; }
         public decimal TotalLineasEspeciales { get; set; }
         public string ResumenAuditoria { get; set; }
+        public List<DocumentoAuditoriaEventoViewModel> EventosAuditoria { get; set; }
     }
 }

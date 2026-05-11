@@ -174,10 +174,15 @@ namespace UltraERP.Controllers
                 if (model == null)
                     return Json(new JsonResponse("Datos invalidos.", "No se recibio el encabezado del documento.", null, false));
 
-                var validationMessage = ValidateEncabezado(model, accion);
-                if (!String.IsNullOrWhiteSpace(validationMessage))
+                var normalizedAction = NormalizeAccion(accion);
+                var isReceptionSave = model.DocumentoId.HasValue && (normalizedAction == "Parcial" || normalizedAction == "Recibir");
+                if (!isReceptionSave)
                 {
-                    return Json(new JsonResponse("Validacion de encabezado.", validationMessage, null, false));
+                    var validationMessage = ValidateEncabezado(model, accion);
+                    if (!String.IsNullOrWhiteSpace(validationMessage))
+                    {
+                        return Json(new JsonResponse("Validacion de encabezado.", validationMessage, null, false));
+                    }
                 }
 
                 lock (SyncRoot)
@@ -197,8 +202,15 @@ namespace UltraERP.Controllers
                     if (isUpdate && documento == null)
                         return Json(new JsonResponse("Documento no encontrado.", "No se encontro el documento que intenta editar.", null, false));
 
-                    if (isUpdate && !String.Equals(documento.Estado, "Borrador", StringComparison.OrdinalIgnoreCase))
-                        return Json(new JsonResponse("Edicion no permitida.", "Solo los documentos en Borrador pueden editarse desde el registro.", null, false));
+                    var isRecepcionPermitida = isUpdate &&
+                        (String.Equals(documento.Estado, "Enviada", StringComparison.OrdinalIgnoreCase) ||
+                         String.Equals(documento.Estado, "Parcial", StringComparison.OrdinalIgnoreCase)) &&
+                        (normalizedAction == "Parcial" || normalizedAction == "Recibir");
+
+                    if (isUpdate &&
+                        !String.Equals(documento.Estado, "Borrador", StringComparison.OrdinalIgnoreCase) &&
+                        !isRecepcionPermitida)
+                        return Json(new JsonResponse("Edicion no permitida.", "Solo Borrador permite editar encabezado y detalle. En Parcial solo se actualizan cantidades recibidas.", null, false));
 
                     if (!isUpdate)
                     {
@@ -210,9 +222,17 @@ namespace UltraERP.Controllers
                         };
                     }
 
-                    UpdateDocumentoFromRegistro(documento, model, detalleLineas);
+                    if (isRecepcionPermitida)
+                    {
+                        UpdateRecepcionFromRegistro(documento, detalleLineas);
+                    }
+                    else
+                    {
+                        UpdateDocumentoFromRegistro(documento, model, detalleLineas);
+                        AddAuditoria(documento, isUpdate ? "Editado" : "Creado", GetCurrentUserName(), isUpdate ? "Documento actualizado desde registro." : "Documento creado en memoria.");
+                    }
 
-                    var transitionMessage = ApplyEstadoFromAccion(documento, accion);
+                    var transitionMessage = ApplyEstadoFromAccion(documento, accion, GetCurrentUserName(), null);
                     if (!String.IsNullOrWhiteSpace(transitionMessage))
                     {
                         return Json(new JsonResponse("Cambio de estado no permitido.", transitionMessage, null, false));
@@ -315,16 +335,23 @@ namespace UltraERP.Controllers
                     copy.ID = nextId;
                     copy.Numero = GetNextNumero(copy.Tipo);
                     copy.Estado = "Borrador";
+                    copy.MotivoAnulacion = "";
+                    copy.UsuarioAnula = "";
+                    copy.FechaHoraAnula = null;
                     copy.FacturaRef = "";
                     copy.FechaSolicitud = DateTime.Today;
                     copy.FechaEntrega = null;
                     copy.FechaAplicacion = null;
+                    ResetRecepcion(copy.DetalleLineas);
                     copy.LineasEspeciales = BuildLineasEspeciales(copy.DetalleLineas);
                     copy.CantidadLineasDetalle = copy.DetalleLineas == null ? 0 : copy.DetalleLineas.Count;
                     copy.CantidadLineasEspeciales = copy.LineasEspeciales.Count;
                     copy.TotalLineasEspeciales = copy.LineasEspeciales.Sum(x => x.Cantidad * x.Costo);
                     copy.ResumenAuditoria = BuildResumenAuditoria(copy.LineasEspeciales);
                     copy.Producto = BuildResumenProducto(copy.DetalleLineas, copy.LineasEspeciales);
+                    copy.EventosAuditoria = new List<DocumentoAuditoriaEventoViewModel>();
+                    AddAuditoria(copy, "Creado", GetCurrentUserName(), "Documento creado por duplicado.");
+                    AddAuditoria(copy, "Duplicado", GetCurrentUserName(), "Origen: " + source.Numero + ".");
                     Documentos.Add(copy);
 
                     return Json(new JsonResponse("", "Documento duplicado como borrador. Revise factura y fechas antes de enviarlo.", ToGrid(copy), true), JsonRequestBehavior.AllowGet);
@@ -337,7 +364,7 @@ namespace UltraERP.Controllers
         }
 
         [HttpPost]
-        public JsonResult EjecutarAccion(int id, string accion)
+        public JsonResult EjecutarAccion(int id, string accion, string motivo)
         {
             try
             {
@@ -347,7 +374,7 @@ namespace UltraERP.Controllers
                     if (documento == null)
                         return Json(new JsonResponse("Documento no encontrado.", "No se encontro el documento seleccionado.", null, false), JsonRequestBehavior.AllowGet);
 
-                    var transitionMessage = ApplyEstadoFromAccion(documento, accion);
+                    var transitionMessage = ApplyEstadoFromAccion(documento, accion, GetCurrentUserName(), motivo);
                     if (!String.IsNullOrWhiteSpace(transitionMessage))
                     {
                         return Json(new JsonResponse("Cambio de estado no permitido.", transitionMessage, null, false), JsonRequestBehavior.AllowGet);
@@ -398,7 +425,9 @@ namespace UltraERP.Controllers
                 .Select(CloneDetalleLinea)
                 .ToList();
             var tipo = NormalizeTipoDocumento(documento.Tipo);
-            var tipoSalida = String.IsNullOrWhiteSpace(documento.TipoSalida) ? "Est\u00e1ndar" : documento.TipoSalida;
+            var tipoSalida = String.Equals(tipo, "Salida de Inventario", StringComparison.OrdinalIgnoreCase)
+                ? (String.IsNullOrWhiteSpace(documento.TipoSalida) ? "Est\u00e1ndar" : documento.TipoSalida)
+                : "";
 
             return new DocumentoInventarioRegistroViewModel
             {
@@ -430,6 +459,9 @@ namespace UltraERP.Controllers
 
         private static void UpdateDocumentoFromRegistro(DocumentoInventarioViewModel documento, DocumentoInventarioRegistroViewModel model, List<DocumentoDetalleLineaViewModel> detalleLineas)
         {
+            foreach (var linea in detalleLineas)
+                EnsureRecepcionLinea(linea, documento.Estado);
+
             var lineasEspeciales = BuildLineasEspeciales(detalleLineas);
 
             documento.Tipo = ToListTipo(model.TipoDocumento);
@@ -440,9 +472,9 @@ namespace UltraERP.Controllers
             documento.FechaAplicacion = model.FechaAplicacion;
             documento.Total = detalleLineas.Any() ? detalleLineas.Sum(x => x.TotalLinea) : (model.TotalFactura ?? 0m);
             documento.PersonaSolicita = (model.PersonaSolicita ?? "").Trim();
-            documento.TipoSalida = model.TipoSalida;
-            documento.JustificacionSalida = model.JustificacionSalida;
-            documento.JustificacionEntrada = model.JustificacionEntrada;
+            documento.TipoSalida = String.Equals(documento.Tipo, "Salida de Inventario", StringComparison.OrdinalIgnoreCase) ? model.TipoSalida : "";
+            documento.JustificacionSalida = String.Equals(documento.Tipo, "Salida de Inventario", StringComparison.OrdinalIgnoreCase) ? model.JustificacionSalida : "";
+            documento.JustificacionEntrada = String.Equals(documento.Tipo, "Entrada de Inventario", StringComparison.OrdinalIgnoreCase) ? model.JustificacionEntrada : "";
             documento.DetalleLineas = detalleLineas.Select(CloneDetalleLinea).ToList();
             documento.CantidadLineasDetalle = detalleLineas.Count;
             documento.LineasEspeciales = lineasEspeciales;
@@ -450,6 +482,60 @@ namespace UltraERP.Controllers
             documento.TotalLineasEspeciales = lineasEspeciales.Sum(x => x.Cantidad * x.Costo);
             documento.ResumenAuditoria = BuildResumenAuditoria(lineasEspeciales);
             documento.Producto = BuildResumenProducto(detalleLineas, lineasEspeciales);
+        }
+
+        private static void UpdateRecepcionFromRegistro(DocumentoInventarioViewModel documento, List<DocumentoDetalleLineaViewModel> postedLineas)
+        {
+            var actuales = documento.DetalleLineas ?? new List<DocumentoDetalleLineaViewModel>();
+            for (var i = 0; i < actuales.Count; i++)
+            {
+                var actual = actuales[i];
+                EnsureRecepcionLinea(actual, documento.Estado);
+
+                var posted = postedLineas.ElementAtOrDefault(i);
+                if (posted == null)
+                    continue;
+
+                actual.CantidadRecibida = Clamp(posted.CantidadRecibida, 0m, actual.CantidadSolicitada);
+                actual.CantidadPendiente = Math.Max(0m, actual.CantidadSolicitada - actual.CantidadRecibida);
+            }
+
+            documento.DetalleLineas = actuales;
+            documento.Producto = BuildResumenProducto(actuales, documento.LineasEspeciales);
+        }
+
+        private static void ResetRecepcion(List<DocumentoDetalleLineaViewModel> lineas)
+        {
+            foreach (var linea in lineas ?? new List<DocumentoDetalleLineaViewModel>())
+            {
+                EnsureRecepcionLinea(linea, "Borrador");
+                linea.CantidadRecibida = 0m;
+                linea.CantidadPendiente = linea.CantidadSolicitada;
+            }
+        }
+
+        private static void EnsureRecepcionLinea(DocumentoDetalleLineaViewModel linea, string estado)
+        {
+            if (linea == null)
+                return;
+
+            if (linea.Cantidad <= 0)
+                linea.Cantidad = linea.CantidadSolicitada > 0 ? linea.CantidadSolicitada : 1m;
+
+            if (linea.CantidadSolicitada <= 0)
+                linea.CantidadSolicitada = linea.Cantidad;
+
+            if (String.Equals(estado, "Recibida", StringComparison.OrdinalIgnoreCase) ||
+                String.Equals(estado, "Cerrada", StringComparison.OrdinalIgnoreCase))
+            {
+                linea.CantidadRecibida = linea.CantidadSolicitada;
+            }
+            else
+            {
+                linea.CantidadRecibida = Clamp(linea.CantidadRecibida, 0m, linea.CantidadSolicitada);
+            }
+
+            linea.CantidadPendiente = Math.Max(0m, linea.CantidadSolicitada - linea.CantidadRecibida);
         }
 
         private static DocumentoInventarioViewModel CreateDocumento(
@@ -469,6 +555,9 @@ namespace UltraERP.Controllers
             List<DocumentoDetalleLineaViewModel> detalleLineas)
         {
             detalleLineas = detalleLineas ?? new List<DocumentoDetalleLineaViewModel>();
+            foreach (var linea in detalleLineas)
+                EnsureRecepcionLinea(linea, estado);
+
             var lineasEspeciales = BuildLineasEspeciales(detalleLineas);
 
             return new DocumentoInventarioViewModel
@@ -493,7 +582,11 @@ namespace UltraERP.Controllers
                 LineasEspeciales = lineasEspeciales,
                 CantidadLineasEspeciales = lineasEspeciales.Count,
                 TotalLineasEspeciales = lineasEspeciales.Sum(x => x.Cantidad * x.Costo),
-                ResumenAuditoria = BuildResumenAuditoria(lineasEspeciales)
+                ResumenAuditoria = BuildResumenAuditoria(lineasEspeciales),
+                EventosAuditoria = new List<DocumentoAuditoriaEventoViewModel>
+                {
+                    CreateAuditoriaEvento("Creado", personaSolicita, fechaSolicitud, "Documento inicial en memoria.")
+                }
             };
         }
 
@@ -515,6 +608,9 @@ namespace UltraERP.Controllers
                 Descripcion = descripcion,
                 Unidad = unidad,
                 Cantidad = cantidad,
+                CantidadSolicitada = cantidad,
+                CantidadRecibida = 0m,
+                CantidadPendiente = cantidad,
                 CostoUnitario = costoUnitario,
                 DescuentoPorcentaje = descuentoPorcentaje,
                 DescuentoMonto = descuentoMonto,
@@ -578,6 +674,9 @@ namespace UltraERP.Controllers
                 FechaEntrega = source.FechaEntrega,
                 FechaAplicacion = source.FechaAplicacion,
                 Estado = source.Estado,
+                MotivoAnulacion = source.MotivoAnulacion,
+                UsuarioAnula = source.UsuarioAnula,
+                FechaHoraAnula = source.FechaHoraAnula,
                 Total = source.Total,
                 PersonaSolicita = source.PersonaSolicita,
                 TipoSalida = source.TipoSalida,
@@ -592,7 +691,10 @@ namespace UltraERP.Controllers
                     .ToList(),
                 CantidadLineasEspeciales = source.CantidadLineasEspeciales,
                 TotalLineasEspeciales = source.TotalLineasEspeciales,
-                ResumenAuditoria = source.ResumenAuditoria
+                ResumenAuditoria = source.ResumenAuditoria,
+                EventosAuditoria = (source.EventosAuditoria ?? new List<DocumentoAuditoriaEventoViewModel>())
+                    .Select(CloneAuditoriaEvento)
+                    .ToList()
             };
         }
 
@@ -619,6 +721,9 @@ namespace UltraERP.Controllers
                 documento.CantidadLineasEspeciales,
                 documento.TotalLineasEspeciales,
                 documento.ResumenAuditoria,
+                documento.MotivoAnulacion,
+                documento.UsuarioAnula,
+                FechaHoraAnula = FormatDateTime(documento.FechaHoraAnula),
                 DetalleLineas = (documento.DetalleLineas ?? new List<DocumentoDetalleLineaViewModel>())
                     .Select(x => new
                     {
@@ -626,6 +731,9 @@ namespace UltraERP.Controllers
                         x.Descripcion,
                         x.Unidad,
                         x.Cantidad,
+                        x.CantidadSolicitada,
+                        x.CantidadRecibida,
+                        x.CantidadPendiente,
                         x.CostoUnitario,
                         x.DescuentoPorcentaje,
                         x.DescuentoMonto,
@@ -643,6 +751,15 @@ namespace UltraERP.Controllers
                         x.Costo,
                         x.TipoLinea,
                         x.RequiereAuditoria
+                    }),
+                EventosAuditoria = (documento.EventosAuditoria ?? new List<DocumentoAuditoriaEventoViewModel>())
+                    .OrderBy(x => x.FechaHora)
+                    .Select(x => new
+                    {
+                        x.Evento,
+                        x.Usuario,
+                        FechaHora = FormatDateTime(x.FechaHora),
+                        x.Comentario
                     })
             };
         }
@@ -655,6 +772,9 @@ namespace UltraERP.Controllers
                 Descripcion = source.Descripcion,
                 Unidad = source.Unidad,
                 Cantidad = source.Cantidad,
+                CantidadSolicitada = source.CantidadSolicitada,
+                CantidadRecibida = source.CantidadRecibida,
+                CantidadPendiente = source.CantidadPendiente,
                 CostoUnitario = source.CostoUnitario,
                 DescuentoPorcentaje = source.DescuentoPorcentaje,
                 DescuentoMonto = source.DescuentoMonto,
@@ -662,6 +782,17 @@ namespace UltraERP.Controllers
                 TotalLinea = source.TotalLinea,
                 Regalia = source.Regalia,
                 Observacion = source.Observacion
+            };
+        }
+
+        private static DocumentoAuditoriaEventoViewModel CloneAuditoriaEvento(DocumentoAuditoriaEventoViewModel source)
+        {
+            return new DocumentoAuditoriaEventoViewModel
+            {
+                Evento = source.Evento,
+                Usuario = source.Usuario,
+                FechaHora = source.FechaHora,
+                Comentario = source.Comentario
             };
         }
 
@@ -703,12 +834,18 @@ namespace UltraERP.Controllers
                         }
 
                         descuentoMonto = Math.Min(descuentoMonto, subtotal);
+                        var cantidadSolicitada = x.CantidadSolicitada <= 0 ? cantidad : x.CantidadSolicitada;
+                        var cantidadRecibida = Clamp(x.CantidadRecibida, 0m, cantidadSolicitada);
+
                         return new DocumentoDetalleLineaViewModel
                         {
                             Codigo = (x.Codigo ?? "").Trim(),
                             Descripcion = (x.Descripcion ?? "").Trim(),
                             Unidad = String.IsNullOrWhiteSpace(x.Unidad) ? "UND" : x.Unidad.Trim(),
                             Cantidad = cantidad,
+                            CantidadSolicitada = cantidadSolicitada,
+                            CantidadRecibida = cantidadRecibida,
+                            CantidadPendiente = Math.Max(0m, cantidadSolicitada - cantidadRecibida),
                             CostoUnitario = costoUnitario,
                             DescuentoPorcentaje = descuentoPorcentaje,
                             DescuentoMonto = descuentoMonto,
@@ -742,6 +879,12 @@ namespace UltraERP.Controllers
                 if (linea.Cantidad <= 0)
                     return rowLabel + "la cantidad debe ser mayor a cero.";
 
+                if (linea.CantidadSolicitada <= 0)
+                    return rowLabel + "la cantidad solicitada debe ser mayor a cero.";
+
+                if (linea.CantidadRecibida < 0 || linea.CantidadRecibida > linea.CantidadSolicitada)
+                    return rowLabel + "la cantidad recibida debe estar entre 0 y la cantidad solicitada.";
+
                 if (!linea.Regalia && linea.CostoUnitario <= 0)
                     return rowLabel + "el costo unitario debe ser mayor a cero.";
 
@@ -756,7 +899,7 @@ namespace UltraERP.Controllers
                     return rowLabel + "el impuesto debe estar entre 0 y 100.";
 
                 if (linea.Regalia && String.IsNullOrWhiteSpace(linea.Observacion))
-                    return rowLabel + "las regalias requieren observacion para auditoria.";
+                    return rowLabel + "las regal\u00edas requieren observaci\u00f3n para auditor\u00eda.";
             }
 
             return "";
@@ -784,8 +927,8 @@ namespace UltraERP.Controllers
                 return "";
 
             return lineas.Count == 1
-                ? "1 linea especial auditada"
-                : lineas.Count.ToString(CultureInfo.InvariantCulture) + " lineas especiales auditadas";
+                ? "1 l\u00ednea especial auditada"
+                : lineas.Count.ToString(CultureInfo.InvariantCulture) + " l\u00edneas especiales auditadas";
         }
 
         private static string BuildResumenProducto(List<DocumentoDetalleLineaViewModel> detalleLineas, List<DocumentoLineaEspecialViewModel> lineasEspeciales)
@@ -880,7 +1023,7 @@ namespace UltraERP.Controllers
             return (value ?? "").Trim().ToUpperInvariant();
         }
 
-        private static string ApplyEstadoFromAccion(DocumentoInventarioViewModel documento, string accion)
+        private static string ApplyEstadoFromAccion(DocumentoInventarioViewModel documento, string accion, string usuario, string motivoAnulacion)
         {
             var normalizedAction = NormalizeAccion(accion);
             var estadoActual = documento.Estado ?? "Borrador";
@@ -900,6 +1043,8 @@ namespace UltraERP.Controllers
                     return "Solo los documentos en Borrador pueden enviarse.";
 
                 documento.Estado = "Enviada";
+                ResetRecepcion(documento.DetalleLineas);
+                AddAuditoria(documento, "Enviado", usuario, "Documento enviado para recepcion.");
                 return "";
             }
 
@@ -909,18 +1054,22 @@ namespace UltraERP.Controllers
                     !String.Equals(estadoActual, "Parcial", StringComparison.OrdinalIgnoreCase))
                     return "Solo los documentos Enviados o Parciales pueden recibirse.";
 
+                CompletarRecepcion(documento.DetalleLineas);
                 documento.Estado = "Recibida";
                 documento.FechaEntrega = documento.FechaEntrega ?? DateTime.Today;
+                AddAuditoria(documento, "Recibido", usuario, "Recepcion completa aplicada.");
                 return "";
             }
 
             if (normalizedAction == "Parcial")
             {
-                if (!String.Equals(estadoActual, "Enviada", StringComparison.OrdinalIgnoreCase))
-                    return "Solo los documentos Enviados pueden marcarse como parciales.";
+                if (!String.Equals(estadoActual, "Enviada", StringComparison.OrdinalIgnoreCase) &&
+                    !String.Equals(estadoActual, "Parcial", StringComparison.OrdinalIgnoreCase))
+                    return "Solo los documentos Enviados o Parciales pueden guardarse como recepcion parcial.";
 
                 documento.Estado = "Parcial";
                 documento.FechaEntrega = documento.FechaEntrega ?? DateTime.Today;
+                AddAuditoria(documento, "Parcial", usuario, "Recepcion parcial guardada.");
                 return "";
             }
 
@@ -931,6 +1080,29 @@ namespace UltraERP.Controllers
 
                 documento.Estado = "Cerrada";
                 documento.FechaAplicacion = documento.FechaAplicacion ?? DateTime.Today;
+                AddAuditoria(documento, "Cerrado", usuario, "Documento cerrado y enviado al historico.");
+                return "";
+            }
+
+            if (normalizedAction == "Anular")
+            {
+                if (String.Equals(estadoActual, "Cerrada", StringComparison.OrdinalIgnoreCase))
+                    return "Los documentos Cerrados no pueden anularse desde esta pantalla.";
+
+                if (String.Equals(estadoActual, "Recibida", StringComparison.OrdinalIgnoreCase))
+                    return "Los documentos Recibidos no pueden anularse sin generar una reversa de inventario.";
+
+                if (String.Equals(estadoActual, "Anulada", StringComparison.OrdinalIgnoreCase))
+                    return "El documento ya se encuentra Anulado.";
+
+                if (String.IsNullOrWhiteSpace(motivoAnulacion))
+                    return "Ingrese el motivo de anulacion.";
+
+                documento.Estado = "Anulada";
+                documento.MotivoAnulacion = motivoAnulacion.Trim();
+                documento.UsuarioAnula = usuario;
+                documento.FechaHoraAnula = DateTime.Now;
+                AddAuditoria(documento, "Anulado", usuario, documento.MotivoAnulacion);
                 return "";
             }
 
@@ -950,6 +1122,8 @@ namespace UltraERP.Controllers
                     return "Recibir";
                 case "cerrar":
                     return "Cerrar";
+                case "anular":
+                    return "Anular";
                 case "borrador":
                 case "":
                     return "Borrador";
@@ -961,6 +1135,53 @@ namespace UltraERP.Controllers
         private static string FormatDate(DateTime? value)
         {
             return value.HasValue ? value.Value.ToString("dd/MM/yyyy") : "";
+        }
+
+        private static string FormatDateTime(DateTime? value)
+        {
+            return value.HasValue ? value.Value.ToString("dd/MM/yyyy HH:mm") : "";
+        }
+
+        private static decimal Clamp(decimal value, decimal min, decimal max)
+        {
+            return Math.Min(Math.Max(value, min), max);
+        }
+
+        private static void CompletarRecepcion(List<DocumentoDetalleLineaViewModel> lineas)
+        {
+            foreach (var linea in lineas ?? new List<DocumentoDetalleLineaViewModel>())
+            {
+                EnsureRecepcionLinea(linea, "Parcial");
+                linea.CantidadRecibida = linea.CantidadSolicitada;
+                linea.CantidadPendiente = 0m;
+            }
+        }
+
+        private static DocumentoAuditoriaEventoViewModel CreateAuditoriaEvento(string evento, string usuario, DateTime fechaHora, string comentario)
+        {
+            return new DocumentoAuditoriaEventoViewModel
+            {
+                Evento = evento,
+                Usuario = String.IsNullOrWhiteSpace(usuario) ? "Sistema" : usuario,
+                FechaHora = fechaHora,
+                Comentario = comentario ?? ""
+            };
+        }
+
+        private static void AddAuditoria(DocumentoInventarioViewModel documento, string evento, string usuario, string comentario)
+        {
+            if (documento == null)
+                return;
+
+            documento.EventosAuditoria = documento.EventosAuditoria ?? new List<DocumentoAuditoriaEventoViewModel>();
+            documento.EventosAuditoria.Add(CreateAuditoriaEvento(evento, usuario, DateTime.Now, comentario));
+        }
+
+        private string GetCurrentUserName()
+        {
+            return User != null && User.Identity != null && !String.IsNullOrWhiteSpace(User.Identity.Name)
+                ? User.Identity.Name
+                : "Usuario actual";
         }
 
         private static string NormalizeTipoDocumento(string tipoDocumento)

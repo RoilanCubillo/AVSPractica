@@ -193,6 +193,7 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\DocumentoDetalleLineaViewModel.cs" />
+    <Compile Include="Models\DocumentoAuditoriaEventoViewModel.cs" />
     <Compile Include="Models\DocumentoLineaEspecialViewModel.cs" />
     <Compile Include="Models\DocumentoInventarioViewModel.cs" />
     <Compile Include="Models\DocumentoInventarioRegistroViewModel.cs" />
