@@ -8,6 +8,17 @@
     <link rel="stylesheet" href="~/Content/Site.css" />
 </head>
 <body>
+    <div id="appPageLoader" class="page-loader" aria-live="polite" aria-hidden="true">
+        <div class="page-loader-card">
+            <div class="page-loader-mark">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <strong>Preparando pantalla</strong>
+            <small>Un momento, estamos cargando la informaci&oacute;n...</small>
+        </div>
+    </div>
     <div class="app-shell">
         @if (Request.IsAuthenticated)
         {
@@ -35,6 +46,79 @@
     </div>
     <script src="~/Scripts/jquery-3.6.0.min.js"></script>
     <script src="~/Scripts/bootstrap.bundle.min.js"></script>
+    <script>
+        (function () {
+            var loader = document.getElementById("appPageLoader");
+            var loaderTimer = null;
+
+            function showPageLoader(message) {
+                if (!loader) return;
+                var title = loader.querySelector("strong");
+                if (title && message) {
+                    title.textContent = message;
+                }
+
+                window.clearTimeout(loaderTimer);
+                loader.classList.add("show");
+                loader.setAttribute("aria-hidden", "false");
+            }
+
+            function hidePageLoader() {
+                if (!loader) return;
+                loader.classList.remove("show");
+                loader.setAttribute("aria-hidden", "true");
+            }
+
+            function isPlainLeftClick(event) {
+                return event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey;
+            }
+
+            function shouldShowForLink(anchor) {
+                if (!anchor) return false;
+                var href = anchor.getAttribute("href");
+                if (!href || href.charAt(0) === "#" || href.indexOf("javascript:") === 0) return false;
+                if (anchor.target && anchor.target !== "_self") return false;
+                if (anchor.hasAttribute("download")) return false;
+
+                var url;
+                try {
+                    url = new URL(anchor.href, window.location.href);
+                } catch (e) {
+                    return false;
+                }
+
+                if (url.origin !== window.location.origin) return false;
+                if (url.pathname === window.location.pathname && url.search === window.location.search) return false;
+                return true;
+            }
+
+            document.addEventListener("click", function (event) {
+                var anchor = event.target.closest ? event.target.closest("a") : null;
+                if (!isPlainLeftClick(event) || !shouldShowForLink(anchor)) return;
+                showPageLoader(anchor.textContent && anchor.textContent.trim() ? "Abriendo " + anchor.textContent.trim() : "Cargando pantalla");
+            }, true);
+
+            document.addEventListener("submit", function (event) {
+                var form = event.target;
+                if (!form || form.getAttribute("data-no-loader") === "true") return;
+                if (form.checkValidity && !form.checkValidity()) return;
+                showPageLoader(form.classList.contains("login-form") ? "Ingresando" : "Guardando cambios");
+            }, true);
+
+            window.addEventListener("beforeunload", function () {
+                loaderTimer = window.setTimeout(function () {
+                    showPageLoader("Cargando pantalla");
+                }, 60);
+            });
+
+            window.addEventListener("pageshow", hidePageLoader);
+            document.addEventListener("DOMContentLoaded", hidePageLoader);
+
+            window.UltraERP = window.UltraERP || {};
+            window.UltraERP.showPageLoader = showPageLoader;
+            window.UltraERP.hidePageLoader = hidePageLoader;
+        })();
+    </script>
     @RenderSection("scripts", required: false)
 </body>
 </html>

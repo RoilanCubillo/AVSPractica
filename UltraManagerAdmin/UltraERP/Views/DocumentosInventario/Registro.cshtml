@@ -665,7 +665,13 @@
                     showToast(data.Message || "Documento guardado.");
                     disableLocalDraftPersistence = true;
                     clearLocalDraft();
-                    setTimeout(function () { window.location.href = urls.inicio; }, 700);
+                    setTimeout(function () {
+                        if (window.UltraERP && window.UltraERP.showPageLoader) {
+                            window.UltraERP.showPageLoader("Volviendo a documentos");
+                        }
+
+                        window.location.href = urls.inicio;
+                    }, 700);
                 })
                 .fail(function () {
                     showToast("No se pudo guardar el documento.");

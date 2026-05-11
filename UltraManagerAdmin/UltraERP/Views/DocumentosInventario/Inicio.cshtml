@@ -329,6 +329,10 @@
                 return;
             }
 
+            if (window.UltraERP && window.UltraERP.showPageLoader) {
+                window.UltraERP.showPageLoader(documento.Estado === "Borrador" ? "Abriendo edici\u00f3n" : "Abriendo recepci\u00f3n");
+            }
+
             window.location.href = urls.registro + "?id=" + encodeURIComponent(id);
         }
 
