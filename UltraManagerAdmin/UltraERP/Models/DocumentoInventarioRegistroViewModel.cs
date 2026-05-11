@@ -7,6 +7,8 @@ namespace UltraERP.Models
 {
     public class DocumentoInventarioRegistroViewModel
     {
+        public int? DocumentoId { get; set; }
+
         [Display(Name = "Tipo de Documento")]
         [Required(ErrorMessage = "Seleccione el tipo de documento.")]
         public string TipoDocumento { get; set; }

@@ -9,7 +9,10 @@
         <h1>Lista de documentos</h1>
         <p>Consulte movimientos, revise auditoria y ejecute acciones del flujo sin salir de la bandeja principal.</p>
     </div>
-    <a id="btnNuevo" class="btn btn-primary" href="@Url.Action("Registro", "DocumentosInventario")">Nuevo documento</a>
+    <div class="topbar-actions">
+        <a class="btn btn-outline-primary" href="@Url.Action("Historico", "DocumentosInventario")">Historico</a>
+        <a id="btnNuevo" class="btn btn-primary" href="@Url.Action("Registro", "DocumentosInventario")">Nuevo documento</a>
+    </div>
 </section>
 
 <section class="filter-panel">
@@ -163,6 +166,7 @@
     <script>
         var urls = {
             documentos: '@Url.Action("GetDocumentos", "DocumentosInventario")',
+            registro: '@Url.Action("Registro", "DocumentosInventario")',
             duplicar: '@Url.Action("Duplicar", "DocumentosInventario")',
             accion: '@Url.Action("EjecutarAccion", "DocumentosInventario")'
         };
@@ -269,6 +273,10 @@
             }
 
             if (estado === "Enviada" || estado === "Parcial") {
+                if (estado === "Enviada") {
+                    buttons.push("<button class='icon-button warning' title='Marcar parcial' onclick='onAccion(" + id + ", \"parcial\")'>Parcial</button>");
+                }
+
                 buttons.push("<button class='icon-button success' title='Recibir' onclick='onAccion(" + id + ", \"recibir\")'>Recibir</button>");
             }
 
@@ -308,7 +316,12 @@
         function onEditar(id) {
             var documento = findDocumento(id);
             if (!documento) return;
-            showToast("La edicion del detalle se conectara al formulario del documento " + documento.Numero + ".");
+            if (documento.Estado !== "Borrador") {
+                showToast("Solo los documentos en Borrador pueden editarse.");
+                return;
+            }
+
+            window.location.href = urls.registro + "?id=" + encodeURIComponent(id);
         }
 
         function onDuplicar(id) {
@@ -335,7 +348,16 @@
 
         function onAccion(id, accion) {
             var documento = findDocumento(id);
-            if (!documento || !confirm("Desea " + accion + " el documento " + documento.Numero + "?")) return;
+            if (!documento) return;
+
+            var accionTexto = {
+                enviar: "enviar",
+                parcial: "marcar como parcial",
+                recibir: "recibir/aplicar",
+                cerrar: "cerrar"
+            }[accion] || accion;
+
+            if (!confirm("Desea " + accionTexto + " el documento " + documento.Numero + "?")) return;
 
             $.post(urls.accion, { id: id, accion: accion }).done(function (data) {
                 if (!data.Status) {
