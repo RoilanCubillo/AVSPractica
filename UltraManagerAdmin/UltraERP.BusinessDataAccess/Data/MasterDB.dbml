@@ -1,5 +1,5 @@
-﻿<?xml version="1.0" encoding="utf-8"?><Database Name="BM_POS_CEDI" Class="MasterDBDataContext" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
-  <Connection Mode="AppSettings" ConnectionString="Data Source=192.168.137.216,9010;Initial Catalog=BM_POS_CEDI;Persist Security Info=True;User ID=us_rmhc_grupobm;Trust Server Certificate=True" SettingsObjectName="UltraERP.BusinessDataAccess.Properties.Settings" SettingsPropertyName="MasterDB" Provider="System.Data.SqlClient" />
+﻿<?xml version="1.0" encoding="utf-8"?><Database Name="DB_9E3FAF_CIFASA" Class="MasterDBDataContext" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
+  <Connection Mode="AppSettings" ConnectionString="Data Source=192.168.137.216,9090;Initial Catalog=DB_9E3FAF_CIFASA;Persist Security Info=True;User ID=developerUNA;Password=space-dev2026;TrustServerCertificate=True" SettingsObjectName="UltraERP.BusinessDataAccess.Properties.Settings" SettingsPropertyName="MasterDB" Provider="System.Data.SqlClient" />
   <Table Name="dbo.View_UEP_ITEM_GET_BY_ITEMLOOKUPCODE_LIST" Member="View_UEP_ITEM_GET_BY_ITEMLOOKUPCODE_LISTs">
     <Type Name="View_UEP_ITEM_GET_BY_ITEMLOOKUPCODE_LIST">
       <Column Name="ItemLookupCode" Type="System.String" DbType="NVarChar(25) NOT NULL" CanBeNull="false" />

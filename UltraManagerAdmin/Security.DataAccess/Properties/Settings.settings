@@ -5,10 +5,10 @@
     <Setting Name="AVS_SECURITYConnectionString1" Type="(Connection string)" Scope="Application">
       <DesignTimeValue Profile="(Default)">&lt;?xml version="1.0" encoding="utf-16"?&gt;
 &lt;SerializableConnectionString xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"&gt;
-  &lt;ConnectionString&gt;Data Source=192.168.137.216,8010;Initial Catalog=AVS_SECURITY;User ID=us_rmhc_grupobm;Password=qEMawKZr*5SVg7QeRt&lt;/ConnectionString&gt;
+  &lt;ConnectionString&gt;Data Source=192.168.137.216,9090;Initial Catalog=AVS_SECURITY_DEV;User ID=developerUNA;Password=space-dev2026&lt;/ConnectionString&gt;
   &lt;ProviderName&gt;System.Data.SqlClient&lt;/ProviderName&gt;
 &lt;/SerializableConnectionString&gt;</DesignTimeValue>
-      <Value Profile="(Default)">Data Source=192.168.137.216,8010;Initial Catalog=AVS_SECURITY;User ID=us_rmhc_grupobm;Password=qEMawKZr*5SVg7QeRt</Value>
+      <Value Profile="(Default)">Data Source=192.168.137.216,9090;Initial Catalog=AVS_SECURITY_DEV;User ID=developerUNA;Password=space-dev2026</Value>
     </Setting>
   </Settings>
 </SettingsFile>

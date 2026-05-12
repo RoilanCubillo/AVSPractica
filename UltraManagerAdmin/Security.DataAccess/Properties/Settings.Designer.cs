@@ -26,8 +26,7 @@ namespace Security.DataAccess.Properties {
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.ConnectionString)]
-        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=192.168.137.216,8010;Initial Catalog=AVS_SECURITY;User ID=us_rmhc_" +
-            "pobm;Password=qEMawKZr*5SVg7QeRt")]
+        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=192.168.137.216,9090;Initial Catalog=AVS_SECURITY_DEV;User ID=developerUNA;Password=space-dev2026")]
         public string AVS_SECURITYConnectionString1 {
             get {
                 return ((string)(this["AVS_SECURITYConnectionString1"]));

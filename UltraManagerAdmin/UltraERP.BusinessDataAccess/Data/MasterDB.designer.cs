@@ -22,7 +22,7 @@ namespace UltraERP.BusinessDataAccess.Data
 	using System;
 	
 	
-	[global::System.Data.Linq.Mapping.DatabaseAttribute(Name="BM_POS_CEDI")]
+	[global::System.Data.Linq.Mapping.DatabaseAttribute(Name="DB_9E3FAF_CIFASA")]
 	public partial class MasterDBDataContext : System.Data.Linq.DataContext
 	{
 		

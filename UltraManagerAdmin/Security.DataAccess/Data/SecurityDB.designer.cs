@@ -22,7 +22,7 @@ namespace Security.DataAccess.Data
 	using System;
 	
 	
-	[global::System.Data.Linq.Mapping.DatabaseAttribute(Name="AVS_SECURITY")]
+	[global::System.Data.Linq.Mapping.DatabaseAttribute(Name="AVS_SECURITY_DEV")]
 	public partial class SecurityDBDataContext : System.Data.Linq.DataContext
 	{
 		

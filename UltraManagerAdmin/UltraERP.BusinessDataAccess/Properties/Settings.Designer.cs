@@ -26,9 +26,7 @@ namespace UltraERP.BusinessDataAccess.Properties {
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.SpecialSettingAttribute(global::System.Configuration.SpecialSetting.ConnectionString)]
-        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=192.168.137.216,9010;Initial Catalog=BM_POS_CEDI;Persist Security Inf" +
-            "o=True;User ID=us_rmhc_grupobm;Password=qEMawKZr*5SVg7QeRt;TrustServerCertificat" +
-            "e=True")]
+        [global::System.Configuration.DefaultSettingValueAttribute("Data Source=192.168.137.216,9090;Initial Catalog=DB_9E3FAF_CIFASA;Persist Security Info=True;User ID=developerUNA;Password=space-dev2026;TrustServerCertificate=True")]
         public string MasterDB {
             get {
                 return ((string)(this["MasterDB"]));
