@@ -188,7 +188,10 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\ArticulosController.cs" />
+    <Compile Include="Controllers\CategoriasController.cs" />
+    <Compile Include="Controllers\DepartamentosController.cs" />
     <Compile Include="Controllers\DocumentosInventarioController.cs" />
+    <Compile Include="Controllers\FamiliasController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -199,6 +202,9 @@
     <Compile Include="Models\DocumentoInventarioViewModel.cs" />
     <Compile Include="Models\DocumentoInventarioRegistroViewModel.cs" />
     <Compile Include="Models\ArticuloViewModel.cs" />
+    <Compile Include="Models\CategoriaViewModel.cs" />
+    <Compile Include="Models\DepartamentoViewModel.cs" />
+    <Compile Include="Models\FamiliaViewModel.cs" />
     <Compile Include="Models\JsonResponse.cs" />
     <Compile Include="Models\LoginViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -209,9 +215,15 @@
     <Content Include="Views\Account\Login.cshtml" />
     <Content Include="Views\Articulos\Inicio.cshtml" />
     <Content Include="Views\Articulos\Registro.cshtml" />
+    <Content Include="Views\Categorias\Inicio.cshtml" />
+    <Content Include="Views\Categorias\Registro.cshtml" />
+    <Content Include="Views\Departamentos\Inicio.cshtml" />
+    <Content Include="Views\Departamentos\Registro.cshtml" />
     <Content Include="Views\DocumentosInventario\Historico.cshtml" />
     <Content Include="Views\DocumentosInventario\Inicio.cshtml" />
     <Content Include="Views\DocumentosInventario\Registro.cshtml" />
+    <Content Include="Views\Familias\Inicio.cshtml" />
+    <Content Include="Views\Familias\Registro.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Content\bootstrap.rtl.min.css.map" />
     <Content Include="Content\bootstrap.rtl.css.map" />

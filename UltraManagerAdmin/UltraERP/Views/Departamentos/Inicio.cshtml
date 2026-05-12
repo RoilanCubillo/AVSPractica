@@ -1,0 +1,303 @@
+@model IEnumerable<UltraERP.Models.DepartamentoViewModel>
+@{
+    ViewBag.Title = "Departamentos";
+    ViewBag.ActiveMenu = "Departamentos";
+    var departamentosJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
+}
+
+<section class="page-header">
+    <div class="page-header-copy">
+        <span class="eyebrow">Catalogo de clasificacion</span>
+        <h1>Departamentos</h1>
+        <p>Controle la segunda capa de clasificaci&oacute;n de art&iacute;culos, asociada siempre a una familia.</p>
+    </div>
+    <div class="topbar-actions">
+        <a id="btnNuevoDepartamento" class="btn btn-primary" href="@Url.Action("Registro", "Departamentos")">Nuevo departamento</a>
+    </div>
+</section>
+
+@if (TempData["DepartamentoMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["DepartamentoMessage"]</div>
+}
+
+<section class="filter-panel">
+    <div class="row g-3">
+        <div class="col-12 col-md-3">
+            <label for="filter_estado" class="form-label">Estado</label>
+            <select id="filter_estado" class="form-select">
+                <option value="Todos">Todos</option>
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="filter_familia" class="form-label">Familia</label>
+            <input id="filter_familia" type="text" class="form-control" />
+        </div>
+        <div class="col-12 col-md-5">
+            <label for="table_search" class="form-label">Buscar</label>
+            <input id="table_search" type="search" class="form-control" placeholder="Codigo, nombre o descripcion" />
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button id="btnLimpiar" class="btn btn-outline-secondary" type="button">Limpiar</button>
+        <button id="btnConsultar" class="btn btn-primary" type="button">Consultar</button>
+    </div>
+</section>
+
+<section class="metric-grid">
+    <article>
+        <span>Departamentos</span>
+        <strong id="summary_count">0</strong>
+    </article>
+    <article>
+        <span>Activos</span>
+        <strong id="summary_active">0</strong>
+    </article>
+    <article>
+        <span>Art&iacute;culos asociados</span>
+        <strong id="summary_items">0</strong>
+    </article>
+</section>
+
+<section class="table-panel">
+    <div class="table-toolbar">
+        <div class="table-toolbar-main">
+            <span id="results_hint" class="toolbar-chip">0 resultados</span>
+        </div>
+        <span id="loading_state" class="loading-state">Cargando...</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle document-table department-list-table">
+            <thead>
+                <tr>
+                    <th>C&oacute;digo</th>
+                    <th>Nombre</th>
+                    <th>Familia</th>
+                    <th>Descripci&oacute;n</th>
+                    <th>Categor&iacute;as</th>
+                    <th>Art&iacute;culos</th>
+                    <th>Estado</th>
+                    <th>Fecha crea</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="departamentos_body"></tbody>
+        </table>
+    </div>
+</section>
+
+<div class="modal fade" id="departamentoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="departamentoModalTitle" class="modal-title">Departamento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="document-view">
+                    <section class="document-view-hero">
+                        <div>
+                            <span class="eyebrow">Ficha de departamento</span>
+                            <h2 id="dep_view_title" class="document-view-title"></h2>
+                            <p id="dep_view_subtitle" class="document-view-subtitle"></p>
+                        </div>
+                        <div class="document-view-total">
+                            <span>Art&iacute;culos</span>
+                            <strong id="dep_view_items"></strong>
+                        </div>
+                    </section>
+                    <div id="dep_view_badges" class="document-view-badges"></div>
+                    <section class="document-view-section">
+                        <h3>Datos generales</h3>
+                        <div id="dep_view_summary" class="document-view-grid"></div>
+                    </section>
+                    <section class="document-view-section">
+                        <h3>Auditor&iacute;a</h3>
+                        <div id="dep_view_audit" class="document-view-grid"></div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        var urls = {
+            registro: '@Url.Action("Registro", "Departamentos")',
+            cambiarEstado: '@Url.Action("CambiarEstado", "Departamentos")'
+        };
+        var departamentos = @Html.Raw(departamentosJson);
+        var filteredRows = [];
+
+        $(function () {
+            bindEvents();
+            renderTable();
+            setLoading(false);
+        });
+
+        function bindEvents() {
+            $("#btnConsultar").on("click", renderTable);
+            $("#table_search, #filter_familia").on("input", renderTable);
+            $("#filter_estado").on("change", renderTable);
+            $("#btnLimpiar").on("click", function () {
+                $("#filter_estado").val("Todos");
+                $("#filter_familia").val("");
+                $("#table_search").val("");
+                renderTable();
+            });
+        }
+
+        function renderTable() {
+            filteredRows = getFilteredRows();
+            var html = filteredRows.map(function (d) {
+                return "<tr>" +
+                    "<td><strong>" + escapeHtml(d.Codigo) + "</strong></td>" +
+                    "<td>" + escapeHtml(d.Nombre) + "</td>" +
+                    "<td>" + escapeHtml(d.FamiliaTexto || "-") + "</td>" +
+                    "<td>" + escapeHtml(d.Descripcion || "-") + "</td>" +
+                    "<td>" + formatNumber(d.CantidadCategorias) + "</td>" +
+                    "<td>" + formatNumber(d.CantidadArticulos) + "</td>" +
+                    "<td>" + getEstadoBadge(d.EstadoTexto) + "</td>" +
+                    "<td>" + escapeHtml(d.FechaCreaTexto || "-") + "</td>" +
+                    "<td>" + getActionButtons(d) + "</td>" +
+                    "</tr>";
+            }).join("");
+
+            $("#results_hint").text(filteredRows.length + " resultados");
+            $("#departamentos_body").html(html || "<tr><td colspan='9' class='empty-state'>Sin departamentos para los filtros aplicados.</td></tr>");
+            updateSummary();
+        }
+
+        function getFilteredRows() {
+            var estado = $("#filter_estado").val();
+            var familia = ($("#filter_familia").val() || "").toLowerCase();
+            var text = ($("#table_search").val() || "").toLowerCase();
+
+            return departamentos.filter(function (d) {
+                if (estado !== "Todos" && d.EstadoTexto !== estado) return false;
+                if (familia && String(d.FamiliaTexto || "").toLowerCase().indexOf(familia) < 0) return false;
+                if (!text) return true;
+
+                return [d.Codigo, d.Nombre, d.Descripcion, d.FamiliaTexto]
+                    .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
+            });
+        }
+
+        function getActionButtons(departamento) {
+            return "<div class='action-stack'>" +
+                "<button class='icon-button info' type='button' onclick='onVer(" + departamento.ID + ")'>Ver</button>" +
+                "<button class='icon-button primary' type='button' onclick='onEditar(" + departamento.ID + ")'>Editar</button>" +
+                "<button class='icon-button " + (departamento.Activo ? "danger" : "success") + "' type='button' onclick='onCambiarEstado(" + departamento.ID + ")'>" + (departamento.Activo ? "Inactivar" : "Activar") + "</button>" +
+                "</div>";
+        }
+
+        function onVer(id) {
+            var departamento = findDepartamento(id);
+            if (!departamento) return;
+
+            $("#departamentoModalTitle").text("Departamento " + departamento.Codigo);
+            $("#dep_view_title").text(departamento.Codigo);
+            $("#dep_view_subtitle").text(departamento.Nombre);
+            $("#dep_view_items").text(formatNumber(departamento.CantidadArticulos));
+            $("#dep_view_badges").html(getEstadoBadge(departamento.EstadoTexto));
+            $("#dep_view_summary").html(renderViewGrid([
+                { label: "Codigo", value: departamento.Codigo },
+                { label: "Nombre", value: departamento.Nombre },
+                { label: "Familia", value: departamento.FamiliaTexto || "-" },
+                { label: "Descripcion", value: departamento.Descripcion || "-" },
+                { label: "Categorias", value: formatNumber(departamento.CantidadCategorias) },
+                { label: "Articulos asociados", value: formatNumber(departamento.CantidadArticulos) }
+            ]));
+            $("#dep_view_audit").html(renderViewGrid([
+                { label: "Usuario crea", value: departamento.UsuarioCrea || "-" },
+                { label: "Fecha crea", value: departamento.FechaCreaTexto || "-" },
+                { label: "Usuario modifica", value: departamento.UsuarioModifica || "-" },
+                { label: "Fecha modifica", value: departamento.FechaModificaTexto || "-" }
+            ]));
+            new bootstrap.Modal(document.getElementById("departamentoModal")).show();
+        }
+
+        function onEditar(id) {
+            if (window.UltraERP && window.UltraERP.showPageLoader) {
+                window.UltraERP.showPageLoader("Abriendo departamento");
+            }
+
+            window.location.href = urls.registro + "?id=" + encodeURIComponent(id);
+        }
+
+        function onCambiarEstado(id) {
+            var departamento = findDepartamento(id);
+            if (!departamento) return;
+
+            var accion = departamento.Activo ? "inactivar" : "activar";
+            if (!confirm("Desea " + accion + " el departamento " + departamento.Codigo + "?")) return;
+
+            $.post(urls.cambiarEstado, { id: id }).done(function (data) {
+                if (!data.Status) {
+                    showToast(data.Message || "No se pudo actualizar el departamento.");
+                    return;
+                }
+
+                var index = departamentos.findIndex(function (x) { return x.ID === id; });
+                if (index >= 0) {
+                    departamentos[index] = data.Result;
+                }
+
+                showToast(data.Message || "Departamento actualizado.");
+                renderTable();
+            }).fail(function () {
+                showToast("No se pudo actualizar el departamento.");
+            });
+        }
+
+        function findDepartamento(id) {
+            return departamentos.find(function (item) { return item.ID === id; });
+        }
+
+        function updateSummary() {
+            var rows = filteredRows.length ? filteredRows : getFilteredRows();
+            var active = rows.filter(function (d) { return d.Activo; }).length;
+            var items = rows.reduce(function (sum, d) { return sum + Number(d.CantidadArticulos || 0); }, 0);
+            $("#summary_count").text(rows.length);
+            $("#summary_active").text(active);
+            $("#summary_items").text(formatNumber(items));
+        }
+
+        function getEstadoBadge(estado) {
+            return estado === "Activo"
+                ? "<span class='status-badge received'>Activo</span>"
+                : "<span class='status-badge closed'>Inactivo</span>";
+        }
+
+        function renderViewGrid(items) {
+            return items.map(function (item) {
+                return "<article class='document-view-item'><span>" + escapeHtml(item.label) + "</span><strong>" + escapeHtml(item.value) + "</strong></article>";
+            }).join("");
+        }
+
+        function setLoading(isLoading) {
+            $("#loading_state").toggle(isLoading);
+        }
+
+        function showToast(message) {
+            var toast = $("<div class='local-toast'></div>").text(message);
+            $("body").append(toast);
+            setTimeout(function () { toast.addClass("show"); }, 10);
+            setTimeout(function () {
+                toast.removeClass("show");
+                setTimeout(function () { toast.remove(); }, 250);
+            }, 2600);
+        }
+
+        function formatNumber(value) {
+            return Number(value || 0).toLocaleString("es-CR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function escapeHtml(value) {
+            return $("<div />").text(value || "").html();
+        }
+    </script>
+}

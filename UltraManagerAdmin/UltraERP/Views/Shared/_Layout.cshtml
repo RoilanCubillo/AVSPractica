@@ -33,6 +33,9 @@
                 <nav class="app-nav">
                     <a class="@(ViewBag.ActiveMenu == "Documentos" ? "active" : "")" href="@Url.Action("Inicio", "DocumentosInventario")">Documentos</a>
                     <a class="@(ViewBag.ActiveMenu == "Articulos" ? "active" : "")" href="@Url.Action("Inicio", "Articulos")">Art&iacute;culos</a>
+                    <a class="@(ViewBag.ActiveMenu == "Familias" ? "active" : "")" href="@Url.Action("Inicio", "Familias")">Familias</a>
+                    <a class="@(ViewBag.ActiveMenu == "Departamentos" ? "active" : "")" href="@Url.Action("Inicio", "Departamentos")">Departamentos</a>
+                    <a class="@(ViewBag.ActiveMenu == "Categorias" ? "active" : "")" href="@Url.Action("Inicio", "Categorias")">Categor&iacute;as</a>
                     <a class="@(ViewBag.ActiveMenu == "Historico" ? "active" : "")" href="@Url.Action("Historico", "DocumentosInventario")">Historico de Ajustes</a>
                 </nav>
                 <div class="user-panel">

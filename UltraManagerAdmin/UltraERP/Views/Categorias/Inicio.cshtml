@@ -1,0 +1,304 @@
+@model IEnumerable<UltraERP.Models.CategoriaViewModel>
+@{
+    ViewBag.Title = "Categorias";
+    ViewBag.ActiveMenu = "Categorias";
+    var categoriasJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
+}
+
+<section class="page-header">
+    <div class="page-header-copy">
+        <span class="eyebrow">Catalogo de clasificacion</span>
+        <h1>Categor&iacute;as</h1>
+        <p>Administre la clasificaci&oacute;n por categor&iacute;a dentro de cada departamento para ordenar el cat&aacute;logo de art&iacute;culos.</p>
+    </div>
+    <div class="topbar-actions">
+        <a id="btnNuevaCategoria" class="btn btn-primary" href="@Url.Action("Registro", "Categorias")">Nueva categor&iacute;a</a>
+    </div>
+</section>
+
+@if (TempData["CategoriaMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["CategoriaMessage"]</div>
+}
+
+<section class="filter-panel">
+    <div class="row g-3">
+        <div class="col-12 col-md-3">
+            <label for="filter_estado" class="form-label">Estado</label>
+            <select id="filter_estado" class="form-select">
+                <option value="Todos">Todos</option>
+                <option value="Activa">Activa</option>
+                <option value="Inactiva">Inactiva</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="filter_departamento" class="form-label">Departamento</label>
+            <input id="filter_departamento" type="text" class="form-control" />
+        </div>
+        <div class="col-12 col-md-5">
+            <label for="table_search" class="form-label">Buscar</label>
+            <input id="table_search" type="search" class="form-control" placeholder="Codigo, nombre, familia o descripcion" />
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button id="btnLimpiar" class="btn btn-outline-secondary" type="button">Limpiar</button>
+        <button id="btnConsultar" class="btn btn-primary" type="button">Consultar</button>
+    </div>
+</section>
+
+<section class="metric-grid">
+    <article>
+        <span>Categor&iacute;as</span>
+        <strong id="summary_count">0</strong>
+    </article>
+    <article>
+        <span>Activas</span>
+        <strong id="summary_active">0</strong>
+    </article>
+    <article>
+        <span>Art&iacute;culos asociados</span>
+        <strong id="summary_items">0</strong>
+    </article>
+</section>
+
+<section class="table-panel">
+    <div class="table-toolbar">
+        <div class="table-toolbar-main">
+            <span id="results_hint" class="toolbar-chip">0 resultados</span>
+        </div>
+        <span id="loading_state" class="loading-state">Cargando...</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle document-table category-list-table">
+            <thead>
+                <tr>
+                    <th>C&oacute;digo</th>
+                    <th>Nombre</th>
+                    <th>Departamento</th>
+                    <th>Familia</th>
+                    <th>Descripci&oacute;n</th>
+                    <th>Subcategor&iacute;as</th>
+                    <th>Art&iacute;culos</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="categorias_body"></tbody>
+        </table>
+    </div>
+</section>
+
+<div class="modal fade" id="categoriaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="categoriaModalTitle" class="modal-title">Categor&iacute;a</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="document-view">
+                    <section class="document-view-hero">
+                        <div>
+                            <span class="eyebrow">Ficha de categor&iacute;a</span>
+                            <h2 id="cat_view_title" class="document-view-title"></h2>
+                            <p id="cat_view_subtitle" class="document-view-subtitle"></p>
+                        </div>
+                        <div class="document-view-total">
+                            <span>Art&iacute;culos</span>
+                            <strong id="cat_view_items"></strong>
+                        </div>
+                    </section>
+                    <div id="cat_view_badges" class="document-view-badges"></div>
+                    <section class="document-view-section">
+                        <h3>Datos generales</h3>
+                        <div id="cat_view_summary" class="document-view-grid"></div>
+                    </section>
+                    <section class="document-view-section">
+                        <h3>Auditor&iacute;a</h3>
+                        <div id="cat_view_audit" class="document-view-grid"></div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        var urls = {
+            registro: '@Url.Action("Registro", "Categorias")',
+            cambiarEstado: '@Url.Action("CambiarEstado", "Categorias")'
+        };
+        var categorias = @Html.Raw(categoriasJson);
+        var filteredRows = [];
+
+        $(function () {
+            bindEvents();
+            renderTable();
+            setLoading(false);
+        });
+
+        function bindEvents() {
+            $("#btnConsultar").on("click", renderTable);
+            $("#table_search, #filter_departamento").on("input", renderTable);
+            $("#filter_estado").on("change", renderTable);
+            $("#btnLimpiar").on("click", function () {
+                $("#filter_estado").val("Todos");
+                $("#filter_departamento").val("");
+                $("#table_search").val("");
+                renderTable();
+            });
+        }
+
+        function renderTable() {
+            filteredRows = getFilteredRows();
+            var html = filteredRows.map(function (c) {
+                return "<tr>" +
+                    "<td><strong>" + escapeHtml(c.Codigo) + "</strong></td>" +
+                    "<td>" + escapeHtml(c.Nombre) + "</td>" +
+                    "<td>" + escapeHtml(c.DepartamentoTexto || "-") + "</td>" +
+                    "<td>" + escapeHtml(c.FamiliaTexto || "-") + "</td>" +
+                    "<td>" + escapeHtml(c.Descripcion || "-") + "</td>" +
+                    "<td>" + formatNumber(c.CantidadSubcategorias) + "</td>" +
+                    "<td>" + formatNumber(c.CantidadArticulos) + "</td>" +
+                    "<td>" + getEstadoBadge(c.EstadoTexto) + "</td>" +
+                    "<td>" + getActionButtons(c) + "</td>" +
+                    "</tr>";
+            }).join("");
+
+            $("#results_hint").text(filteredRows.length + " resultados");
+            $("#categorias_body").html(html || "<tr><td colspan='9' class='empty-state'>Sin categorias para los filtros aplicados.</td></tr>");
+            updateSummary();
+        }
+
+        function getFilteredRows() {
+            var estado = $("#filter_estado").val();
+            var departamento = ($("#filter_departamento").val() || "").toLowerCase();
+            var text = ($("#table_search").val() || "").toLowerCase();
+
+            return categorias.filter(function (c) {
+                if (estado !== "Todos" && c.EstadoTexto !== estado) return false;
+                if (departamento && String(c.DepartamentoTexto || "").toLowerCase().indexOf(departamento) < 0) return false;
+                if (!text) return true;
+
+                return [c.Codigo, c.Nombre, c.Descripcion, c.DepartamentoTexto, c.FamiliaTexto]
+                    .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
+            });
+        }
+
+        function getActionButtons(categoria) {
+            return "<div class='action-stack'>" +
+                "<button class='icon-button info' type='button' onclick='onVer(" + categoria.ID + ")'>Ver</button>" +
+                "<button class='icon-button primary' type='button' onclick='onEditar(" + categoria.ID + ")'>Editar</button>" +
+                "<button class='icon-button " + (categoria.Activa ? "danger" : "success") + "' type='button' onclick='onCambiarEstado(" + categoria.ID + ")'>" + (categoria.Activa ? "Inactivar" : "Activar") + "</button>" +
+                "</div>";
+        }
+
+        function onVer(id) {
+            var categoria = findCategoria(id);
+            if (!categoria) return;
+
+            $("#categoriaModalTitle").text("Categoria " + categoria.Codigo);
+            $("#cat_view_title").text(categoria.Codigo);
+            $("#cat_view_subtitle").text(categoria.Nombre);
+            $("#cat_view_items").text(formatNumber(categoria.CantidadArticulos));
+            $("#cat_view_badges").html(getEstadoBadge(categoria.EstadoTexto));
+            $("#cat_view_summary").html(renderViewGrid([
+                { label: "Codigo", value: categoria.Codigo },
+                { label: "Nombre", value: categoria.Nombre },
+                { label: "Departamento", value: categoria.DepartamentoTexto || "-" },
+                { label: "Familia", value: categoria.FamiliaTexto || "-" },
+                { label: "Descripcion", value: categoria.Descripcion || "-" },
+                { label: "Subcategorias", value: formatNumber(categoria.CantidadSubcategorias) },
+                { label: "Articulos asociados", value: formatNumber(categoria.CantidadArticulos) }
+            ]));
+            $("#cat_view_audit").html(renderViewGrid([
+                { label: "Usuario crea", value: categoria.UsuarioCrea || "-" },
+                { label: "Fecha crea", value: categoria.FechaCreaTexto || "-" },
+                { label: "Usuario modifica", value: categoria.UsuarioModifica || "-" },
+                { label: "Fecha modifica", value: categoria.FechaModificaTexto || "-" }
+            ]));
+            new bootstrap.Modal(document.getElementById("categoriaModal")).show();
+        }
+
+        function onEditar(id) {
+            if (window.UltraERP && window.UltraERP.showPageLoader) {
+                window.UltraERP.showPageLoader("Abriendo categoria");
+            }
+
+            window.location.href = urls.registro + "?id=" + encodeURIComponent(id);
+        }
+
+        function onCambiarEstado(id) {
+            var categoria = findCategoria(id);
+            if (!categoria) return;
+
+            var accion = categoria.Activa ? "inactivar" : "activar";
+            if (!confirm("Desea " + accion + " la categoria " + categoria.Codigo + "?")) return;
+
+            $.post(urls.cambiarEstado, { id: id }).done(function (data) {
+                if (!data.Status) {
+                    showToast(data.Message || "No se pudo actualizar la categoria.");
+                    return;
+                }
+
+                var index = categorias.findIndex(function (x) { return x.ID === id; });
+                if (index >= 0) {
+                    categorias[index] = data.Result;
+                }
+
+                showToast(data.Message || "Categoria actualizada.");
+                renderTable();
+            }).fail(function () {
+                showToast("No se pudo actualizar la categoria.");
+            });
+        }
+
+        function findCategoria(id) {
+            return categorias.find(function (item) { return item.ID === id; });
+        }
+
+        function updateSummary() {
+            var rows = filteredRows.length ? filteredRows : getFilteredRows();
+            var active = rows.filter(function (c) { return c.Activa; }).length;
+            var items = rows.reduce(function (sum, c) { return sum + Number(c.CantidadArticulos || 0); }, 0);
+            $("#summary_count").text(rows.length);
+            $("#summary_active").text(active);
+            $("#summary_items").text(formatNumber(items));
+        }
+
+        function getEstadoBadge(estado) {
+            return estado === "Activa"
+                ? "<span class='status-badge received'>Activa</span>"
+                : "<span class='status-badge closed'>Inactiva</span>";
+        }
+
+        function renderViewGrid(items) {
+            return items.map(function (item) {
+                return "<article class='document-view-item'><span>" + escapeHtml(item.label) + "</span><strong>" + escapeHtml(item.value) + "</strong></article>";
+            }).join("");
+        }
+
+        function setLoading(isLoading) {
+            $("#loading_state").toggle(isLoading);
+        }
+
+        function showToast(message) {
+            var toast = $("<div class='local-toast'></div>").text(message);
+            $("body").append(toast);
+            setTimeout(function () { toast.addClass("show"); }, 10);
+            setTimeout(function () {
+                toast.removeClass("show");
+                setTimeout(function () { toast.remove(); }, 250);
+            }, 2600);
+        }
+
+        function formatNumber(value) {
+            return Number(value || 0).toLocaleString("es-CR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function escapeHtml(value) {
+            return $("<div />").text(value || "").html();
+        }
+    </script>
+}

@@ -1,0 +1,84 @@
+@model UltraERP.Models.CategoriaViewModel
+@{
+    ViewBag.Title = Model.ID > 0 ? "Editar Categoria" : "Nueva Categoria";
+    ViewBag.ActiveMenu = "Categorias";
+}
+
+<section class="document-topbar">
+    <div class="document-topbar-copy">
+        <span class="eyebrow">Catalogo de categorias</span>
+        <h1>@(Model.ID > 0 ? "Editar categor&iacute;a" : "Nueva categor&iacute;a")</h1>
+        <p>Defina la categor&iacute;a dentro de un departamento para completar la estructura Familia, Departamento y Categor&iacute;a.</p>
+    </div>
+    <div class="topbar-actions">
+        <a class="btn btn-outline-secondary" href="@Url.Action("Inicio", "Categorias")">Cancelar</a>
+        <button id="btnGuardarCategoria" class="btn btn-primary" type="submit" form="categoriaForm">Guardar categor&iacute;a</button>
+    </div>
+</section>
+
+@using (Html.BeginForm("Registro", "Categorias", FormMethod.Post, new { id = "categoriaForm", @class = "document-form" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.ID)
+    @Html.HiddenFor(m => m.HQID)
+    @Html.HiddenFor(m => m.DepartamentoCodigo)
+    @Html.HiddenFor(m => m.DepartamentoNombre)
+    @Html.HiddenFor(m => m.FamiliaCodigo)
+    @Html.HiddenFor(m => m.FamiliaNombre)
+    @Html.HiddenFor(m => m.UsuarioCrea)
+    @Html.HiddenFor(m => m.FechaCrea)
+    @Html.HiddenFor(m => m.UsuarioModifica)
+    @Html.HiddenFor(m => m.FechaModifica)
+
+    if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            @Html.ValidationSummary(false, "Revise los datos de la categoria:")
+        </div>
+    }
+
+    <section class="form-panel">
+        <div class="section-title">
+            <span>1.</span>
+            <h2>Datos de la categor&iacute;a</h2>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-4">
+                <label class="form-label required" for="DepartamentoID">Departamento</label>
+                @Html.DropDownListFor(m => m.DepartamentoID, (IEnumerable<SelectListItem>)ViewBag.Departamentos, new { @class = "form-select" })
+                @Html.ValidationMessageFor(m => m.DepartamentoID, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label required" for="Codigo">C&oacute;digo</label>
+                @Html.TextBoxFor(m => m.Codigo, new { @class = "form-control", maxlength = "17", autocomplete = "off", placeholder = "Ej: ARROZ" })
+                @Html.ValidationMessageFor(m => m.Codigo, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-5">
+                <label class="form-label required" for="Nombre">Nombre</label>
+                @Html.TextBoxFor(m => m.Nombre, new { @class = "form-control", maxlength = "30", autocomplete = "off", placeholder = "Ej: Arroces" })
+                @Html.ValidationMessageFor(m => m.Nombre, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="CantidadSubcategorias">Subcategor&iacute;as</label>
+                @Html.TextBoxFor(m => m.CantidadSubcategorias, new { @class = "form-control", type = "number", min = "0", step = "1" })
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="CantidadArticulos">Art&iacute;culos</label>
+                @Html.TextBoxFor(m => m.CantidadArticulos, new { @class = "form-control", type = "number", min = "0", step = "1" })
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="Activa">Estado</label>
+                <div class="article-switch">
+                    @Html.CheckBoxFor(m => m.Activa)
+                    <span>Activa</span>
+                </div>
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="Descripcion">Descripci&oacute;n</label>
+                @Html.TextAreaFor(m => m.Descripcion, 4, 30, new { @class = "form-control", maxlength = "180", placeholder = "Uso o alcance de esta categoria dentro del departamento." })
+                @Html.ValidationMessageFor(m => m.Descripcion, "", new { @class = "text-danger small" })
+            </div>
+        </div>
+    </section>
+}

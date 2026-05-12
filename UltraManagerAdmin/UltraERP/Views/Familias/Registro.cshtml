@@ -1,0 +1,70 @@
+@model UltraERP.Models.FamiliaViewModel
+@{
+    ViewBag.Title = Model.ID > 0 ? "Editar Familia" : "Nueva Familia";
+    ViewBag.ActiveMenu = "Familias";
+}
+
+<section class="document-topbar">
+    <div class="document-topbar-copy">
+        <span class="eyebrow">Catalogo de familias</span>
+        <h1>@(Model.ID > 0 ? "Editar familia" : "Nueva familia")</h1>
+        <p>Defina el c&oacute;digo y nombre de la familia para clasificar art&iacute;culos y preparar la conexi&oacute;n con el cat&aacute;logo central.</p>
+    </div>
+    <div class="topbar-actions">
+        <a class="btn btn-outline-secondary" href="@Url.Action("Inicio", "Familias")">Cancelar</a>
+        <button id="btnGuardarFamilia" class="btn btn-primary" type="submit" form="familiaForm">Guardar familia</button>
+    </div>
+</section>
+
+@using (Html.BeginForm("Registro", "Familias", FormMethod.Post, new { id = "familiaForm", @class = "document-form" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.ID)
+    @Html.HiddenFor(m => m.UsuarioCrea)
+    @Html.HiddenFor(m => m.FechaCrea)
+    @Html.HiddenFor(m => m.UsuarioModifica)
+    @Html.HiddenFor(m => m.FechaModifica)
+
+    if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            @Html.ValidationSummary(false, "Revise los datos de la familia:")
+        </div>
+    }
+
+    <section class="form-panel">
+        <div class="section-title">
+            <span>1.</span>
+            <h2>Datos de la familia</h2>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-3">
+                <label class="form-label required" for="Codigo">C&oacute;digo</label>
+                @Html.TextBoxFor(m => m.Codigo, new { @class = "form-control", maxlength = "17", autocomplete = "off", placeholder = "Ej: ABAR" })
+                @Html.ValidationMessageFor(m => m.Codigo, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-5">
+                <label class="form-label required" for="Nombre">Nombre</label>
+                @Html.TextBoxFor(m => m.Nombre, new { @class = "form-control", maxlength = "30", autocomplete = "off", placeholder = "Ej: Abarrotes" })
+                @Html.ValidationMessageFor(m => m.Nombre, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label" for="CantidadArticulos">Art&iacute;culos</label>
+                @Html.TextBoxFor(m => m.CantidadArticulos, new { @class = "form-control", type = "number", min = "0", step = "1" })
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label" for="Activa">Estado</label>
+                <div class="article-switch">
+                    @Html.CheckBoxFor(m => m.Activa)
+                    <span>Activa</span>
+                </div>
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="Descripcion">Descripci&oacute;n</label>
+                @Html.TextAreaFor(m => m.Descripcion, 4, 30, new { @class = "form-control", maxlength = "180", placeholder = "Uso o alcance de esta familia dentro del inventario." })
+                @Html.ValidationMessageFor(m => m.Descripcion, "", new { @class = "text-danger small" })
+            </div>
+        </div>
+    </section>
+}

@@ -1,0 +1,82 @@
+@model UltraERP.Models.DepartamentoViewModel
+@{
+    ViewBag.Title = Model.ID > 0 ? "Editar Departamento" : "Nuevo Departamento";
+    ViewBag.ActiveMenu = "Departamentos";
+}
+
+<section class="document-topbar">
+    <div class="document-topbar-copy">
+        <span class="eyebrow">Catalogo de departamentos</span>
+        <h1>@(Model.ID > 0 ? "Editar departamento" : "Nuevo departamento")</h1>
+        <p>Defina el departamento dentro de una familia para continuar ordenando el cat&aacute;logo de art&iacute;culos.</p>
+    </div>
+    <div class="topbar-actions">
+        <a class="btn btn-outline-secondary" href="@Url.Action("Inicio", "Departamentos")">Cancelar</a>
+        <button id="btnGuardarDepartamento" class="btn btn-primary" type="submit" form="departamentoForm">Guardar departamento</button>
+    </div>
+</section>
+
+@using (Html.BeginForm("Registro", "Departamentos", FormMethod.Post, new { id = "departamentoForm", @class = "document-form" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.ID)
+    @Html.HiddenFor(m => m.HQID)
+    @Html.HiddenFor(m => m.FamiliaCodigo)
+    @Html.HiddenFor(m => m.FamiliaNombre)
+    @Html.HiddenFor(m => m.UsuarioCrea)
+    @Html.HiddenFor(m => m.FechaCrea)
+    @Html.HiddenFor(m => m.UsuarioModifica)
+    @Html.HiddenFor(m => m.FechaModifica)
+
+    if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            @Html.ValidationSummary(false, "Revise los datos del departamento:")
+        </div>
+    }
+
+    <section class="form-panel">
+        <div class="section-title">
+            <span>1.</span>
+            <h2>Datos del departamento</h2>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-4">
+                <label class="form-label required" for="FamiliaID">Familia</label>
+                @Html.DropDownListFor(m => m.FamiliaID, (IEnumerable<SelectListItem>)ViewBag.Familias, new { @class = "form-select" })
+                @Html.ValidationMessageFor(m => m.FamiliaID, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label required" for="Codigo">C&oacute;digo</label>
+                @Html.TextBoxFor(m => m.Codigo, new { @class = "form-control", maxlength = "17", autocomplete = "off", placeholder = "Ej: SECOS" })
+                @Html.ValidationMessageFor(m => m.Codigo, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-5">
+                <label class="form-label required" for="Nombre">Nombre</label>
+                @Html.TextBoxFor(m => m.Nombre, new { @class = "form-control", maxlength = "30", autocomplete = "off", placeholder = "Ej: Productos secos" })
+                @Html.ValidationMessageFor(m => m.Nombre, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="CantidadCategorias">Categor&iacute;as</label>
+                @Html.TextBoxFor(m => m.CantidadCategorias, new { @class = "form-control", type = "number", min = "0", step = "1" })
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="CantidadArticulos">Art&iacute;culos</label>
+                @Html.TextBoxFor(m => m.CantidadArticulos, new { @class = "form-control", type = "number", min = "0", step = "1" })
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="Activo">Estado</label>
+                <div class="article-switch">
+                    @Html.CheckBoxFor(m => m.Activo)
+                    <span>Activo</span>
+                </div>
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="Descripcion">Descripci&oacute;n</label>
+                @Html.TextAreaFor(m => m.Descripcion, 4, 30, new { @class = "form-control", maxlength = "180", placeholder = "Uso o alcance de este departamento dentro de la familia." })
+                @Html.ValidationMessageFor(m => m.Descripcion, "", new { @class = "text-danger small" })
+            </div>
+        </div>
+    </section>
+}
