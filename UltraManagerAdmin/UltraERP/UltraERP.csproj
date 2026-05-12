@@ -187,6 +187,7 @@
   <ItemGroup>
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\ArticulosController.cs" />
     <Compile Include="Controllers\DocumentosInventarioController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Global.asax.cs">
@@ -197,6 +198,7 @@
     <Compile Include="Models\DocumentoLineaEspecialViewModel.cs" />
     <Compile Include="Models\DocumentoInventarioViewModel.cs" />
     <Compile Include="Models\DocumentoInventarioRegistroViewModel.cs" />
+    <Compile Include="Models\ArticuloViewModel.cs" />
     <Compile Include="Models\JsonResponse.cs" />
     <Compile Include="Models\LoginViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -205,6 +207,8 @@
     <Content Include="Views\web.config" />
     <Content Include="Views\_ViewStart.cshtml" />
     <Content Include="Views\Account\Login.cshtml" />
+    <Content Include="Views\Articulos\Inicio.cshtml" />
+    <Content Include="Views\Articulos\Registro.cshtml" />
     <Content Include="Views\DocumentosInventario\Historico.cshtml" />
     <Content Include="Views\DocumentosInventario\Inicio.cshtml" />
     <Content Include="Views\DocumentosInventario\Registro.cshtml" />

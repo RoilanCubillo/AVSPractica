@@ -1,0 +1,330 @@
+@model IEnumerable<UltraERP.Models.ArticuloViewModel>
+@{
+    ViewBag.Title = "Articulos";
+    ViewBag.ActiveMenu = "Articulos";
+    var articulosJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
+}
+
+<section class="page-header">
+    <div class="page-header-copy">
+        <span class="eyebrow">Catalogo maestro</span>
+        <h1>Art&iacute;culos</h1>
+        <p>Administre productos, costos, precios, inventario inicial y datos base que luego se usan en documentos de inventario.</p>
+    </div>
+    <div class="topbar-actions">
+        <a id="btnNuevoArticulo" class="btn btn-primary" href="@Url.Action("Registro", "Articulos")">Nuevo art&iacute;culo</a>
+    </div>
+</section>
+
+@if (TempData["ArticuloMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["ArticuloMessage"]</div>
+}
+
+<section class="filter-panel">
+    <div class="row g-3">
+        <div class="col-12 col-md-3">
+            <label for="filter_estado" class="form-label">Estado</label>
+            <select id="filter_estado" class="form-select">
+                <option value="Todos">Todos</option>
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="filter_departamento" class="form-label">Departamento</label>
+            <input id="filter_departamento" type="text" class="form-control" />
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="filter_proveedor" class="form-label">Proveedor</label>
+            <input id="filter_proveedor" type="text" class="form-control" />
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="table_search" class="form-label">Buscar</label>
+            <input id="table_search" type="search" class="form-control" placeholder="Codigo, descripcion o categoria" />
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button id="btnLimpiar" class="btn btn-outline-secondary" type="button">Limpiar</button>
+        <button id="btnConsultar" class="btn btn-primary" type="button">Consultar</button>
+    </div>
+</section>
+
+<section class="metric-grid">
+    <article>
+        <span>Art&iacute;culos</span>
+        <strong id="summary_count">0</strong>
+    </article>
+    <article>
+        <span>Activos</span>
+        <strong id="summary_active">0</strong>
+    </article>
+    <article>
+        <span>Valor costo</span>
+        <strong id="summary_cost">0.00</strong>
+    </article>
+</section>
+
+<section class="table-panel">
+    <div class="table-toolbar">
+        <div class="table-toolbar-main">
+            <span id="results_hint" class="toolbar-chip">0 resultados</span>
+        </div>
+        <span id="loading_state" class="loading-state">Cargando...</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle document-table article-list-table">
+            <thead>
+                <tr>
+                    <th>C&oacute;digo</th>
+                    <th>Descripci&oacute;n</th>
+                    <th>Unidad</th>
+                    <th>Departamento</th>
+                    <th>Categor&iacute;a</th>
+                    <th>Proveedor</th>
+                    <th>Costo</th>
+                    <th>Precio</th>
+                    <th>Existencia</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="articulos_body"></tbody>
+        </table>
+    </div>
+</section>
+
+<div class="modal fade" id="articuloModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="articuloModalTitle" class="modal-title">Art&iacute;culo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="document-view">
+                    <section class="document-view-hero">
+                        <div>
+                            <span class="eyebrow">Ficha de art&iacute;culo</span>
+                            <h2 id="art_view_title" class="document-view-title"></h2>
+                            <p id="art_view_subtitle" class="document-view-subtitle"></p>
+                        </div>
+                        <div class="document-view-total">
+                            <span>Precio venta</span>
+                            <strong id="art_view_price"></strong>
+                        </div>
+                    </section>
+                    <div id="art_view_badges" class="document-view-badges"></div>
+                    <section class="document-view-section">
+                        <h3>Datos generales</h3>
+                        <div id="art_view_summary" class="document-view-grid"></div>
+                    </section>
+                    <section class="document-view-section">
+                        <h3>Auditor&iacute;a</h3>
+                        <div id="art_view_audit" class="document-view-grid"></div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        var urls = {
+            registro: '@Url.Action("Registro", "Articulos")',
+            cambiarEstado: '@Url.Action("CambiarEstado", "Articulos")'
+        };
+        var articulos = @Html.Raw(articulosJson);
+        var filteredRows = [];
+
+        $(function () {
+            bindEvents();
+            renderTable();
+            setLoading(false);
+        });
+
+        function bindEvents() {
+            $("#btnConsultar").on("click", renderTable);
+            $("#table_search, #filter_departamento, #filter_proveedor").on("input", renderTable);
+            $("#filter_estado").on("change", renderTable);
+            $("#btnLimpiar").on("click", function () {
+                $("#filter_estado").val("Todos");
+                $("#filter_departamento").val("");
+                $("#filter_proveedor").val("");
+                $("#table_search").val("");
+                renderTable();
+            });
+        }
+
+        function renderTable() {
+            filteredRows = getFilteredRows();
+            var html = filteredRows.map(function (a) {
+                return "<tr>" +
+                    "<td><strong>" + escapeHtml(a.Codigo) + "</strong></td>" +
+                    "<td>" + escapeHtml(a.Descripcion) + "</td>" +
+                    "<td>" + escapeHtml(a.UnidadMedida) + "</td>" +
+                    "<td>" + escapeHtml(a.Departamento || "-") + "</td>" +
+                    "<td>" + escapeHtml(a.Categoria || "-") + "</td>" +
+                    "<td>" + escapeHtml(a.Proveedor || "-") + "</td>" +
+                    "<td>" + formatMoney(a.Costo) + "</td>" +
+                    "<td>" + formatMoney(a.PrecioVenta) + "</td>" +
+                    "<td>" + formatNumber(a.Existencia) + "</td>" +
+                    "<td>" + getEstadoBadge(a.EstadoTexto) + "</td>" +
+                    "<td>" + getActionButtons(a) + "</td>" +
+                    "</tr>";
+            }).join("");
+
+            $("#results_hint").text(filteredRows.length + " resultados");
+            $("#articulos_body").html(html || "<tr><td colspan='11' class='empty-state'>Sin articulos para los filtros aplicados.</td></tr>");
+            updateSummary();
+        }
+
+        function getFilteredRows() {
+            var estado = $("#filter_estado").val();
+            var departamento = ($("#filter_departamento").val() || "").toLowerCase();
+            var proveedor = ($("#filter_proveedor").val() || "").toLowerCase();
+            var text = ($("#table_search").val() || "").toLowerCase();
+
+            return articulos.filter(function (a) {
+                if (estado !== "Todos" && a.EstadoTexto !== estado) return false;
+                if (departamento && String(a.Departamento || "").toLowerCase().indexOf(departamento) < 0) return false;
+                if (proveedor && String(a.Proveedor || "").toLowerCase().indexOf(proveedor) < 0) return false;
+                if (!text) return true;
+
+                return [a.Codigo, a.Descripcion, a.Categoria, a.UnidadMedida, a.Bodega]
+                    .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
+            });
+        }
+
+        function getActionButtons(articulo) {
+            return "<div class='action-stack'>" +
+                "<button class='icon-button info' type='button' onclick='onVer(" + articulo.ID + ")'>Ver</button>" +
+                "<button class='icon-button primary' type='button' onclick='onEditar(" + articulo.ID + ")'>Editar</button>" +
+                "<button class='icon-button " + (articulo.Activo ? "danger" : "success") + "' type='button' onclick='onCambiarEstado(" + articulo.ID + ")'>" + (articulo.Activo ? "Inactivar" : "Activar") + "</button>" +
+                "</div>";
+        }
+
+        function onVer(id) {
+            var articulo = findArticulo(id);
+            if (!articulo) return;
+
+            $("#articuloModalTitle").text("Articulo " + articulo.Codigo);
+            $("#art_view_title").text(articulo.Codigo);
+            $("#art_view_subtitle").text(articulo.Descripcion);
+            $("#art_view_price").text(formatMoney(articulo.PrecioVenta));
+            $("#art_view_badges").html(getEstadoBadge(articulo.EstadoTexto) + getBooleanBadge(articulo.Inventariable, "Inventariable", "No inventariable") + getBooleanBadge(articulo.Exento, "Exento", "Gravado"));
+            $("#art_view_summary").html(renderViewGrid([
+                { label: "Descripcion", value: articulo.DescripcionExtendida || articulo.Descripcion },
+                { label: "Unidad", value: articulo.UnidadMedida },
+                { label: "Departamento", value: articulo.Departamento || "-" },
+                { label: "Categoria", value: articulo.Categoria || "-" },
+                { label: "Proveedor", value: articulo.Proveedor || "-" },
+                { label: "Bodega", value: articulo.Bodega || "-" },
+                { label: "Costo", value: formatMoney(articulo.Costo) },
+                { label: "Impuesto", value: formatNumber(articulo.ImpuestoPorcentaje) + "%" },
+                { label: "Margen", value: formatNumber(articulo.MargenPorcentaje) + "%" },
+                { label: "Existencia", value: formatNumber(articulo.Existencia) },
+                { label: "Minimo", value: formatNumber(articulo.ExistenciaMinima) },
+                { label: "Maximo", value: formatNumber(articulo.ExistenciaMaxima) }
+            ]));
+            $("#art_view_audit").html(renderViewGrid([
+                { label: "Usuario crea", value: articulo.UsuarioCrea || "-" },
+                { label: "Fecha crea", value: articulo.FechaCreaTexto || "-" },
+                { label: "Usuario modifica", value: articulo.UsuarioModifica || "-" },
+                { label: "Fecha modifica", value: articulo.FechaModificaTexto || "-" }
+            ]));
+            new bootstrap.Modal(document.getElementById("articuloModal")).show();
+        }
+
+        function onEditar(id) {
+            if (window.UltraERP && window.UltraERP.showPageLoader) {
+                window.UltraERP.showPageLoader("Abriendo articulo");
+            }
+
+            window.location.href = urls.registro + "?id=" + encodeURIComponent(id);
+        }
+
+        function onCambiarEstado(id) {
+            var articulo = findArticulo(id);
+            if (!articulo) return;
+
+            var accion = articulo.Activo ? "inactivar" : "activar";
+            if (!confirm("Desea " + accion + " el articulo " + articulo.Codigo + "?")) return;
+
+            $.post(urls.cambiarEstado, { id: id }).done(function (data) {
+                if (!data.Status) {
+                    showToast(data.Message || "No se pudo actualizar el articulo.");
+                    return;
+                }
+
+                var index = articulos.findIndex(function (x) { return x.ID === id; });
+                if (index >= 0) {
+                    articulos[index] = data.Result;
+                }
+
+                showToast(data.Message || "Articulo actualizado.");
+                renderTable();
+            }).fail(function () {
+                showToast("No se pudo actualizar el articulo.");
+            });
+        }
+
+        function findArticulo(id) {
+            return articulos.find(function (item) { return item.ID === id; });
+        }
+
+        function updateSummary() {
+            var rows = filteredRows.length ? filteredRows : getFilteredRows();
+            var active = rows.filter(function (a) { return a.Activo; }).length;
+            var cost = rows.reduce(function (sum, a) { return sum + (Number(a.Costo || 0) * Number(a.Existencia || 0)); }, 0);
+            $("#summary_count").text(rows.length);
+            $("#summary_active").text(active);
+            $("#summary_cost").text(formatMoney(cost));
+        }
+
+        function getEstadoBadge(estado) {
+            return estado === "Activo"
+                ? "<span class='status-badge received'>Activo</span>"
+                : "<span class='status-badge closed'>Inactivo</span>";
+        }
+
+        function getBooleanBadge(flag, trueText, falseText) {
+            return flag
+                ? "<span class='status-badge sent'>" + escapeHtml(trueText) + "</span>"
+                : "<span class='status-badge draft'>" + escapeHtml(falseText) + "</span>";
+        }
+
+        function renderViewGrid(items) {
+            return items.map(function (item) {
+                return "<article class='document-view-item'><span>" + escapeHtml(item.label) + "</span><strong>" + escapeHtml(item.value) + "</strong></article>";
+            }).join("");
+        }
+
+        function setLoading(isLoading) {
+            $("#loading_state").toggle(isLoading);
+        }
+
+        function showToast(message) {
+            var toast = $("<div class='local-toast'></div>").text(message);
+            $("body").append(toast);
+            setTimeout(function () { toast.addClass("show"); }, 10);
+            setTimeout(function () {
+                toast.removeClass("show");
+                setTimeout(function () { toast.remove(); }, 250);
+            }, 2600);
+        }
+
+        function formatMoney(value) {
+            return Number(value || 0).toLocaleString("es-CR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatNumber(value) {
+            return Number(value || 0).toLocaleString("es-CR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function escapeHtml(value) {
+            return $("<div />").text(value || "").html();
+        }
+    </script>
+}

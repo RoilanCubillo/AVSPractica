@@ -1,0 +1,178 @@
+@model UltraERP.Models.ArticuloViewModel
+@{
+    ViewBag.Title = Model.ID > 0 ? "Editar Articulo" : "Nuevo Articulo";
+    ViewBag.ActiveMenu = "Articulos";
+}
+
+<section class="document-topbar">
+    <div class="document-topbar-copy">
+        <span class="eyebrow">Creaci&oacute;n de art&iacute;culos</span>
+        <h1>@(Model.ID > 0 ? "Editar art&iacute;culo" : "Nuevo art&iacute;culo")</h1>
+        <p>Complete la ficha base del producto para usarlo luego en compras, entradas, salidas y b&uacute;squeda r&aacute;pida del detalle.</p>
+    </div>
+    <div class="topbar-actions">
+        <a class="btn btn-outline-secondary" href="@Url.Action("Inicio", "Articulos")">Cancelar</a>
+        <button id="btnGuardarArticulo" class="btn btn-primary" type="submit" form="articuloForm">Guardar art&iacute;culo</button>
+    </div>
+</section>
+
+@using (Html.BeginForm("Registro", "Articulos", FormMethod.Post, new { id = "articuloForm", @class = "document-form" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.ID)
+    @Html.HiddenFor(m => m.UsuarioCrea)
+    @Html.HiddenFor(m => m.FechaCrea)
+    @Html.HiddenFor(m => m.UsuarioModifica)
+    @Html.HiddenFor(m => m.FechaModifica)
+
+    if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            @Html.ValidationSummary(false, "Revise los datos del articulo:")
+        </div>
+    }
+
+    <section class="form-panel">
+        <div class="section-title">
+            <span>1.</span>
+            <h2>Datos generales</h2>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-3">
+                <label class="form-label required" for="Codigo">C&oacute;digo</label>
+                @Html.TextBoxFor(m => m.Codigo, new { @class = "form-control", maxlength = "25", autocomplete = "off", placeholder = "Ej: ART-001" })
+                @Html.ValidationMessageFor(m => m.Codigo, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-5">
+                <label class="form-label required" for="Descripcion">Descripci&oacute;n</label>
+                @Html.TextBoxFor(m => m.Descripcion, new { @class = "form-control", maxlength = "80", autocomplete = "off" })
+                @Html.ValidationMessageFor(m => m.Descripcion, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label required" for="UnidadMedida">Unidad</label>
+                @Html.DropDownListFor(m => m.UnidadMedida, (IEnumerable<SelectListItem>)ViewBag.Unidades, new { @class = "form-select" })
+                @Html.ValidationMessageFor(m => m.UnidadMedida, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label" for="Activo">Estado</label>
+                <div class="article-switch">
+                    @Html.CheckBoxFor(m => m.Activo)
+                    <span>Activo</span>
+                </div>
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="DescripcionExtendida">Descripci&oacute;n extendida</label>
+                @Html.TextAreaFor(m => m.DescripcionExtendida, 3, 30, new { @class = "form-control", maxlength = "180" })
+                @Html.ValidationMessageFor(m => m.DescripcionExtendida, "", new { @class = "text-danger small" })
+            </div>
+        </div>
+    </section>
+
+    <div class="document-grid-two">
+        <section class="form-panel">
+            <div class="section-title">
+                <span>2.</span>
+                <h2>Clasificaci&oacute;n</h2>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="Departamento">Departamento</label>
+                    @Html.DropDownListFor(m => m.Departamento, (IEnumerable<SelectListItem>)ViewBag.Departamentos, new { @class = "form-select" })
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="Categoria">Categor&iacute;a</label>
+                    @Html.DropDownListFor(m => m.Categoria, (IEnumerable<SelectListItem>)ViewBag.Categorias, new { @class = "form-select" })
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="Proveedor">Proveedor principal</label>
+                    @Html.DropDownListFor(m => m.Proveedor, (IEnumerable<SelectListItem>)ViewBag.Proveedores, new { @class = "form-select" })
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label" for="Bodega">Bodega inicial</label>
+                    @Html.DropDownListFor(m => m.Bodega, (IEnumerable<SelectListItem>)ViewBag.Bodegas, new { @class = "form-select" })
+                </div>
+            </div>
+        </section>
+
+        <section class="form-panel">
+            <div class="section-title">
+                <span>3.</span>
+                <h2>Precios e impuestos</h2>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="Costo">Costo</label>
+                    @Html.TextBoxFor(m => m.Costo, new { @class = "form-control", type = "number", step = "0.01", min = "0" })
+                    @Html.ValidationMessageFor(m => m.Costo, "", new { @class = "text-danger small" })
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label required" for="PrecioVenta">Precio venta</label>
+                    @Html.TextBoxFor(m => m.PrecioVenta, new { @class = "form-control", type = "number", step = "0.01", min = "0.01" })
+                    @Html.ValidationMessageFor(m => m.PrecioVenta, "", new { @class = "text-danger small" })
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="ImpuestoPorcentaje">Impuesto %</label>
+                    @Html.TextBoxFor(m => m.ImpuestoPorcentaje, new { @class = "form-control", type = "number", step = "0.01", min = "0", max = "100", id = "ImpuestoPorcentaje" })
+                    @Html.ValidationMessageFor(m => m.ImpuestoPorcentaje, "", new { @class = "text-danger small" })
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="article-switch">
+                        @Html.CheckBoxFor(m => m.Exento, new { id = "Exento" })
+                        <span>Producto exento</span>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="article-switch">
+                        @Html.CheckBoxFor(m => m.Inventariable)
+                        <span>Controla inventario</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <section class="form-panel">
+        <div class="section-title">
+            <span>4.</span>
+            <h2>Inventario inicial</h2>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="Existencia">Existencia</label>
+                @Html.TextBoxFor(m => m.Existencia, new { @class = "form-control", type = "number", step = "0.01", min = "0" })
+                @Html.ValidationMessageFor(m => m.Existencia, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="ExistenciaMinima">Existencia m&iacute;nima</label>
+                @Html.TextBoxFor(m => m.ExistenciaMinima, new { @class = "form-control", type = "number", step = "0.01", min = "0" })
+                @Html.ValidationMessageFor(m => m.ExistenciaMinima, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="ExistenciaMaxima">Existencia m&aacute;xima</label>
+                @Html.TextBoxFor(m => m.ExistenciaMaxima, new { @class = "form-control", type = "number", step = "0.01", min = "0" })
+                @Html.ValidationMessageFor(m => m.ExistenciaMaxima, "", new { @class = "text-danger small" })
+            </div>
+        </div>
+    </section>
+}
+
+@section scripts {
+    <script>
+        $(function () {
+            $("#Exento").on("change", syncExento);
+            syncExento();
+        });
+
+        function syncExento() {
+            var isExento = $("#Exento").is(":checked");
+            $("#ImpuestoPorcentaje").prop("readonly", isExento);
+            if (isExento) {
+                $("#ImpuestoPorcentaje").val("0");
+            }
+        }
+    </script>
+}

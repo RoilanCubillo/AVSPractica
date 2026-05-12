@@ -32,6 +32,7 @@
                 </a>
                 <nav class="app-nav">
                     <a class="@(ViewBag.ActiveMenu == "Documentos" ? "active" : "")" href="@Url.Action("Inicio", "DocumentosInventario")">Documentos</a>
+                    <a class="@(ViewBag.ActiveMenu == "Articulos" ? "active" : "")" href="@Url.Action("Inicio", "Articulos")">Art&iacute;culos</a>
                     <a class="@(ViewBag.ActiveMenu == "Historico" ? "active" : "")" href="@Url.Action("Historico", "DocumentosInventario")">Historico de Ajustes</a>
                 </nav>
                 <div class="user-panel">

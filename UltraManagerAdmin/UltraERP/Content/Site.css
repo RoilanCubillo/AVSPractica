@@ -711,6 +711,26 @@ body {
     font-size: 12px;
 }
 
+.article-switch {
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--app-border);
+    border-radius: 12px;
+    background: #f8fbfa;
+    color: var(--app-text);
+    font-weight: 700;
+}
+
+.article-switch input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--app-primary);
+}
+
 .plain-input,
 .xml-summary input {
     width: 100%;
@@ -1409,6 +1429,18 @@ body {
     .history-list-table td:nth-child(10)::before { content: "Usuario"; }
     .history-list-table td:nth-child(11)::before { content: "Acciones"; }
 
+    .article-list-table td:nth-child(1)::before { content: "C\00f3digo"; }
+    .article-list-table td:nth-child(2)::before { content: "Descripci\00f3n"; }
+    .article-list-table td:nth-child(3)::before { content: "Unidad"; }
+    .article-list-table td:nth-child(4)::before { content: "Departamento"; }
+    .article-list-table td:nth-child(5)::before { content: "Categor\00eda"; }
+    .article-list-table td:nth-child(6)::before { content: "Proveedor"; }
+    .article-list-table td:nth-child(7)::before { content: "Costo"; }
+    .article-list-table td:nth-child(8)::before { content: "Precio"; }
+    .article-list-table td:nth-child(9)::before { content: "Existencia"; }
+    .article-list-table td:nth-child(10)::before { content: "Estado"; }
+    .article-list-table td:nth-child(11)::before { content: "Acciones"; }
+
     .grid-inline-action {
         grid-template-columns: minmax(0, 1fr) 42px;
     }
@@ -1775,6 +1807,10 @@ body {
 
 .document-table {
     min-width: 1120px;
+}
+
+.article-list-table {
+    min-width: 1180px;
 }
 
 .document-table thead {
