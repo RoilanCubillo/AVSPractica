@@ -21,8 +21,26 @@ namespace UltraERP.Models
         [Required(ErrorMessage = "La unidad de medida es obligatoria.")]
         public string UnidadMedida { get; set; }
 
+        [Required(ErrorMessage = "La familia es obligatoria.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Seleccione una familia.")]
+        public int FamiliaID { get; set; }
+
+        [Required(ErrorMessage = "El departamento es obligatorio.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Seleccione un departamento.")]
+        public int DepartamentoID { get; set; }
+
+        [Required(ErrorMessage = "La categoria es obligatoria.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Seleccione una categoria.")]
+        public int CategoriaID { get; set; }
+
+        [Required(ErrorMessage = "La subcategoria es obligatoria.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Seleccione una subcategoria.")]
+        public int SubCategoriaID { get; set; }
+
+        public string Familia { get; set; }
         public string Departamento { get; set; }
         public string Categoria { get; set; }
+        public string SubCategoria { get; set; }
         public string Proveedor { get; set; }
         public string Bodega { get; set; }
 

@@ -78,12 +78,24 @@
 
             <div class="row g-3">
                 <div class="col-12 col-md-6">
-                    <label class="form-label" for="Departamento">Departamento</label>
-                    @Html.DropDownListFor(m => m.Departamento, (IEnumerable<SelectListItem>)ViewBag.Departamentos, new { @class = "form-select" })
+                    <label class="form-label required" for="FamiliaID">Familia</label>
+                    @Html.DropDownListFor(m => m.FamiliaID, (IEnumerable<SelectListItem>)ViewBag.Familias, new { @class = "form-select", id = "FamiliaID" })
+                    @Html.ValidationMessageFor(m => m.FamiliaID, "", new { @class = "text-danger small" })
                 </div>
                 <div class="col-12 col-md-6">
-                    <label class="form-label" for="Categoria">Categor&iacute;a</label>
-                    @Html.DropDownListFor(m => m.Categoria, (IEnumerable<SelectListItem>)ViewBag.Categorias, new { @class = "form-select" })
+                    <label class="form-label required" for="DepartamentoID">Departamento</label>
+                    @Html.DropDownListFor(m => m.DepartamentoID, (IEnumerable<SelectListItem>)ViewBag.Departamentos, new { @class = "form-select", id = "DepartamentoID" })
+                    @Html.ValidationMessageFor(m => m.DepartamentoID, "", new { @class = "text-danger small" })
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label required" for="CategoriaID">Categor&iacute;a</label>
+                    @Html.DropDownListFor(m => m.CategoriaID, (IEnumerable<SelectListItem>)ViewBag.Categorias, new { @class = "form-select", id = "CategoriaID" })
+                    @Html.ValidationMessageFor(m => m.CategoriaID, "", new { @class = "text-danger small" })
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label required" for="SubCategoriaID">Subcategor&iacute;a</label>
+                    @Html.DropDownListFor(m => m.SubCategoriaID, (IEnumerable<SelectListItem>)ViewBag.SubCategorias, new { @class = "form-select", id = "SubCategoriaID" })
+                    @Html.ValidationMessageFor(m => m.SubCategoriaID, "", new { @class = "text-danger small" })
                 </div>
                 <div class="col-12 col-md-6">
                     <label class="form-label" for="Proveedor">Proveedor principal</label>
@@ -162,10 +174,71 @@
 
 @section scripts {
     <script>
+        var clasificacion = @Html.Raw(ViewBag.ClasificacionJson ?? "{}");
+        var initialDepartamentoId = @Model.DepartamentoID;
+        var initialCategoriaId = @Model.CategoriaID;
+        var initialSubCategoriaId = @Model.SubCategoriaID;
+
         $(function () {
+            $("#FamiliaID").on("change", function () {
+                fillDepartamentos();
+                fillCategorias();
+                fillSubCategorias();
+            });
+            $("#DepartamentoID").on("change", function () {
+                fillCategorias();
+                fillSubCategorias();
+            });
+            $("#CategoriaID").on("change", fillSubCategorias);
+            fillDepartamentos(initialDepartamentoId);
+            fillCategorias(initialCategoriaId);
+            fillSubCategorias(initialSubCategoriaId);
             $("#Exento").on("change", syncExento);
             syncExento();
         });
+
+        function fillDepartamentos(selectedId) {
+            var familiaId = Number($("#FamiliaID").val() || 0);
+            var selected = Number(selectedId || $("#DepartamentoID").val() || 0);
+            var items = (clasificacion.departamentos || []).filter(function (item) {
+                return Number(item.FamiliaID) === familiaId;
+            });
+
+            fillSelect("#DepartamentoID", items, selected);
+        }
+
+        function fillCategorias(selectedId) {
+            var departamentoId = Number($("#DepartamentoID").val() || 0);
+            var selected = Number(selectedId || $("#CategoriaID").val() || 0);
+            var items = (clasificacion.categorias || []).filter(function (item) {
+                return Number(item.DepartamentoID) === departamentoId;
+            });
+
+            fillSelect("#CategoriaID", items, selected);
+        }
+
+        function fillSubCategorias(selectedId) {
+            var categoriaId = Number($("#CategoriaID").val() || 0);
+            var selected = Number(selectedId || $("#SubCategoriaID").val() || 0);
+            var items = (clasificacion.subCategorias || []).filter(function (item) {
+                return Number(item.CategoriaID) === categoriaId;
+            });
+
+            fillSelect("#SubCategoriaID", items, selected);
+        }
+
+        function fillSelect(selector, items, selectedId) {
+            var select = $(selector);
+            var html = items.map(function (item) {
+                var selected = Number(item.ID) === Number(selectedId) ? " selected" : "";
+                return "<option value='" + item.ID + "'" + selected + ">" + escapeHtml(item.Texto) + "</option>";
+            }).join("");
+
+            select.html(html);
+            if (!select.val() && items.length) {
+                select.val(String(items[0].ID));
+            }
+        }
 
         function syncExento() {
             var isExento = $("#Exento").is(":checked");
@@ -173,6 +246,10 @@
             if (isExento) {
                 $("#ImpuestoPorcentaje").val("0");
             }
+        }
+
+        function escapeHtml(value) {
+            return $("<div />").text(value || "").html();
         }
     </script>
 }

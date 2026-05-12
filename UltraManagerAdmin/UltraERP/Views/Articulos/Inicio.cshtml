@@ -32,8 +32,20 @@
             </select>
         </div>
         <div class="col-12 col-md-3">
+            <label for="filter_familia" class="form-label">Familia</label>
+            <input id="filter_familia" type="text" class="form-control" />
+        </div>
+        <div class="col-12 col-md-3">
             <label for="filter_departamento" class="form-label">Departamento</label>
             <input id="filter_departamento" type="text" class="form-control" />
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="filter_categoria" class="form-label">Categor&iacute;a</label>
+            <input id="filter_categoria" type="text" class="form-control" />
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="filter_subcategoria" class="form-label">Subcategor&iacute;a</label>
+            <input id="filter_subcategoria" type="text" class="form-control" />
         </div>
         <div class="col-12 col-md-3">
             <label for="filter_proveedor" class="form-label">Proveedor</label>
@@ -79,8 +91,10 @@
                     <th>C&oacute;digo</th>
                     <th>Descripci&oacute;n</th>
                     <th>Unidad</th>
+                    <th>Familia</th>
                     <th>Departamento</th>
                     <th>Categor&iacute;a</th>
+                    <th>Subcategor&iacute;a</th>
                     <th>Proveedor</th>
                     <th>Costo</th>
                     <th>Precio</th>
@@ -146,11 +160,14 @@
 
         function bindEvents() {
             $("#btnConsultar").on("click", renderTable);
-            $("#table_search, #filter_departamento, #filter_proveedor").on("input", renderTable);
+            $("#table_search, #filter_familia, #filter_departamento, #filter_categoria, #filter_subcategoria, #filter_proveedor").on("input", renderTable);
             $("#filter_estado").on("change", renderTable);
             $("#btnLimpiar").on("click", function () {
                 $("#filter_estado").val("Todos");
+                $("#filter_familia").val("");
                 $("#filter_departamento").val("");
+                $("#filter_categoria").val("");
+                $("#filter_subcategoria").val("");
                 $("#filter_proveedor").val("");
                 $("#table_search").val("");
                 renderTable();
@@ -164,8 +181,10 @@
                     "<td><strong>" + escapeHtml(a.Codigo) + "</strong></td>" +
                     "<td>" + escapeHtml(a.Descripcion) + "</td>" +
                     "<td>" + escapeHtml(a.UnidadMedida) + "</td>" +
+                    "<td>" + escapeHtml(a.Familia || "-") + "</td>" +
                     "<td>" + escapeHtml(a.Departamento || "-") + "</td>" +
                     "<td>" + escapeHtml(a.Categoria || "-") + "</td>" +
+                    "<td>" + escapeHtml(a.SubCategoria || "-") + "</td>" +
                     "<td>" + escapeHtml(a.Proveedor || "-") + "</td>" +
                     "<td>" + formatMoney(a.Costo) + "</td>" +
                     "<td>" + formatMoney(a.PrecioVenta) + "</td>" +
@@ -176,23 +195,29 @@
             }).join("");
 
             $("#results_hint").text(filteredRows.length + " resultados");
-            $("#articulos_body").html(html || "<tr><td colspan='11' class='empty-state'>Sin articulos para los filtros aplicados.</td></tr>");
+            $("#articulos_body").html(html || "<tr><td colspan='13' class='empty-state'>Sin articulos para los filtros aplicados.</td></tr>");
             updateSummary();
         }
 
         function getFilteredRows() {
             var estado = $("#filter_estado").val();
+            var familia = ($("#filter_familia").val() || "").toLowerCase();
             var departamento = ($("#filter_departamento").val() || "").toLowerCase();
+            var categoria = ($("#filter_categoria").val() || "").toLowerCase();
+            var subcategoria = ($("#filter_subcategoria").val() || "").toLowerCase();
             var proveedor = ($("#filter_proveedor").val() || "").toLowerCase();
             var text = ($("#table_search").val() || "").toLowerCase();
 
             return articulos.filter(function (a) {
                 if (estado !== "Todos" && a.EstadoTexto !== estado) return false;
+                if (familia && String(a.Familia || "").toLowerCase().indexOf(familia) < 0) return false;
                 if (departamento && String(a.Departamento || "").toLowerCase().indexOf(departamento) < 0) return false;
+                if (categoria && String(a.Categoria || "").toLowerCase().indexOf(categoria) < 0) return false;
+                if (subcategoria && String(a.SubCategoria || "").toLowerCase().indexOf(subcategoria) < 0) return false;
                 if (proveedor && String(a.Proveedor || "").toLowerCase().indexOf(proveedor) < 0) return false;
                 if (!text) return true;
 
-                return [a.Codigo, a.Descripcion, a.Categoria, a.UnidadMedida, a.Bodega]
+                return [a.Codigo, a.Descripcion, a.Familia, a.Departamento, a.Categoria, a.SubCategoria, a.UnidadMedida, a.Bodega]
                     .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
             });
         }
@@ -217,8 +242,10 @@
             $("#art_view_summary").html(renderViewGrid([
                 { label: "Descripcion", value: articulo.DescripcionExtendida || articulo.Descripcion },
                 { label: "Unidad", value: articulo.UnidadMedida },
+                { label: "Familia", value: articulo.Familia || "-" },
                 { label: "Departamento", value: articulo.Departamento || "-" },
                 { label: "Categoria", value: articulo.Categoria || "-" },
+                { label: "Subcategoria", value: articulo.SubCategoria || "-" },
                 { label: "Proveedor", value: articulo.Proveedor || "-" },
                 { label: "Bodega", value: articulo.Bodega || "-" },
                 { label: "Costo", value: formatMoney(articulo.Costo) },
