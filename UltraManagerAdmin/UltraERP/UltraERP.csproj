@@ -188,6 +188,7 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\ArticulosController.cs" />
+    <Compile Include="Controllers\CambiosMasivosWizardController.cs" />
     <Compile Include="Controllers\CategoriasController.cs" />
     <Compile Include="Controllers\CasasComercialesController.cs" />
     <Compile Include="Controllers\DepartamentosController.cs" />
@@ -210,6 +211,7 @@
     <Compile Include="Models\DocumentoInventarioViewModel.cs" />
     <Compile Include="Models\DocumentoInventarioRegistroViewModel.cs" />
     <Compile Include="Models\ArticuloViewModel.cs" />
+    <Compile Include="Models\CambiosMasivosWizardViewModel.cs" />
     <Compile Include="Models\CasaComercialViewModel.cs" />
     <Compile Include="Models\CategoriaViewModel.cs" />
     <Compile Include="Models\DepartamentoViewModel.cs" />
@@ -231,6 +233,7 @@
     <Content Include="Views\Account\Login.cshtml" />
     <Content Include="Views\Articulos\Inicio.cshtml" />
     <Content Include="Views\Articulos\Registro.cshtml" />
+    <Content Include="Views\CambiosMasivosWizard\Inicio.cshtml" />
     <Content Include="Views\CasasComerciales\Inicio.cshtml" />
     <Content Include="Views\CasasComerciales\Registro.cshtml" />
     <Content Include="Views\Categorias\Inicio.cshtml" />

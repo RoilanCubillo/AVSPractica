@@ -1,0 +1,738 @@
+@model UltraERP.Models.CambiosMasivosWizardViewModel
+@{
+    ViewBag.Title = "Cambios Masivos Wizard";
+    ViewBag.ActiveMenu = "CambiosMasivos";
+    var wizardJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
+    var firstTaskCode = Model.Tareas.Count > 0 ? Model.Tareas[0].Codigo : "";
+}
+
+<section class="page-header">
+    <div class="page-header-copy">
+        <span class="eyebrow">Operacion comercial</span>
+        <h1>Cambios Masivos Wizard</h1>
+        <p>Prepare cargas por lote, revise la plantilla y cree hojas de trabajo listas para aprobacion sin salir del flujo nuevo.</p>
+    </div>
+    <div class="topbar-actions">
+        <a class="btn btn-outline-secondary" href="@Url.Action("Inicio", "HojasTrabajo")">Ver hojas de trabajo</a>
+    </div>
+</section>
+
+<section class="wizard-panel">
+    <div class="wizard-stepper" role="tablist" aria-label="Pasos del wizard">
+        <button class="wizard-step active" type="button" data-step="1">
+            <span class="wizard-step-index">1</span>
+            <span class="wizard-step-copy">
+                <strong>Inicio</strong>
+                <small>Contexto del proceso</small>
+            </span>
+        </button>
+        <button class="wizard-step" type="button" data-step="2">
+            <span class="wizard-step-index">2</span>
+            <span class="wizard-step-copy">
+                <strong>Tarea y tiendas</strong>
+                <small>Seleccione el alcance</small>
+            </span>
+        </button>
+        <button class="wizard-step" type="button" data-step="3">
+            <span class="wizard-step-index">3</span>
+            <span class="wizard-step-copy">
+                <strong>Datos</strong>
+                <small>Cargue o pegue la plantilla</small>
+            </span>
+        </button>
+        <button class="wizard-step" type="button" data-step="4">
+            <span class="wizard-step-index">4</span>
+            <span class="wizard-step-copy">
+                <strong>Aplicar</strong>
+                <small>Validar y crear hoja</small>
+            </span>
+        </button>
+    </div>
+
+    <div class="wizard-stage">
+        <section class="wizard-screen active" data-step="1">
+            <div class="wizard-hero">
+                <div>
+                    <span class="eyebrow">Asistente de inventario</span>
+                    <h2>Un solo flujo para preparar cambios por lote</h2>
+                    <p>El wizard nuevo concentra selecci&oacute;n de tarea, tiendas, plantilla, validaci&oacute;n y creaci&oacute;n de hoja de trabajo. El objetivo es que el equipo pueda revisar antes de enviar y seguir el proceso desde Hojas de Trabajo.</p>
+                </div>
+                <div class="wizard-hero-side">
+                    <article>
+                        <span>Tareas activas</span>
+                        <strong>@Model.Tareas.Count</strong>
+                    </article>
+                    <article>
+                        <span>Tiendas disponibles</span>
+                        <strong>@Model.Tiendas.Count</strong>
+                    </article>
+                </div>
+            </div>
+            <div class="wizard-benefits">
+                <article>
+                    <strong>1. Seleccione la tarea</strong>
+                    <span>Tomamos las plantillas m&aacute;s frecuentes del wizard viejo y las acomodamos con descripci&oacute;n clara.</span>
+                </article>
+                <article>
+                    <strong>2. Defina tiendas</strong>
+                    <span>Puede filtrar por grupo y escoger s&oacute;lo las sucursales que participar&aacute;n en la hoja.</span>
+                </article>
+                <article>
+                    <strong>3. Revise antes de crear</strong>
+                    <span>El sistema valida columnas, c&oacute;digos vac&iacute;os y duplicados para evitar una hoja incompleta.</span>
+                </article>
+            </div>
+            <div class="wizard-actions">
+                <button class="btn btn-primary" type="button" data-next-step="2">Comenzar</button>
+            </div>
+        </section>
+
+        <section class="wizard-screen" data-step="2">
+            <div class="section-title">
+                <span>1</span>
+                <h2>Seleccione la tarea</h2>
+                <small>Las columnas esperadas cambian segun la tarea elegida.</small>
+            </div>
+            <div class="wizard-task-grid" id="wizardTaskGrid">
+                @foreach (var tarea in Model.Tareas)
+                {
+                    <button class="wizard-task-card @(tarea.Codigo == firstTaskCode ? "active" : "")" type="button" data-task-code="@tarea.Codigo">
+                        <span class="wizard-task-meta">@tarea.Categoria - T@tarea.Codigo</span>
+                        <strong>@tarea.Nombre</strong>
+                        <small>@tarea.Descripcion</small>
+                        <span class="wizard-task-summary">@tarea.Resumen</span>
+                    </button>
+                }
+            </div>
+
+            <div class="section-title wizard-section-gap">
+                <span>2</span>
+                <h2>Defina el alcance</h2>
+                <small>Primero filtre, luego marque las tiendas que entran en la hoja.</small>
+            </div>
+            <div class="wizard-store-toolbar">
+                <div id="wizardGroupFilters" class="wizard-group-filters">
+                    @foreach (var grupo in Model.GruposTienda)
+                    {
+                        <button class="wizard-group-chip active" type="button" data-group-id="@grupo.ID">@grupo.Nombre <small>@grupo.CantidadTiendas</small></button>
+                    }
+                </div>
+                <div class="topbar-actions">
+                    <button id="btnSelectVisibleStores" class="btn btn-outline-secondary" type="button">Seleccionar visibles</button>
+                    <button id="btnClearStores" class="btn btn-outline-secondary" type="button">Limpiar</button>
+                </div>
+            </div>
+            <div id="wizardStoresGrid" class="wizard-store-grid">
+                @foreach (var tienda in Model.Tiendas)
+                {
+                    <label class="wizard-store-card" data-store-id="@tienda.ID" data-group-id="@tienda.GrupoID">
+                        <input class="wizard-store-checkbox" type="checkbox" value="@tienda.ID" />
+                        <span class="wizard-store-mark"></span>
+                        <strong>@tienda.Codigo - @tienda.Nombre</strong>
+                        <small>@tienda.Ciudad</small>
+                    </label>
+                }
+            </div>
+
+            <div class="wizard-actions">
+                <button class="btn btn-outline-secondary" type="button" data-prev-step="1">Anterior</button>
+                <button class="btn btn-primary" type="button" data-next-step="3">Continuar con datos</button>
+            </div>
+        </section>
+
+        <section class="wizard-screen" data-step="3">
+            <div class="wizard-data-layout">
+                <div class="wizard-data-main">
+                    <section class="form-panel wizard-form-panel">
+                        <div class="section-title">
+                            <span>3</span>
+                            <h2>Cargue la plantilla</h2>
+                            <small>Puede cargar archivo o pegar contenido separado por columnas.</small>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-4">
+                                <label class="form-label" for="wizard_separator">Separador</label>
+                                <select id="wizard_separator" class="form-select">
+                                    <option value=";">Punto y coma (;)</option>
+                                    <option value=",">Coma (,)</option>
+                                    <option value="|">Barra vertical (|)</option>
+                                    <option value="	">Tab</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label" for="wizard_effective_date">Fecha efectiva</label>
+                                <input id="wizard_effective_date" type="date" class="form-control" value="@Model.FechaEfectivaSugerida" />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label" for="wizard_file">Archivo</label>
+                                <input id="wizard_file" type="file" class="form-control" accept=".csv,.txt" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="wizard_notes">Notas de la solicitud</label>
+                                <textarea id="wizard_notes" class="form-control" rows="4" placeholder="Contexto comercial, ventana de aplicacion, proveedor o detalle relevante."></textarea>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="wizard_paste">Pegar contenido</label>
+                                <textarea id="wizard_paste" class="form-control wizard-paste" rows="8" placeholder="Pegue aqui el contenido del archivo, una fila por linea."></textarea>
+                                <div class="form-check wizard-inline-check">
+                                    <input id="wizard_has_header" class="form-check-input" type="checkbox" checked="checked" />
+                                    <label class="form-check-label" for="wizard_has_header">La primera fila contiene encabezados</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="wizard-actions compact">
+                            <button id="btnProcessWizardData" class="btn btn-primary" type="button">Procesar datos</button>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="wizard-data-side">
+                    <section class="table-panel wizard-template-panel">
+                        <div class="section-title">
+                            <span>i</span>
+                            <h2>Plantilla esperada</h2>
+                            <small id="wizardTaskHint">Seleccione una tarea para ver columnas.</small>
+                        </div>
+                        <div id="wizardTaskTemplate" class="wizard-template-columns"></div>
+                        <div class="wizard-template-example">
+                            <strong>Fila ejemplo</strong>
+                            <code id="wizardTaskExample">-</code>
+                        </div>
+                    </section>
+                </aside>
+            </div>
+
+            <section class="table-panel wizard-preview-panel">
+                <div class="table-toolbar">
+                    <div class="table-toolbar-main">
+                        <span id="wizardRowsChip" class="toolbar-chip">0 filas</span>
+                        <span id="wizardFileChip" class="toolbar-chip secondary">Sin archivo</span>
+                    </div>
+                </div>
+                <div id="wizardPreviewTableWrap" class="table-responsive wizard-table-wrap"></div>
+            </section>
+
+            <div class="wizard-actions">
+                <button class="btn btn-outline-secondary" type="button" data-prev-step="2">Anterior</button>
+                <button class="btn btn-primary" type="button" data-next-step="4">Revisar y aplicar</button>
+            </div>
+        </section>
+
+        <section class="wizard-screen" data-step="4">
+            <section class="metric-grid wizard-metric-grid">
+                <article>
+                    <span>Tarea</span>
+                    <strong id="summaryTask">-</strong>
+                </article>
+                <article>
+                    <span>Tiendas</span>
+                    <strong id="summaryStores">0</strong>
+                </article>
+                <article>
+                    <span>Filas</span>
+                    <strong id="summaryRows">0</strong>
+                </article>
+            </section>
+
+            <div class="wizard-review-grid">
+                <section class="table-panel">
+                    <div class="section-title">
+                        <span>4</span>
+                        <h2>Validacion</h2>
+                        <small>Antes de crear la hoja revisamos la estructura basica de la plantilla.</small>
+                    </div>
+                    <div id="wizardValidationBox" class="wizard-validation-box"></div>
+                </section>
+                <section class="table-panel">
+                    <div class="section-title">
+                        <span>5</span>
+                        <h2>Resumen</h2>
+                        <small>Asi quedar&aacute; registrada la solicitud en Hojas de Trabajo.</small>
+                    </div>
+                    <div id="wizardRequestSummary" class="wizard-request-summary"></div>
+                </section>
+            </div>
+
+            <section class="table-panel wizard-preview-panel">
+                <div class="table-toolbar">
+                    <div class="table-toolbar-main">
+                        <span class="toolbar-chip">Vista previa</span>
+                    </div>
+                </div>
+                <div id="wizardReviewTableWrap" class="table-responsive wizard-table-wrap"></div>
+            </section>
+
+            <div id="wizardSuccessPanel" class="wizard-success-panel" hidden="hidden">
+                <strong>Hoja creada correctamente.</strong>
+                <span id="wizardSuccessText"></span>
+                <div class="topbar-actions">
+                    <a id="wizardSuccessLink" class="btn btn-primary" href="@Url.Action("Inicio", "HojasTrabajo")">Ir a Hojas de Trabajo</a>
+                </div>
+            </div>
+
+            <div class="wizard-actions">
+                <button class="btn btn-outline-secondary" type="button" data-prev-step="3">Anterior</button>
+                <button id="btnApplyWizard" class="btn btn-primary" type="button">Crear hoja de trabajo</button>
+            </div>
+        </section>
+    </div>
+</section>
+
+<div id="localToast" class="local-toast" role="status" aria-live="polite"></div>
+
+@section scripts {
+    <script>
+        var urls = {
+            aplicar: '@Url.Action("Aplicar", "CambiosMasivosWizard")',
+            hojasTrabajo: '@Url.Action("Inicio", "HojasTrabajo")'
+        };
+        var pantalla = @Html.Raw(wizardJson);
+        var tareas = pantalla.Tareas || [];
+        var grupos = pantalla.GruposTienda || [];
+        var tiendas = pantalla.Tiendas || [];
+        var state = {
+            step: 1,
+            taskCode: tareas.length ? tareas[0].Codigo : "",
+            groupIDs: grupos.map(function (item) { return item.ID; }),
+            storeIDs: [],
+            rows: [],
+            fileName: "",
+            notes: "",
+            separator: ";",
+            effectiveDate: pantalla.FechaEfectivaSugerida || "",
+            lastResponse: null
+        };
+
+        $(function () {
+            bindEvents();
+            syncTaskSelection();
+            renderStores();
+            renderTemplateInfo();
+            renderPreview();
+            updateReview();
+            syncStep();
+        });
+
+        function bindEvents() {
+            $(".wizard-step").on("click", function () {
+                var targetStep = Number($(this).data("step") || 1);
+                if (!canMoveTo(targetStep)) return;
+                goToStep(targetStep);
+            });
+
+            $("[data-next-step]").on("click", function () {
+                var nextStep = Number($(this).data("next-step") || state.step);
+                if (!canMoveTo(nextStep)) return;
+                goToStep(nextStep);
+            });
+
+            $("[data-prev-step]").on("click", function () {
+                goToStep(Number($(this).data("prev-step") || state.step));
+            });
+
+            $("#wizardTaskGrid").on("click", ".wizard-task-card", function () {
+                state.taskCode = String($(this).data("task-code") || "");
+                syncTaskSelection();
+                renderTemplateInfo();
+                renderPreview();
+                updateReview();
+            });
+
+            $("#wizardGroupFilters").on("click", ".wizard-group-chip", function () {
+                var groupID = Number($(this).data("group-id"));
+                toggleGroup(groupID);
+            });
+
+            $("#wizardStoresGrid").on("change", ".wizard-store-checkbox", function () {
+                syncSelectedStores();
+            });
+
+            $("#btnSelectVisibleStores").on("click", function () {
+                $("#wizardStoresGrid .wizard-store-card:visible .wizard-store-checkbox").prop("checked", true);
+                syncSelectedStores();
+            });
+
+            $("#btnClearStores").on("click", function () {
+                $("#wizardStoresGrid .wizard-store-checkbox").prop("checked", false);
+                syncSelectedStores();
+            });
+
+            $("#wizard_separator, #wizard_effective_date, #wizard_notes").on("change input", function () {
+                state.separator = $("#wizard_separator").val();
+                state.effectiveDate = $("#wizard_effective_date").val();
+                state.notes = $("#wizard_notes").val();
+                updateReview();
+            });
+
+            $("#wizard_file").on("change", onFileSelected);
+            $("#btnProcessWizardData").on("click", processManualInput);
+            $("#btnApplyWizard").on("click", applyWizard);
+        }
+
+        function canMoveTo(step) {
+            if (step <= state.step) return true;
+
+            if (step >= 3) {
+                if (!state.taskCode) {
+                    showToast("Seleccione una tarea para continuar.", false);
+                    return false;
+                }
+                if (!state.storeIDs.length) {
+                    showToast("Seleccione al menos una tienda.", false);
+                    return false;
+                }
+            }
+
+            if (step >= 4 && !state.rows.length) {
+                showToast("Procese una plantilla antes de revisar la aplicacion.", false);
+                return false;
+            }
+
+            return true;
+        }
+
+        function goToStep(step) {
+            state.step = step;
+            syncStep();
+            if (step === 4) {
+                updateReview();
+            }
+        }
+
+        function syncStep() {
+            $(".wizard-step").each(function () {
+                var step = Number($(this).data("step"));
+                $(this).toggleClass("active", step === state.step);
+                $(this).toggleClass("done", step < state.step);
+            });
+
+            $(".wizard-screen").each(function () {
+                $(this).toggleClass("active", Number($(this).data("step")) === state.step);
+            });
+        }
+
+        function toggleGroup(groupID) {
+            var index = state.groupIDs.indexOf(groupID);
+            if (index >= 0) {
+                if (state.groupIDs.length === 1) return;
+                state.groupIDs.splice(index, 1);
+            } else {
+                state.groupIDs.push(groupID);
+            }
+
+            renderStores();
+        }
+
+        function renderStores() {
+            $("#wizardGroupFilters .wizard-group-chip").each(function () {
+                var isActive = state.groupIDs.indexOf(Number($(this).data("group-id"))) >= 0;
+                $(this).toggleClass("active", isActive);
+            });
+
+            $("#wizardStoresGrid .wizard-store-card").each(function () {
+                var isVisible = state.groupIDs.indexOf(Number($(this).data("group-id"))) >= 0;
+                $(this).toggle(isVisible);
+            });
+
+            $("#wizardStoresGrid .wizard-store-checkbox").each(function () {
+                var storeID = Number($(this).val());
+                $(this).prop("checked", state.storeIDs.indexOf(storeID) >= 0);
+            });
+
+            syncSelectedStores();
+        }
+
+        function syncSelectedStores() {
+            state.storeIDs = $("#wizardStoresGrid .wizard-store-checkbox:checked").map(function () {
+                return Number($(this).val());
+            }).get();
+
+            $("#wizardStoresGrid .wizard-store-card").each(function () {
+                var checkbox = $(this).find(".wizard-store-checkbox");
+                $(this).toggleClass("selected", checkbox.is(":checked"));
+            });
+
+            updateReview();
+        }
+
+        function syncTaskSelection() {
+            $("#wizardTaskGrid .wizard-task-card").each(function () {
+                $(this).toggleClass("active", String($(this).data("task-code")) === state.taskCode);
+            });
+        }
+
+        function getSelectedTask() {
+            return tareas.find(function (item) { return String(item.Codigo) === String(state.taskCode); }) || null;
+        }
+
+        function getSelectedStores() {
+            return tiendas.filter(function (item) { return state.storeIDs.indexOf(Number(item.ID)) >= 0; });
+        }
+
+        function renderTemplateInfo() {
+            var task = getSelectedTask();
+            if (!task) {
+                $("#wizardTaskTemplate").html("<span class='empty-state wizard-empty-inline'>Seleccione una tarea.</span>");
+                $("#wizardTaskHint").text("Seleccione una tarea para ver columnas.");
+                $("#wizardTaskExample").text("-");
+                return;
+            }
+
+            var columns = task.ColumnasArchivo || [];
+            $("#wizardTaskHint").text(task.Resumen || task.Descripcion || "");
+            $("#wizardTaskTemplate").html(columns.map(function (column, index) {
+                return "<span><strong>" + (index + 1) + ".</strong> " + escapeHtml(column) + "</span>";
+            }).join(""));
+            $("#wizardTaskExample").text(task.PlantillaEjemplo || "-");
+        }
+
+        function onFileSelected(event) {
+            var file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            state.fileName = file.name;
+            $("#wizardFileChip").text(file.name);
+
+            var reader = new FileReader();
+            reader.onload = function (loadEvent) {
+                $("#wizard_paste").val(loadEvent.target.result || "");
+                processManualInput();
+            };
+            reader.onerror = function () {
+                showToast("No se pudo leer el archivo seleccionado.", false);
+            };
+            reader.readAsText(file);
+        }
+
+        function processManualInput() {
+            var task = getSelectedTask();
+            if (!task) {
+                showToast("Seleccione una tarea antes de procesar datos.", false);
+                return;
+            }
+
+            state.separator = $("#wizard_separator").val();
+            state.notes = $("#wizard_notes").val();
+            state.effectiveDate = $("#wizard_effective_date").val();
+
+            var text = $("#wizard_paste").val() || "";
+            if (!text.trim()) {
+                state.rows = [];
+                renderPreview();
+                updateReview();
+                showToast("Pegue contenido o cargue un archivo para procesar.", false);
+                return;
+            }
+
+            state.rows = parseRows(text, state.separator, $("#wizard_has_header").is(":checked"));
+            renderPreview();
+            updateReview();
+
+            if (!state.fileName) {
+                $("#wizardFileChip").text("Carga manual");
+            }
+
+            showToast("Se procesaron " + state.rows.length + " fila(s).", true);
+        }
+
+        function parseRows(text, separator, hasHeader) {
+            var normalized = String(text || "").replace(/\r/g, "");
+            var lines = normalized.split("\n").filter(function (line) {
+                return $.trim(line).length > 0;
+            });
+
+            if (hasHeader && lines.length) {
+                lines = lines.slice(1);
+            }
+
+            return lines.map(function (line) {
+                return line.split(separator).map(function (cell) { return $.trim(cell); });
+            });
+        }
+
+        function renderPreview() {
+            var task = getSelectedTask();
+            var columns = task ? (task.ColumnasArchivo || []) : [];
+            var header = columns.map(function (column) {
+                return "<th>" + escapeHtml(column) + "</th>";
+            }).join("");
+
+            var rowsHtml = state.rows.slice(0, 12).map(function (row) {
+                return "<tr>" + columns.map(function (column, index) {
+                    return "<td>" + escapeHtml(row[index] || "-") + "</td>";
+                }).join("") + "</tr>";
+            }).join("");
+
+            var tableHtml = columns.length
+                ? "<table class='table align-middle document-table wizard-preview-table'><thead><tr>" + header + "</tr></thead><tbody>" + (rowsHtml || "<tr><td colspan='" + columns.length + "' class='empty-state'>Sin filas cargadas.</td></tr>") + "</tbody></table>"
+                : "<div class='empty-state'>Seleccione una tarea para ver la vista previa.</div>";
+
+            $("#wizardRowsChip").text(state.rows.length + " fila(s)");
+            $("#wizardPreviewTableWrap").html(tableHtml);
+            $("#wizardReviewTableWrap").html(tableHtml);
+        }
+
+        function runValidation() {
+            var task = getSelectedTask();
+            var issues = [];
+            var warnings = [];
+            var expectedColumns = task && task.ColumnasArchivo ? task.ColumnasArchivo.length : 0;
+
+            if (!task) issues.push("No hay tarea seleccionada.");
+            if (!state.storeIDs.length) issues.push("No se han seleccionado tiendas.");
+            if (!state.rows.length) issues.push("No hay filas cargadas.");
+
+            if (task && state.rows.length) {
+                var invalidCount = state.rows.some(function (row) { return row.length !== expectedColumns; });
+                if (invalidCount) {
+                    issues.push("La cantidad de columnas no coincide con la plantilla esperada.");
+                }
+
+                var emptyCodes = state.rows.some(function (row) { return !String(row[0] || "").trim(); });
+                if (emptyCodes) {
+                    issues.push("Hay filas sin codigo de producto en la primera columna.");
+                }
+
+                var duplicates = getDuplicateCodes();
+                if (duplicates.length) {
+                    issues.push("Hay codigos repetidos: " + duplicates.slice(0, 3).join(", ") + ".");
+                }
+
+                if (state.rows.length > 120) {
+                    warnings.push("La hoja guardara las primeras 120 filas para mantener la vista operativa.");
+                }
+            }
+
+            if (!($("#wizard_effective_date").val() || "").trim()) {
+                warnings.push("No se indico fecha efectiva; se usara la fecha sugerida.");
+            }
+
+            return {
+                ready: issues.length === 0,
+                issues: issues,
+                warnings: warnings
+            };
+        }
+
+        function getDuplicateCodes() {
+            var map = {};
+            var duplicates = [];
+
+            state.rows.forEach(function (row) {
+                var code = String(row[0] || "").trim().toUpperCase();
+                if (!code) return;
+                map[code] = (map[code] || 0) + 1;
+            });
+
+            Object.keys(map).forEach(function (code) {
+                if (map[code] > 1) {
+                    duplicates.push(code);
+                }
+            });
+
+            return duplicates;
+        }
+
+        function updateReview() {
+            var task = getSelectedTask();
+            var stores = getSelectedStores();
+            var validation = runValidation();
+            var effectiveDate = ($("#wizard_effective_date").val() || pantalla.FechaEfectivaSugerida || "-");
+            var storeNames = stores.length ? stores.map(function (item) { return item.Nombre; }).join(", ") : "Sin tiendas";
+
+            $("#summaryTask").text(task ? ("T" + task.Codigo) : "-");
+            $("#summaryStores").text(stores.length);
+            $("#summaryRows").text(state.rows.length);
+
+            var validationHtml = "<div class='wizard-validation-state " + (validation.ready ? "success" : "danger") + "'>" +
+                "<strong>" + (validation.ready ? "Listo para crear la hoja" : "Hay puntos por corregir") + "</strong>" +
+                "<span>" + (validation.ready ? "La estructura basica del archivo se ve consistente." : "Revise los detalles antes de continuar.") + "</span>" +
+                "</div>";
+
+            if (validation.issues.length) {
+                validationHtml += "<ul class='wizard-validation-list danger'>" +
+                    validation.issues.map(function (issue) { return "<li>" + escapeHtml(issue) + "</li>"; }).join("") +
+                    "</ul>";
+            }
+
+            if (validation.warnings.length) {
+                validationHtml += "<ul class='wizard-validation-list warning'>" +
+                    validation.warnings.map(function (warning) { return "<li>" + escapeHtml(warning) + "</li>"; }).join("") +
+                    "</ul>";
+            }
+
+            $("#wizardValidationBox").html(validationHtml);
+            $("#btnApplyWizard").prop("disabled", !validation.ready);
+
+            $("#wizardRequestSummary").html(
+                "<article><span>Tarea</span><strong>" + escapeHtml(task ? task.Nombre : "-") + "</strong></article>" +
+                "<article><span>Fecha efectiva</span><strong>" + escapeHtml(effectiveDate) + "</strong></article>" +
+                "<article><span>Tiendas</span><strong>" + escapeHtml(storeNames) + "</strong></article>" +
+                "<article><span>Notas</span><strong>" + escapeHtml($("#wizard_notes").val() || "Sin notas adicionales") + "</strong></article>"
+            );
+        }
+
+        function applyWizard() {
+            var validation = runValidation();
+            if (!validation.ready) {
+                updateReview();
+                showToast("Todavia hay datos por corregir antes de crear la hoja.", false);
+                return;
+            }
+
+            var payload = {
+                TaskCode: state.taskCode,
+                Notes: $("#wizard_notes").val() || "",
+                EffectiveDate: $("#wizard_effective_date").val() || pantalla.FechaEfectivaSugerida,
+                FileName: state.fileName || "",
+                Separator: $("#wizard_separator").val() || ";",
+                StoreIDs: state.storeIDs,
+                Rows: state.rows.map(function (row) { return { Values: row }; })
+            };
+
+            $("#btnApplyWizard").prop("disabled", true).text("Creando hoja...");
+
+            $.ajax({
+                url: urls.aplicar,
+                type: "POST",
+                data: JSON.stringify(payload),
+                contentType: "application/json; charset=utf-8"
+            }).done(function (data) {
+                if (!data || !data.Status) {
+                    showToast(data && data.Message ? data.Message : "No se pudo crear la hoja de trabajo.", false);
+                    return;
+                }
+
+                state.lastResponse = data.Result || null;
+                $("#wizardSuccessPanel").prop("hidden", false);
+                $("#wizardSuccessText").text("Hoja #" + data.Result.WorksheetID + " con " + data.Result.RegisteredRows + " fila(s) y " + data.Result.Stores + " tienda(s).");
+                $("#wizardSuccessLink").attr("href", data.Result.RedirectUrl || urls.hojasTrabajo);
+                showToast(data.Message || "Hoja creada correctamente.", true);
+            }).fail(function () {
+                showToast("Ocurrio un error al crear la hoja de trabajo.", false);
+            }).always(function () {
+                $("#btnApplyWizard").prop("disabled", !runValidation().ready).text("Crear hoja de trabajo");
+            });
+        }
+
+        function showToast(message, isSuccess) {
+            var toast = $("#localToast");
+            toast.removeClass("show success danger");
+            toast.text(message || "");
+            toast.addClass(isSuccess ? "success" : "danger");
+
+            window.setTimeout(function () {
+                toast.addClass("show");
+            }, 10);
+
+            window.clearTimeout(showToast._timer);
+            showToast._timer = window.setTimeout(function () {
+                toast.removeClass("show");
+            }, 3200);
+        }
+
+        function escapeHtml(value) {
+            return $("<div />").text(value || "").html();
+        }
+    </script>
+}

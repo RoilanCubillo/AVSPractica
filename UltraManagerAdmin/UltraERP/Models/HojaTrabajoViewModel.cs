@@ -38,6 +38,7 @@ namespace UltraERP.Models
                     case 251: return "Actualizar Inventario - Precio de Producto";
                     case 261: return "Descarga de Productos";
                     case 320: return "Ajuste de Impuestos";
+                    case 410: return "Cambios Masivos Wizard";
                     default: return "Hoja de trabajo";
                 }
             }

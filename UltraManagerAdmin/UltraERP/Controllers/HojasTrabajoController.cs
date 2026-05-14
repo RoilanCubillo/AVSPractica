@@ -142,6 +142,25 @@ namespace UltraERP.Controllers
             return View(model);
         }
 
+        public static HojaTrabajoViewModel RegistrarHoja(HojaTrabajoViewModel hoja)
+        {
+            if (hoja == null)
+                return null;
+
+            lock (SyncRoot)
+            {
+                var registrada = Clone(hoja);
+                registrada.ID = HojasTrabajo.Count == 0 ? 1 : HojasTrabajo.Max(x => x.ID) + 1;
+                registrada.FechaCreacion = registrada.FechaCreacion == default(DateTime) ? DateTime.Now : registrada.FechaCreacion;
+                registrada.FechaEfectiva = registrada.FechaEfectiva == default(DateTime) ? registrada.FechaCreacion.Date.AddDays(1).AddHours(22) : registrada.FechaEfectiva;
+                registrada.ArchivoID = registrada.ArchivoID <= 0 ? 9000 + registrada.ID : registrada.ArchivoID;
+                registrada.TiendasTexto = registrada.Tiendas == null ? "" : String.Join(", ", registrada.Tiendas.Select(x => x.TiendaNombre));
+
+                HojasTrabajo.Add(registrada);
+                return Clone(registrada);
+            }
+        }
+
         [HttpPost]
         public JsonResult CambiarEstado(int id, int estado)
         {

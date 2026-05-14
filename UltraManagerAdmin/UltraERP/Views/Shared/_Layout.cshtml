@@ -32,24 +32,25 @@
                 </a>
                 @{
                     var catalogMenus = new[] { "Familias", "Departamentos", "Categorias", "SubCategorias", "Segmentos", "Marcas", "Fabricantes", "Descuentos" };
+                    var processMenus = new[] { "HojasTrabajo", "CambiosMasivos" };
                     var isCatalogMenu = Array.IndexOf(catalogMenus, Convert.ToString(ViewBag.ActiveMenu)) >= 0;
+                    var isProcessMenu = Array.IndexOf(processMenus, Convert.ToString(ViewBag.ActiveMenu)) >= 0;
                 }
-                <nav class="app-nav">
+                <nav id="appNavAccordion" class="app-nav">
                     <a class="@(ViewBag.ActiveMenu == "Documentos" ? "active" : "")" href="@Url.Action("Inicio", "DocumentosInventario")">Documentos</a>
                     <a class="@(ViewBag.ActiveMenu == "Articulos" ? "active" : "")" href="@Url.Action("Inicio", "Articulos")">Art&iacute;culos</a>
                     <a class="@(ViewBag.ActiveMenu == "PropiedadesArticulos" ? "active" : "")" href="@Url.Action("Inicio", "PropiedadesArticulos")">Propiedades de Art&iacute;culos</a>
                     <a class="@(ViewBag.ActiveMenu == "CasasComerciales" ? "active" : "")" href="@Url.Action("Inicio", "CasasComerciales")">Casas Comerciales</a>
-                    <a class="@(ViewBag.ActiveMenu == "HojasTrabajo" ? "active" : "")" href="@Url.Action("Inicio", "HojasTrabajo")">Hojas de Trabajo</a>
                     <a id="catalogosToggle" class="nav-section-toggle @(isCatalogMenu ? "active" : "") @(isCatalogMenu ? "" : "collapsed")" href="#catalogosMenu" role="button" data-bs-toggle="collapse" data-bs-target="#catalogosMenu" aria-expanded="@(isCatalogMenu ? "true" : "false")" aria-controls="catalogosMenu">
                         <span>Cat&aacute;logos</span>
                         <span class="nav-section-icon @(isCatalogMenu ? "open" : "")" aria-hidden="true">
-                            <svg id="catalogosArrow" class="nav-arrow-svg" width="26" height="26" viewBox="0 0 26 26" focusable="false">
+                            <svg class="nav-arrow-svg" width="26" height="26" viewBox="0 0 26 26" focusable="false">
                                 <circle cx="13" cy="13" r="12" style="fill: rgba(255, 255, 255, .08); stroke: rgba(217, 155, 39, .34); stroke-width: 1;" />
-                                <path id="catalogosArrowPath" d="@(isCatalogMenu ? "M8 10 L13 15 L18 10" : "M8 16 L13 11 L18 16")" style="fill: none; stroke: #ffffff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;" />
+                                <path class="nav-arrow-path" d="@(isCatalogMenu ? "M8 10 L13 15 L18 10" : "M8 16 L13 11 L18 16")" style="fill: none; stroke: #ffffff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;" />
                             </svg>
                         </span>
                     </a>
-                    <div id="catalogosMenu" class="nav-section collapse @(isCatalogMenu ? "show" : "")">
+                    <div id="catalogosMenu" class="nav-section collapse @(isCatalogMenu ? "show" : "")" data-bs-parent="#appNavAccordion">
                         <a class="nav-sub-link @(ViewBag.ActiveMenu == "Familias" ? "active" : "")" href="@Url.Action("Inicio", "Familias")">Familias</a>
                         <a class="nav-sub-link @(ViewBag.ActiveMenu == "Departamentos" ? "active" : "")" href="@Url.Action("Inicio", "Departamentos")">Departamentos</a>
                         <a class="nav-sub-link @(ViewBag.ActiveMenu == "Categorias" ? "active" : "")" href="@Url.Action("Inicio", "Categorias")">Categor&iacute;as</a>
@@ -58,6 +59,19 @@
                         <a class="nav-sub-link @(ViewBag.ActiveMenu == "Marcas" ? "active" : "")" href="@Url.Action("Inicio", "Marcas")">Marcas</a>
                         <a class="nav-sub-link @(ViewBag.ActiveMenu == "Fabricantes" ? "active" : "")" href="@Url.Action("Inicio", "Fabricantes")">Fabricantes</a>
                         <a class="nav-sub-link @(ViewBag.ActiveMenu == "Descuentos" ? "active" : "")" href="@Url.Action("Inicio", "Descuentos")">Descuentos</a>
+                    </div>
+                    <a id="procesosToggle" class="nav-section-toggle @(isProcessMenu ? "active" : "") @(isProcessMenu ? "" : "collapsed")" href="#procesosMenu" role="button" data-bs-toggle="collapse" data-bs-target="#procesosMenu" aria-expanded="@(isProcessMenu ? "true" : "false")" aria-controls="procesosMenu">
+                        <span>Procesos</span>
+                        <span class="nav-section-icon @(isProcessMenu ? "open" : "")" aria-hidden="true">
+                            <svg class="nav-arrow-svg" width="26" height="26" viewBox="0 0 26 26" focusable="false">
+                                <circle cx="13" cy="13" r="12" style="fill: rgba(255, 255, 255, .08); stroke: rgba(217, 155, 39, .34); stroke-width: 1;" />
+                                <path class="nav-arrow-path" d="@(isProcessMenu ? "M8 10 L13 15 L18 10" : "M8 16 L13 11 L18 16")" style="fill: none; stroke: #ffffff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;" />
+                            </svg>
+                        </span>
+                    </a>
+                    <div id="procesosMenu" class="nav-section collapse @(isProcessMenu ? "show" : "")" data-bs-parent="#appNavAccordion">
+                        <a class="nav-sub-link @(ViewBag.ActiveMenu == "HojasTrabajo" ? "active" : "")" href="@Url.Action("Inicio", "HojasTrabajo")">Hojas de Trabajo</a>
+                        <a class="nav-sub-link @(ViewBag.ActiveMenu == "CambiosMasivos" ? "active" : "")" href="@Url.Action("Inicio", "CambiosMasivosWizard")">Cambios Masivos</a>
                     </div>
                     <a class="@(ViewBag.ActiveMenu == "Historico" ? "active" : "")" href="@Url.Action("Historico", "DocumentosInventario")">Historico de Ajustes</a>
                 </nav>
@@ -165,27 +179,34 @@
             window.UltraERP.downloadFile = downloadFile;
 
             document.addEventListener("DOMContentLoaded", function () {
-                var catalogosMenu = document.getElementById("catalogosMenu");
-                var catalogosToggle = document.getElementById("catalogosToggle");
-                var catalogosArrow = document.getElementById("catalogosArrow");
-                var catalogosArrowPath = document.getElementById("catalogosArrowPath");
-                if (!catalogosMenu || !catalogosToggle || !catalogosArrow || !catalogosArrowPath) return;
+                function bindSectionToggle(toggleId, menuId) {
+                    var toggle = document.getElementById(toggleId);
+                    var menu = document.getElementById(menuId);
+                    if (!toggle || !menu) return;
 
-                function syncCatalogosArrow(isOpen) {
-                    catalogosToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
-                    catalogosToggle.classList.toggle("catalogos-open", isOpen);
-                    catalogosToggle.classList.toggle("collapsed", !isOpen);
-                    catalogosArrow.parentElement.classList.toggle("open", isOpen);
-                    catalogosArrowPath.setAttribute("d", isOpen ? "M8 10 L13 15 L18 10" : "M8 16 L13 11 L18 16");
+                    var icon = toggle.querySelector(".nav-section-icon");
+                    var arrowPath = toggle.querySelector(".nav-arrow-path");
+                    if (!icon || !arrowPath) return;
+
+                    function syncSectionArrow(isOpen) {
+                        toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+                        toggle.classList.toggle("section-open", isOpen);
+                        toggle.classList.toggle("collapsed", !isOpen);
+                        icon.classList.toggle("open", isOpen);
+                        arrowPath.setAttribute("d", isOpen ? "M8 10 L13 15 L18 10" : "M8 16 L13 11 L18 16");
+                    }
+
+                    syncSectionArrow(menu.classList.contains("show"));
+                    toggle.addEventListener("click", function () {
+                        var willOpen = !menu.classList.contains("show") && !menu.classList.contains("collapsing");
+                        syncSectionArrow(willOpen);
+                    });
+                    menu.addEventListener("shown.bs.collapse", function () { syncSectionArrow(true); });
+                    menu.addEventListener("hidden.bs.collapse", function () { syncSectionArrow(false); });
                 }
 
-                syncCatalogosArrow(catalogosMenu.classList.contains("show"));
-                catalogosToggle.addEventListener("click", function () {
-                    var willOpen = !catalogosMenu.classList.contains("show") && !catalogosMenu.classList.contains("collapsing");
-                    syncCatalogosArrow(willOpen);
-                });
-                catalogosMenu.addEventListener("shown.bs.collapse", function () { syncCatalogosArrow(true); });
-                catalogosMenu.addEventListener("hidden.bs.collapse", function () { syncCatalogosArrow(false); });
+                bindSectionToggle("catalogosToggle", "catalogosMenu");
+                bindSectionToggle("procesosToggle", "procesosMenu");
             });
         })();
     </script>
