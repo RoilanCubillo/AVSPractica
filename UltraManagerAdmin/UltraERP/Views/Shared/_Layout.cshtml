@@ -40,7 +40,10 @@
                     <a id="catalogosToggle" class="nav-section-toggle @(isCatalogMenu ? "active" : "") @(isCatalogMenu ? "" : "collapsed")" href="#catalogosMenu" role="button" data-bs-toggle="collapse" data-bs-target="#catalogosMenu" aria-expanded="@(isCatalogMenu ? "true" : "false")" aria-controls="catalogosMenu">
                         <span>Cat&aacute;logos</span>
                         <span class="nav-section-icon @(isCatalogMenu ? "open" : "")" aria-hidden="true">
-                            <span id="catalogosArrow" class="nav-arrow">@Html.Raw(isCatalogMenu ? "&#8964;" : "&#8963;")</span>
+                            <svg id="catalogosArrow" class="nav-arrow-svg" width="26" height="26" viewBox="0 0 26 26" focusable="false">
+                                <circle cx="13" cy="13" r="12" style="fill: rgba(255, 255, 255, .08); stroke: rgba(217, 155, 39, .34); stroke-width: 1;" />
+                                <path id="catalogosArrowPath" d="@(isCatalogMenu ? "M8 10 L13 15 L18 10" : "M8 16 L13 11 L18 16")" style="fill: none; stroke: #ffffff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;" />
+                            </svg>
                         </span>
                     </a>
                     <div id="catalogosMenu" class="nav-section collapse @(isCatalogMenu ? "show" : "")">
@@ -143,14 +146,15 @@
                 var catalogosMenu = document.getElementById("catalogosMenu");
                 var catalogosToggle = document.getElementById("catalogosToggle");
                 var catalogosArrow = document.getElementById("catalogosArrow");
-                if (!catalogosMenu || !catalogosToggle || !catalogosArrow) return;
+                var catalogosArrowPath = document.getElementById("catalogosArrowPath");
+                if (!catalogosMenu || !catalogosToggle || !catalogosArrow || !catalogosArrowPath) return;
 
                 function syncCatalogosArrow(isOpen) {
                     catalogosToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
                     catalogosToggle.classList.toggle("catalogos-open", isOpen);
                     catalogosToggle.classList.toggle("collapsed", !isOpen);
-                    catalogosArrow.textContent = isOpen ? "\u2304" : "\u2303";
                     catalogosArrow.parentElement.classList.toggle("open", isOpen);
+                    catalogosArrowPath.setAttribute("d", isOpen ? "M8 10 L13 15 L18 10" : "M8 16 L13 11 L18 16");
                 }
 
                 syncCatalogosArrow(catalogosMenu.classList.contains("show"));

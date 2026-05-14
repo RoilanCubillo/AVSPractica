@@ -268,44 +268,49 @@ body {
 }
 
 .nav-section-icon {
-    width: 32px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     margin-left: auto;
-    border: 1px solid rgba(217, 155, 39, .18);
-    border-radius: 999px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex: 0 0 32px;
-    color: #d7e4e0;
-    background: linear-gradient(180deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, .04));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 8px 18px rgba(0, 0, 0, .08);
-    transition: background .16s ease, border-color .16s ease, color .16s ease, transform .16s ease;
+    flex: 0 0 30px;
+    color: #fff;
+    transition: color .16s ease, transform .16s ease;
 }
 
-.nav-arrow {
+.nav-arrow-svg {
+    width: 26px;
+    height: 26px;
     display: block;
-    min-width: 14px;
-    text-align: center;
-    color: currentColor;
-    font-family: "Segoe UI Symbol", "Segoe UI", Tahoma, sans-serif;
-    font-size: 21px;
-    font-weight: 700;
-    line-height: 1;
-    transform: translateY(-3px);
-    transition: opacity .16s ease, transform .16s ease;
+    overflow: visible;
+}
+
+.nav-arrow-svg circle {
+    fill: rgba(255, 255, 255, .08);
+    stroke: rgba(217, 155, 39, .34);
+    stroke-width: 1;
+}
+
+.nav-arrow-svg path {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .nav-section-toggle[aria-expanded="true"] .nav-section-icon,
 .nav-section-toggle.catalogos-open .nav-section-icon {
-    background: rgba(217, 155, 39, .2);
-    border-color: rgba(217, 155, 39, .3);
     color: #fff;
 }
 
-.nav-section-icon.open .nav-arrow {
-    transform: translateY(-4px);
+.nav-section-toggle[aria-expanded="true"] .nav-arrow-svg circle,
+.nav-section-toggle.catalogos-open .nav-arrow-svg circle {
+    fill: rgba(217, 155, 39, .32);
+    stroke: rgba(217, 155, 39, .45);
 }
+
 
 .user-panel {
     margin-top: auto;
