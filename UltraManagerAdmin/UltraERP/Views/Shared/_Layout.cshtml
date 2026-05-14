@@ -32,7 +32,7 @@
                 </a>
                 @{
                     var catalogMenus = new[] { "Familias", "Departamentos", "Categorias", "SubCategorias", "Segmentos", "Marcas", "Fabricantes", "Descuentos" };
-                    var processMenus = new[] { "HojasTrabajo", "CambiosMasivos" };
+                    var processMenus = new[] { "HojasTrabajo", "CambiosMasivos", "MonitoreoDatos" };
                     var isCatalogMenu = Array.IndexOf(catalogMenus, Convert.ToString(ViewBag.ActiveMenu)) >= 0;
                     var isProcessMenu = Array.IndexOf(processMenus, Convert.ToString(ViewBag.ActiveMenu)) >= 0;
                 }
@@ -72,6 +72,7 @@
                     <div id="procesosMenu" class="nav-section collapse @(isProcessMenu ? "show" : "")" data-bs-parent="#appNavAccordion">
                         <a class="nav-sub-link @(ViewBag.ActiveMenu == "HojasTrabajo" ? "active" : "")" href="@Url.Action("Inicio", "HojasTrabajo")">Hojas de Trabajo</a>
                         <a class="nav-sub-link @(ViewBag.ActiveMenu == "CambiosMasivos" ? "active" : "")" href="@Url.Action("Inicio", "CambiosMasivosWizard")">Cambios Masivos</a>
+                        <a class="nav-sub-link @(ViewBag.ActiveMenu == "MonitoreoDatos" ? "active" : "")" href="@Url.Action("Inicio", "MonitoreoDatos")">Monitoreo de Datos</a>
                     </div>
                     <a class="@(ViewBag.ActiveMenu == "Historico" ? "active" : "")" href="@Url.Action("Historico", "DocumentosInventario")">Historico de Ajustes</a>
                 </nav>

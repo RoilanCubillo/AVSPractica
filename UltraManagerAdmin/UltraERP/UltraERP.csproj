@@ -199,6 +199,7 @@
     <Compile Include="Controllers\HojasTrabajoController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\MarcasController.cs" />
+    <Compile Include="Controllers\MonitoreoDatosController.cs" />
     <Compile Include="Controllers\PropiedadesArticulosController.cs" />
     <Compile Include="Controllers\SegmentosController.cs" />
     <Compile Include="Controllers\SubCategoriasController.cs" />
@@ -222,6 +223,7 @@
     <Compile Include="Models\JsonResponse.cs" />
     <Compile Include="Models\LoginViewModel.cs" />
     <Compile Include="Models\MarcaViewModel.cs" />
+    <Compile Include="Models\MonitoreoDatosViewModel.cs" />
     <Compile Include="Models\PropiedadArticuloViewModel.cs" />
     <Compile Include="Models\SegmentoViewModel.cs" />
     <Compile Include="Models\SubCategoriaViewModel.cs" />
@@ -252,6 +254,7 @@
     <Content Include="Views\HojasTrabajo\Inicio.cshtml" />
     <Content Include="Views\Marcas\Inicio.cshtml" />
     <Content Include="Views\Marcas\Registro.cshtml" />
+    <Content Include="Views\MonitoreoDatos\Inicio.cshtml" />
     <Content Include="Views\PropiedadesArticulos\Inicio.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\Segmentos\Inicio.cshtml" />

@@ -1,0 +1,398 @@
+@model UltraERP.Models.MonitoreoDatosViewModel
+@{
+    ViewBag.Title = "Monitoreo de Datos";
+    ViewBag.ActiveMenu = "MonitoreoDatos";
+    var monitoreoJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
+}
+
+<section class="page-header monitoring-page-header">
+    <div class="page-header-copy">
+        <span class="eyebrow">Analitica operativa</span>
+        <h1>Monitoreo de Datos</h1>
+        <p>Revise la sincronizacion de documentos electronicos, documentos ERP y asientos contables por tienda, fecha y estado.</p>
+    </div>
+    <div class="monitoring-header-status" aria-label="Estado general">
+        <span>Revision continua</span>
+        <strong>Datos del periodo activo</strong>
+    </div>
+</section>
+
+<section class="filter-panel monitoring-filter-panel">
+    <div class="monitoring-filter-grid">
+        <div class="monitoring-filter-field">
+            <label for="filter_store" class="form-label">Tienda</label>
+            <select id="filter_store" class="form-select">
+                <option value="Todos">Todas</option>
+                @foreach (var tienda in Model.Tiendas)
+                {
+                    <option value="@tienda.ID">@tienda.Texto</option>
+                }
+            </select>
+        </div>
+        <div class="monitoring-filter-field">
+            <label for="filter_status" class="form-label">Estado</label>
+            <select id="filter_status" class="form-select">
+                <option value="Todos">Todos</option>
+                <option value="1">Aceptados / enviados</option>
+                <option value="2">Rechazados / con error</option>
+                <option value="3">Pendientes</option>
+                <option value="0">Sin enviar</option>
+            </select>
+        </div>
+        <div class="monitoring-filter-field compact">
+            <label for="filter_from" class="form-label">Desde</label>
+            <input id="filter_from" class="form-control" type="date" value="2026-05-10" />
+        </div>
+        <div class="monitoring-filter-field compact">
+            <label for="filter_to" class="form-label">Hasta</label>
+            <input id="filter_to" class="form-control" type="date" value="2026-05-14" />
+        </div>
+        <div class="monitoring-filter-field search">
+            <label for="table_search" class="form-label">Buscar</label>
+            <input id="table_search" class="form-control" type="search" placeholder="Clave, asiento o cliente" />
+        </div>
+    </div>
+    <div class="filter-actions monitoring-filter-actions">
+        <button id="btnLimpiar" class="btn btn-outline-secondary" type="button">Limpiar</button>
+        <button id="btnConsultar" class="btn btn-primary" type="button">Consultar</button>
+    </div>
+</section>
+
+<section class="metric-grid monitoring-metric-grid">
+    <article>
+        <span>Documentos</span>
+        <strong id="summary_docs">@Model.TotalDocumentos</strong>
+    </article>
+    <article>
+        <span>Aceptados / enviados</span>
+        <strong id="summary_ok">@Model.TotalAceptados</strong>
+    </article>
+    <article>
+        <span>Rechazados / errores</span>
+        <strong id="summary_errors">@Model.TotalRechazados</strong>
+    </article>
+    <article>
+        <span>Asientos pendientes</span>
+        <strong id="summary_pending">@Model.TotalAsientosPendientes</strong>
+    </article>
+</section>
+
+<section class="monitoring-dashboard-grid">
+    <article class="table-panel monitoring-chart-card">
+        <div class="section-title">
+            <span>1</span>
+            <h2>Ministerio de Hacienda</h2>
+            <small>Documentos aceptados, rechazados y pendientes.</small>
+        </div>
+        <div id="chart_mh" class="monitoring-bar-chart"></div>
+    </article>
+    <article class="table-panel monitoring-chart-card">
+        <div class="section-title">
+            <span>2</span>
+            <h2>Documentos ERP</h2>
+            <small>Sincronizacion posterior al envio electronico.</small>
+        </div>
+        <div id="chart_erp" class="monitoring-bar-chart"></div>
+    </article>
+    <article class="table-panel monitoring-chart-card">
+        <div class="section-title">
+            <span>3</span>
+            <h2>Asientos ERP</h2>
+            <small>Estado del cierre contable y sincronizacion.</small>
+        </div>
+        <div class="monitoring-donut-wrap">
+            <div class="monitoring-donut-panel">
+                <div id="chart_asientos" class="monitoring-donut"></div>
+            </div>
+            <div id="chart_asientos_legend" class="monitoring-donut-legend"></div>
+        </div>
+    </article>
+</section>
+
+<section class="table-panel monitoring-table-panel">
+    <div class="table-toolbar">
+        <div class="table-toolbar-main">
+            <div class="monitoring-table-heading">
+                <span class="eyebrow">Detalle operativo</span>
+                <strong id="monitoring_table_title">Hacienda</strong>
+            </div>
+            <div class="monitoring-tabs" role="tablist">
+                <button class="monitoring-tab active" type="button" data-tab="mh">Hacienda</button>
+                <button class="monitoring-tab" type="button" data-tab="erp">Documentos ERP</button>
+                <button class="monitoring-tab" type="button" data-tab="asientos">Asientos ERP</button>
+            </div>
+            <span id="results_hint" class="toolbar-chip">0 resultados</span>
+        </div>
+        <span id="active_context" class="toolbar-chip secondary">Hacienda</span>
+    </div>
+    <div id="monitoring_table_wrap" class="table-responsive monitoring-table-responsive"></div>
+</section>
+
+<div class="modal fade" id="monitoringModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="monitoringModalTitle" class="modal-title">Detalle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="monitoringDetail" class="document-view-grid monitoring-detail-grid"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        var pantalla = @Html.Raw(monitoreoJson);
+        var state = {
+            tab: "mh",
+            filteredMH: [],
+            filteredERP: [],
+            filteredAsientos: []
+        };
+        var monitoringModal = null;
+
+        $(function () {
+            monitoringModal = new bootstrap.Modal(document.getElementById("monitoringModal"));
+            bindEvents();
+            renderAll();
+        });
+
+        function bindEvents() {
+            $("#btnConsultar").on("click", renderAll);
+            $("#filter_store, #filter_status, #filter_from, #filter_to").on("change", renderAll);
+            $("#table_search").on("input", renderAll);
+            $("#btnLimpiar").on("click", function () {
+                $("#filter_store").val("Todos");
+                $("#filter_status").val("Todos");
+                $("#filter_from").val("2026-05-10");
+                $("#filter_to").val("2026-05-14");
+                $("#table_search").val("");
+                renderAll();
+            });
+            $(".monitoring-tab").on("click", function () {
+                state.tab = String($(this).data("tab") || "mh");
+                renderTable();
+            });
+        }
+
+        function renderAll() {
+            state.filteredMH = filterRows(pantalla.DocumentosMH || []);
+            state.filteredERP = filterRows(pantalla.DocumentosERP || []);
+            state.filteredAsientos = filterRows(pantalla.AsientosERP || []);
+            renderSummary();
+            renderCharts();
+            renderTable();
+        }
+
+        function filterRows(rows) {
+            var store = $("#filter_store").val();
+            var status = $("#filter_status").val();
+            var from = $("#filter_from").val();
+            var to = $("#filter_to").val();
+            var text = ($("#table_search").val() || "").toLowerCase();
+
+            return rows.filter(function (row) {
+                if (store !== "Todos" && String(row.TiendaID) !== String(store)) return false;
+                if (status !== "Todos" && String(row.EstadoID) !== String(status)) return false;
+                if (from && row.FechaFiltro < from) return false;
+                if (to && row.FechaFiltro > to) return false;
+                if (!text) return true;
+
+                return [row.Consecutivo, row.Clave, row.ComprobanteTipo, row.Cliente, row.NumeroAsiento, row.Referencia, row.Tipo, row.Tienda, row.Mensaje]
+                    .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
+            });
+        }
+
+        function renderSummary() {
+            var docs = state.filteredMH.length + state.filteredERP.length;
+            var ok = state.filteredMH.filter(isOk).length + state.filteredERP.filter(isOk).length + state.filteredAsientos.filter(isOk).length;
+            var errors = state.filteredMH.filter(isError).length + state.filteredERP.filter(isError).length + state.filteredAsientos.filter(isError).length;
+            var pending = state.filteredMH.filter(isPending).length + state.filteredERP.filter(isPending).length + state.filteredAsientos.filter(isPending).length;
+
+            $("#summary_docs").text(docs);
+            $("#summary_ok").text(ok);
+            $("#summary_errors").text(errors);
+            $("#summary_pending").text(pending);
+        }
+
+        function renderCharts() {
+            renderBarChart("#chart_mh", state.filteredMH);
+            renderBarChart("#chart_erp", state.filteredERP);
+            renderDonutChart(state.filteredAsientos);
+        }
+
+        function renderBarChart(selector, rows) {
+            var accepted = rows.filter(isOk).length;
+            var rejected = rows.filter(isError).length;
+            var pending = rows.filter(isPending).length;
+            var max = Math.max(accepted, rejected, pending, 1);
+            var bars = [
+                { label: "Aceptados", value: accepted, cls: "ok" },
+                { label: "Rechazados", value: rejected, cls: "error" },
+                { label: "Pendientes", value: pending, cls: "pending" }
+            ];
+
+            $(selector).html(bars.map(function (bar) {
+                var height = Math.max(8, Math.round((bar.value / max) * 100));
+                return "<article class='monitoring-bar " + bar.cls + "'>" +
+                    "<div class='monitoring-bar-track'><span style='height:" + height + "%'></span></div>" +
+                    "<strong>" + bar.value + "</strong>" +
+                    "<small>" + escapeHtml(bar.label) + "</small>" +
+                    "</article>";
+            }).join(""));
+        }
+
+        function renderDonutChart(rows) {
+            var sent = rows.filter(isOk).length;
+            var error = rows.filter(isError).length;
+            var pending = rows.filter(isPending).length;
+            var total = Math.max(sent + error + pending, 1);
+            var sentDeg = Math.round((sent / total) * 360);
+            var errorDeg = Math.round((error / total) * 360);
+            var pendingDeg = 360 - sentDeg - errorDeg;
+            var gradient = "conic-gradient(#176b5b 0deg " + sentDeg + "deg, #9f2435 " + sentDeg + "deg " + (sentDeg + errorDeg) + "deg, #b07c22 " + (sentDeg + errorDeg) + "deg 360deg)";
+
+            $("#chart_asientos").css("background", gradient).html("<div class='monitoring-donut-value'><strong>" + rows.length + "</strong><span>asientos</span></div>");
+            $("#chart_asientos_legend").html(
+                renderLegend("Enviados", sent, "ok") +
+                renderLegend("Con error", error, "error") +
+                renderLegend("Sin enviar", pending, "pending")
+            );
+        }
+
+        function renderLegend(label, value, cls) {
+            return "<span class='" + cls + "'><i></i>" + escapeHtml(label) + "<strong>" + value + "</strong></span>";
+        }
+
+        function renderTable() {
+            $(".monitoring-tab").removeClass("active");
+            $(".monitoring-tab[data-tab='" + state.tab + "']").addClass("active");
+
+            if (state.tab === "asientos") {
+                $("#active_context").text("Asientos ERP");
+                $("#monitoring_table_title").text("Asientos ERP");
+                renderAccountingTable(state.filteredAsientos);
+            } else if (state.tab === "erp") {
+                $("#active_context").text("Documentos ERP");
+                $("#monitoring_table_title").text("Documentos ERP");
+                renderDocumentTable(state.filteredERP, "erp");
+            } else {
+                $("#active_context").text("Hacienda");
+                $("#monitoring_table_title").text("Hacienda");
+                renderDocumentTable(state.filteredMH, "mh");
+            }
+        }
+
+        function renderDocumentTable(rows, type) {
+            var html = "<table class='table align-middle document-table monitoring-document-table'><thead><tr>" +
+                "<th>Consecutivo</th><th>Tipo</th><th>Cliente</th><th>Tienda</th><th>Fecha</th><th>Sincronizacion</th><th>Total</th><th>Estado</th><th>Acciones</th>" +
+                "</tr></thead><tbody>" +
+                rows.map(function (row) {
+                    return "<tr>" +
+                        "<td><div class='monitoring-document-id'><strong>" + escapeHtml(row.Consecutivo) + "</strong><span class='monitoring-key'>" + escapeHtml(row.Clave) + "</span></div></td>" +
+                        "<td>" + escapeHtml(row.ComprobanteTipo) + "</td>" +
+                        "<td>" + escapeHtml(row.Cliente) + "</td>" +
+                        "<td>" + escapeHtml(row.Tienda) + "</td>" +
+                        "<td>" + escapeHtml(row.FechaTexto) + "</td>" +
+                        "<td>" + escapeHtml(row.FechaSincronizacionTexto) + "</td>" +
+                        "<td>" + formatMoney(row.Total) + "</td>" +
+                        "<td>" + renderStatus(row) + "</td>" +
+                        "<td><button class='icon-button info' type='button' onclick='showDocumentDetail(" + row.ID + ", \"" + type + "\")'>Ver</button></td>" +
+                        "</tr>";
+                }).join("") +
+                "</tbody></table>";
+
+            $("#results_hint").text(rows.length + " resultados");
+            $("#monitoring_table_wrap").html(rows.length ? html : "<div class='empty-state'>Sin documentos para los filtros aplicados.</div>");
+        }
+
+        function renderAccountingTable(rows) {
+            var html = "<table class='table align-middle document-table monitoring-accounting-table'><thead><tr>" +
+                "<th>Asiento</th><th>Referencia</th><th>Tipo</th><th>Tienda</th><th>Fecha</th><th>Sincronizacion</th><th>Debito</th><th>Credito</th><th>Estado</th><th>Acciones</th>" +
+                "</tr></thead><tbody>" +
+                rows.map(function (row) {
+                    return "<tr>" +
+                        "<td><strong class='monitoring-code'>" + escapeHtml(row.NumeroAsiento) + "</strong></td>" +
+                        "<td><span class='monitoring-key compact'>" + escapeHtml(row.Referencia) + "</span></td>" +
+                        "<td>" + escapeHtml(row.Tipo) + "</td>" +
+                        "<td>" + escapeHtml(row.Tienda) + "</td>" +
+                        "<td>" + escapeHtml(row.FechaAsientoTexto) + "</td>" +
+                        "<td>" + escapeHtml(row.FechaSincronizacionTexto) + "</td>" +
+                        "<td>" + formatMoney(row.Debito) + "</td>" +
+                        "<td>" + formatMoney(row.Credito) + "</td>" +
+                        "<td>" + renderStatus(row) + "</td>" +
+                        "<td><button class='icon-button info' type='button' onclick='showAccountingDetail(" + row.ID + ")'>Ver</button></td>" +
+                        "</tr>";
+                }).join("") +
+                "</tbody></table>";
+
+            $("#results_hint").text(rows.length + " resultados");
+            $("#monitoring_table_wrap").html(rows.length ? html : "<div class='empty-state'>Sin asientos para los filtros aplicados.</div>");
+        }
+
+        function showDocumentDetail(id, type) {
+            var list = type === "erp" ? (pantalla.DocumentosERP || []) : (pantalla.DocumentosMH || []);
+            var row = list.find(function (item) { return item.ID === id; });
+            if (!row) return;
+
+            $("#monitoringModalTitle").text(row.Origen + " - " + row.Consecutivo);
+            $("#monitoringDetail").html(renderDetailGrid([
+                { label: "Consecutivo", value: row.Consecutivo },
+                { label: "Clave", value: row.Clave },
+                { label: "Tipo", value: row.ComprobanteTipo },
+                { label: "Cliente", value: row.Cliente },
+                { label: "Tienda", value: row.Tienda },
+                { label: "Fecha", value: row.FechaTexto },
+                { label: "Sincronizacion", value: row.FechaSincronizacionTexto },
+                { label: "Total", value: formatMoney(row.Total) },
+                { label: "Estado", value: row.EstadoTexto },
+                { label: "Mensaje", value: row.Mensaje }
+            ]));
+            monitoringModal.show();
+        }
+
+        function showAccountingDetail(id) {
+            var row = (pantalla.AsientosERP || []).find(function (item) { return item.ID === id; });
+            if (!row) return;
+
+            $("#monitoringModalTitle").text("Asiento " + row.NumeroAsiento);
+            $("#monitoringDetail").html(renderDetailGrid([
+                { label: "Asiento", value: row.NumeroAsiento },
+                { label: "Referencia", value: row.Referencia },
+                { label: "Tipo", value: row.Tipo },
+                { label: "Tienda", value: row.Tienda },
+                { label: "Fecha asiento", value: row.FechaAsientoTexto },
+                { label: "Sincronizacion", value: row.FechaSincronizacionTexto },
+                { label: "Debito", value: formatMoney(row.Debito) },
+                { label: "Credito", value: formatMoney(row.Credito) },
+                { label: "Estado", value: row.EstadoTexto },
+                { label: "Mensaje", value: row.Mensaje }
+            ]));
+            monitoringModal.show();
+        }
+
+        function renderDetailGrid(items) {
+            return items.map(function (item) {
+                return "<article class='document-view-item'><span>" + escapeHtml(item.label) + "</span><strong>" + escapeHtml(item.value) + "</strong></article>";
+            }).join("");
+        }
+
+        function isOk(row) { return Number(row.EstadoID) === 1; }
+        function isError(row) { return Number(row.EstadoID) === 2; }
+        function isPending(row) { return Number(row.EstadoID) === 3 || Number(row.EstadoID) === 0; }
+
+        function renderStatus(row) {
+            return "<span class='status-badge " + escapeHtml(row.EstadoClase) + "'>" + escapeHtml(row.EstadoTexto) + "</span>";
+        }
+
+        function formatMoney(value) {
+            return Number(value || 0).toLocaleString("es-CR", { style: "currency", currency: "CRC", maximumFractionDigits: 0 });
+        }
+
+        function escapeHtml(value) {
+            return $("<div />").text(value || "").html();
+        }
+    </script>
+}

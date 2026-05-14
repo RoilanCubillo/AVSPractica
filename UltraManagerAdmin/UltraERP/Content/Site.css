@@ -1462,7 +1462,8 @@ body {
 
     .wizard-review-grid,
     .wizard-data-layout,
-    .wizard-hero {
+    .wizard-hero,
+    .monitoring-dashboard-grid {
         grid-template-columns: 1fr;
     }
 }
@@ -1670,6 +1671,27 @@ body {
     .worksheet-list-table td:nth-child(6)::before { content: "Tarea"; }
     .worksheet-list-table td:nth-child(7)::before { content: "Tiendas"; }
     .worksheet-list-table td:nth-child(8)::before { content: "Acciones"; }
+
+    .monitoring-document-table td:nth-child(1)::before { content: "Consecutivo"; }
+    .monitoring-document-table td:nth-child(2)::before { content: "Tipo"; }
+    .monitoring-document-table td:nth-child(3)::before { content: "Cliente"; }
+    .monitoring-document-table td:nth-child(4)::before { content: "Tienda"; }
+    .monitoring-document-table td:nth-child(5)::before { content: "Fecha"; }
+    .monitoring-document-table td:nth-child(6)::before { content: "Sincronizaci\00f3n"; }
+    .monitoring-document-table td:nth-child(7)::before { content: "Total"; }
+    .monitoring-document-table td:nth-child(8)::before { content: "Estado"; }
+    .monitoring-document-table td:nth-child(9)::before { content: "Acciones"; }
+
+    .monitoring-accounting-table td:nth-child(1)::before { content: "Asiento"; }
+    .monitoring-accounting-table td:nth-child(2)::before { content: "Referencia"; }
+    .monitoring-accounting-table td:nth-child(3)::before { content: "Tipo"; }
+    .monitoring-accounting-table td:nth-child(4)::before { content: "Tienda"; }
+    .monitoring-accounting-table td:nth-child(5)::before { content: "Fecha"; }
+    .monitoring-accounting-table td:nth-child(6)::before { content: "Sincronizaci\00f3n"; }
+    .monitoring-accounting-table td:nth-child(7)::before { content: "D\00e9bito"; }
+    .monitoring-accounting-table td:nth-child(8)::before { content: "Cr\00e9dito"; }
+    .monitoring-accounting-table td:nth-child(9)::before { content: "Estado"; }
+    .monitoring-accounting-table td:nth-child(10)::before { content: "Acciones"; }
 
     .grid-inline-action {
         grid-template-columns: minmax(0, 1fr) 42px;
@@ -2338,6 +2360,7 @@ body {
 .status-badge.received { background: #dff5f2; color: #176b5b; }
 .status-badge.applied { background: #e4f7df; color: #336b22; }
 .status-badge.closed { background: #e9ecef; color: #343a40; }
+.status-badge.danger { background: #fde3e7; color: #9f2435; }
 
 .action-stack {
     display: flex;
@@ -2889,6 +2912,430 @@ body {
     padding: 14px !important;
 }
 
+.monitoring-page-header {
+    align-items: stretch;
+}
+
+.monitoring-header-status {
+    min-width: 230px;
+    display: grid;
+    align-content: center;
+    gap: 6px;
+    padding: 16px 18px;
+    border: 1px solid rgba(23, 107, 91, .14);
+    border-radius: 14px;
+    background: #fbfcfd;
+}
+
+.monitoring-header-status span {
+    color: var(--app-muted);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.monitoring-header-status strong {
+    color: var(--app-primary);
+    line-height: 1.25;
+}
+
+.monitoring-filter-panel {
+    overflow: visible;
+}
+
+.monitoring-filter-grid {
+    display: grid;
+    grid-template-columns: minmax(170px, 1.2fr) minmax(170px, 1.2fr) minmax(130px, .8fr) minmax(130px, .8fr) minmax(180px, 1fr);
+    gap: 14px;
+    align-items: end;
+}
+
+.monitoring-filter-field {
+    min-width: 0;
+}
+
+.monitoring-filter-field .form-control,
+.monitoring-filter-field .form-select {
+    width: 100%;
+}
+
+.monitoring-filter-panel .filter-actions {
+    margin-top: 18px;
+}
+
+.monitoring-filter-actions {
+    justify-content: flex-end;
+}
+
+.monitoring-metric-grid {
+    grid-template-columns: repeat(4, minmax(180px, 1fr));
+}
+
+.monitoring-metric-grid article:nth-child(4) {
+    background: linear-gradient(135deg, #512e24, #9f4d36);
+}
+
+.monitoring-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(290px, 1fr));
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.monitoring-chart-card {
+    min-height: 330px;
+    overflow: hidden;
+}
+
+.monitoring-bar-chart {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+    align-items: end;
+    min-height: 220px;
+    padding-top: 4px;
+}
+
+.monitoring-bar {
+    display: grid;
+    grid-template-rows: 1fr auto auto;
+    gap: 8px;
+    align-items: end;
+    min-height: 220px;
+    text-align: center;
+    min-width: 0;
+}
+
+.monitoring-bar-track {
+    position: relative;
+    overflow: hidden;
+    height: 150px;
+    border-radius: 12px;
+    background: #eef3f1;
+}
+
+.monitoring-bar-track span {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 12px 12px 0 0;
+    transition: height .2s ease;
+}
+
+.monitoring-bar.ok .monitoring-bar-track span {
+    background: linear-gradient(180deg, #2d8a55, #176b5b);
+}
+
+.monitoring-bar.error .monitoring-bar-track span {
+    background: linear-gradient(180deg, #d75b70, #9f2435);
+}
+
+.monitoring-bar.pending .monitoring-bar-track span {
+    background: linear-gradient(180deg, #d99b27, #8a5a00);
+}
+
+.monitoring-bar strong {
+    color: var(--app-text);
+    font-size: 24px;
+    line-height: 1;
+}
+
+.monitoring-bar small {
+    color: var(--app-muted);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.monitoring-donut-wrap {
+    display: grid;
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+    gap: 22px;
+    align-items: center;
+    min-height: 240px;
+}
+
+.monitoring-donut-panel {
+    display: grid;
+    place-items: center;
+    min-height: 220px;
+    padding: 8px;
+}
+
+.monitoring-donut {
+    position: relative;
+    width: 190px;
+    height: 190px;
+    margin: 0 auto;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    box-shadow: inset 0 0 0 1px rgba(19, 35, 31, .08), 0 18px 32px rgba(19, 35, 31, .1);
+}
+
+.monitoring-donut::after {
+    content: "";
+    position: absolute;
+    inset: 42px;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: inset 0 0 0 1px rgba(19, 35, 31, .06);
+}
+
+.monitoring-donut-value {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    transform: translateY(-2px);
+}
+
+.monitoring-donut strong,
+.monitoring-donut span {
+    position: relative;
+    display: block;
+    text-align: center;
+}
+
+.monitoring-donut strong {
+    margin: 0;
+    font-size: 42px;
+    line-height: .9;
+    font-weight: 800;
+    color: var(--app-text);
+}
+
+.monitoring-donut span {
+    margin: 0;
+    color: var(--app-muted);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.monitoring-donut-legend {
+    display: grid;
+    gap: 10px;
+    align-content: center;
+}
+
+.monitoring-donut-legend span {
+    display: grid;
+    grid-template-columns: 12px minmax(0, 1fr) auto;
+    gap: 9px;
+    align-items: center;
+    padding: 10px 12px;
+    border: 1px solid var(--app-border);
+    border-radius: 10px;
+    background: #fbfcfd;
+    font-size: 13px;
+    box-shadow: 0 8px 18px rgba(19, 35, 31, .04);
+}
+
+.monitoring-donut-legend i {
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+}
+
+.monitoring-donut-legend .ok i { background: #176b5b; }
+.monitoring-donut-legend .error i { background: #9f2435; }
+.monitoring-donut-legend .pending i { background: #b07c22; }
+
+.monitoring-tabs {
+    display: inline-flex;
+    gap: 6px;
+    padding: 5px;
+    border: 1px solid var(--app-border);
+    border-radius: 14px;
+    background: #f8fbfa;
+}
+
+.monitoring-tab {
+    min-height: 36px;
+    padding: 7px 12px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--app-muted);
+    font-weight: 800;
+}
+
+.monitoring-tab.active {
+    background: #fff;
+    color: var(--app-primary);
+    box-shadow: 0 8px 18px rgba(19, 35, 31, .08);
+}
+
+.monitoring-table-panel .table-toolbar {
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.monitoring-table-responsive {
+    overflow-x: auto !important;
+    overflow-y: visible;
+}
+
+.monitoring-table-heading {
+    display: grid;
+    gap: 2px;
+    min-width: 170px;
+}
+
+.monitoring-table-heading strong {
+    color: var(--app-text);
+    font-size: 20px;
+    line-height: 1.1;
+}
+
+.monitoring-document-table,
+.monitoring-accounting-table {
+    display: table !important;
+    margin-bottom: 0;
+    table-layout: fixed;
+    width: 100%;
+    min-width: 1260px;
+}
+
+.monitoring-document-table thead,
+.monitoring-accounting-table thead {
+    display: table-header-group !important;
+}
+
+.monitoring-document-table tbody,
+.monitoring-accounting-table tbody {
+    display: table-row-group !important;
+}
+
+.monitoring-document-table tr,
+.monitoring-accounting-table tr {
+    display: table-row !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.monitoring-document-table td,
+.monitoring-document-table th,
+.monitoring-accounting-table td,
+.monitoring-accounting-table th {
+    display: table-cell !important;
+}
+
+.monitoring-document-table td::before,
+.monitoring-accounting-table td::before {
+    display: none !important;
+}
+
+.monitoring-document-table th:nth-child(1),
+.monitoring-document-table td:nth-child(1) {
+    width: 26%;
+}
+
+.monitoring-document-table th:nth-child(2),
+.monitoring-document-table td:nth-child(2) {
+    width: 12%;
+}
+
+.monitoring-document-table th:nth-child(3),
+.monitoring-document-table td:nth-child(3) {
+    width: 14%;
+}
+
+.monitoring-document-table th:nth-child(4),
+.monitoring-document-table td:nth-child(4),
+.monitoring-document-table th:nth-child(5),
+.monitoring-document-table td:nth-child(5),
+.monitoring-document-table th:nth-child(6),
+.monitoring-document-table td:nth-child(6) {
+    width: 10%;
+}
+
+.monitoring-document-table th:nth-child(7),
+.monitoring-document-table td:nth-child(7) {
+    width: 9%;
+}
+
+.monitoring-document-table th:nth-child(8),
+.monitoring-document-table td:nth-child(8),
+.monitoring-document-table th:nth-child(9),
+.monitoring-document-table td:nth-child(9) {
+    width: 7%;
+}
+
+.monitoring-accounting-table th:nth-child(1),
+.monitoring-accounting-table td:nth-child(1) {
+    width: 16%;
+}
+
+.monitoring-accounting-table th:nth-child(2),
+.monitoring-accounting-table td:nth-child(2) {
+    width: 14%;
+}
+
+.monitoring-document-id {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.monitoring-code,
+.monitoring-document-id strong {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.monitoring-key {
+    display: block;
+    max-width: 100%;
+    padding: 7px 9px;
+    border: 1px solid rgba(23, 107, 91, .11);
+    border-radius: 8px;
+    background: #f8fbfa;
+    color: var(--app-muted);
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.monitoring-key.compact {
+    display: inline-block;
+    padding: 5px 7px;
+}
+
+.monitoring-document-table td,
+.monitoring-accounting-table td {
+    vertical-align: top;
+    overflow-wrap: anywhere;
+    word-break: normal;
+}
+
+.monitoring-document-table td,
+.monitoring-accounting-table td {
+    padding-top: 14px !important;
+    padding-bottom: 14px !important;
+}
+
+.monitoring-detail-grid .document-view-item {
+    min-width: 0;
+}
+
+.monitoring-detail-grid .document-view-item strong {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+}
+
 .local-recovery-modal {
     border: 0;
     border-radius: 18px;
@@ -3011,7 +3458,9 @@ body {
     .wizard-review-grid,
     .wizard-data-layout,
     .wizard-benefits,
-    .wizard-request-summary {
+    .wizard-request-summary,
+    .monitoring-dashboard-grid,
+    .monitoring-donut-wrap {
         grid-template-columns: 1fr;
     }
 
@@ -3072,8 +3521,87 @@ body {
         grid-template-columns: 1fr;
     }
 
-    .metric-grid {
+    .metric-grid,
+    .monitoring-metric-grid {
         grid-template-columns: 1fr;
+    }
+
+    .monitoring-tabs {
+        display: grid;
+        width: 100%;
+    }
+
+    .monitoring-header-status {
+        min-width: 0;
+    }
+
+    .monitoring-table-panel .table-toolbar {
+        align-items: stretch;
+    }
+
+    .monitoring-table-heading {
+        min-width: 0;
+    }
+
+    .monitoring-document-table,
+    .monitoring-accounting-table {
+        display: block !important;
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+
+    .monitoring-document-table thead,
+    .monitoring-accounting-table thead {
+        display: none !important;
+    }
+
+    .monitoring-document-table tbody,
+    .monitoring-accounting-table tbody {
+        display: grid !important;
+        gap: 14px;
+    }
+
+    .monitoring-document-table tr,
+    .monitoring-accounting-table tr {
+        display: grid !important;
+        gap: 12px;
+        padding: 16px !important;
+        border: 1px solid var(--app-border) !important;
+        border-radius: 16px !important;
+        background: #fff !important;
+        box-shadow: 0 12px 24px rgba(19, 35, 31, .06) !important;
+    }
+
+    .monitoring-document-table td,
+    .monitoring-accounting-table td {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 6px;
+        width: 100% !important;
+        padding: 0 !important;
+        border: 0 !important;
+    }
+
+    .monitoring-document-table td::before,
+    .monitoring-accounting-table td::before {
+        display: block !important;
+        color: var(--app-muted);
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .monitoring-document-id {
+        gap: 8px;
+    }
+
+    .monitoring-key {
+        font-size: 10px;
+    }
+
+    .monitoring-key.compact {
+        display: block;
     }
 
     .wizard-stepper,
@@ -3088,6 +3616,160 @@ body {
 
     .app-main {
         padding: 18px;
+    }
+}
+
+@media (max-width: 1280px) {
+    .monitoring-page-header {
+        flex-direction: column;
+    }
+
+    .monitoring-header-status {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .monitoring-filter-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .monitoring-filter-field.search,
+    .monitoring-filter-field.compact {
+        min-width: 0;
+    }
+
+    .monitoring-metric-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .monitoring-dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .monitoring-table-panel .table-toolbar {
+        align-items: stretch;
+    }
+
+    .monitoring-table-heading {
+        min-width: 0;
+    }
+
+    .monitoring-document-table,
+    .monitoring-accounting-table {
+        display: block !important;
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+
+    .monitoring-document-table thead,
+    .monitoring-accounting-table thead {
+        display: none !important;
+    }
+
+    .monitoring-document-table tbody,
+    .monitoring-accounting-table tbody {
+        display: grid !important;
+        gap: 14px;
+    }
+
+    .monitoring-document-table tr,
+    .monitoring-accounting-table tr {
+        display: grid !important;
+        gap: 12px;
+        padding: 16px !important;
+        border: 1px solid var(--app-border) !important;
+        border-radius: 16px !important;
+        background: #fff !important;
+        box-shadow: 0 12px 24px rgba(19, 35, 31, .06) !important;
+    }
+
+    .monitoring-document-table td,
+    .monitoring-accounting-table td {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 6px;
+        width: 100% !important;
+        padding: 0 !important;
+        border: 0 !important;
+    }
+
+    .monitoring-document-table td::before,
+    .monitoring-accounting-table td::before {
+        display: block !important;
+        color: var(--app-muted);
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .monitoring-document-id {
+        gap: 8px;
+    }
+
+    .monitoring-key {
+        font-size: 10px;
+    }
+
+    .monitoring-key.compact {
+        display: block;
+    }
+
+    .monitoring-donut-wrap {
+        grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+        gap: 18px;
+    }
+
+    .monitoring-donut {
+        width: 170px;
+        height: 170px;
+    }
+
+    .monitoring-donut::after {
+        inset: 36px;
+    }
+
+    .monitoring-donut strong {
+        font-size: 34px;
+    }
+}
+
+@media (max-width: 900px) {
+    .monitoring-filter-grid,
+    .monitoring-metric-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .monitoring-filter-actions {
+        justify-content: stretch;
+    }
+
+    .monitoring-filter-actions .btn {
+        width: 100%;
+    }
+
+    .monitoring-tabs {
+        display: grid;
+        width: 100%;
+    }
+
+    .monitoring-chart-card {
+        min-height: 0;
+    }
+
+    .monitoring-donut-wrap {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        min-height: 0;
+    }
+
+    .monitoring-donut-panel {
+        min-height: 0;
+        padding: 0;
+    }
+
+    .monitoring-donut-legend {
+        align-content: start;
     }
 }
 
@@ -3188,6 +3870,54 @@ body {
 
     .wizard-actions .btn {
         width: 100%;
+    }
+
+    .monitoring-page-header h1 {
+        font-size: 30px;
+    }
+
+    .monitoring-dashboard-grid {
+        gap: 14px;
+    }
+
+    .monitoring-chart-card {
+        min-height: 0;
+        padding: 18px;
+    }
+
+    .monitoring-bar-chart {
+        min-height: 0;
+        gap: 10px;
+    }
+
+    .monitoring-bar {
+        min-height: 170px;
+    }
+
+    .monitoring-bar-track {
+        height: 110px;
+    }
+
+    .monitoring-donut {
+        width: 144px;
+        height: 144px;
+    }
+
+    .monitoring-donut::after {
+        inset: 30px;
+    }
+
+    .monitoring-donut strong {
+        font-size: 24px;
+    }
+
+    .monitoring-donut span {
+        margin-top: 26px;
+    }
+
+    .monitoring-document-table tr,
+    .monitoring-accounting-table tr {
+        padding: 14px !important;
     }
 }
 
