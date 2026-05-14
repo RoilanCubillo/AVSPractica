@@ -31,7 +31,7 @@
                     </span>
                 </a>
                 @{
-                    var catalogMenus = new[] { "Familias", "Departamentos", "Categorias", "SubCategorias", "Segmentos", "Marcas", "Fabricantes", "Descuentos" };
+                    var catalogMenus = new[] { "Familias", "Departamentos", "Categorias", "SubCategorias", "Segmentos", "Marcas", "Fabricantes", "Descuentos", "PropiedadesArticulos" };
                     var isCatalogMenu = Array.IndexOf(catalogMenus, Convert.ToString(ViewBag.ActiveMenu)) >= 0;
                 }
                 <nav class="app-nav">
@@ -55,6 +55,7 @@
                         <a class="nav-sub-link @(ViewBag.ActiveMenu == "Marcas" ? "active" : "")" href="@Url.Action("Inicio", "Marcas")">Marcas</a>
                         <a class="nav-sub-link @(ViewBag.ActiveMenu == "Fabricantes" ? "active" : "")" href="@Url.Action("Inicio", "Fabricantes")">Fabricantes</a>
                         <a class="nav-sub-link @(ViewBag.ActiveMenu == "Descuentos" ? "active" : "")" href="@Url.Action("Inicio", "Descuentos")">Descuentos</a>
+                        <a class="nav-sub-link @(ViewBag.ActiveMenu == "PropiedadesArticulos" ? "active" : "")" href="@Url.Action("Inicio", "PropiedadesArticulos")">Propiedades de Art&iacute;culos</a>
                     </div>
                     <a class="@(ViewBag.ActiveMenu == "Historico" ? "active" : "")" href="@Url.Action("Historico", "DocumentosInventario")">Historico de Ajustes</a>
                 </nav>

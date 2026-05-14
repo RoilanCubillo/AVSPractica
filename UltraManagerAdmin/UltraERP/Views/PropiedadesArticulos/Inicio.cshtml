@@ -1,0 +1,387 @@
+@model UltraERP.Models.PropiedadesArticuloInicioViewModel
+@{
+    ViewBag.Title = "Propiedades de Articulos";
+    ViewBag.ActiveMenu = "PropiedadesArticulos";
+    var propiedadesJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
+}
+
+<section class="page-header">
+    <div class="page-header-copy">
+        <span class="eyebrow">Catalogo de articulos</span>
+        <h1>Propiedades de Art&iacute;culos</h1>
+        <p>Actualice atributos extendidos como CABYS, registro sanitario, origen y presentaci&oacute;n para los productos del inventario.</p>
+    </div>
+</section>
+
+<section class="filter-panel">
+    <div class="row g-3">
+        <div class="col-12 col-md-3">
+            <label for="filter_codigo" class="form-label">C&oacute;digo</label>
+            <input id="filter_codigo" type="text" class="form-control" placeholder="ARR-TP-2K" />
+        </div>
+        <div class="col-12 col-md-4">
+            <label for="table_search" class="form-label">Buscar</label>
+            <input id="table_search" type="search" class="form-control" placeholder="Articulo o propiedad" />
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="filter_estado" class="form-label">Estado</label>
+            <select id="filter_estado" class="form-select">
+                <option value="Todos">Todos</option>
+                <option value="Completos">Completos</option>
+                <option value="Pendientes">Con pendientes</option>
+            </select>
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button id="btnLimpiar" class="btn btn-outline-secondary" type="button">Limpiar</button>
+        <button id="btnConsultar" class="btn btn-primary" type="button">Consultar</button>
+    </div>
+</section>
+
+<section class="metric-grid">
+    <article>
+        <span>Art&iacute;culos</span>
+        <strong id="summary_count">0</strong>
+    </article>
+    <article>
+        <span>Propiedades listas</span>
+        <strong id="summary_ready">0</strong>
+    </article>
+    <article>
+        <span>Pendientes</span>
+        <strong id="summary_pending">0</strong>
+    </article>
+</section>
+
+<section class="table-panel">
+    <div class="table-toolbar">
+        <div class="table-toolbar-main">
+            <span id="results_hint" class="toolbar-chip">0 resultados</span>
+        </div>
+        <span id="loading_state" class="loading-state">Cargando...</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle document-table item-property-list-table">
+            <thead>
+                <tr>
+                    <th>C&oacute;digo</th>
+                    <th>Art&iacute;culo</th>
+                    <th>Propiedades</th>
+                    <th>Listas</th>
+                    <th>Pendientes</th>
+                    <th>Actualizado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="propiedades_body"></tbody>
+        </table>
+    </div>
+</section>
+
+<div id="localToast" class="local-toast" role="status" aria-live="polite"></div>
+
+<div class="modal fade" id="propiedadesModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="propiedadesModalTitle" class="modal-title">Propiedades de art&iacute;culo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="document-view">
+                    <section class="document-view-hero">
+                        <div>
+                            <span class="eyebrow">Actualizaci&oacute;n de propiedades</span>
+                            <h2 id="property_view_title" class="document-view-title"></h2>
+                            <p id="property_view_subtitle" class="document-view-subtitle"></p>
+                        </div>
+                        <div class="document-view-total">
+                            <span>Propiedades</span>
+                            <strong id="property_view_count"></strong>
+                        </div>
+                    </section>
+
+                    <section class="document-view-section">
+                        <h3>Tiendas a actualizar</h3>
+                        <div class="property-store-grid">
+                            <select id="stores_select" class="form-select" multiple></select>
+                            <label class="article-switch">
+                                <input id="chk_all_stores" type="checkbox" />
+                                <span>Todas</span>
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="document-view-section">
+                        <h3>Propiedades</h3>
+                        <div id="property_form_grid" class="property-form-grid"></div>
+                    </section>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button id="btnGuardarPropiedades" type="button" class="btn btn-primary">Guardar propiedades</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        var urls = {
+            guardar: '@Url.Action("Guardar", "PropiedadesArticulos")'
+        };
+        var pantalla = @Html.Raw(propiedadesJson);
+        var articulos = pantalla.Articulos || [];
+        var tiendas = pantalla.Tiendas || [];
+        var filteredRows = [];
+        var currentItem = null;
+        var propiedadesModal = null;
+
+        $(function () {
+            propiedadesModal = new bootstrap.Modal(document.getElementById("propiedadesModal"));
+            bindEvents();
+            renderStores();
+            renderTable();
+            setLoading(false);
+        });
+
+        function bindEvents() {
+            $("#btnConsultar").on("click", renderTable);
+            $("#filter_codigo, #table_search, #filter_estado").on("input change", renderTable);
+            $("#btnLimpiar").on("click", function () {
+                $("#filter_codigo").val("");
+                $("#table_search").val("");
+                $("#filter_estado").val("Todos");
+                renderTable();
+            });
+            $("#chk_all_stores").on("change", function () {
+                var selected = this.checked ? tiendas.map(function (t) { return t.ID; }) : [];
+                $("#stores_select").val(selected);
+            });
+            $("#stores_select").on("change", function () {
+                $("#chk_all_stores").prop("checked", getSelectedStores().length === tiendas.length);
+            });
+            $("#btnGuardarPropiedades").on("click", saveProperties);
+        }
+
+        function renderTable() {
+            filteredRows = getFilteredRows();
+            var html = filteredRows.map(function (item) {
+                return "<tr>" +
+                    "<td><strong>" + escapeHtml(item.Codigo) + "</strong></td>" +
+                    "<td><span class='table-title'>" + escapeHtml(item.Descripcion) + "</span><small>" + escapeHtml(item.DescripcionExtendida || "-") + "</small></td>" +
+                    "<td>" + renderPropertyChips(item) + "</td>" +
+                    "<td>" + formatNumber(item.PropiedadesConfiguradas) + "</td>" +
+                    "<td>" + formatPending(item.PropiedadesPendientes) + "</td>" +
+                    "<td>" + escapeHtml(item.FechaModificaTexto || "-") + "</td>" +
+                    "<td>" + getActionButtons(item) + "</td>" +
+                    "</tr>";
+            }).join("");
+
+            $("#results_hint").text(filteredRows.length + " resultados");
+            $("#propiedades_body").html(html || "<tr><td colspan='7' class='empty-state'>Sin art&iacute;culos para los filtros aplicados.</td></tr>");
+            updateSummary();
+        }
+
+        function getFilteredRows() {
+            var codigo = ($("#filter_codigo").val() || "").toLowerCase();
+            var text = ($("#table_search").val() || "").toLowerCase();
+            var estado = $("#filter_estado").val();
+
+            return articulos.filter(function (item) {
+                if (codigo && String(item.Codigo || "").toLowerCase().indexOf(codigo) < 0) return false;
+                if (estado === "Completos" && Number(item.PropiedadesPendientes || 0) > 0) return false;
+                if (estado === "Pendientes" && Number(item.PropiedadesPendientes || 0) === 0) return false;
+                if (!text) return true;
+
+                return [item.Codigo, item.Descripcion, item.DescripcionExtendida, item.PropiedadesTexto]
+                    .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
+            });
+        }
+
+        function renderPropertyChips(item) {
+            var properties = item.Propiedades || [];
+            var configured = properties.filter(function (p) { return String(p.Valor || "").length > 0; });
+            if (!configured.length) return "<span class='status-badge closed'>Sin propiedades</span>";
+
+            var chips = configured.slice(0, 4).map(function (p) {
+                return "<span class='property-chip'><strong>" + escapeHtml(p.Nombre) + "</strong>" + escapeHtml(p.ValorTexto || p.Valor || "-") + "</span>";
+            }).join("");
+
+            if (configured.length > 4) {
+                chips += "<span class='property-chip muted'>+" + (configured.length - 4) + "</span>";
+            }
+
+            return "<div class='property-chip-group'>" + chips + "</div>";
+        }
+
+        function formatPending(value) {
+            var count = Number(value || 0);
+            if (count === 0) return "<span class='status-badge received'>0</span>";
+            return "<span class='status-badge draft'>" + count + "</span>";
+        }
+
+        function getActionButtons(item) {
+            return "<div class='action-stack'>" +
+                "<button class='icon-button primary' type='button' onclick='onEditar(" + item.ID + ")'>Editar</button>" +
+                "</div>";
+        }
+
+        function onEditar(id) {
+            currentItem = findItem(id);
+            if (!currentItem) return;
+
+            $("#propiedadesModalTitle").text("Propiedades " + currentItem.Codigo);
+            $("#property_view_title").text(currentItem.Descripcion);
+            $("#property_view_subtitle").text(currentItem.Codigo + " - " + (currentItem.DescripcionExtendida || ""));
+            $("#property_view_count").text((currentItem.Propiedades || []).length);
+            $("#chk_all_stores").prop("checked", true);
+            $("#stores_select").val(tiendas.map(function (t) { return t.ID; }));
+            renderPropertyForm(currentItem);
+            propiedadesModal.show();
+        }
+
+        function renderStores() {
+            var html = tiendas.map(function (store) {
+                return "<option value='" + escapeHtml(store.ID) + "'>" + escapeHtml(store.Texto) + "</option>";
+            }).join("");
+            $("#stores_select").html(html);
+        }
+
+        function renderPropertyForm(item) {
+            var html = (item.Propiedades || []).map(function (property, index) {
+                return "<div class='property-field'>" +
+                    "<label class='form-label' for='property_" + index + "'>" + escapeHtml(property.Nombre) + "<small>" + escapeHtml(property.TipoTexto) + "</small></label>" +
+                    renderInput(property, index) +
+                    "</div>";
+            }).join("");
+
+            $("#property_form_grid").html(html);
+        }
+
+        function renderInput(property, index) {
+            var value = property.Valor || "";
+            if (property.Tipo === 4) {
+                return "<label class='article-switch property-switch'>" +
+                    "<input id='property_" + index + "' data-index='" + index + "' type='checkbox' " + (String(value).toLowerCase() === "true" ? "checked" : "") + " />" +
+                    "<span>Activo</span>" +
+                    "</label>";
+            }
+
+            if (property.Tipo === 5) {
+                var options = (property.Opciones || []).map(function (option) {
+                    return "<option value='" + escapeHtml(option) + "' " + (option === value ? "selected" : "") + ">" + escapeHtml(option) + "</option>";
+                }).join("");
+                return "<select id='property_" + index + "' data-index='" + index + "' class='form-select'><option value=''>Seleccione</option>" + options + "</select>";
+            }
+
+            if (property.Tipo === 1) {
+                return "<input id='property_" + index + "' data-index='" + index + "' class='form-control' type='date' value='" + escapeHtml(value) + "' />";
+            }
+
+            if (property.Tipo === 2 || property.Tipo === 3) {
+                return "<input id='property_" + index + "' data-index='" + index + "' class='form-control' type='number' min='0' step='0.01' value='" + escapeHtml(value) + "' />";
+            }
+
+            return "<input id='property_" + index + "' data-index='" + index + "' class='form-control' type='text' maxlength='80' value='" + escapeHtml(value) + "' />";
+        }
+
+        function saveProperties() {
+            if (!currentItem) return;
+
+            var selectedStores = getSelectedStores();
+            if (!selectedStores.length) {
+                showToast("Seleccione al menos una tienda.");
+                return;
+            }
+
+            var payload = {
+                ItemID: currentItem.ID,
+                Tiendas: selectedStores.join(","),
+                Propiedades: (currentItem.Propiedades || []).map(function (property, index) {
+                    var input = $("#property_" + index);
+                    return {
+                        ID: property.ID,
+                        ItemID: currentItem.ID,
+                        Nombre: property.Nombre,
+                        Tipo: property.Tipo,
+                        Inactivo: property.Inactivo,
+                        ListaValores: property.ListaValores,
+                        Valor: property.Tipo === 4 ? String(input.is(":checked")) : input.val()
+                    };
+                })
+            };
+
+            setSaving(true);
+            $.ajax({
+                url: urls.guardar,
+                method: "POST",
+                data: JSON.stringify(payload),
+                contentType: "application/json; charset=utf-8"
+            }).done(function (response) {
+                if (!response || !response.Status) {
+                    showToast(response && response.Message ? response.Message : "No se pudieron guardar las propiedades.");
+                    return;
+                }
+
+                replaceItem(response.Result);
+                renderTable();
+                propiedadesModal.hide();
+                showToast(response.Message || "Propiedades actualizadas correctamente.");
+            }).fail(function () {
+                showToast("No se pudieron guardar las propiedades.");
+            }).always(function () {
+                setSaving(false);
+            });
+        }
+
+        function replaceItem(item) {
+            for (var i = 0; i < articulos.length; i++) {
+                if (articulos[i].ID === item.ID) {
+                    articulos[i] = item;
+                    return;
+                }
+            }
+        }
+
+        function findItem(id) {
+            return articulos.find(function (item) { return item.ID === id; });
+        }
+
+        function getSelectedStores() {
+            return $("#stores_select").val() || [];
+        }
+
+        function updateSummary() {
+            var ready = filteredRows.reduce(function (sum, item) { return sum + Number(item.PropiedadesConfiguradas || 0); }, 0);
+            var pending = filteredRows.reduce(function (sum, item) { return sum + Number(item.PropiedadesPendientes || 0); }, 0);
+            $("#summary_count").text(filteredRows.length);
+            $("#summary_ready").text(formatNumber(ready));
+            $("#summary_pending").text(formatNumber(pending));
+        }
+
+        function setLoading(isLoading) {
+            $("#loading_state").toggle(isLoading);
+        }
+
+        function setSaving(isSaving) {
+            $("#btnGuardarPropiedades").prop("disabled", isSaving).text(isSaving ? "Guardando..." : "Guardar propiedades");
+        }
+
+        function showToast(message) {
+            var toast = $("#localToast");
+            toast.text(message).addClass("show");
+            window.clearTimeout(showToast.timer);
+            showToast.timer = window.setTimeout(function () { toast.removeClass("show"); }, 3200);
+        }
+
+        function formatNumber(value) {
+            return Number(value || 0).toLocaleString("es-CR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function escapeHtml(value) {
+            return $("<div />").text(value || "").html();
+        }
+    </script>
+}

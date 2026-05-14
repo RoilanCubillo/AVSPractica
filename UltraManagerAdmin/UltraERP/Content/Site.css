@@ -1634,6 +1634,14 @@ body {
     .discount-list-table td:nth-child(6)::before { content: "Art\00edculos"; }
     .discount-list-table td:nth-child(7)::before { content: "Acciones"; }
 
+    .item-property-list-table td:nth-child(1)::before { content: "C\00f3digo"; }
+    .item-property-list-table td:nth-child(2)::before { content: "Art\00edculo"; }
+    .item-property-list-table td:nth-child(3)::before { content: "Propiedades"; }
+    .item-property-list-table td:nth-child(4)::before { content: "Listas"; }
+    .item-property-list-table td:nth-child(5)::before { content: "Pendientes"; }
+    .item-property-list-table td:nth-child(6)::before { content: "Actualizado"; }
+    .item-property-list-table td:nth-child(7)::before { content: "Acciones"; }
+
     .grid-inline-action {
         grid-template-columns: minmax(0, 1fr) 42px;
     }
@@ -2038,6 +2046,100 @@ body {
     min-width: 1040px;
 }
 
+.item-property-list-table {
+    min-width: 1180px;
+}
+
+.table-title {
+    display: block;
+    font-weight: 800;
+    color: var(--app-text);
+}
+
+.document-table td small {
+    display: block;
+    margin-top: 3px;
+    color: var(--app-muted);
+    font-size: 12px;
+    line-height: 1.35;
+}
+
+.property-chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.property-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 240px;
+    min-height: 28px;
+    padding: 5px 9px;
+    border: 1px solid #d9e7e3;
+    border-radius: 999px;
+    background: #f8fbfa;
+    color: #2f403b;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.property-chip strong {
+    color: var(--app-primary);
+    font-size: 11px;
+}
+
+.property-chip.muted {
+    color: var(--app-muted);
+}
+
+.property-store-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 132px;
+    gap: 12px;
+    align-items: start;
+}
+
+.property-store-grid .form-select {
+    min-height: 124px;
+}
+
+.property-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.property-field {
+    min-width: 0;
+    padding: 14px;
+    border: 1px solid var(--app-border);
+    border-radius: 12px;
+    background: #f8fbfa;
+}
+
+.property-field .form-label {
+    width: 100%;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    color: var(--app-text);
+    font-weight: 800;
+}
+
+.property-field .form-label small {
+    color: var(--app-muted);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.property-switch {
+    margin: 0;
+}
+
 .document-table thead {
     background: #f4f8f6;
 }
@@ -2245,6 +2347,8 @@ body {
     .conditional-grid,
     .xml-summary,
     .provider-card,
+    .property-store-grid,
+    .property-form-grid,
     .special-lines-summary,
     .detail-summary-grid,
     .detail-bottom-grid,

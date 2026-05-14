@@ -196,6 +196,7 @@
     <Compile Include="Controllers\FamiliasController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\MarcasController.cs" />
+    <Compile Include="Controllers\PropiedadesArticulosController.cs" />
     <Compile Include="Controllers\SegmentosController.cs" />
     <Compile Include="Controllers\SubCategoriasController.cs" />
     <Compile Include="Global.asax.cs">
@@ -215,6 +216,7 @@
     <Compile Include="Models\JsonResponse.cs" />
     <Compile Include="Models\LoginViewModel.cs" />
     <Compile Include="Models\MarcaViewModel.cs" />
+    <Compile Include="Models\PropiedadArticuloViewModel.cs" />
     <Compile Include="Models\SegmentoViewModel.cs" />
     <Compile Include="Models\SubCategoriaViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -240,6 +242,7 @@
     <Content Include="Views\Familias\Registro.cshtml" />
     <Content Include="Views\Marcas\Inicio.cshtml" />
     <Content Include="Views\Marcas\Registro.cshtml" />
+    <Content Include="Views\PropiedadesArticulos\Inicio.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\Segmentos\Inicio.cshtml" />
     <Content Include="Views\Segmentos\Registro.cshtml" />
