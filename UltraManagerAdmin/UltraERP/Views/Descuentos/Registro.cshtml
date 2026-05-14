@@ -1,0 +1,171 @@
+@model UltraERP.Models.DescuentoViewModel
+@{
+    ViewBag.Title = Model.ID > 0 ? "Editar Descuento" : "Nuevo Descuento";
+    ViewBag.ActiveMenu = "Descuentos";
+}
+
+<section class="document-topbar">
+    <div class="document-topbar-copy">
+        <span class="eyebrow">Catalogo de descuentos</span>
+        <h1>@(Model.ID > 0 ? "Editar descuento" : "Nuevo descuento")</h1>
+        <p>Configure reglas comerciales por cantidad, precio especial o porcentaje para promociones de inventario.</p>
+    </div>
+    <div class="topbar-actions">
+        <a class="btn btn-outline-secondary" href="@Url.Action("Inicio", "Descuentos")">Cancelar</a>
+        <button id="btnGuardarDescuento" class="btn btn-primary" type="submit" form="descuentoForm">Guardar descuento</button>
+    </div>
+</section>
+
+@using (Html.BeginForm("Registro", "Descuentos", FormMethod.Post, new { id = "descuentoForm", @class = "document-form" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.ID)
+    @Html.HiddenFor(m => m.HQID)
+    @Html.HiddenFor(m => m.UsuarioCrea)
+    @Html.HiddenFor(m => m.FechaCrea)
+    @Html.HiddenFor(m => m.UsuarioModifica)
+    @Html.HiddenFor(m => m.FechaModifica)
+
+    if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            @Html.ValidationSummary(false, "Revise los datos del descuento:")
+        </div>
+    }
+
+    <section class="form-panel">
+        <div class="section-title">
+            <span>1.</span>
+            <h2>Datos generales</h2>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-2">
+                <label class="form-label" for="CodigoTexto">C&oacute;digo</label>
+                <input id="CodigoTexto" class="form-control readonly-control" type="text" value="@Model.CodigoTexto" readonly />
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label required" for="Descripcion">Descripci&oacute;n</label>
+                @Html.TextBoxFor(m => m.Descripcion, new { @class = "form-control", maxlength = "30", autocomplete = "off", placeholder = "Ej: Cafe CR mayoreo" })
+                @Html.ValidationMessageFor(m => m.Descripcion, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label required" for="Tipo">Tipo</label>
+                @Html.DropDownListFor(m => m.Tipo, (IEnumerable<SelectListItem>)ViewBag.Tipos, new { @class = "form-select", id = "Tipo" })
+                @Html.ValidationMessageFor(m => m.Tipo, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label" for="DescontarImpares">Impares</label>
+                <div class="article-switch">
+                    @Html.CheckBoxFor(m => m.DescontarImpares)
+                    <span>Aplicar</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="form-panel">
+        <div class="section-title">
+            <span>2.</span>
+            <h2>Regla de descuento</h2>
+        </div>
+
+        <div class="row g-3 discount-rule-grid">
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="Cantidad1">Cantidad 1</label>
+                @Html.TextBoxFor(m => m.Cantidad1, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
+                @Html.ValidationMessageFor(m => m.Cantidad1, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-3 matrix-field">
+                <label class="form-label" for="Cantidad2">Cantidad 2</label>
+                @Html.TextBoxFor(m => m.Cantidad2, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
+                @Html.ValidationMessageFor(m => m.Cantidad2, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-3 matrix-only">
+                <label class="form-label" for="Cantidad3">Cantidad 3</label>
+                @Html.TextBoxFor(m => m.Cantidad3, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
+            </div>
+            <div class="col-12 col-md-3 matrix-only">
+                <label class="form-label" for="Cantidad4">Cantidad 4</label>
+                @Html.TextBoxFor(m => m.Cantidad4, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
+            </div>
+
+            <div class="col-12 col-md-3 price-field">
+                <label class="form-label" for="Precio1">Precio 1</label>
+                @Html.TextBoxFor(m => m.Precio1, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
+                @Html.ValidationMessageFor(m => m.Precio1, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-3 price-field">
+                <label class="form-label" for="Precio2">Precio 2</label>
+                @Html.TextBoxFor(m => m.Precio2, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
+                @Html.ValidationMessageFor(m => m.Precio2, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-3 price-field matrix-only">
+                <label class="form-label" for="Precio3">Precio 3</label>
+                @Html.TextBoxFor(m => m.Precio3, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
+            </div>
+            <div class="col-12 col-md-3 price-field matrix-only">
+                <label class="form-label" for="Precio4">Precio 4</label>
+                @Html.TextBoxFor(m => m.Precio4, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
+            </div>
+
+            <div class="col-12 col-md-3 percent-field">
+                <label class="form-label" for="Porcentaje1">Porcentaje 1</label>
+                @Html.TextBoxFor(m => m.Porcentaje1, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })
+                @Html.ValidationMessageFor(m => m.Porcentaje1, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-3 percent-field">
+                <label class="form-label" for="Porcentaje2">Porcentaje 2</label>
+                @Html.TextBoxFor(m => m.Porcentaje2, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })
+                @Html.ValidationMessageFor(m => m.Porcentaje2, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-3 percent-field matrix-only">
+                <label class="form-label" for="Porcentaje3">Porcentaje 3</label>
+                @Html.TextBoxFor(m => m.Porcentaje3, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })
+            </div>
+            <div class="col-12 col-md-3 percent-field matrix-only">
+                <label class="form-label" for="Porcentaje4">Porcentaje 4</label>
+                @Html.TextBoxFor(m => m.Porcentaje4, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })
+            </div>
+        </div>
+    </section>
+
+    <section class="form-panel">
+        <div class="section-title">
+            <span>3.</span>
+            <h2>Alcance</h2>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="TiendasAsociadas">Tiendas asociadas</label>
+                @Html.TextBoxFor(m => m.TiendasAsociadas, new { @class = "form-control", type = "number", min = "0", step = "1" })
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="ArticulosAsociados">Art&iacute;culos asociados</label>
+                @Html.TextBoxFor(m => m.ArticulosAsociados, new { @class = "form-control", type = "number", min = "0", step = "1" })
+            </div>
+        </div>
+    </section>
+}
+
+@section scripts {
+    <script>
+        $(function () {
+            $("#Tipo").on("change", syncDiscountType);
+            syncDiscountType();
+        });
+
+        function syncDiscountType() {
+            var type = Number($("#Tipo").val() || 1);
+            var isMatrix = type === 1 || type === 3;
+            var usesPrice = type === 1 || type === 2;
+            var usesPercent = type === 3 || type === 4;
+
+            $(".matrix-only").toggle(isMatrix);
+            $(".price-field").toggle(usesPrice);
+            $(".percent-field").toggle(usesPercent);
+            $(".matrix-field").toggle(isMatrix || type === 2 || type === 4);
+        }
+    </script>
+}

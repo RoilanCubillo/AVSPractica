@@ -190,7 +190,9 @@
     <Compile Include="Controllers\ArticulosController.cs" />
     <Compile Include="Controllers\CategoriasController.cs" />
     <Compile Include="Controllers\DepartamentosController.cs" />
+    <Compile Include="Controllers\DescuentosController.cs" />
     <Compile Include="Controllers\DocumentosInventarioController.cs" />
+    <Compile Include="Controllers\FabricantesController.cs" />
     <Compile Include="Controllers\FamiliasController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\MarcasController.cs" />
@@ -207,6 +209,8 @@
     <Compile Include="Models\ArticuloViewModel.cs" />
     <Compile Include="Models\CategoriaViewModel.cs" />
     <Compile Include="Models\DepartamentoViewModel.cs" />
+    <Compile Include="Models\DescuentoViewModel.cs" />
+    <Compile Include="Models\FabricanteViewModel.cs" />
     <Compile Include="Models\FamiliaViewModel.cs" />
     <Compile Include="Models\JsonResponse.cs" />
     <Compile Include="Models\LoginViewModel.cs" />
@@ -225,9 +229,13 @@
     <Content Include="Views\Categorias\Registro.cshtml" />
     <Content Include="Views\Departamentos\Inicio.cshtml" />
     <Content Include="Views\Departamentos\Registro.cshtml" />
+    <Content Include="Views\Descuentos\Inicio.cshtml" />
+    <Content Include="Views\Descuentos\Registro.cshtml" />
     <Content Include="Views\DocumentosInventario\Historico.cshtml" />
     <Content Include="Views\DocumentosInventario\Inicio.cshtml" />
     <Content Include="Views\DocumentosInventario\Registro.cshtml" />
+    <Content Include="Views\Fabricantes\Inicio.cshtml" />
+    <Content Include="Views\Fabricantes\Registro.cshtml" />
     <Content Include="Views\Familias\Inicio.cshtml" />
     <Content Include="Views\Familias\Registro.cshtml" />
     <Content Include="Views\Marcas\Inicio.cshtml" />

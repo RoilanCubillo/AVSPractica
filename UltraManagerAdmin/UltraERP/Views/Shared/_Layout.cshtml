@@ -30,15 +30,29 @@
                         <small>Inventario</small>
                     </span>
                 </a>
+                @{
+                    var catalogMenus = new[] { "Familias", "Departamentos", "Categorias", "SubCategorias", "Segmentos", "Marcas", "Fabricantes", "Descuentos" };
+                    var isCatalogMenu = Array.IndexOf(catalogMenus, Convert.ToString(ViewBag.ActiveMenu)) >= 0;
+                }
                 <nav class="app-nav">
                     <a class="@(ViewBag.ActiveMenu == "Documentos" ? "active" : "")" href="@Url.Action("Inicio", "DocumentosInventario")">Documentos</a>
                     <a class="@(ViewBag.ActiveMenu == "Articulos" ? "active" : "")" href="@Url.Action("Inicio", "Articulos")">Art&iacute;culos</a>
-                    <a class="@(ViewBag.ActiveMenu == "Familias" ? "active" : "")" href="@Url.Action("Inicio", "Familias")">Familias</a>
-                    <a class="@(ViewBag.ActiveMenu == "Departamentos" ? "active" : "")" href="@Url.Action("Inicio", "Departamentos")">Departamentos</a>
-                    <a class="@(ViewBag.ActiveMenu == "Categorias" ? "active" : "")" href="@Url.Action("Inicio", "Categorias")">Categor&iacute;as</a>
-                    <a class="@(ViewBag.ActiveMenu == "SubCategorias" ? "active" : "")" href="@Url.Action("Inicio", "SubCategorias")">Subcategor&iacute;as</a>
-                    <a class="@(ViewBag.ActiveMenu == "Segmentos" ? "active" : "")" href="@Url.Action("Inicio", "Segmentos")">Segmentos</a>
-                    <a class="@(ViewBag.ActiveMenu == "Marcas" ? "active" : "")" href="@Url.Action("Inicio", "Marcas")">Marcas</a>
+                    <a id="catalogosToggle" class="nav-section-toggle @(isCatalogMenu ? "active" : "") @(isCatalogMenu ? "" : "collapsed")" href="#catalogosMenu" role="button" data-bs-toggle="collapse" data-bs-target="#catalogosMenu" aria-expanded="@(isCatalogMenu ? "true" : "false")" aria-controls="catalogosMenu">
+                        <span>Cat&aacute;logos</span>
+                        <span class="nav-section-icon @(isCatalogMenu ? "open" : "")" aria-hidden="true">
+                            <span id="catalogosArrow" class="nav-arrow">@Html.Raw(isCatalogMenu ? "&#8964;" : "&#8963;")</span>
+                        </span>
+                    </a>
+                    <div id="catalogosMenu" class="nav-section collapse @(isCatalogMenu ? "show" : "")">
+                        <a class="nav-sub-link @(ViewBag.ActiveMenu == "Familias" ? "active" : "")" href="@Url.Action("Inicio", "Familias")">Familias</a>
+                        <a class="nav-sub-link @(ViewBag.ActiveMenu == "Departamentos" ? "active" : "")" href="@Url.Action("Inicio", "Departamentos")">Departamentos</a>
+                        <a class="nav-sub-link @(ViewBag.ActiveMenu == "Categorias" ? "active" : "")" href="@Url.Action("Inicio", "Categorias")">Categor&iacute;as</a>
+                        <a class="nav-sub-link @(ViewBag.ActiveMenu == "SubCategorias" ? "active" : "")" href="@Url.Action("Inicio", "SubCategorias")">Subcategor&iacute;as</a>
+                        <a class="nav-sub-link @(ViewBag.ActiveMenu == "Segmentos" ? "active" : "")" href="@Url.Action("Inicio", "Segmentos")">Segmentos</a>
+                        <a class="nav-sub-link @(ViewBag.ActiveMenu == "Marcas" ? "active" : "")" href="@Url.Action("Inicio", "Marcas")">Marcas</a>
+                        <a class="nav-sub-link @(ViewBag.ActiveMenu == "Fabricantes" ? "active" : "")" href="@Url.Action("Inicio", "Fabricantes")">Fabricantes</a>
+                        <a class="nav-sub-link @(ViewBag.ActiveMenu == "Descuentos" ? "active" : "")" href="@Url.Action("Inicio", "Descuentos")">Descuentos</a>
+                    </div>
                     <a class="@(ViewBag.ActiveMenu == "Historico" ? "active" : "")" href="@Url.Action("Historico", "DocumentosInventario")">Historico de Ajustes</a>
                 </nav>
                 <div class="user-panel">
@@ -124,6 +138,29 @@
             window.UltraERP = window.UltraERP || {};
             window.UltraERP.showPageLoader = showPageLoader;
             window.UltraERP.hidePageLoader = hidePageLoader;
+
+            document.addEventListener("DOMContentLoaded", function () {
+                var catalogosMenu = document.getElementById("catalogosMenu");
+                var catalogosToggle = document.getElementById("catalogosToggle");
+                var catalogosArrow = document.getElementById("catalogosArrow");
+                if (!catalogosMenu || !catalogosToggle || !catalogosArrow) return;
+
+                function syncCatalogosArrow(isOpen) {
+                    catalogosToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+                    catalogosToggle.classList.toggle("catalogos-open", isOpen);
+                    catalogosToggle.classList.toggle("collapsed", !isOpen);
+                    catalogosArrow.textContent = isOpen ? "\u2304" : "\u2303";
+                    catalogosArrow.parentElement.classList.toggle("open", isOpen);
+                }
+
+                syncCatalogosArrow(catalogosMenu.classList.contains("show"));
+                catalogosToggle.addEventListener("click", function () {
+                    var willOpen = !catalogosMenu.classList.contains("show") && !catalogosMenu.classList.contains("collapsing");
+                    syncCatalogosArrow(willOpen);
+                });
+                catalogosMenu.addEventListener("shown.bs.collapse", function () { syncCatalogosArrow(true); });
+                catalogosMenu.addEventListener("hidden.bs.collapse", function () { syncCatalogosArrow(false); });
+            });
         })();
     </script>
     @RenderSection("scripts", required: false)

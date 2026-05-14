@@ -1,0 +1,249 @@
+@model IEnumerable<UltraERP.Models.DescuentoViewModel>
+@{
+    ViewBag.Title = "Descuentos";
+    ViewBag.ActiveMenu = "Descuentos";
+    var descuentosJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
+}
+
+<section class="page-header">
+    <div class="page-header-copy">
+        <span class="eyebrow">Catalogo comercial</span>
+        <h1>Descuentos</h1>
+        <p>Administre reglas de descuento por cantidad, precio especial y promociones para tiendas del inventario.</p>
+    </div>
+    <div class="topbar-actions">
+        <a id="btnNuevoDescuento" class="btn btn-primary" href="@Url.Action("Registro", "Descuentos")">Nuevo descuento</a>
+    </div>
+</section>
+
+@if (TempData["DescuentoMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["DescuentoMessage"]</div>
+}
+
+<section class="filter-panel">
+    <div class="row g-3">
+        <div class="col-12 col-md-3">
+            <label for="filter_tipo" class="form-label">Tipo</label>
+            <select id="filter_tipo" class="form-select">
+                <option value="Todos">Todos</option>
+                <option value="Precio por cantidad">Precio por cantidad</option>
+                <option value="Compre X y lleve Y a precio">Compre X y lleve Y a precio</option>
+                <option value="Porcentaje por cantidad">Porcentaje por cantidad</option>
+                <option value="Compre X y lleve Y con porcentaje">Compre X y lleve Y con porcentaje</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-6">
+            <label for="table_search" class="form-label">Buscar</label>
+            <input id="table_search" type="search" class="form-control" placeholder="Descripcion, tipo o resumen" />
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button id="btnLimpiar" class="btn btn-outline-secondary" type="button">Limpiar</button>
+        <button id="btnConsultar" class="btn btn-primary" type="button">Consultar</button>
+    </div>
+</section>
+
+<section class="metric-grid">
+    <article>
+        <span>Descuentos</span>
+        <strong id="summary_count">0</strong>
+    </article>
+    <article>
+        <span>Tiendas asociadas</span>
+        <strong id="summary_stores">0</strong>
+    </article>
+    <article>
+        <span>Art&iacute;culos asociados</span>
+        <strong id="summary_items">0</strong>
+    </article>
+</section>
+
+<section class="table-panel">
+    <div class="table-toolbar">
+        <div class="table-toolbar-main">
+            <span id="results_hint" class="toolbar-chip">0 resultados</span>
+        </div>
+        <span id="loading_state" class="loading-state">Cargando...</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle document-table discount-list-table">
+            <thead>
+                <tr>
+                    <th>C&oacute;digo</th>
+                    <th>Descripci&oacute;n</th>
+                    <th>Tipo</th>
+                    <th>Resumen</th>
+                    <th>Tiendas</th>
+                    <th>Art&iacute;culos</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="descuentos_body"></tbody>
+        </table>
+    </div>
+</section>
+
+<div class="modal fade" id="descuentoCatalogoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="descuentoModalTitle" class="modal-title">Descuento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="document-view">
+                    <section class="document-view-hero">
+                        <div>
+                            <span class="eyebrow">Ficha de descuento</span>
+                            <h2 id="discount_view_title" class="document-view-title"></h2>
+                            <p id="discount_view_subtitle" class="document-view-subtitle"></p>
+                        </div>
+                        <div class="document-view-total">
+                            <span>Art&iacute;culos</span>
+                            <strong id="discount_view_items"></strong>
+                        </div>
+                    </section>
+                    <section class="document-view-section">
+                        <h3>Datos generales</h3>
+                        <div id="discount_view_summary" class="document-view-grid"></div>
+                    </section>
+                    <section class="document-view-section">
+                        <h3>Auditor&iacute;a</h3>
+                        <div id="discount_view_audit" class="document-view-grid"></div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        var urls = {
+            registro: '@Url.Action("Registro", "Descuentos")'
+        };
+        var descuentos = @Html.Raw(descuentosJson);
+        var filteredRows = [];
+
+        $(function () {
+            bindEvents();
+            renderTable();
+            setLoading(false);
+        });
+
+        function bindEvents() {
+            $("#btnConsultar").on("click", renderTable);
+            $("#table_search").on("input", renderTable);
+            $("#filter_tipo").on("change", renderTable);
+            $("#btnLimpiar").on("click", function () {
+                $("#filter_tipo").val("Todos");
+                $("#table_search").val("");
+                renderTable();
+            });
+        }
+
+        function renderTable() {
+            filteredRows = getFilteredRows();
+            var html = filteredRows.map(function (d) {
+                return "<tr>" +
+                    "<td><strong>" + escapeHtml(d.CodigoTexto) + "</strong></td>" +
+                    "<td>" + escapeHtml(d.Descripcion) + "</td>" +
+                    "<td>" + escapeHtml(d.TipoTexto) + "</td>" +
+                    "<td>" + escapeHtml(d.ResumenTexto) + "</td>" +
+                    "<td>" + formatNumber(d.TiendasAsociadas) + "</td>" +
+                    "<td>" + formatNumber(d.ArticulosAsociados) + "</td>" +
+                    "<td>" + getActionButtons(d) + "</td>" +
+                    "</tr>";
+            }).join("");
+
+            $("#results_hint").text(filteredRows.length + " resultados");
+            $("#descuentos_body").html(html || "<tr><td colspan='7' class='empty-state'>Sin descuentos para los filtros aplicados.</td></tr>");
+            updateSummary();
+        }
+
+        function getFilteredRows() {
+            var tipo = $("#filter_tipo").val();
+            var text = ($("#table_search").val() || "").toLowerCase();
+
+            return descuentos.filter(function (d) {
+                if (tipo !== "Todos" && d.TipoTexto !== tipo) return false;
+                if (!text) return true;
+
+                return [d.CodigoTexto, d.Descripcion, d.TipoTexto, d.ResumenTexto]
+                    .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
+            });
+        }
+
+        function getActionButtons(descuento) {
+            return "<div class='action-stack'>" +
+                "<button class='icon-button info' type='button' onclick='onVer(" + descuento.ID + ")'>Ver</button>" +
+                "<button class='icon-button primary' type='button' onclick='onEditar(" + descuento.ID + ")'>Editar</button>" +
+                "</div>";
+        }
+
+        function onVer(id) {
+            var descuento = findDescuento(id);
+            if (!descuento) return;
+
+            $("#descuentoModalTitle").text("Descuento " + descuento.CodigoTexto);
+            $("#discount_view_title").text(descuento.Descripcion);
+            $("#discount_view_subtitle").text(descuento.TipoTexto);
+            $("#discount_view_items").text(formatNumber(descuento.ArticulosAsociados));
+            $("#discount_view_summary").html(renderViewGrid([
+                { label: "Codigo", value: descuento.CodigoTexto },
+                { label: "Descripcion", value: descuento.Descripcion },
+                { label: "Tipo", value: descuento.TipoTexto },
+                { label: "Resumen", value: descuento.ResumenTexto },
+                { label: "Descontar impares", value: descuento.DescontarImpares ? "Si" : "No" },
+                { label: "Tiendas asociadas", value: formatNumber(descuento.TiendasAsociadas) },
+                { label: "Articulos asociados", value: formatNumber(descuento.ArticulosAsociados) }
+            ]));
+            $("#discount_view_audit").html(renderViewGrid([
+                { label: "Usuario crea", value: descuento.UsuarioCrea || "-" },
+                { label: "Fecha crea", value: descuento.FechaCreaTexto || "-" },
+                { label: "Usuario modifica", value: descuento.UsuarioModifica || "-" },
+                { label: "Fecha modifica", value: descuento.FechaModificaTexto || "-" }
+            ]));
+            new bootstrap.Modal(document.getElementById("descuentoCatalogoModal")).show();
+        }
+
+        function onEditar(id) {
+            if (window.UltraERP && window.UltraERP.showPageLoader) {
+                window.UltraERP.showPageLoader("Abriendo descuento");
+            }
+
+            window.location.href = urls.registro + "?id=" + encodeURIComponent(id);
+        }
+
+        function findDescuento(id) {
+            return descuentos.find(function (item) { return item.ID === id; });
+        }
+
+        function updateSummary() {
+            var stores = filteredRows.reduce(function (sum, d) { return sum + Number(d.TiendasAsociadas || 0); }, 0);
+            var items = filteredRows.reduce(function (sum, d) { return sum + Number(d.ArticulosAsociados || 0); }, 0);
+            $("#summary_count").text(filteredRows.length);
+            $("#summary_stores").text(formatNumber(stores));
+            $("#summary_items").text(formatNumber(items));
+        }
+
+        function renderViewGrid(items) {
+            return items.map(function (item) {
+                return "<article class='document-view-item'><span>" + escapeHtml(item.label) + "</span><strong>" + escapeHtml(item.value) + "</strong></article>";
+            }).join("");
+        }
+
+        function setLoading(isLoading) {
+            $("#loading_state").toggle(isLoading);
+        }
+
+        function formatNumber(value) {
+            return Number(value || 0).toLocaleString("es-CR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function escapeHtml(value) {
+            return $("<div />").text(value || "").html();
+        }
+    </script>
+}

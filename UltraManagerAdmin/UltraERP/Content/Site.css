@@ -187,14 +187,124 @@ body {
     text-decoration: none;
 }
 
-.app-nav a {
-    display: block;
-    padding: 12px 14px;
+.app-nav {
+    display: grid;
+    gap: 6px;
+}
+
+.app-nav a,
+.app-nav .nav-section-toggle {
+    width: 100%;
+    min-height: 42px;
+    padding: 11px 13px;
     border-radius: 8px;
 }
 
-.app-nav a.active {
-    background: rgba(255, 255, 255, .1);
+.app-nav a {
+    display: flex;
+    align-items: center;
+}
+
+.app-nav .nav-section-toggle {
+    border: 1px solid transparent;
+    background: transparent;
+    color: #d7e4e0;
+    box-shadow: none;
+    justify-content: space-between;
+    text-align: left;
+}
+
+.app-nav a:hover,
+.app-nav .nav-section-toggle:hover {
+    background: rgba(255, 255, 255, .06);
+    color: #fff;
+}
+
+.app-nav .nav-section-toggle:focus {
+    outline: 0;
+    border-color: rgba(217, 155, 39, .45);
+    box-shadow: 0 0 0 3px rgba(217, 155, 39, .12);
+    color: #fff;
+}
+
+.app-nav a.active,
+.app-nav .nav-section-toggle.active {
+    background: rgba(255, 255, 255, .11);
+    color: #fff;
+}
+
+.nav-section {
+    gap: 3px;
+    margin: -1px 0 6px;
+    padding: 4px 0 4px 12px;
+    border-left: 1px solid rgba(255, 255, 255, .14);
+}
+
+.nav-section.collapse:not(.show) {
+    display: none;
+}
+
+.nav-section.collapse.show {
+    display: grid;
+}
+
+.nav-section.collapsing {
+    display: grid;
+    height: 0;
+    overflow: hidden;
+    transition: height .24s ease;
+}
+
+.app-nav .nav-sub-link {
+    min-height: 36px;
+    padding: 8px 12px;
+    color: #bdd4ce;
+    font-size: 14px;
+}
+
+.app-nav .nav-sub-link.active {
+    background: rgba(217, 155, 39, .18);
+    color: #fff;
+}
+
+.nav-section-icon {
+    width: 32px;
+    height: 28px;
+    margin-left: auto;
+    border: 1px solid rgba(217, 155, 39, .18);
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 32px;
+    color: #d7e4e0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, .04));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08), 0 8px 18px rgba(0, 0, 0, .08);
+    transition: background .16s ease, border-color .16s ease, color .16s ease, transform .16s ease;
+}
+
+.nav-arrow {
+    display: block;
+    min-width: 14px;
+    text-align: center;
+    color: currentColor;
+    font-family: "Segoe UI Symbol", "Segoe UI", Tahoma, sans-serif;
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1;
+    transform: translateY(-3px);
+    transition: opacity .16s ease, transform .16s ease;
+}
+
+.nav-section-toggle[aria-expanded="true"] .nav-section-icon,
+.nav-section-toggle.catalogos-open .nav-section-icon {
+    background: rgba(217, 155, 39, .2);
+    border-color: rgba(217, 155, 39, .3);
+    color: #fff;
+}
+
+.nav-section-icon.open .nav-arrow {
+    transform: translateY(-4px);
 }
 
 .user-panel {
@@ -1504,6 +1614,21 @@ body {
     .brand-list-table td:nth-child(5)::before { content: "Fecha crea"; }
     .brand-list-table td:nth-child(6)::before { content: "Acciones"; }
 
+    .manufacturer-list-table td:nth-child(1)::before { content: "C\00f3digo"; }
+    .manufacturer-list-table td:nth-child(2)::before { content: "Descripci\00f3n"; }
+    .manufacturer-list-table td:nth-child(3)::before { content: "Nota"; }
+    .manufacturer-list-table td:nth-child(4)::before { content: "Art\00edculos"; }
+    .manufacturer-list-table td:nth-child(5)::before { content: "Fecha crea"; }
+    .manufacturer-list-table td:nth-child(6)::before { content: "Acciones"; }
+
+    .discount-list-table td:nth-child(1)::before { content: "C\00f3digo"; }
+    .discount-list-table td:nth-child(2)::before { content: "Descripci\00f3n"; }
+    .discount-list-table td:nth-child(3)::before { content: "Tipo"; }
+    .discount-list-table td:nth-child(4)::before { content: "Resumen"; }
+    .discount-list-table td:nth-child(5)::before { content: "Tiendas"; }
+    .discount-list-table td:nth-child(6)::before { content: "Art\00edculos"; }
+    .discount-list-table td:nth-child(7)::before { content: "Acciones"; }
+
     .grid-inline-action {
         grid-template-columns: minmax(0, 1fr) 42px;
     }
@@ -1898,6 +2023,14 @@ body {
 
 .brand-list-table {
     min-width: 860px;
+}
+
+.manufacturer-list-table {
+    min-width: 920px;
+}
+
+.discount-list-table {
+    min-width: 1040px;
 }
 
 .document-table thead {

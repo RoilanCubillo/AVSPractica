@@ -1,0 +1,238 @@
+@model IEnumerable<UltraERP.Models.FabricanteViewModel>
+@{
+    ViewBag.Title = "Fabricantes";
+    ViewBag.ActiveMenu = "Fabricantes";
+    var fabricantesJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
+}
+
+<section class="page-header">
+    <div class="page-header-copy">
+        <span class="eyebrow">Catalogo de articulos</span>
+        <h1>Fabricantes</h1>
+        <p>Administre los fabricantes asociados a marcas y art&iacute;culos del inventario nacional.</p>
+    </div>
+    <div class="topbar-actions">
+        <a id="btnNuevoFabricante" class="btn btn-primary" href="@Url.Action("Registro", "Fabricantes")">Nuevo fabricante</a>
+    </div>
+</section>
+
+@if (TempData["FabricanteMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["FabricanteMessage"]</div>
+}
+
+<section class="filter-panel">
+    <div class="row g-3">
+        <div class="col-12 col-md-3">
+            <label for="filter_codigo" class="form-label">C&oacute;digo</label>
+            <input id="filter_codigo" type="text" class="form-control" />
+        </div>
+        <div class="col-12 col-md-6">
+            <label for="table_search" class="form-label">Buscar</label>
+            <input id="table_search" type="search" class="form-control" placeholder="Descripcion o nota" />
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button id="btnLimpiar" class="btn btn-outline-secondary" type="button">Limpiar</button>
+        <button id="btnConsultar" class="btn btn-primary" type="button">Consultar</button>
+    </div>
+</section>
+
+<section class="metric-grid">
+    <article>
+        <span>Fabricantes</span>
+        <strong id="summary_count">0</strong>
+    </article>
+    <article>
+        <span>Con art&iacute;culos</span>
+        <strong id="summary_with_items">0</strong>
+    </article>
+    <article>
+        <span>Art&iacute;culos asociados</span>
+        <strong id="summary_items">0</strong>
+    </article>
+</section>
+
+<section class="table-panel">
+    <div class="table-toolbar">
+        <div class="table-toolbar-main">
+            <span id="results_hint" class="toolbar-chip">0 resultados</span>
+        </div>
+        <span id="loading_state" class="loading-state">Cargando...</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle document-table manufacturer-list-table">
+            <thead>
+                <tr>
+                    <th>C&oacute;digo</th>
+                    <th>Descripci&oacute;n</th>
+                    <th>Nota</th>
+                    <th>Art&iacute;culos</th>
+                    <th>Fecha crea</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="fabricantes_body"></tbody>
+        </table>
+    </div>
+</section>
+
+<div class="modal fade" id="fabricanteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="fabricanteModalTitle" class="modal-title">Fabricante</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="document-view">
+                    <section class="document-view-hero">
+                        <div>
+                            <span class="eyebrow">Ficha de fabricante</span>
+                            <h2 id="manufacturer_view_title" class="document-view-title"></h2>
+                            <p id="manufacturer_view_subtitle" class="document-view-subtitle"></p>
+                        </div>
+                        <div class="document-view-total">
+                            <span>Art&iacute;culos</span>
+                            <strong id="manufacturer_view_items"></strong>
+                        </div>
+                    </section>
+                    <section class="document-view-section">
+                        <h3>Datos generales</h3>
+                        <div id="manufacturer_view_summary" class="document-view-grid"></div>
+                    </section>
+                    <section class="document-view-section">
+                        <h3>Auditor&iacute;a</h3>
+                        <div id="manufacturer_view_audit" class="document-view-grid"></div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        var urls = {
+            registro: '@Url.Action("Registro", "Fabricantes")'
+        };
+        var fabricantes = @Html.Raw(fabricantesJson);
+        var filteredRows = [];
+
+        $(function () {
+            bindEvents();
+            renderTable();
+            setLoading(false);
+        });
+
+        function bindEvents() {
+            $("#btnConsultar").on("click", renderTable);
+            $("#table_search, #filter_codigo").on("input", renderTable);
+            $("#btnLimpiar").on("click", function () {
+                $("#filter_codigo").val("");
+                $("#table_search").val("");
+                renderTable();
+            });
+        }
+
+        function renderTable() {
+            filteredRows = getFilteredRows();
+            var html = filteredRows.map(function (f) {
+                return "<tr>" +
+                    "<td><strong>" + escapeHtml(f.CodigoTexto) + "</strong></td>" +
+                    "<td>" + escapeHtml(f.Descripcion) + "</td>" +
+                    "<td>" + escapeHtml(f.Nota || "-") + "</td>" +
+                    "<td>" + formatNumber(f.CantidadArticulos) + "</td>" +
+                    "<td>" + escapeHtml(f.FechaCreaTexto || "-") + "</td>" +
+                    "<td>" + getActionButtons(f) + "</td>" +
+                    "</tr>";
+            }).join("");
+
+            $("#results_hint").text(filteredRows.length + " resultados");
+            $("#fabricantes_body").html(html || "<tr><td colspan='6' class='empty-state'>Sin fabricantes para los filtros aplicados.</td></tr>");
+            updateSummary();
+        }
+
+        function getFilteredRows() {
+            var codigo = ($("#filter_codigo").val() || "").toLowerCase();
+            var text = ($("#table_search").val() || "").toLowerCase();
+
+            return fabricantes.filter(function (f) {
+                if (codigo && String(f.CodigoTexto || "").toLowerCase().indexOf(codigo) < 0) return false;
+                if (!text) return true;
+
+                return [f.Descripcion, f.Nota]
+                    .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
+            });
+        }
+
+        function getActionButtons(fabricante) {
+            return "<div class='action-stack'>" +
+                "<button class='icon-button info' type='button' onclick='onVer(" + fabricante.ID + ")'>Ver</button>" +
+                "<button class='icon-button primary' type='button' onclick='onEditar(" + fabricante.ID + ")'>Editar</button>" +
+                "</div>";
+        }
+
+        function onVer(id) {
+            var fabricante = findFabricante(id);
+            if (!fabricante) return;
+
+            $("#fabricanteModalTitle").text("Fabricante " + fabricante.CodigoTexto);
+            $("#manufacturer_view_title").text(fabricante.Descripcion);
+            $("#manufacturer_view_subtitle").text("Codigo " + fabricante.CodigoTexto);
+            $("#manufacturer_view_items").text(formatNumber(fabricante.CantidadArticulos));
+            $("#manufacturer_view_summary").html(renderViewGrid([
+                { label: "Codigo", value: fabricante.CodigoTexto },
+                { label: "Descripcion", value: fabricante.Descripcion },
+                { label: "Nota", value: fabricante.Nota || "-" },
+                { label: "Articulos asociados", value: formatNumber(fabricante.CantidadArticulos) }
+            ]));
+            $("#manufacturer_view_audit").html(renderViewGrid([
+                { label: "Usuario crea", value: fabricante.UsuarioCrea || "-" },
+                { label: "Fecha crea", value: fabricante.FechaCreaTexto || "-" },
+                { label: "Usuario modifica", value: fabricante.UsuarioModifica || "-" },
+                { label: "Fecha modifica", value: fabricante.FechaModificaTexto || "-" }
+            ]));
+            new bootstrap.Modal(document.getElementById("fabricanteModal")).show();
+        }
+
+        function onEditar(id) {
+            if (window.UltraERP && window.UltraERP.showPageLoader) {
+                window.UltraERP.showPageLoader("Abriendo fabricante");
+            }
+
+            window.location.href = urls.registro + "?id=" + encodeURIComponent(id);
+        }
+
+        function findFabricante(id) {
+            return fabricantes.find(function (item) { return item.ID === id; });
+        }
+
+        function updateSummary() {
+            var rows = filteredRows;
+            var withItems = rows.filter(function (f) { return Number(f.CantidadArticulos || 0) > 0; }).length;
+            var items = rows.reduce(function (sum, f) { return sum + Number(f.CantidadArticulos || 0); }, 0);
+            $("#summary_count").text(rows.length);
+            $("#summary_with_items").text(withItems);
+            $("#summary_items").text(formatNumber(items));
+        }
+
+        function renderViewGrid(items) {
+            return items.map(function (item) {
+                return "<article class='document-view-item'><span>" + escapeHtml(item.label) + "</span><strong>" + escapeHtml(item.value) + "</strong></article>";
+            }).join("");
+        }
+
+        function setLoading(isLoading) {
+            $("#loading_state").toggle(isLoading);
+        }
+
+        function formatNumber(value) {
+            return Number(value || 0).toLocaleString("es-CR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function escapeHtml(value) {
+            return $("<div />").text(value || "").html();
+        }
+    </script>
+}
