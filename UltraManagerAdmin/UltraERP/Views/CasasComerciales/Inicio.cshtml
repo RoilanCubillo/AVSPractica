@@ -1,0 +1,261 @@
+@model IEnumerable<UltraERP.Models.CasaComercialViewModel>
+@{
+    ViewBag.Title = "Casas Comerciales";
+    ViewBag.ActiveMenu = "CasasComerciales";
+    var casasJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
+}
+
+<section class="page-header">
+    <div class="page-header-copy">
+        <span class="eyebrow">Compras y abastecimiento</span>
+        <h1>Casas Comerciales</h1>
+        <p>Administre las casas comerciales usadas para compras, relaci&oacute;n con art&iacute;culos y coordinaci&oacute;n operativa con proveedores.</p>
+    </div>
+    <div class="topbar-actions">
+        <a id="btnNuevaCasa" class="btn btn-primary" href="@Url.Action("Registro", "CasasComerciales")">Nueva casa comercial</a>
+    </div>
+</section>
+
+@if (TempData["CasaComercialMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["CasaComercialMessage"]</div>
+}
+
+<section class="filter-panel">
+    <div class="row g-3">
+        <div class="col-12 col-md-3">
+            <label for="filter_codigo" class="form-label">C&oacute;digo</label>
+            <input id="filter_codigo" type="text" class="form-control" placeholder="CC-DP" />
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="filter_estado" class="form-label">Estado</label>
+            <select id="filter_estado" class="form-select">
+                <option value="Todos">Todos</option>
+                <option value="Activos">Activos</option>
+                <option value="Inactivos">Inactivos</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-4">
+            <label for="table_search" class="form-label">Buscar</label>
+            <input id="table_search" type="search" class="form-control" placeholder="Nombre, correo o telefono" />
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button id="btnLimpiar" class="btn btn-outline-secondary" type="button">Limpiar</button>
+        <button id="btnConsultar" class="btn btn-primary" type="button">Consultar</button>
+    </div>
+</section>
+
+<section class="metric-grid">
+    <article>
+        <span>Casas comerciales</span>
+        <strong id="summary_count">0</strong>
+    </article>
+    <article>
+        <span>Activas</span>
+        <strong id="summary_active">0</strong>
+    </article>
+    <article>
+        <span>Art&iacute;culos asociados</span>
+        <strong id="summary_items">0</strong>
+    </article>
+</section>
+
+<section class="table-panel">
+    <div class="table-toolbar">
+        <div class="table-toolbar-main">
+            <span id="results_hint" class="toolbar-chip">0 resultados</span>
+        </div>
+        <span id="loading_state" class="loading-state">Cargando...</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle document-table commercial-house-list-table">
+            <thead>
+                <tr>
+                    <th>C&oacute;digo</th>
+                    <th>C&oacute;digo extra</th>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Tel&eacute;fono</th>
+                    <th>Estado</th>
+                    <th>Actualizado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="casas_body"></tbody>
+        </table>
+    </div>
+</section>
+
+<div class="modal fade" id="casaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="casaModalTitle" class="modal-title">Casa comercial</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="document-view">
+                    <section class="document-view-hero">
+                        <div>
+                            <span class="eyebrow">Ficha comercial</span>
+                            <h2 id="house_view_title" class="document-view-title"></h2>
+                            <p id="house_view_subtitle" class="document-view-subtitle"></p>
+                        </div>
+                        <div class="document-view-total">
+                            <span>Art&iacute;culos</span>
+                            <strong id="house_view_items"></strong>
+                        </div>
+                    </section>
+                    <section class="document-view-section">
+                        <h3>Datos generales</h3>
+                        <div id="house_view_summary" class="document-view-grid"></div>
+                    </section>
+                    <section class="document-view-section">
+                        <h3>Contacto y auditor&iacute;a</h3>
+                        <div id="house_view_audit" class="document-view-grid"></div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        var urls = {
+            registro: '@Url.Action("Registro", "CasasComerciales")'
+        };
+        var casas = @Html.Raw(casasJson);
+        var filteredRows = [];
+
+        $(function () {
+            bindEvents();
+            renderTable();
+            setLoading(false);
+        });
+
+        function bindEvents() {
+            $("#btnConsultar").on("click", renderTable);
+            $("#filter_codigo, #table_search").on("input", renderTable);
+            $("#filter_estado").on("change", renderTable);
+            $("#btnLimpiar").on("click", function () {
+                $("#filter_codigo").val("");
+                $("#table_search").val("");
+                $("#filter_estado").val("Todos");
+                renderTable();
+            });
+        }
+
+        function renderTable() {
+            filteredRows = getFilteredRows();
+            var html = filteredRows.map(function (casa) {
+                return "<tr>" +
+                    "<td><strong>" + escapeHtml(casa.Codigo) + "</strong></td>" +
+                    "<td>" + escapeHtml(casa.CodigoExtra || "-") + "</td>" +
+                    "<td>" + escapeHtml(casa.Nombre) + "</td>" +
+                    "<td>" + escapeHtml(casa.CorreoElectronico) + "</td>" +
+                    "<td>" + escapeHtml(casa.Telefono) + "</td>" +
+                    "<td>" + renderStatus(casa) + "</td>" +
+                    "<td>" + escapeHtml(casa.FechaActualizacionTexto || "-") + "</td>" +
+                    "<td>" + getActionButtons(casa) + "</td>" +
+                    "</tr>";
+            }).join("");
+
+            $("#results_hint").text(filteredRows.length + " resultados");
+            $("#casas_body").html(html || "<tr><td colspan='8' class='empty-state'>Sin casas comerciales para los filtros aplicados.</td></tr>");
+            updateSummary();
+        }
+
+        function getFilteredRows() {
+            var codigo = ($("#filter_codigo").val() || "").toLowerCase();
+            var estado = $("#filter_estado").val();
+            var text = ($("#table_search").val() || "").toLowerCase();
+
+            return casas.filter(function (casa) {
+                if (codigo && String(casa.Codigo || "").toLowerCase().indexOf(codigo) < 0) return false;
+                if (estado === "Activos" && casa.Inactivo) return false;
+                if (estado === "Inactivos" && !casa.Inactivo) return false;
+                if (!text) return true;
+
+                return [casa.Nombre, casa.CorreoElectronico, casa.Telefono, casa.CodigoExtra]
+                    .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
+            });
+        }
+
+        function renderStatus(casa) {
+            return "<span class='status-badge " + (casa.Inactivo ? "closed" : "received") + "'>" + escapeHtml(casa.EstadoTexto) + "</span>";
+        }
+
+        function getActionButtons(casa) {
+            return "<div class='action-stack'>" +
+                "<button class='icon-button info' type='button' onclick='onVer(" + casa.ID + ")'>Ver</button>" +
+                "<button class='icon-button primary' type='button' onclick='onEditar(" + casa.ID + ")'>Editar</button>" +
+                "</div>";
+        }
+
+        function onVer(id) {
+            var casa = findCasa(id);
+            if (!casa) return;
+
+            $("#casaModalTitle").text("Casa comercial " + casa.Codigo);
+            $("#house_view_title").text(casa.Nombre);
+            $("#house_view_subtitle").text((casa.CodigoExtra || "Sin codigo extra") + " - " + casa.EstadoTexto);
+            $("#house_view_items").text(formatNumber(casa.ArticulosAsociados));
+            $("#house_view_summary").html(renderViewGrid([
+                { label: "Codigo", value: casa.Codigo },
+                { label: "Codigo extra", value: casa.CodigoExtra || "-" },
+                { label: "Nombre", value: casa.Nombre },
+                { label: "Estado", value: casa.EstadoTexto },
+                { label: "Correo", value: casa.CorreoElectronico },
+                { label: "Telefono", value: casa.Telefono }
+            ]));
+            $("#house_view_audit").html(renderViewGrid([
+                { label: "Articulos asociados", value: formatNumber(casa.ArticulosAsociados) },
+                { label: "Usuario crea", value: casa.UsuarioCrea || "-" },
+                { label: "Fecha crea", value: casa.FechaCreaTexto || "-" },
+                { label: "Usuario modifica", value: casa.UsuarioModifica || "-" },
+                { label: "Fecha modifica", value: casa.FechaModificaTexto || "-" }
+            ]));
+            new bootstrap.Modal(document.getElementById("casaModal")).show();
+        }
+
+        function onEditar(id) {
+            if (window.UltraERP && window.UltraERP.showPageLoader) {
+                window.UltraERP.showPageLoader("Abriendo casa comercial");
+            }
+
+            window.location.href = urls.registro + "?id=" + encodeURIComponent(id);
+        }
+
+        function findCasa(id) {
+            return casas.find(function (item) { return item.ID === id; });
+        }
+
+        function updateSummary() {
+            var active = filteredRows.filter(function (casa) { return !casa.Inactivo; }).length;
+            var items = filteredRows.reduce(function (sum, casa) { return sum + Number(casa.ArticulosAsociados || 0); }, 0);
+            $("#summary_count").text(filteredRows.length);
+            $("#summary_active").text(active);
+            $("#summary_items").text(formatNumber(items));
+        }
+
+        function renderViewGrid(items) {
+            return items.map(function (item) {
+                return "<article class='document-view-item'><span>" + escapeHtml(item.label) + "</span><strong>" + escapeHtml(item.value) + "</strong></article>";
+            }).join("");
+        }
+
+        function setLoading(isLoading) {
+            $("#loading_state").toggle(isLoading);
+        }
+
+        function formatNumber(value) {
+            return Number(value || 0).toLocaleString("es-CR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function escapeHtml(value) {
+            return $("<div />").text(value || "").html();
+        }
+    </script>
+}

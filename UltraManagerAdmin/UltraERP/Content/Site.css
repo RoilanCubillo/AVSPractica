@@ -1642,6 +1642,24 @@ body {
     .item-property-list-table td:nth-child(6)::before { content: "Actualizado"; }
     .item-property-list-table td:nth-child(7)::before { content: "Acciones"; }
 
+    .commercial-house-list-table td:nth-child(1)::before { content: "C\00f3digo"; }
+    .commercial-house-list-table td:nth-child(2)::before { content: "C\00f3digo extra"; }
+    .commercial-house-list-table td:nth-child(3)::before { content: "Nombre"; }
+    .commercial-house-list-table td:nth-child(4)::before { content: "Correo"; }
+    .commercial-house-list-table td:nth-child(5)::before { content: "Tel\00e9fono"; }
+    .commercial-house-list-table td:nth-child(6)::before { content: "Estado"; }
+    .commercial-house-list-table td:nth-child(7)::before { content: "Actualizado"; }
+    .commercial-house-list-table td:nth-child(8)::before { content: "Acciones"; }
+
+    .worksheet-list-table td:nth-child(1)::before { content: "Ref."; }
+    .worksheet-list-table td:nth-child(2)::before { content: "Estado"; }
+    .worksheet-list-table td:nth-child(3)::before { content: "T\00edtulo"; }
+    .worksheet-list-table td:nth-child(4)::before { content: "Fecha creada"; }
+    .worksheet-list-table td:nth-child(5)::before { content: "Fecha efectiva"; }
+    .worksheet-list-table td:nth-child(6)::before { content: "Tarea"; }
+    .worksheet-list-table td:nth-child(7)::before { content: "Tiendas"; }
+    .worksheet-list-table td:nth-child(8)::before { content: "Acciones"; }
+
     .grid-inline-action {
         grid-template-columns: minmax(0, 1fr) 42px;
     }
@@ -2046,51 +2064,179 @@ body {
     min-width: 1040px;
 }
 
+.commercial-house-list-table {
+    min-width: 1120px;
+}
+
+.worksheet-list-table {
+    min-width: 1220px;
+}
+
 .item-property-list-table {
-    min-width: 1180px;
+    min-width: 1360px;
+}
+
+.worksheet-filter-panel .filter-actions {
+    margin-top: 14px;
+}
+
+.worksheet-store-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.worksheet-store-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: start;
+    padding: 14px;
+    border: 1px solid var(--app-border);
+    border-radius: 12px;
+    background: #f8fbfa;
+}
+
+.worksheet-store-card strong,
+.worksheet-store-card span {
+    display: block;
+}
+
+.worksheet-store-card strong {
+    color: var(--app-text);
+    font-size: 13px;
+}
+
+.worksheet-store-card > div > span {
+    margin-top: 5px;
+    color: var(--app-muted);
+    font-size: 12px;
+}
+
+.worksheet-content-table td {
+    vertical-align: top;
+}
+
+.worksheet-modal-footer {
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.status-badge.worksheet-draft { background: #fff4d8; color: #76520f; }
+.status-badge.worksheet-sent { background: #dcecff; color: #174c85; }
+.status-badge.worksheet-received { background: #dff5f2; color: #176b5b; }
+.status-badge.worksheet-success { background: #e4f7df; color: #336b22; }
+.status-badge.worksheet-warning { background: #fff0d6; color: #915f00; }
+.status-badge.worksheet-danger { background: #fde3e7; color: #9f2435; }
+.status-badge.worksheet-neutral { background: #eceff1; color: #52625d; }
+.status-badge.worksheet-info { background: #e2f0ff; color: #205493; }
+.status-badge.worksheet-closed { background: #e9ecef; color: #343a40; }
+
+.item-property-list-table th:nth-child(1),
+.item-property-list-table td:nth-child(1) {
+    width: 120px;
+}
+
+.item-property-list-table th:nth-child(2),
+.item-property-list-table td:nth-child(2) {
+    width: 290px;
+}
+
+.item-property-list-table th:nth-child(3),
+.item-property-list-table td:nth-child(3) {
+    width: 520px;
+}
+
+.item-property-list-table th:nth-child(4),
+.item-property-list-table td:nth-child(4),
+.item-property-list-table th:nth-child(5),
+.item-property-list-table td:nth-child(5) {
+    width: 92px;
+    text-align: center;
+}
+
+.item-property-list-table th:nth-child(6),
+.item-property-list-table td:nth-child(6) {
+    width: 130px;
+}
+
+.item-property-list-table td {
+    vertical-align: top;
+}
+
+.item-property-filter {
+    padding-bottom: 18px;
+}
+
+.item-property-filter .filter-actions {
+    margin-top: 14px;
 }
 
 .table-title {
     display: block;
     font-weight: 800;
     color: var(--app-text);
+    line-height: 1.25;
 }
 
+.table-subtitle,
 .document-table td small {
     display: block;
-    margin-top: 3px;
+    margin-top: 5px;
     color: var(--app-muted);
     font-size: 12px;
     line-height: 1.35;
 }
 
 .property-chip-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
 }
 
 .property-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    max-width: 240px;
-    min-height: 28px;
-    padding: 5px 9px;
-    border: 1px solid #d9e7e3;
-    border-radius: 999px;
-    background: #f8fbfa;
+    min-width: 0;
+    min-height: 54px;
+    padding: 9px 11px;
+    border: 1px solid #d7e6e1;
+    border-radius: 10px;
+    background:
+        linear-gradient(135deg, rgba(23, 107, 91, .045), transparent 70%),
+        #fbfdfc;
     color: #2f403b;
-    font-size: 12px;
-    white-space: nowrap;
+    box-shadow: 0 8px 18px rgba(19, 35, 31, .04);
+}
+
+.property-chip span,
+.property-chip strong {
+    display: block;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.property-chip span {
+    color: var(--app-primary);
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    line-height: 1.1;
 }
 
 .property-chip strong {
-    color: var(--app-primary);
-    font-size: 11px;
+    margin-top: 5px;
+    color: var(--app-text);
+    font-size: 13px;
+    line-height: 1.2;
 }
 
 .property-chip.muted {
+    border-style: dashed;
+    background: #f4f7f6;
+}
+
+.property-chip.muted span,
+.property-chip.muted strong {
     color: var(--app-muted);
 }
 
@@ -2349,6 +2495,7 @@ body {
     .provider-card,
     .property-store-grid,
     .property-form-grid,
+    .worksheet-store-grid,
     .special-lines-summary,
     .detail-summary-grid,
     .detail-bottom-grid,

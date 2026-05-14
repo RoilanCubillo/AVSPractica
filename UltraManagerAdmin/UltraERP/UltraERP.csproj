@@ -189,11 +189,13 @@
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\ArticulosController.cs" />
     <Compile Include="Controllers\CategoriasController.cs" />
+    <Compile Include="Controllers\CasasComercialesController.cs" />
     <Compile Include="Controllers\DepartamentosController.cs" />
     <Compile Include="Controllers\DescuentosController.cs" />
     <Compile Include="Controllers\DocumentosInventarioController.cs" />
     <Compile Include="Controllers\FabricantesController.cs" />
     <Compile Include="Controllers\FamiliasController.cs" />
+    <Compile Include="Controllers\HojasTrabajoController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\MarcasController.cs" />
     <Compile Include="Controllers\PropiedadesArticulosController.cs" />
@@ -208,11 +210,13 @@
     <Compile Include="Models\DocumentoInventarioViewModel.cs" />
     <Compile Include="Models\DocumentoInventarioRegistroViewModel.cs" />
     <Compile Include="Models\ArticuloViewModel.cs" />
+    <Compile Include="Models\CasaComercialViewModel.cs" />
     <Compile Include="Models\CategoriaViewModel.cs" />
     <Compile Include="Models\DepartamentoViewModel.cs" />
     <Compile Include="Models\DescuentoViewModel.cs" />
     <Compile Include="Models\FabricanteViewModel.cs" />
     <Compile Include="Models\FamiliaViewModel.cs" />
+    <Compile Include="Models\HojaTrabajoViewModel.cs" />
     <Compile Include="Models\JsonResponse.cs" />
     <Compile Include="Models\LoginViewModel.cs" />
     <Compile Include="Models\MarcaViewModel.cs" />
@@ -227,6 +231,8 @@
     <Content Include="Views\Account\Login.cshtml" />
     <Content Include="Views\Articulos\Inicio.cshtml" />
     <Content Include="Views\Articulos\Registro.cshtml" />
+    <Content Include="Views\CasasComerciales\Inicio.cshtml" />
+    <Content Include="Views\CasasComerciales\Registro.cshtml" />
     <Content Include="Views\Categorias\Inicio.cshtml" />
     <Content Include="Views\Categorias\Registro.cshtml" />
     <Content Include="Views\Departamentos\Inicio.cshtml" />
@@ -240,6 +246,7 @@
     <Content Include="Views\Fabricantes\Registro.cshtml" />
     <Content Include="Views\Familias\Inicio.cshtml" />
     <Content Include="Views\Familias\Registro.cshtml" />
+    <Content Include="Views\HojasTrabajo\Inicio.cshtml" />
     <Content Include="Views\Marcas\Inicio.cshtml" />
     <Content Include="Views\Marcas\Registro.cshtml" />
     <Content Include="Views\PropiedadesArticulos\Inicio.cshtml" />

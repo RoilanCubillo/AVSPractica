@@ -1,0 +1,100 @@
+@model UltraERP.Models.CasaComercialViewModel
+@{
+    ViewBag.Title = Model.ID > 0 ? "Editar Casa Comercial" : "Nueva Casa Comercial";
+    ViewBag.ActiveMenu = "CasasComerciales";
+}
+
+<section class="document-topbar">
+    <div class="document-topbar-copy">
+        <span class="eyebrow">Compras y abastecimiento</span>
+        <h1>@(Model.ID > 0 ? "Editar casa comercial" : "Nueva casa comercial")</h1>
+        <p>Configure la relaci&oacute;n comercial que usa el equipo de compras para art&iacute;culos, contactos y coordinaci&oacute;n de abastecimiento.</p>
+    </div>
+    <div class="topbar-actions">
+        <a class="btn btn-outline-secondary" href="@Url.Action("Inicio", "CasasComerciales")">Cancelar</a>
+        <button id="btnGuardarCasa" class="btn btn-primary" type="submit" form="casaForm">Guardar casa comercial</button>
+    </div>
+</section>
+
+@using (Html.BeginForm("Registro", "CasasComerciales", FormMethod.Post, new { id = "casaForm", @class = "document-form" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.ID)
+    @Html.HiddenFor(m => m.UsuarioCrea)
+    @Html.HiddenFor(m => m.FechaCrea)
+    @Html.HiddenFor(m => m.UsuarioModifica)
+    @Html.HiddenFor(m => m.FechaModifica)
+
+    if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            @Html.ValidationSummary(false, "Revise los datos de la casa comercial:")
+        </div>
+    }
+
+    <section class="form-panel">
+        <div class="section-title">
+            <span>1.</span>
+            <h2>Datos generales</h2>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-3">
+                <label class="form-label required" for="Codigo">C&oacute;digo</label>
+                @Html.TextBoxFor(m => m.Codigo, new { @class = "form-control", maxlength = "20", autocomplete = "off", placeholder = "CC-DP" })
+                @Html.ValidationMessageFor(m => m.Codigo, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="CodigoExtra">C&oacute;digo extra</label>
+                @Html.TextBoxFor(m => m.CodigoExtra, new { @class = "form-control", maxlength = "20", autocomplete = "off", placeholder = "DOSPINOS" })
+                @Html.ValidationMessageFor(m => m.CodigoExtra, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label required" for="Nombre">Nombre</label>
+                @Html.TextBoxFor(m => m.Nombre, new { @class = "form-control", maxlength = "50", autocomplete = "off", placeholder = "Ej: Casa Comercial Dos Pinos" })
+                @Html.ValidationMessageFor(m => m.Nombre, "", new { @class = "text-danger small" })
+            </div>
+        </div>
+    </section>
+
+    <section class="form-panel">
+        <div class="section-title">
+            <span>2.</span>
+            <h2>Contacto</h2>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <label class="form-label required" for="CorreoElectronico">Correo electr&oacute;nico</label>
+                @Html.TextBoxFor(m => m.CorreoElectronico, new { @class = "form-control", maxlength = "225", autocomplete = "off", placeholder = "compras@empresa.co.cr" })
+                @Html.ValidationMessageFor(m => m.CorreoElectronico, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label required" for="Telefono">Tel&eacute;fono</label>
+                @Html.TextBoxFor(m => m.Telefono, new { @class = "form-control", maxlength = "30", autocomplete = "off", placeholder = "2247-8000" })
+                @Html.ValidationMessageFor(m => m.Telefono, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="ArticulosAsociados">Art&iacute;culos asociados</label>
+                @Html.TextBoxFor(m => m.ArticulosAsociados, new { @class = "form-control", type = "number", min = "0", step = "1" })
+            </div>
+        </div>
+    </section>
+
+    <section class="form-panel">
+        <div class="section-title">
+            <span>3.</span>
+            <h2>Estado</h2>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="Inactivo">Disponibilidad</label>
+                <div class="article-switch">
+                    @Html.CheckBoxFor(m => m.Inactivo)
+                    <span>Marcar como inactiva</span>
+                </div>
+            </div>
+        </div>
+    </section>
+}

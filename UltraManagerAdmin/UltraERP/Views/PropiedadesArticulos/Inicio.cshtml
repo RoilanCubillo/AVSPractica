@@ -13,7 +13,7 @@
     </div>
 </section>
 
-<section class="filter-panel">
+<section class="filter-panel item-property-filter">
     <div class="row g-3">
         <div class="col-12 col-md-3">
             <label for="filter_codigo" class="form-label">C&oacute;digo</label>
@@ -137,6 +137,7 @@
         var filteredRows = [];
         var currentItem = null;
         var propiedadesModal = null;
+        var modalMode = "edit";
 
         $(function () {
             propiedadesModal = new bootstrap.Modal(document.getElementById("propiedadesModal"));
@@ -170,7 +171,7 @@
             var html = filteredRows.map(function (item) {
                 return "<tr>" +
                     "<td><strong>" + escapeHtml(item.Codigo) + "</strong></td>" +
-                    "<td><span class='table-title'>" + escapeHtml(item.Descripcion) + "</span><small>" + escapeHtml(item.DescripcionExtendida || "-") + "</small></td>" +
+                    "<td class='item-property-article'><span class='table-title'>" + escapeHtml(item.Descripcion) + "</span><span class='table-subtitle'>" + escapeHtml(item.DescripcionExtendida || "-") + "</span></td>" +
                     "<td>" + renderPropertyChips(item) + "</td>" +
                     "<td>" + formatNumber(item.PropiedadesConfiguradas) + "</td>" +
                     "<td>" + formatPending(item.PropiedadesPendientes) + "</td>" +
@@ -206,11 +207,11 @@
             if (!configured.length) return "<span class='status-badge closed'>Sin propiedades</span>";
 
             var chips = configured.slice(0, 4).map(function (p) {
-                return "<span class='property-chip'><strong>" + escapeHtml(p.Nombre) + "</strong>" + escapeHtml(p.ValorTexto || p.Valor || "-") + "</span>";
+                return "<article class='property-chip'><span>" + escapeHtml(p.Nombre) + "</span><strong>" + escapeHtml(p.ValorTexto || p.Valor || "-") + "</strong></article>";
             }).join("");
 
             if (configured.length > 4) {
-                chips += "<span class='property-chip muted'>+" + (configured.length - 4) + "</span>";
+                chips += "<article class='property-chip muted'><span>Adicionales</span><strong>+" + (configured.length - 4) + "</strong></article>";
             }
 
             return "<div class='property-chip-group'>" + chips + "</div>";
@@ -224,21 +225,32 @@
 
         function getActionButtons(item) {
             return "<div class='action-stack'>" +
+                "<button class='icon-button info' type='button' onclick='onVer(" + item.ID + ")'>Ver</button>" +
                 "<button class='icon-button primary' type='button' onclick='onEditar(" + item.ID + ")'>Editar</button>" +
                 "</div>";
         }
 
+        function onVer(id) {
+            openItemModal(id, "view");
+        }
+
         function onEditar(id) {
+            openItemModal(id, "edit");
+        }
+
+        function openItemModal(id, mode) {
             currentItem = findItem(id);
             if (!currentItem) return;
 
-            $("#propiedadesModalTitle").text("Propiedades " + currentItem.Codigo);
+            modalMode = mode || "edit";
+            $("#propiedadesModalTitle").text((modalMode === "view" ? "Consulta " : "Propiedades ") + currentItem.Codigo);
             $("#property_view_title").text(currentItem.Descripcion);
             $("#property_view_subtitle").text(currentItem.Codigo + " - " + (currentItem.DescripcionExtendida || ""));
             $("#property_view_count").text((currentItem.Propiedades || []).length);
             $("#chk_all_stores").prop("checked", true);
             $("#stores_select").val(tiendas.map(function (t) { return t.ID; }));
             renderPropertyForm(currentItem);
+            syncModalState();
             propiedadesModal.show();
         }
 
@@ -258,6 +270,14 @@
             }).join("");
 
             $("#property_form_grid").html(html);
+        }
+
+        function syncModalState() {
+            var isView = modalMode === "view";
+            $("#btnGuardarPropiedades").toggle(!isView);
+            $("#stores_select").prop("disabled", isView);
+            $("#chk_all_stores").prop("disabled", isView);
+            $("#property_form_grid").find("input, select, textarea").prop("disabled", isView);
         }
 
         function renderInput(property, index) {

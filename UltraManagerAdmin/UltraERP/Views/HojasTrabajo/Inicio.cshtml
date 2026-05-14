@@ -1,0 +1,467 @@
+@model IEnumerable<UltraERP.Models.HojaTrabajoViewModel>
+@{
+    ViewBag.Title = "Hojas de Trabajo";
+    ViewBag.ActiveMenu = "HojasTrabajo";
+    var hojasJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
+}
+
+<section class="page-header">
+    <div class="page-header-copy">
+        <span class="eyebrow">Cambios masivos</span>
+        <h1>Hojas de Trabajo</h1>
+        <p>Supervise las hojas generadas por procesos masivos, valide su contenido por tienda y gestione la aprobaci&oacute;n antes de aplicar cambios.</p>
+    </div>
+</section>
+
+<section class="filter-panel worksheet-filter-panel">
+    <div class="row g-3">
+        <div class="col-12 col-md-3">
+            <label for="worksheet_search" class="form-label">Buscar</label>
+            <input id="worksheet_search" type="search" class="form-control" placeholder="Titulo, tarea o usuario" />
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="worksheet_estado" class="form-label">Estado</label>
+            <select id="worksheet_estado" class="form-select">
+                <option value="Todos">Todos</option>
+                <option value="1">Sin aprobar</option>
+                <option value="2">Aprobado</option>
+                <option value="0">Suspendido</option>
+                <option value="4">Completado con exito</option>
+                <option value="8">Completado sin cambios</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="worksheet_desde" class="form-label">Registro desde</label>
+            <input id="worksheet_desde" type="date" class="form-control" />
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="worksheet_hasta" class="form-label">Registro hasta</label>
+            <input id="worksheet_hasta" type="date" class="form-control" />
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button id="btnWorksheetLimpiar" class="btn btn-outline-secondary" type="button">Limpiar</button>
+        <button id="btnWorksheetConsultar" class="btn btn-primary" type="button">Consultar</button>
+    </div>
+</section>
+
+<section class="metric-grid">
+    <article>
+        <span>Hojas</span>
+        <strong id="worksheet_summary_count">0</strong>
+    </article>
+    <article>
+        <span>Pendientes de aprobar</span>
+        <strong id="worksheet_summary_pending">0</strong>
+    </article>
+    <article>
+        <span>Contenido total</span>
+        <strong id="worksheet_summary_content">0</strong>
+    </article>
+</section>
+
+<section class="table-panel">
+    <div class="table-toolbar">
+        <div class="table-toolbar-main">
+            <span id="worksheet_results_hint" class="toolbar-chip">0 resultados</span>
+        </div>
+        <span id="worksheet_loading" class="loading-state">Cargando...</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle document-table worksheet-list-table">
+            <thead>
+                <tr>
+                    <th>Ref.</th>
+                    <th>Estado</th>
+                    <th>T&iacute;tulo</th>
+                    <th>Fecha creada</th>
+                    <th>Fecha efectiva</th>
+                    <th>Tarea</th>
+                    <th>Tiendas</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="worksheet_body"></tbody>
+        </table>
+    </div>
+</section>
+
+<div id="worksheetToast" class="local-toast" role="status" aria-live="polite"></div>
+
+<div class="modal fade" id="worksheetModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="worksheetModalTitle" class="modal-title">Hoja de trabajo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="document-view">
+                    <section class="document-view-hero">
+                        <div>
+                            <span class="eyebrow">Seguimiento operativo</span>
+                            <h2 id="worksheet_view_title" class="document-view-title"></h2>
+                            <p id="worksheet_view_subtitle" class="document-view-subtitle"></p>
+                        </div>
+                        <div class="document-view-total">
+                            <span>Contenido</span>
+                            <strong id="worksheet_view_count"></strong>
+                        </div>
+                    </section>
+
+                    <div id="worksheet_view_badges" class="document-view-badges"></div>
+
+                    <section class="document-view-section">
+                        <h3>General</h3>
+                        <div id="worksheet_view_general" class="document-view-grid"></div>
+                    </section>
+
+                    <section class="document-view-section">
+                        <h3>Notas</h3>
+                        <div id="worksheet_view_notes" class="document-view-callout"></div>
+                    </section>
+
+                    <section class="document-view-section">
+                        <h3>Tiendas</h3>
+                        <div id="worksheet_view_stores" class="worksheet-store-grid"></div>
+                    </section>
+
+                    <section class="document-view-section">
+                        <h3>Contenido</h3>
+                        <div id="worksheet_view_content"></div>
+                    </section>
+
+                    <section class="document-view-section">
+                        <h3>Historial</h3>
+                        <div id="worksheet_view_history"></div>
+                    </section>
+                </div>
+            </div>
+            <div class="modal-footer worksheet-modal-footer">
+                <button id="btnWorksheetDesaprobar" type="button" class="btn btn-outline-secondary">Desaprobar</button>
+                <button id="btnWorksheetAprobar" type="button" class="btn btn-primary">Aprobar</button>
+                <button id="btnWorksheetSuspender" type="button" class="btn btn-outline-danger">Suspender</button>
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        var worksheetUrls = {
+            cambiarEstado: '@Url.Action("CambiarEstado", "HojasTrabajo")',
+            descargar: '@Url.Action("DescargarArchivo", "HojasTrabajo")'
+        };
+        var worksheets = @Html.Raw(hojasJson);
+        var filteredRows = [];
+        var currentWorksheet = null;
+        var worksheetModal = null;
+
+        $(function () {
+            worksheetModal = new bootstrap.Modal(document.getElementById("worksheetModal"));
+            bindWorksheetEvents();
+            renderWorksheetTable();
+            setWorksheetLoading(false);
+        });
+
+        function bindWorksheetEvents() {
+            $("#btnWorksheetConsultar").on("click", renderWorksheetTable);
+            $("#worksheet_search").on("input", renderWorksheetTable);
+            $("#worksheet_estado").on("change", renderWorksheetTable);
+            $("#worksheet_desde, #worksheet_hasta").on("change", renderWorksheetTable);
+            $("#btnWorksheetLimpiar").on("click", function () {
+                $("#worksheet_search").val("");
+                $("#worksheet_estado").val("Todos");
+                $("#worksheet_desde").val("");
+                $("#worksheet_hasta").val("");
+                renderWorksheetTable();
+            });
+            $("#btnWorksheetAprobar").on("click", function () { changeWorksheetStatus(2); });
+            $("#btnWorksheetDesaprobar").on("click", function () { changeWorksheetStatus(1); });
+            $("#btnWorksheetSuspender").on("click", function () { changeWorksheetStatus(0); });
+        }
+
+        function renderWorksheetTable() {
+            filteredRows = getFilteredWorksheets();
+            var html = filteredRows.map(function (worksheet) {
+                return "<tr>" +
+                    "<td><strong>" + escapeHtml(String(worksheet.ID)) + "</strong></td>" +
+                    "<td>" + renderWorksheetStatus(worksheet) + "</td>" +
+                    "<td><span class='table-title'>" + escapeHtml(worksheet.Titulo) + "</span><span class='table-subtitle'>" + escapeHtml(worksheet.EstiloTexto) + "</span></td>" +
+                    "<td>" + escapeHtml(worksheet.FechaCreacionTexto) + "</td>" +
+                    "<td>" + escapeHtml(worksheet.FechaEfectivaTexto) + "</td>" +
+                    "<td>" + escapeHtml(worksheet.TareaDescripcion) + "</td>" +
+                    "<td>" + escapeHtml(worksheet.TiendasTexto || "-") + "</td>" +
+                    "<td>" + getWorksheetActions(worksheet) + "</td>" +
+                    "</tr>";
+            }).join("");
+
+            $("#worksheet_results_hint").text(filteredRows.length + " resultados");
+            $("#worksheet_body").html(html || "<tr><td colspan='8' class='empty-state'>Sin hojas de trabajo para los filtros aplicados.</td></tr>");
+            updateWorksheetSummary();
+        }
+
+        function getFilteredWorksheets() {
+            var text = ($("#worksheet_search").val() || "").toLowerCase();
+            var estado = $("#worksheet_estado").val();
+            var desde = $("#worksheet_desde").val();
+            var hasta = $("#worksheet_hasta").val();
+
+            return worksheets.filter(function (worksheet) {
+                if (estado !== "Todos" && String(worksheet.EstadoID) !== estado) return false;
+                if (desde && String(worksheet.FechaCreacionFiltro || "") < desde) return false;
+                if (hasta && String(worksheet.FechaCreacionFiltro || "") > hasta) return false;
+                if (!text) return true;
+
+                return [worksheet.Titulo, worksheet.TareaDescripcion, worksheet.Usuario, worksheet.TiendasTexto, worksheet.EstiloTexto]
+                    .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
+            });
+        }
+
+        function renderWorksheetStatus(worksheet) {
+            return "<span class='status-badge worksheet-" + escapeHtml(worksheet.EstadoClase || "neutral") + "'>" + escapeHtml(worksheet.EstadoTexto) + "</span>";
+        }
+
+        function getWorksheetActions(worksheet) {
+            return "<div class='action-stack'>" +
+                "<button class='icon-button info' type='button' onclick='onWorksheetView(" + worksheet.ID + ")'>Ver</button>" +
+                (Number(worksheet.ArchivoID || 0) > 0
+                    ? "<button class='icon-button success' type='button' onclick='onWorksheetDownload(" + worksheet.ID + ")'>Descargar</button>"
+                    : "") +
+                "</div>";
+        }
+
+        function onWorksheetView(id) {
+            currentWorksheet = findWorksheet(id);
+            if (!currentWorksheet) return;
+
+            $("#worksheetModalTitle").text("Hoja de trabajo " + currentWorksheet.ID);
+            $("#worksheet_view_title").text(currentWorksheet.Titulo);
+            $("#worksheet_view_subtitle").text(currentWorksheet.EstiloTexto + " - " + currentWorksheet.TareaDescripcion);
+            $("#worksheet_view_count").text(formatNumber(currentWorksheet.CantidadContenido));
+            $("#worksheet_view_badges").html(renderWorksheetBadges(currentWorksheet));
+            $("#worksheet_view_general").html(renderViewGrid([
+                { label: "Referencia", value: currentWorksheet.ID },
+                { label: "Estado", value: currentWorksheet.EstadoTexto },
+                { label: "Tarea", value: currentWorksheet.TareaCodigo + " - " + currentWorksheet.TareaDescripcion },
+                { label: "Usuario", value: currentWorksheet.Usuario || "-" },
+                { label: "Fecha creada", value: currentWorksheet.FechaCreacionTexto || "-" },
+                { label: "Fecha efectiva", value: currentWorksheet.FechaEfectivaTexto || "-" },
+                { label: "Fecha aplicacion", value: currentWorksheet.FechaAplicacionTexto || "-" },
+                { label: "Tiendas", value: formatNumber(currentWorksheet.CantidadTiendas) }
+            ]));
+            $("#worksheet_view_notes").text(currentWorksheet.Notas || "Sin notas registradas.");
+            $("#worksheet_view_stores").html(renderWorksheetStores(currentWorksheet.Tiendas || []));
+            $("#worksheet_view_content").html(renderWorksheetContent(currentWorksheet));
+            $("#worksheet_view_history").html(renderWorksheetHistory(currentWorksheet.Historial || []));
+            syncWorksheetActions();
+            worksheetModal.show();
+        }
+
+        function onWorksheetDownload(id) {
+            var url = worksheetUrls.descargar + "?id=" + encodeURIComponent(id);
+
+            if (window.UltraERP && window.UltraERP.downloadFile) {
+                window.UltraERP.downloadFile(url);
+                return;
+            }
+
+            window.location.href = url;
+        }
+
+        function renderWorksheetBadges(worksheet) {
+            var badges = [
+                renderWorksheetStatus(worksheet),
+                "<span class='status-badge draft'>" + escapeHtml(worksheet.EstiloTexto) + "</span>"
+            ];
+
+            if (Number(worksheet.ArchivoID || 0) > 0) {
+                badges.push("<span class='status-badge received'>Archivo disponible</span>");
+            }
+
+            return badges.join("");
+        }
+
+        function renderWorksheetStores(stores) {
+            if (!stores.length) {
+                return "<div class='document-view-empty'>Sin tiendas relacionadas.</div>";
+            }
+
+            return stores.map(function (store) {
+                return "<article class='worksheet-store-card'>" +
+                    "<div><strong>" + escapeHtml(store.TiendaID + " - " + store.TiendaNombre) + "</strong><span>" + escapeHtml(store.FechaProcesadoTexto || "-") + "</span></div>" +
+                    "<span class='status-badge worksheet-" + escapeHtml(getStatusClass(store.EstadoID)) + "'>" + escapeHtml(store.EstadoTexto) + "</span>" +
+                    "</article>";
+            }).join("");
+        }
+
+        function renderWorksheetContent(worksheet) {
+            var rows = worksheet.Contenido || [];
+            if (!rows.length) {
+                return "<div class='document-view-empty'>La hoja no tiene contenido para aplicar.</div>";
+            }
+
+            var columns = [
+                "<th>Tienda</th>",
+                "<th>Disp.</th>",
+                "<th>Cod. articulo</th>",
+                "<th>Descripcion</th>"
+            ];
+
+            if (worksheet.EstiloID === 251) {
+                columns = columns.concat([
+                    "<th>Precio liquidacion</th>",
+                    "<th>Inicio</th>",
+                    "<th>Fin</th>",
+                    "<th>Precio cantidad</th>",
+                    "<th>Cantidad liquidacion</th>"
+                ]);
+            } else if (worksheet.EstiloID === 320) {
+                columns.push("<th>Impuesto</th>");
+            } else {
+                columns.push("<th>Descripcion extendida</th>");
+            }
+
+            var body = rows.map(function (row) {
+                var cells = [
+                    "<td>" + escapeHtml(row.Tienda) + "</td>",
+                    "<td>" + (row.Disponible ? "<span class='status-badge received'>Si</span>" : "<span class='status-badge closed'>No</span>") + "</td>",
+                    "<td>" + escapeHtml(row.CodigoArticulo) + "</td>",
+                    "<td><span class='table-title'>" + escapeHtml(row.Descripcion) + "</span><span class='table-subtitle'>" + escapeHtml(row.DescripcionExtendida || "-") + "</span></td>"
+                ];
+
+                if (worksheet.EstiloID === 251) {
+                    cells = cells.concat([
+                        "<td>" + formatMoney(row.PrecioLiquidacion) + "</td>",
+                        "<td>" + escapeHtml(row.InicioLiquidacionTexto || "-") + "</td>",
+                        "<td>" + escapeHtml(row.FinLiquidacionTexto || "-") + "</td>",
+                        "<td>" + formatMoney(row.PrecioCantidad) + "</td>",
+                        "<td>" + formatNumber(row.CantidadLiquidacion) + "</td>"
+                    ]);
+                } else if (worksheet.EstiloID === 320) {
+                    cells.push("<td>" + escapeHtml(row.Impuesto || "-") + "</td>");
+                } else {
+                    cells.push("<td>" + escapeHtml(row.DescripcionExtendida || "-") + "</td>");
+                }
+
+                return "<tr>" + cells.join("") + "</tr>";
+            }).join("");
+
+            return "<div class='document-view-table'><table class='table table-sm align-middle mb-0 worksheet-content-table'><thead><tr>" + columns.join("") + "</tr></thead><tbody>" + body + "</tbody></table></div>";
+        }
+
+        function renderWorksheetHistory(history) {
+            if (!history.length) {
+                return "<div class='document-view-empty'>Sin historial registrado.</div>";
+            }
+
+            var body = history.map(function (item) {
+                return "<tr>" +
+                    "<td><span class='status-badge worksheet-" + escapeHtml(getStatusClass(item.EstadoID)) + "'>" + escapeHtml(item.EstadoTexto) + "</span></td>" +
+                    "<td>" + escapeHtml(item.FechaHoraTexto) + "</td>" +
+                    "<td>" + escapeHtml(item.Tienda) + "</td>" +
+                    "<td>" + escapeHtml(item.Comentario || "-") + "</td>" +
+                    "</tr>";
+            }).join("");
+
+            return "<div class='document-view-table'><table class='table table-sm align-middle mb-0'><thead><tr><th>Estado</th><th>Fecha/Hora</th><th>Tienda</th><th>Comentario</th></tr></thead><tbody>" + body + "</tbody></table></div>";
+        }
+
+        function changeWorksheetStatus(status) {
+            if (!currentWorksheet) return;
+
+            $.post(worksheetUrls.cambiarEstado, { id: currentWorksheet.ID, estado: status })
+                .done(function (response) {
+                    if (!response || !response.Status) {
+                        showWorksheetToast(response && response.Message ? response.Message : "No se pudo cambiar el estado.");
+                        return;
+                    }
+
+                    replaceWorksheet(response.Result);
+                    currentWorksheet = response.Result;
+                    renderWorksheetTable();
+                    onWorksheetView(currentWorksheet.ID);
+                    showWorksheetToast(response.Message || "Estado actualizado correctamente.");
+                })
+                .fail(function () {
+                    showWorksheetToast("No se pudo cambiar el estado.");
+                });
+        }
+
+        function syncWorksheetActions() {
+            if (!currentWorksheet) return;
+
+            var status = Number(currentWorksheet.EstadoID || 0);
+            $("#btnWorksheetAprobar").prop("disabled", status !== 1);
+            $("#btnWorksheetDesaprobar").prop("disabled", status !== 2);
+            $("#btnWorksheetSuspender").prop("disabled", status !== 1 && status !== 2);
+        }
+
+        function replaceWorksheet(item) {
+            for (var i = 0; i < worksheets.length; i++) {
+                if (worksheets[i].ID === item.ID) {
+                    worksheets[i] = item;
+                    return;
+                }
+            }
+        }
+
+        function updateWorksheetSummary() {
+            var pending = filteredRows.filter(function (item) { return Number(item.EstadoID) === 1; }).length;
+            var content = filteredRows.reduce(function (sum, item) { return sum + Number(item.CantidadContenido || 0); }, 0);
+            $("#worksheet_summary_count").text(filteredRows.length);
+            $("#worksheet_summary_pending").text(pending);
+            $("#worksheet_summary_content").text(formatNumber(content));
+        }
+
+        function findWorksheet(id) {
+            return worksheets.find(function (item) { return item.ID === id; });
+        }
+
+        function getStatusClass(statusId) {
+            switch (Number(statusId || 0)) {
+                case 0: return "closed";
+                case 1: return "draft";
+                case 2: return "sent";
+                case 3: return "warning";
+                case 4: return "received";
+                case 5: return "danger";
+                case 6: return "neutral";
+                case 7: return "info";
+                case 8: return "success";
+                default: return "neutral";
+            }
+        }
+
+        function renderViewGrid(items) {
+            return items.map(function (item) {
+                return "<article class='document-view-item'><span>" + escapeHtml(item.label) + "</span><strong>" + escapeHtml(item.value) + "</strong></article>";
+            }).join("");
+        }
+
+        function setWorksheetLoading(isLoading) {
+            $("#worksheet_loading").toggle(isLoading);
+        }
+
+        function showWorksheetToast(message) {
+            var toast = $("#worksheetToast");
+            toast.text(message).addClass("show");
+            window.clearTimeout(showWorksheetToast.timer);
+            showWorksheetToast.timer = window.setTimeout(function () { toast.removeClass("show"); }, 3200);
+        }
+
+        function formatMoney(value) {
+            if (value === null || value === undefined || value === "") return "-";
+            return Number(value || 0).toLocaleString("es-CR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function formatNumber(value) {
+            return Number(value || 0).toLocaleString("es-CR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function escapeHtml(value) {
+            return $("<div />").text(value || "").html();
+        }
+    </script>
+}

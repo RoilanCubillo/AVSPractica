@@ -31,12 +31,15 @@
                     </span>
                 </a>
                 @{
-                    var catalogMenus = new[] { "Familias", "Departamentos", "Categorias", "SubCategorias", "Segmentos", "Marcas", "Fabricantes", "Descuentos", "PropiedadesArticulos" };
+                    var catalogMenus = new[] { "Familias", "Departamentos", "Categorias", "SubCategorias", "Segmentos", "Marcas", "Fabricantes", "Descuentos" };
                     var isCatalogMenu = Array.IndexOf(catalogMenus, Convert.ToString(ViewBag.ActiveMenu)) >= 0;
                 }
                 <nav class="app-nav">
                     <a class="@(ViewBag.ActiveMenu == "Documentos" ? "active" : "")" href="@Url.Action("Inicio", "DocumentosInventario")">Documentos</a>
                     <a class="@(ViewBag.ActiveMenu == "Articulos" ? "active" : "")" href="@Url.Action("Inicio", "Articulos")">Art&iacute;culos</a>
+                    <a class="@(ViewBag.ActiveMenu == "PropiedadesArticulos" ? "active" : "")" href="@Url.Action("Inicio", "PropiedadesArticulos")">Propiedades de Art&iacute;culos</a>
+                    <a class="@(ViewBag.ActiveMenu == "CasasComerciales" ? "active" : "")" href="@Url.Action("Inicio", "CasasComerciales")">Casas Comerciales</a>
+                    <a class="@(ViewBag.ActiveMenu == "HojasTrabajo" ? "active" : "")" href="@Url.Action("Inicio", "HojasTrabajo")">Hojas de Trabajo</a>
                     <a id="catalogosToggle" class="nav-section-toggle @(isCatalogMenu ? "active" : "") @(isCatalogMenu ? "" : "collapsed")" href="#catalogosMenu" role="button" data-bs-toggle="collapse" data-bs-target="#catalogosMenu" aria-expanded="@(isCatalogMenu ? "true" : "false")" aria-controls="catalogosMenu">
                         <span>Cat&aacute;logos</span>
                         <span class="nav-section-icon @(isCatalogMenu ? "open" : "")" aria-hidden="true">
@@ -55,7 +58,6 @@
                         <a class="nav-sub-link @(ViewBag.ActiveMenu == "Marcas" ? "active" : "")" href="@Url.Action("Inicio", "Marcas")">Marcas</a>
                         <a class="nav-sub-link @(ViewBag.ActiveMenu == "Fabricantes" ? "active" : "")" href="@Url.Action("Inicio", "Fabricantes")">Fabricantes</a>
                         <a class="nav-sub-link @(ViewBag.ActiveMenu == "Descuentos" ? "active" : "")" href="@Url.Action("Inicio", "Descuentos")">Descuentos</a>
-                        <a class="nav-sub-link @(ViewBag.ActiveMenu == "PropiedadesArticulos" ? "active" : "")" href="@Url.Action("Inicio", "PropiedadesArticulos")">Propiedades de Art&iacute;culos</a>
                     </div>
                     <a class="@(ViewBag.ActiveMenu == "Historico" ? "active" : "")" href="@Url.Action("Historico", "DocumentosInventario")">Historico de Ajustes</a>
                 </nav>
@@ -75,6 +77,7 @@
         (function () {
             var loader = document.getElementById("appPageLoader");
             var loaderTimer = null;
+            var downloadFrame = null;
 
             function showPageLoader(message) {
                 if (!loader) return;
@@ -94,12 +97,28 @@
                 loader.setAttribute("aria-hidden", "true");
             }
 
+            function downloadFile(url) {
+                if (!url) return;
+                hidePageLoader();
+
+                if (!downloadFrame) {
+                    downloadFrame = document.createElement("iframe");
+                    downloadFrame.style.display = "none";
+                    downloadFrame.setAttribute("aria-hidden", "true");
+                    document.body.appendChild(downloadFrame);
+                }
+
+                downloadFrame.src = url + (url.indexOf("?") >= 0 ? "&" : "?") + "_download=" + Date.now();
+            }
+
             function isPlainLeftClick(event) {
                 return event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey;
             }
 
             function shouldShowForLink(anchor) {
                 if (!anchor) return false;
+                if (anchor.getAttribute("data-no-loader") === "true") return false;
+                if (anchor.getAttribute("data-download") === "true") return false;
                 var href = anchor.getAttribute("href");
                 if (!href || href.charAt(0) === "#" || href.indexOf("javascript:") === 0) return false;
                 if (anchor.target && anchor.target !== "_self") return false;
@@ -113,6 +132,7 @@
                 }
 
                 if (url.origin !== window.location.origin) return false;
+                if (/\/(Descargar|Download)/i.test(url.pathname)) return false;
                 if (url.pathname === window.location.pathname && url.search === window.location.search) return false;
                 return true;
             }
@@ -142,6 +162,7 @@
             window.UltraERP = window.UltraERP || {};
             window.UltraERP.showPageLoader = showPageLoader;
             window.UltraERP.hidePageLoader = hidePageLoader;
+            window.UltraERP.downloadFile = downloadFile;
 
             document.addEventListener("DOMContentLoaded", function () {
                 var catalogosMenu = document.getElementById("catalogosMenu");
