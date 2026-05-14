@@ -1,0 +1,257 @@
+@model IEnumerable<UltraERP.Models.SegmentoViewModel>
+@{
+    ViewBag.Title = "Segmentos";
+    ViewBag.ActiveMenu = "Segmentos";
+    var segmentosJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
+}
+
+<section class="page-header">
+    <div class="page-header-copy">
+        <span class="eyebrow">Catalogo de clasificacion</span>
+        <h1>Segmentos</h1>
+        <p>Administre la clasificaci&oacute;n final dentro de cada subcategor&iacute;a antes de asociar art&iacute;culos.</p>
+    </div>
+    <div class="topbar-actions">
+        <a id="btnNuevoSegmento" class="btn btn-primary" href="@Url.Action("Registro", "Segmentos")">Nuevo segmento</a>
+    </div>
+</section>
+
+@if (TempData["SegmentoMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SegmentoMessage"]</div>
+}
+
+<section class="filter-panel">
+    <div class="row g-3">
+        <div class="col-12 col-md-3">
+            <label for="filter_subcategoria" class="form-label">Subcategor&iacute;a</label>
+            <input id="filter_subcategoria" type="text" class="form-control" />
+        </div>
+        <div class="col-12 col-md-3">
+            <label for="filter_categoria" class="form-label">Categor&iacute;a</label>
+            <input id="filter_categoria" type="text" class="form-control" />
+        </div>
+        <div class="col-12 col-md-5">
+            <label for="table_search" class="form-label">Buscar</label>
+            <input id="table_search" type="search" class="form-control" placeholder="Codigo, descripcion, subcategoria o familia" />
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button id="btnLimpiar" class="btn btn-outline-secondary" type="button">Limpiar</button>
+        <button id="btnConsultar" class="btn btn-primary" type="button">Consultar</button>
+    </div>
+</section>
+
+<section class="metric-grid">
+    <article>
+        <span>Segmentos</span>
+        <strong id="summary_count">0</strong>
+    </article>
+    <article>
+        <span>Subcategor&iacute;as</span>
+        <strong id="summary_subcategories">0</strong>
+    </article>
+    <article>
+        <span>Art&iacute;culos asociados</span>
+        <strong id="summary_items">0</strong>
+    </article>
+</section>
+
+<section class="table-panel">
+    <div class="table-toolbar">
+        <div class="table-toolbar-main">
+            <span id="results_hint" class="toolbar-chip">0 resultados</span>
+        </div>
+        <span id="loading_state" class="loading-state">Cargando...</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle document-table segment-list-table">
+            <thead>
+                <tr>
+                    <th>C&oacute;digo</th>
+                    <th>Descripci&oacute;n</th>
+                    <th>Subcategor&iacute;a</th>
+                    <th>Categor&iacute;a</th>
+                    <th>Departamento</th>
+                    <th>Familia</th>
+                    <th>Art&iacute;culos</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="segmentos_body"></tbody>
+        </table>
+    </div>
+</section>
+
+<div class="modal fade" id="segmentoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="segmentoModalTitle" class="modal-title">Segmento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="document-view">
+                    <section class="document-view-hero">
+                        <div>
+                            <span class="eyebrow">Ficha de segmento</span>
+                            <h2 id="seg_view_title" class="document-view-title"></h2>
+                            <p id="seg_view_subtitle" class="document-view-subtitle"></p>
+                        </div>
+                        <div class="document-view-total">
+                            <span>Art&iacute;culos</span>
+                            <strong id="seg_view_items"></strong>
+                        </div>
+                    </section>
+                    <section class="document-view-section">
+                        <h3>Datos generales</h3>
+                        <div id="seg_view_summary" class="document-view-grid"></div>
+                    </section>
+                    <section class="document-view-section">
+                        <h3>Auditor&iacute;a</h3>
+                        <div id="seg_view_audit" class="document-view-grid"></div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        var urls = {
+            registro: '@Url.Action("Registro", "Segmentos")'
+        };
+        var segmentos = @Html.Raw(segmentosJson);
+        var filteredRows = [];
+
+        $(function () {
+            bindEvents();
+            renderTable();
+            setLoading(false);
+        });
+
+        function bindEvents() {
+            $("#btnConsultar").on("click", renderTable);
+            $("#table_search, #filter_subcategoria, #filter_categoria").on("input", renderTable);
+            $("#btnLimpiar").on("click", function () {
+                $("#filter_subcategoria").val("");
+                $("#filter_categoria").val("");
+                $("#table_search").val("");
+                renderTable();
+            });
+        }
+
+        function renderTable() {
+            filteredRows = getFilteredRows();
+            var html = filteredRows.map(function (s) {
+                return "<tr>" +
+                    "<td><strong>" + escapeHtml(s.Codigo) + "</strong></td>" +
+                    "<td>" + escapeHtml(s.Descripcion) + "</td>" +
+                    "<td>" + escapeHtml(s.SubCategoriaTexto || "-") + "</td>" +
+                    "<td>" + escapeHtml(s.CategoriaTexto || "-") + "</td>" +
+                    "<td>" + escapeHtml(s.DepartamentoTexto || "-") + "</td>" +
+                    "<td>" + escapeHtml(s.FamiliaTexto || "-") + "</td>" +
+                    "<td>" + formatNumber(s.CantidadArticulos) + "</td>" +
+                    "<td>" + getActionButtons(s) + "</td>" +
+                    "</tr>";
+            }).join("");
+
+            $("#results_hint").text(filteredRows.length + " resultados");
+            $("#segmentos_body").html(html || "<tr><td colspan='8' class='empty-state'>Sin segmentos para los filtros aplicados.</td></tr>");
+            updateSummary();
+        }
+
+        function getFilteredRows() {
+            var subcategoria = ($("#filter_subcategoria").val() || "").toLowerCase();
+            var categoria = ($("#filter_categoria").val() || "").toLowerCase();
+            var text = ($("#table_search").val() || "").toLowerCase();
+
+            return segmentos.filter(function (s) {
+                if (subcategoria && String(s.SubCategoriaTexto || "").toLowerCase().indexOf(subcategoria) < 0) return false;
+                if (categoria && String(s.CategoriaTexto || "").toLowerCase().indexOf(categoria) < 0) return false;
+                if (!text) return true;
+
+                return [s.Codigo, s.Descripcion, s.Nota, s.SubCategoriaTexto, s.CategoriaTexto, s.DepartamentoTexto, s.FamiliaTexto]
+                    .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
+            });
+        }
+
+        function getActionButtons(segmento) {
+            return "<div class='action-stack'>" +
+                "<button class='icon-button info' type='button' onclick='onVer(" + segmento.ID + ")'>Ver</button>" +
+                "<button class='icon-button primary' type='button' onclick='onEditar(" + segmento.ID + ")'>Editar</button>" +
+                "</div>";
+        }
+
+        function onVer(id) {
+            var segmento = findSegmento(id);
+            if (!segmento) return;
+
+            $("#segmentoModalTitle").text("Segmento " + segmento.Codigo);
+            $("#seg_view_title").text(segmento.Codigo);
+            $("#seg_view_subtitle").text(segmento.Descripcion);
+            $("#seg_view_items").text(formatNumber(segmento.CantidadArticulos));
+            $("#seg_view_summary").html(renderViewGrid([
+                { label: "Codigo", value: segmento.Codigo },
+                { label: "Descripcion", value: segmento.Descripcion },
+                { label: "Subcategoria", value: segmento.SubCategoriaTexto || "-" },
+                { label: "Categoria", value: segmento.CategoriaTexto || "-" },
+                { label: "Departamento", value: segmento.DepartamentoTexto || "-" },
+                { label: "Familia", value: segmento.FamiliaTexto || "-" },
+                { label: "Nota", value: segmento.Nota || "-" },
+                { label: "Articulos asociados", value: formatNumber(segmento.CantidadArticulos) }
+            ]));
+            $("#seg_view_audit").html(renderViewGrid([
+                { label: "Usuario crea", value: segmento.UsuarioCrea || "-" },
+                { label: "Fecha crea", value: segmento.FechaCreaTexto || "-" },
+                { label: "Usuario modifica", value: segmento.UsuarioModifica || "-" },
+                { label: "Fecha modifica", value: segmento.FechaModificaTexto || "-" }
+            ]));
+            new bootstrap.Modal(document.getElementById("segmentoModal")).show();
+        }
+
+        function onEditar(id) {
+            if (window.UltraERP && window.UltraERP.showPageLoader) {
+                window.UltraERP.showPageLoader("Abriendo segmento");
+            }
+
+            window.location.href = urls.registro + "?id=" + encodeURIComponent(id);
+        }
+
+        function findSegmento(id) {
+            return segmentos.find(function (item) { return item.ID === id; });
+        }
+
+        function updateSummary() {
+            var rows = filteredRows;
+            var subcategories = {};
+            var items = rows.reduce(function (sum, s) {
+                subcategories[s.SubCategoriaID] = true;
+                return sum + Number(s.CantidadArticulos || 0);
+            }, 0);
+
+            $("#summary_count").text(rows.length);
+            $("#summary_subcategories").text(Object.keys(subcategories).length);
+            $("#summary_items").text(formatNumber(items));
+        }
+
+        function renderViewGrid(items) {
+            return items.map(function (item) {
+                return "<article class='document-view-item'><span>" + escapeHtml(item.label) + "</span><strong>" + escapeHtml(item.value) + "</strong></article>";
+            }).join("");
+        }
+
+        function setLoading(isLoading) {
+            $("#loading_state").toggle(isLoading);
+        }
+
+        function formatNumber(value) {
+            return Number(value || 0).toLocaleString("es-CR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function escapeHtml(value) {
+            return $("<div />").text(value || "").html();
+        }
+    </script>
+}

@@ -14,13 +14,14 @@ namespace UltraERP.Controllers
         private static readonly object SyncRoot = new object();
         private static readonly List<ProveedorCatalogo> Proveedores = new List<ProveedorCatalogo>
         {
-            new ProveedorCatalogo("00129", "CONEJO DORADO S.R.L.", 30),
-            new ProveedorCatalogo("00210", "Distribuidora Central", 15),
-            new ProveedorCatalogo("00345", "Comercial La Union", 45),
-            new ProveedorCatalogo("00401", "Bodega Principal", 0),
+            new ProveedorCatalogo("00129", "Cooperativa Dos Pinos", 30),
+            new ProveedorCatalogo("00210", "Cafe Britt Costa Rica", 15),
+            new ProveedorCatalogo("00345", "Irex de Costa Rica", 30),
+            new ProveedorCatalogo("00401", "Bodega Central Heredia", 0),
             new ProveedorCatalogo("00402", "Sucursal Escazu", 0),
-            new ProveedorCatalogo("00403", "Proveedor Demo", 30),
-            new ProveedorCatalogo("00404", "Sucursal Sabana", 0)
+            new ProveedorCatalogo("00403", "Distribuidora San Jose", 30),
+            new ProveedorCatalogo("00404", "Sucursal Sabana", 0),
+            new ProveedorCatalogo("00405", "Central de Abarrotes Cartago", 15)
         };
 
         private static readonly List<DocumentoInventarioViewModel> Documentos = new List<DocumentoInventarioViewModel>
@@ -29,7 +30,7 @@ namespace UltraERP.Controllers
                 1,
                 "DOC-000124",
                 "Compra",
-                "Distribuidora Central",
+                "Distribuidora San Jose",
                 "FAC-85412",
                 new DateTime(2026, 5, 1),
                 new DateTime(2026, 5, 4),
@@ -41,14 +42,14 @@ namespace UltraERP.Controllers
                 "",
                 new List<DocumentoDetalleLineaViewModel>
                 {
-                    CreateDetalle("EMP-001", "Insumos de empaque", "CJ", 15m, 4520.50m, 0m, 0m, 13m, false, ""),
-                    CreateDetalle("FIL-014", "Film termico", "UND", 24m, 1295.75m, 0m, 0m, 13m, false, "")
+                    CreateDetalle("ARR-TP-2K", "Arroz Tio Pelon 2 kg", "KG", 60m, 1650m, 0m, 0m, 1m, false, ""),
+                    CreateDetalle("SAL-LIZ-700", "Salsa Lizano 700 ml", "UND", 36m, 1850m, 0m, 0m, 13m, false, "")
                 }),
             CreateDocumento(
                 2,
                 "DOC-000125",
                 "Entrada de Inventario",
-                "Bodega Principal",
+                "Bodega Central Heredia",
                 "TR-7781",
                 new DateTime(2026, 5, 2),
                 new DateTime(2026, 5, 3),
@@ -60,7 +61,7 @@ namespace UltraERP.Controllers
                 "Compra a proveedor",
                 new List<DocumentoDetalleLineaViewModel>
                 {
-                    CreateDetalle("ARR-220", "Arroz precocido", "KG", 40m, 2750m, 0m, 0m, 1m, false, "")
+                    CreateDetalle("FRJ-DP-900", "Frijoles rojos Don Pedro 900 g", "UND", 48m, 1225m, 0m, 0m, 1m, false, "")
                 }),
             CreateDocumento(
                 3,
@@ -78,13 +79,13 @@ namespace UltraERP.Controllers
                 "",
                 new List<DocumentoDetalleLineaViewModel>
                 {
-                    CreateDetalle("ACE-015", "Aceite vegetal", "UND", 12m, 2590m, 0m, 0m, 13m, false, "Solicitud operativa")
+                    CreateDetalle("DET-IRX-1K", "Detergente Irex 1 kg", "UND", 12m, 2325m, 0m, 0m, 13m, false, "Solicitud operativa")
                 }),
             CreateDocumento(
                 4,
                 "DOC-000127",
                 "Compra",
-                "Comercial La Union",
+                "Cooperativa Dos Pinos",
                 "FAC-99103",
                 new DateTime(2026, 4, 25),
                 new DateTime(2026, 4, 29),
@@ -96,13 +97,13 @@ namespace UltraERP.Controllers
                 "",
                 new List<DocumentoDetalleLineaViewModel>
                 {
-                    CreateDetalle("SAL-441", "Salsa base", "GAL", 18m, 74850m, 3m, 0m, 13m, false, "")
+                    CreateDetalle("LEC-DP-1L", "Leche Dos Pinos 1 L", "L", 96m, 710m, 3m, 0m, 1m, false, "")
                 }),
             CreateDocumento(
                 5,
                 "DOC-000128",
                 "Entrada de Inventario",
-                "Proveedor Demo",
+                "Cafe Britt Costa Rica",
                 "FAC-12845",
                 new DateTime(2026, 5, 6),
                 null,
@@ -114,7 +115,7 @@ namespace UltraERP.Controllers
                 "Ajuste positivo",
                 new List<DocumentoDetalleLineaViewModel>
                 {
-                    CreateDetalle("HAR-112", "Harina preparada", "QQ", 8m, 10900m, 0m, 0m, 1m, false, "")
+                    CreateDetalle("CAF-1820-500", "Cafe 1820 molido 500 g", "UND", 24m, 2525m, 0m, 0m, 13m, false, "")
                 }),
             CreateDocumento(
                 6,
@@ -132,8 +133,8 @@ namespace UltraERP.Controllers
                 "",
                 new List<DocumentoDetalleLineaViewModel>
                 {
-                    CreateDetalle("CAF-009", "Cafe molido", "BQ", 10m, 4521m, 0m, 0m, 13m, false, ""),
-                    CreateDetalle("PROMO-1", "Producto de cortesia", "UND", 4m, 0m, 0m, 0m, 0m, true, "Linea de regalia auditada")
+                    CreateDetalle("SAL-LIZ-700", "Salsa Lizano 700 ml", "UND", 10m, 1850m, 0m, 0m, 13m, false, ""),
+                    CreateDetalle("PROMO-CR", "Muestra de cafe costarricense", "UND", 4m, 0m, 0m, 0m, 0m, true, "Linea de regalia auditada")
                 })
         };
 

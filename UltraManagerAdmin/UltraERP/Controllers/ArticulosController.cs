@@ -12,49 +12,55 @@ namespace UltraERP.Controllers
         private static readonly object SyncRoot = new object();
 
         private static readonly List<string> Unidades = new List<string> { "UND", "KG", "CJ", "GAL", "L", "QQ", "BQ" };
-        private static readonly List<string> Proveedores = new List<string> { "Distribuidora Central", "CONEJO DORADO S.R.L.", "Comercial La Union", "Proveedor Demo" };
-        private static readonly List<string> Bodegas = new List<string> { "Bodega Principal", "Sucursal Escazu", "Sucursal Sabana" };
+        private static readonly List<string> Proveedores = new List<string> { "Cooperativa Dos Pinos", "Cafe Britt Costa Rica", "Irex de Costa Rica", "Distribuidora San Jose", "Central de Abarrotes Cartago" };
+        private static readonly List<string> Bodegas = new List<string> { "Bodega Central Heredia", "Sucursal Escazu", "Sucursal Sabana", "Sucursal Cartago" };
 
         private static readonly List<FamiliaCatalogo> Familias = new List<FamiliaCatalogo>
         {
-            new FamiliaCatalogo(1, "ABAR", "Abarrotes"),
-            new FamiliaCatalogo(2, "MP", "Materia Prima"),
-            new FamiliaCatalogo(3, "EMP", "Empaque"),
-            new FamiliaCatalogo(4, "PROMO", "Promociones")
+            new FamiliaCatalogo(1, "ABAR", "Abarrotes ticos"),
+            new FamiliaCatalogo(2, "LACT", "Lacteos y frescos"),
+            new FamiliaCatalogo(3, "BEB", "Bebidas y cafe"),
+            new FamiliaCatalogo(4, "LIMP", "Limpieza y hogar")
         };
 
         private static readonly List<DepartamentoCatalogo> Departamentos = new List<DepartamentoCatalogo>
         {
-            new DepartamentoCatalogo(1, 1, "SECOS", "Productos secos"),
-            new DepartamentoCatalogo(2, 1, "BEB", "Bebidas"),
-            new DepartamentoCatalogo(3, 2, "PROD", "Produccion"),
-            new DepartamentoCatalogo(4, 3, "CAJAS", "Cajas y bolsas")
+            new DepartamentoCatalogo(1, 1, "GRANOS", "Granos basicos"),
+            new DepartamentoCatalogo(2, 1, "SALSAS", "Salsas y condimentos"),
+            new DepartamentoCatalogo(3, 2, "REFRI", "Refrigerados"),
+            new DepartamentoCatalogo(4, 3, "CAFE", "Cafe y bebidas"),
+            new DepartamentoCatalogo(5, 4, "HOGAR", "Cuidado del hogar")
         };
 
         private static readonly List<CategoriaCatalogo> Categorias = new List<CategoriaCatalogo>
         {
             new CategoriaCatalogo(1, 1, "ARROZ", "Arroces"),
-            new CategoriaCatalogo(2, 1, "COND", "Condimentos"),
-            new CategoriaCatalogo(3, 2, "GASE", "Gaseosas"),
-            new CategoriaCatalogo(4, 3, "HAR", "Harinas"),
-            new CategoriaCatalogo(5, 4, "BOLS", "Bolsas")
+            new CategoriaCatalogo(2, 1, "FRIJ", "Frijoles"),
+            new CategoriaCatalogo(3, 2, "SALT", "Salsas ticas"),
+            new CategoriaCatalogo(4, 3, "LECHE", "Leches y lacteos"),
+            new CategoriaCatalogo(5, 4, "CAFCR", "Cafe costarricense"),
+            new CategoriaCatalogo(6, 5, "DETER", "Detergentes")
         };
 
         private static readonly List<SubCategoriaCatalogo> SubCategorias = new List<SubCategoriaCatalogo>
         {
-            new SubCategoriaCatalogo(1, 1, "BLANCO", "Arroz blanco"),
-            new SubCategoriaCatalogo(2, 1, "INTEG", "Arroz integral"),
-            new SubCategoriaCatalogo(3, 2, "SALSA", "Salsas y bases"),
-            new SubCategoriaCatalogo(4, 3, "RET", "Retornables"),
-            new SubCategoriaCatalogo(5, 4, "PREM", "Premezclas"),
-            new SubCategoriaCatalogo(6, 5, "BOLSA", "Bolsa flexible")
+            new SubCategoriaCatalogo(1, 1, "GRANO", "Arroz grano entero"),
+            new SubCategoriaCatalogo(2, 1, "PRECOC", "Arroz precocido"),
+            new SubCategoriaCatalogo(3, 2, "ROJOS", "Frijoles rojos"),
+            new SubCategoriaCatalogo(4, 3, "MESA", "Salsas de mesa"),
+            new SubCategoriaCatalogo(5, 4, "FLUIDA", "Leche fluida"),
+            new SubCategoriaCatalogo(6, 5, "MOLIDO", "Cafe molido"),
+            new SubCategoriaCatalogo(7, 6, "POLVO", "Detergente en polvo")
         };
 
         private static readonly List<ArticuloViewModel> Articulos = new List<ArticuloViewModel>
         {
-            CreateArticulo(1, "ARR-220", "Arroz precocido", "KG", 1, "Distribuidora Central", "Bodega Principal", 2450m, 3125m, 1m, 35m, 10m, 80m, true, true, false),
-            CreateArticulo(2, "SAL-441", "Salsa base", "GAL", 3, "Comercial La Union", "Bodega Principal", 74850m, 84580.50m, 13m, 11m, 4m, 25m, true, true, false),
-            CreateArticulo(3, "HAR-112", "Harina preparada", "QQ", 5, "Proveedor Demo", "Bodega Principal", 10900m, 12750m, 1m, 15m, 5m, 40m, true, true, false)
+            CreateArticulo(1, "ARR-TP-2K", "Arroz Tio Pelon 2 kg", "KG", 1, "Distribuidora San Jose", "Bodega Central Heredia", 1650m, 2195m, 1m, 80m, 20m, 160m, true, true, false),
+            CreateArticulo(2, "FRJ-DP-900", "Frijoles rojos Don Pedro 900 g", "UND", 3, "Central de Abarrotes Cartago", "Bodega Central Heredia", 1225m, 1695m, 1m, 50m, 12m, 120m, true, true, false),
+            CreateArticulo(3, "SAL-LIZ-700", "Salsa Lizano 700 ml", "UND", 4, "Distribuidora San Jose", "Sucursal Sabana", 1850m, 2495m, 13m, 36m, 10m, 90m, true, true, false),
+            CreateArticulo(4, "LEC-DP-1L", "Leche Dos Pinos 1 L", "L", 5, "Cooperativa Dos Pinos", "Sucursal Escazu", 710m, 995m, 1m, 120m, 30m, 240m, true, true, false),
+            CreateArticulo(5, "CAF-1820-500", "Cafe 1820 molido 500 g", "UND", 6, "Cafe Britt Costa Rica", "Bodega Central Heredia", 2525m, 3495m, 13m, 42m, 12m, 96m, true, true, false),
+            CreateArticulo(6, "DET-IRX-1K", "Detergente Irex 1 kg", "UND", 7, "Irex de Costa Rica", "Sucursal Cartago", 2325m, 3195m, 13m, 28m, 8m, 72m, true, true, false)
         };
 
         public ActionResult Inicio()
@@ -235,8 +241,8 @@ namespace UltraERP.Controllers
                 DepartamentoID = 1,
                 CategoriaID = 1,
                 SubCategoriaID = 1,
-                Proveedor = "Proveedor Demo",
-                Bodega = "Bodega Principal",
+                Proveedor = "Distribuidora San Jose",
+                Bodega = "Bodega Central Heredia",
                 ImpuestoPorcentaje = 13m,
                 FechaCrea = DateTime.Now,
                 UsuarioCrea = GetCurrentUser()

@@ -13,20 +13,23 @@ namespace UltraERP.Controllers
 
         private static readonly List<CategoriaCatalogo> Categorias = new List<CategoriaCatalogo>
         {
-            new CategoriaCatalogo(1, "ARROZ", "Arroces", "SECOS", "Productos secos", "ABAR", "Abarrotes"),
-            new CategoriaCatalogo(2, "COND", "Condimentos", "SECOS", "Productos secos", "ABAR", "Abarrotes"),
-            new CategoriaCatalogo(3, "GASE", "Gaseosas", "BEB", "Bebidas", "ABAR", "Abarrotes"),
-            new CategoriaCatalogo(4, "HAR", "Harinas", "PROD", "Produccion", "MP", "Materia Prima"),
-            new CategoriaCatalogo(5, "BOLS", "Bolsas", "CAJAS", "Cajas y bolsas", "EMP", "Empaque")
+            new CategoriaCatalogo(1, "ARROZ", "Arroces", "GRANOS", "Granos basicos", "ABAR", "Abarrotes ticos"),
+            new CategoriaCatalogo(2, "FRIJ", "Frijoles", "GRANOS", "Granos basicos", "ABAR", "Abarrotes ticos"),
+            new CategoriaCatalogo(3, "SALT", "Salsas ticas", "SALSAS", "Salsas y condimentos", "ABAR", "Abarrotes ticos"),
+            new CategoriaCatalogo(4, "LECHE", "Leches y lacteos", "REFRI", "Refrigerados", "LACT", "Lacteos y frescos"),
+            new CategoriaCatalogo(5, "CAFCR", "Cafe costarricense", "CAFE", "Cafe y bebidas", "BEB", "Bebidas y cafe"),
+            new CategoriaCatalogo(6, "DETER", "Detergentes", "HOGAR", "Cuidado del hogar", "LIMP", "Limpieza y hogar")
         };
 
         private static readonly List<SubCategoriaViewModel> SubCategorias = new List<SubCategoriaViewModel>
         {
-            CreateSubCategoria(1, 1, "BLANCO", "Arroz blanco", "Arroces blancos por presentacion.", true, 2, 12),
-            CreateSubCategoria(2, 1, "INTEG", "Arroz integral", "Arroces integrales y especiales.", true, 1, 6),
-            CreateSubCategoria(3, 2, "SALSA", "Salsas y bases", "Salsas base para venta o produccion.", true, 3, 9),
-            CreateSubCategoria(4, 3, "RET", "Retornables", "Bebidas con envase retornable.", false, 1, 4),
-            CreateSubCategoria(5, 4, "PREM", "Premezclas", "Harinas preparadas y premezclas.", true, 2, 8)
+            CreateSubCategoria(1, 1, "GRANO", "Arroz grano entero", "Arroces enteros nacionales en bolsa.", true, 2, 12),
+            CreateSubCategoria(2, 1, "PRECOC", "Arroz precocido", "Arroces precocidos de coccion rapida.", true, 1, 6),
+            CreateSubCategoria(3, 2, "ROJOS", "Frijoles rojos", "Frijoles rojos en grano y empacados.", true, 1, 8),
+            CreateSubCategoria(4, 3, "MESA", "Salsas de mesa", "Salsas listas para acompanamiento tipico.", true, 2, 9),
+            CreateSubCategoria(5, 4, "FLUIDA", "Leche fluida", "Leches frescas y larga duracion.", true, 1, 11),
+            CreateSubCategoria(6, 5, "MOLIDO", "Cafe molido", "Cafe molido de origen costarricense.", true, 2, 10),
+            CreateSubCategoria(7, 6, "POLVO", "Detergente en polvo", "Detergentes en polvo de venta masiva.", true, 1, 7)
         };
 
         public ActionResult Inicio()

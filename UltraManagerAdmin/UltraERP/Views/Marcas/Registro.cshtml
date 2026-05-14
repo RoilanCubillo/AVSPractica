@@ -1,0 +1,62 @@
+@model UltraERP.Models.MarcaViewModel
+@{
+    ViewBag.Title = Model.ID > 0 ? "Editar Marca" : "Nueva Marca";
+    ViewBag.ActiveMenu = "Marcas";
+}
+
+<section class="document-topbar">
+    <div class="document-topbar-copy">
+        <span class="eyebrow">Catalogo de marcas</span>
+        <h1>@(Model.ID > 0 ? "Editar marca" : "Nueva marca")</h1>
+        <p>Registre la marca comercial para asociarla luego a la ficha de art&iacute;culos.</p>
+    </div>
+    <div class="topbar-actions">
+        <a class="btn btn-outline-secondary" href="@Url.Action("Inicio", "Marcas")">Cancelar</a>
+        <button id="btnGuardarMarca" class="btn btn-primary" type="submit" form="marcaForm">Guardar marca</button>
+    </div>
+</section>
+
+@using (Html.BeginForm("Registro", "Marcas", FormMethod.Post, new { id = "marcaForm", @class = "document-form" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.ID)
+    @Html.HiddenFor(m => m.UsuarioCrea)
+    @Html.HiddenFor(m => m.FechaCrea)
+    @Html.HiddenFor(m => m.UsuarioModifica)
+    @Html.HiddenFor(m => m.FechaModifica)
+
+    if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            @Html.ValidationSummary(false, "Revise los datos de la marca:")
+        </div>
+    }
+
+    <section class="form-panel">
+        <div class="section-title">
+            <span>1.</span>
+            <h2>Datos de la marca</h2>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="CodigoTexto">C&oacute;digo</label>
+                <input id="CodigoTexto" class="form-control readonly-control" type="text" value="@Model.CodigoTexto" readonly />
+            </div>
+            <div class="col-12 col-md-6">
+                <label class="form-label required" for="Descripcion">Descripci&oacute;n</label>
+                @Html.TextBoxFor(m => m.Descripcion, new { @class = "form-control", maxlength = "50", autocomplete = "off", placeholder = "Ej: La Cosecha" })
+                @Html.ValidationMessageFor(m => m.Descripcion, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="CantidadArticulos">Art&iacute;culos</label>
+                @Html.TextBoxFor(m => m.CantidadArticulos, new { @class = "form-control", type = "number", min = "0", step = "1" })
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="Nota">Nota</label>
+                @Html.TextAreaFor(m => m.Nota, 4, 30, new { @class = "form-control", maxlength = "180", placeholder = "Uso o alcance de esta marca dentro del catalogo." })
+                @Html.ValidationMessageFor(m => m.Nota, "", new { @class = "text-danger small" })
+            </div>
+        </div>
+    </section>
+}

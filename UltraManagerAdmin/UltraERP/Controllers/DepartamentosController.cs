@@ -13,18 +13,19 @@ namespace UltraERP.Controllers
 
         private static readonly List<FamiliaCatalogo> Familias = new List<FamiliaCatalogo>
         {
-            new FamiliaCatalogo(1, "ABAR", "Abarrotes"),
-            new FamiliaCatalogo(2, "MP", "Materia Prima"),
-            new FamiliaCatalogo(3, "EMP", "Empaque"),
-            new FamiliaCatalogo(4, "PROMO", "Promociones")
+            new FamiliaCatalogo(1, "ABAR", "Abarrotes ticos"),
+            new FamiliaCatalogo(2, "LACT", "Lacteos y frescos"),
+            new FamiliaCatalogo(3, "BEB", "Bebidas y cafe"),
+            new FamiliaCatalogo(4, "LIMP", "Limpieza y hogar")
         };
 
         private static readonly List<DepartamentoViewModel> Departamentos = new List<DepartamentoViewModel>
         {
-            CreateDepartamento(1, 1, "SECOS", "Productos secos", "Abarrotes secos y productos no refrigerados.", true, 6, 24),
-            CreateDepartamento(2, 1, "BEB", "Bebidas", "Bebidas listas para venta y consumo.", true, 4, 18),
-            CreateDepartamento(3, 2, "PROD", "Produccion", "Insumos base usados en produccion.", true, 5, 13),
-            CreateDepartamento(4, 3, "CAJAS", "Cajas y bolsas", "Material de empaque por presentacion.", false, 2, 7)
+            CreateDepartamento(1, 1, "GRANOS", "Granos basicos", "Arroz, frijoles y granos de alta rotacion nacional.", true, 3, 28),
+            CreateDepartamento(2, 1, "SALSAS", "Salsas y condimentos", "Salsas, condimentos y acompannamientos usados en cocina tica.", true, 2, 14),
+            CreateDepartamento(3, 2, "REFRI", "Refrigerados", "Leches, yogurt y frescos que requieren cadena fria.", true, 2, 21),
+            CreateDepartamento(4, 3, "CAFE", "Cafe y bebidas", "Cafe molido, bebidas listas y refrescos populares.", true, 3, 24),
+            CreateDepartamento(5, 4, "HOGAR", "Cuidado del hogar", "Detergentes y limpieza para hogares y pulperias.", true, 2, 16)
         };
 
         public ActionResult Inicio()

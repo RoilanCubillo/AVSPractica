@@ -13,19 +13,21 @@ namespace UltraERP.Controllers
 
         private static readonly List<DepartamentoCatalogo> Departamentos = new List<DepartamentoCatalogo>
         {
-            new DepartamentoCatalogo(1, "SECOS", "Productos secos", "ABAR", "Abarrotes"),
-            new DepartamentoCatalogo(2, "BEB", "Bebidas", "ABAR", "Abarrotes"),
-            new DepartamentoCatalogo(3, "PROD", "Produccion", "MP", "Materia Prima"),
-            new DepartamentoCatalogo(4, "CAJAS", "Cajas y bolsas", "EMP", "Empaque")
+            new DepartamentoCatalogo(1, "GRANOS", "Granos basicos", "ABAR", "Abarrotes ticos"),
+            new DepartamentoCatalogo(2, "SALSAS", "Salsas y condimentos", "ABAR", "Abarrotes ticos"),
+            new DepartamentoCatalogo(3, "REFRI", "Refrigerados", "LACT", "Lacteos y frescos"),
+            new DepartamentoCatalogo(4, "CAFE", "Cafe y bebidas", "BEB", "Bebidas y cafe"),
+            new DepartamentoCatalogo(5, "HOGAR", "Cuidado del hogar", "LIMP", "Limpieza y hogar")
         };
 
         private static readonly List<CategoriaViewModel> Categorias = new List<CategoriaViewModel>
         {
-            CreateCategoria(1, 1, "ARROZ", "Arroces", "Arroces, granos secos y productos relacionados.", true, 3, 18),
-            CreateCategoria(2, 1, "COND", "Condimentos", "Sazonadores, salsas secas y condimentos.", true, 4, 22),
-            CreateCategoria(3, 2, "GASE", "Gaseosas", "Bebidas gaseosas y carbonatadas.", true, 2, 15),
-            CreateCategoria(4, 3, "HAR", "Harinas", "Harinas, premezclas y bases de produccion.", true, 3, 11),
-            CreateCategoria(5, 4, "BOLS", "Bolsas", "Bolsas y empaques flexibles.", false, 1, 5)
+            CreateCategoria(1, 1, "ARROZ", "Arroces", "Arroces pilados y precocidos comunes en Costa Rica.", true, 2, 18),
+            CreateCategoria(2, 1, "FRIJ", "Frijoles", "Frijoles rojos y negros para consumo diario.", true, 2, 10),
+            CreateCategoria(3, 2, "SALT", "Salsas ticas", "Salsas y condimentos usados en mesa y cocina nacional.", true, 2, 14),
+            CreateCategoria(4, 3, "LECHE", "Leches y lacteos", "Leche fluida, yogurt y natilla refrigerada.", true, 2, 21),
+            CreateCategoria(5, 4, "CAFCR", "Cafe costarricense", "Cafe molido y tostado de marcas presentes en el pais.", true, 2, 15),
+            CreateCategoria(6, 5, "DETER", "Detergentes", "Detergentes y limpiadores para hogares costarricenses.", true, 2, 16)
         };
 
         public ActionResult Inicio()

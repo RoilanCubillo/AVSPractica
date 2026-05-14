@@ -13,10 +13,10 @@ namespace UltraERP.Controllers
 
         private static readonly List<FamiliaViewModel> Familias = new List<FamiliaViewModel>
         {
-            CreateFamilia(1, "ABAR", "Abarrotes", "Productos de consumo regular y rotacion alta.", true, 18),
-            CreateFamilia(2, "MP", "Materia Prima", "Insumos usados en procesos internos o preparaciones.", true, 9),
-            CreateFamilia(3, "EMP", "Empaque", "Materiales de empaque y presentacion.", true, 6),
-            CreateFamilia(4, "PROMO", "Promociones", "Productos de cortesia, combos o lineas especiales.", false, 2)
+            CreateFamilia(1, "ABAR", "Abarrotes ticos", "Granos, salsas y productos de consumo diario en Costa Rica.", true, 38),
+            CreateFamilia(2, "LACT", "Lacteos y frescos", "Productos refrigerados de consumo masivo costarricense.", true, 21),
+            CreateFamilia(3, "BEB", "Bebidas y cafe", "Cafe, refrescos y bebidas presentes en comercios nacionales.", true, 24),
+            CreateFamilia(4, "LIMP", "Limpieza y hogar", "Detergentes, jabones y articulos para el hogar vendidos en Costa Rica.", true, 16)
         };
 
         public ActionResult Inicio()

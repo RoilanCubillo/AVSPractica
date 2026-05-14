@@ -1,0 +1,238 @@
+@model IEnumerable<UltraERP.Models.MarcaViewModel>
+@{
+    ViewBag.Title = "Marcas";
+    ViewBag.ActiveMenu = "Marcas";
+    var marcasJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
+}
+
+<section class="page-header">
+    <div class="page-header-copy">
+        <span class="eyebrow">Catalogo de articulos</span>
+        <h1>Marcas</h1>
+        <p>Administre las marcas comerciales utilizadas en la ficha de art&iacute;culos y en la clasificaci&oacute;n del inventario.</p>
+    </div>
+    <div class="topbar-actions">
+        <a id="btnNuevaMarca" class="btn btn-primary" href="@Url.Action("Registro", "Marcas")">Nueva marca</a>
+    </div>
+</section>
+
+@if (TempData["MarcaMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["MarcaMessage"]</div>
+}
+
+<section class="filter-panel">
+    <div class="row g-3">
+        <div class="col-12 col-md-3">
+            <label for="filter_codigo" class="form-label">C&oacute;digo</label>
+            <input id="filter_codigo" type="text" class="form-control" />
+        </div>
+        <div class="col-12 col-md-6">
+            <label for="table_search" class="form-label">Buscar</label>
+            <input id="table_search" type="search" class="form-control" placeholder="Descripcion o nota" />
+        </div>
+    </div>
+    <div class="filter-actions">
+        <button id="btnLimpiar" class="btn btn-outline-secondary" type="button">Limpiar</button>
+        <button id="btnConsultar" class="btn btn-primary" type="button">Consultar</button>
+    </div>
+</section>
+
+<section class="metric-grid">
+    <article>
+        <span>Marcas</span>
+        <strong id="summary_count">0</strong>
+    </article>
+    <article>
+        <span>Con art&iacute;culos</span>
+        <strong id="summary_with_items">0</strong>
+    </article>
+    <article>
+        <span>Art&iacute;culos asociados</span>
+        <strong id="summary_items">0</strong>
+    </article>
+</section>
+
+<section class="table-panel">
+    <div class="table-toolbar">
+        <div class="table-toolbar-main">
+            <span id="results_hint" class="toolbar-chip">0 resultados</span>
+        </div>
+        <span id="loading_state" class="loading-state">Cargando...</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle document-table brand-list-table">
+            <thead>
+                <tr>
+                    <th>C&oacute;digo</th>
+                    <th>Descripci&oacute;n</th>
+                    <th>Nota</th>
+                    <th>Art&iacute;culos</th>
+                    <th>Fecha crea</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="marcas_body"></tbody>
+        </table>
+    </div>
+</section>
+
+<div class="modal fade" id="marcaModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="marcaModalTitle" class="modal-title">Marca</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="document-view">
+                    <section class="document-view-hero">
+                        <div>
+                            <span class="eyebrow">Ficha de marca</span>
+                            <h2 id="brand_view_title" class="document-view-title"></h2>
+                            <p id="brand_view_subtitle" class="document-view-subtitle"></p>
+                        </div>
+                        <div class="document-view-total">
+                            <span>Art&iacute;culos</span>
+                            <strong id="brand_view_items"></strong>
+                        </div>
+                    </section>
+                    <section class="document-view-section">
+                        <h3>Datos generales</h3>
+                        <div id="brand_view_summary" class="document-view-grid"></div>
+                    </section>
+                    <section class="document-view-section">
+                        <h3>Auditor&iacute;a</h3>
+                        <div id="brand_view_audit" class="document-view-grid"></div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        var urls = {
+            registro: '@Url.Action("Registro", "Marcas")'
+        };
+        var marcas = @Html.Raw(marcasJson);
+        var filteredRows = [];
+
+        $(function () {
+            bindEvents();
+            renderTable();
+            setLoading(false);
+        });
+
+        function bindEvents() {
+            $("#btnConsultar").on("click", renderTable);
+            $("#table_search, #filter_codigo").on("input", renderTable);
+            $("#btnLimpiar").on("click", function () {
+                $("#filter_codigo").val("");
+                $("#table_search").val("");
+                renderTable();
+            });
+        }
+
+        function renderTable() {
+            filteredRows = getFilteredRows();
+            var html = filteredRows.map(function (m) {
+                return "<tr>" +
+                    "<td><strong>" + escapeHtml(m.CodigoTexto) + "</strong></td>" +
+                    "<td>" + escapeHtml(m.Descripcion) + "</td>" +
+                    "<td>" + escapeHtml(m.Nota || "-") + "</td>" +
+                    "<td>" + formatNumber(m.CantidadArticulos) + "</td>" +
+                    "<td>" + escapeHtml(m.FechaCreaTexto || "-") + "</td>" +
+                    "<td>" + getActionButtons(m) + "</td>" +
+                    "</tr>";
+            }).join("");
+
+            $("#results_hint").text(filteredRows.length + " resultados");
+            $("#marcas_body").html(html || "<tr><td colspan='6' class='empty-state'>Sin marcas para los filtros aplicados.</td></tr>");
+            updateSummary();
+        }
+
+        function getFilteredRows() {
+            var codigo = ($("#filter_codigo").val() || "").toLowerCase();
+            var text = ($("#table_search").val() || "").toLowerCase();
+
+            return marcas.filter(function (m) {
+                if (codigo && String(m.CodigoTexto || "").toLowerCase().indexOf(codigo) < 0) return false;
+                if (!text) return true;
+
+                return [m.Descripcion, m.Nota]
+                    .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
+            });
+        }
+
+        function getActionButtons(marca) {
+            return "<div class='action-stack'>" +
+                "<button class='icon-button info' type='button' onclick='onVer(" + marca.ID + ")'>Ver</button>" +
+                "<button class='icon-button primary' type='button' onclick='onEditar(" + marca.ID + ")'>Editar</button>" +
+                "</div>";
+        }
+
+        function onVer(id) {
+            var marca = findMarca(id);
+            if (!marca) return;
+
+            $("#marcaModalTitle").text("Marca " + marca.CodigoTexto);
+            $("#brand_view_title").text(marca.Descripcion);
+            $("#brand_view_subtitle").text("Codigo " + marca.CodigoTexto);
+            $("#brand_view_items").text(formatNumber(marca.CantidadArticulos));
+            $("#brand_view_summary").html(renderViewGrid([
+                { label: "Codigo", value: marca.CodigoTexto },
+                { label: "Descripcion", value: marca.Descripcion },
+                { label: "Nota", value: marca.Nota || "-" },
+                { label: "Articulos asociados", value: formatNumber(marca.CantidadArticulos) }
+            ]));
+            $("#brand_view_audit").html(renderViewGrid([
+                { label: "Usuario crea", value: marca.UsuarioCrea || "-" },
+                { label: "Fecha crea", value: marca.FechaCreaTexto || "-" },
+                { label: "Usuario modifica", value: marca.UsuarioModifica || "-" },
+                { label: "Fecha modifica", value: marca.FechaModificaTexto || "-" }
+            ]));
+            new bootstrap.Modal(document.getElementById("marcaModal")).show();
+        }
+
+        function onEditar(id) {
+            if (window.UltraERP && window.UltraERP.showPageLoader) {
+                window.UltraERP.showPageLoader("Abriendo marca");
+            }
+
+            window.location.href = urls.registro + "?id=" + encodeURIComponent(id);
+        }
+
+        function findMarca(id) {
+            return marcas.find(function (item) { return item.ID === id; });
+        }
+
+        function updateSummary() {
+            var rows = filteredRows;
+            var withItems = rows.filter(function (m) { return Number(m.CantidadArticulos || 0) > 0; }).length;
+            var items = rows.reduce(function (sum, m) { return sum + Number(m.CantidadArticulos || 0); }, 0);
+            $("#summary_count").text(rows.length);
+            $("#summary_with_items").text(withItems);
+            $("#summary_items").text(formatNumber(items));
+        }
+
+        function renderViewGrid(items) {
+            return items.map(function (item) {
+                return "<article class='document-view-item'><span>" + escapeHtml(item.label) + "</span><strong>" + escapeHtml(item.value) + "</strong></article>";
+            }).join("");
+        }
+
+        function setLoading(isLoading) {
+            $("#loading_state").toggle(isLoading);
+        }
+
+        function formatNumber(value) {
+            return Number(value || 0).toLocaleString("es-CR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
+
+        function escapeHtml(value) {
+            return $("<div />").text(value || "").html();
+        }
+    </script>
+}

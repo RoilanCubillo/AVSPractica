@@ -1,0 +1,76 @@
+@model UltraERP.Models.SegmentoViewModel
+@{
+    ViewBag.Title = Model.ID > 0 ? "Editar Segmento" : "Nuevo Segmento";
+    ViewBag.ActiveMenu = "Segmentos";
+}
+
+<section class="document-topbar">
+    <div class="document-topbar-copy">
+        <span class="eyebrow">Catalogo de segmentos</span>
+        <h1>@(Model.ID > 0 ? "Editar segmento" : "Nuevo segmento")</h1>
+        <p>Defina el segmento dentro de una subcategor&iacute;a para completar la clasificaci&oacute;n de art&iacute;culos.</p>
+    </div>
+    <div class="topbar-actions">
+        <a class="btn btn-outline-secondary" href="@Url.Action("Inicio", "Segmentos")">Cancelar</a>
+        <button id="btnGuardarSegmento" class="btn btn-primary" type="submit" form="segmentoForm">Guardar segmento</button>
+    </div>
+</section>
+
+@using (Html.BeginForm("Registro", "Segmentos", FormMethod.Post, new { id = "segmentoForm", @class = "document-form" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.ID)
+    @Html.HiddenFor(m => m.SubCategoriaCodigo)
+    @Html.HiddenFor(m => m.SubCategoriaNombre)
+    @Html.HiddenFor(m => m.CategoriaCodigo)
+    @Html.HiddenFor(m => m.CategoriaNombre)
+    @Html.HiddenFor(m => m.DepartamentoCodigo)
+    @Html.HiddenFor(m => m.DepartamentoNombre)
+    @Html.HiddenFor(m => m.FamiliaCodigo)
+    @Html.HiddenFor(m => m.FamiliaNombre)
+    @Html.HiddenFor(m => m.UsuarioCrea)
+    @Html.HiddenFor(m => m.FechaCrea)
+    @Html.HiddenFor(m => m.UsuarioModifica)
+    @Html.HiddenFor(m => m.FechaModifica)
+
+    if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            @Html.ValidationSummary(false, "Revise los datos del segmento:")
+        </div>
+    }
+
+    <section class="form-panel">
+        <div class="section-title">
+            <span>1.</span>
+            <h2>Datos del segmento</h2>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-5">
+                <label class="form-label required" for="SubCategoriaID">Subcategor&iacute;a</label>
+                @Html.DropDownListFor(m => m.SubCategoriaID, (IEnumerable<SelectListItem>)ViewBag.SubCategorias, new { @class = "form-select" })
+                @Html.ValidationMessageFor(m => m.SubCategoriaID, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label required" for="Codigo">C&oacute;digo</label>
+                @Html.TextBoxFor(m => m.Codigo, new { @class = "form-control", maxlength = "17", autocomplete = "off", placeholder = "Ej: GRANO-L" })
+                @Html.ValidationMessageFor(m => m.Codigo, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label required" for="Descripcion">Descripci&oacute;n</label>
+                @Html.TextBoxFor(m => m.Descripcion, new { @class = "form-control", maxlength = "80", autocomplete = "off", placeholder = "Ej: Grano largo" })
+                @Html.ValidationMessageFor(m => m.Descripcion, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label" for="CantidadArticulos">Art&iacute;culos</label>
+                @Html.TextBoxFor(m => m.CantidadArticulos, new { @class = "form-control", type = "number", min = "0", step = "1" })
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="Nota">Nota</label>
+                @Html.TextAreaFor(m => m.Nota, 4, 30, new { @class = "form-control", maxlength = "180", placeholder = "Uso o alcance de este segmento dentro de la subcategoria." })
+                @Html.ValidationMessageFor(m => m.Nota, "", new { @class = "text-danger small" })
+            </div>
+        </div>
+    </section>
+}
