@@ -54,18 +54,13 @@ namespace UltraERP.BusinessDataAccess.DataAccessIntegration
 
         public virtual Respuesta Get(int ID)
         {
-            SqlParameter[] parameters = new SqlParameter[] { new SqlParameter("@ID", ID) };
-
             try
             {
-                using (SqlDataReader dataReader = SqlHelper.ExecuteReader(cn, CommandType.StoredProcedure, "UEP_EXTCENTRAL_SUBCATEGORY_GET", parameters))
-                {
-                    if (dataReader.Read())
-                    {
-                        return new Respuesta("", "", MakeEN_ExtCentral_SubCategory(dataReader), true);
-                    }
+                EN_ExtCentral_SubCategory subCategory = GetAll("", 0, 0).FirstOrDefault(x => x.ID == ID);
+                if (subCategory == null)
                     return new Respuesta("RESULTADO: NO LEIDO", "error_leer_proc", null, false);
-                }
+
+                return new Respuesta("", "", subCategory, true);
             }
             catch (Exception e)
             {

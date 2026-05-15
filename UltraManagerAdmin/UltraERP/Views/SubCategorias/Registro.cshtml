@@ -16,6 +16,11 @@
     </div>
 </section>
 
+@if (TempData["SubCategoriaError"] != null)
+{
+    <div class="alert alert-warning">@TempData["SubCategoriaError"]</div>
+}
+
 @using (Html.BeginForm("Registro", "SubCategorias", FormMethod.Post, new { id = "subCategoriaForm", @class = "document-form" }))
 {
     @Html.AntiForgeryToken()

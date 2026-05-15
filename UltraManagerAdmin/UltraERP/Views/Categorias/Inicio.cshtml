@@ -86,9 +86,6 @@
                     <th>Nombre</th>
                     <th>Departamento</th>
                     <th>Familia</th>
-                    <th>Descripci&oacute;n</th>
-                    <th>Subcategor&iacute;as</th>
-                    <th>Art&iacute;culos</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
@@ -177,9 +174,6 @@
                     "<td>" + escapeHtml(c.Nombre) + "</td>" +
                     "<td>" + escapeHtml(c.DepartamentoTexto || "-") + "</td>" +
                     "<td>" + escapeHtml(c.FamiliaTexto || "-") + "</td>" +
-                    "<td>" + escapeHtml(c.Descripcion || "-") + "</td>" +
-                    "<td>" + formatNumber(c.CantidadSubcategorias) + "</td>" +
-                    "<td>" + formatNumber(c.CantidadArticulos) + "</td>" +
                     "<td>" + getEstadoBadge(c.EstadoTexto) + "</td>" +
                     "<td>" + getActionButtons(c) + "</td>" +
                     "</tr>";
@@ -187,7 +181,7 @@
 
             if (pager) pager.update(filteredRows, pageRows);
             else $("#results_hint").text(filteredRows.length + " resultados");
-            $("#categorias_body").html(html || "<tr><td colspan='9' class='empty-state'>Sin categorias para los filtros aplicados.</td></tr>");
+            $("#categorias_body").html(html || "<tr><td colspan='6' class='empty-state'>Sin categorias para los filtros aplicados.</td></tr>");
             updateSummary();
         }
 

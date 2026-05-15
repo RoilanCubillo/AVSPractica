@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
+using UltraERP.BusinessEntities;
+using UltraERP.BusinessLogic;
 using UltraERP.Models;
 
 namespace UltraERP.Controllers
@@ -9,89 +11,91 @@ namespace UltraERP.Controllers
     [Authorize]
     public class CategoriasController : Controller
     {
-        private static readonly object SyncRoot = new object();
-
-        private static readonly List<DepartamentoCatalogo> Departamentos = new List<DepartamentoCatalogo>
-        {
-            new DepartamentoCatalogo(1, "GRANOS", "Granos basicos", "ABAR", "Abarrotes ticos"),
-            new DepartamentoCatalogo(2, "SALSAS", "Salsas y condimentos", "ABAR", "Abarrotes ticos"),
-            new DepartamentoCatalogo(3, "REFRI", "Refrigerados", "LACT", "Lacteos y frescos"),
-            new DepartamentoCatalogo(4, "CAFE", "Cafe y bebidas", "BEB", "Bebidas y cafe"),
-            new DepartamentoCatalogo(5, "HOGAR", "Cuidado del hogar", "LIMP", "Limpieza y hogar")
-        };
-
-        private static readonly List<CategoriaViewModel> Categorias = new List<CategoriaViewModel>
-        {
-            CreateCategoria(1, 1, "ARROZ", "Arroces", "Arroces pilados y precocidos comunes en Costa Rica.", true, 2, 18),
-            CreateCategoria(2, 1, "FRIJ", "Frijoles", "Frijoles rojos y negros para consumo diario.", true, 2, 10),
-            CreateCategoria(3, 2, "SALT", "Salsas ticas", "Salsas y condimentos usados en mesa y cocina nacional.", true, 2, 14),
-            CreateCategoria(4, 3, "LECHE", "Leches y lacteos", "Leche fluida, yogurt y natilla refrigerada.", true, 2, 21),
-            CreateCategoria(5, 4, "CAFCR", "Cafe costarricense", "Cafe molido y tostado de marcas presentes en el pais.", true, 2, 15),
-            CreateCategoria(6, 5, "DETER", "Detergentes", "Detergentes y limpiadores para hogares costarricenses.", true, 2, 16)
-        };
-
         public ActionResult Inicio()
         {
-            List<CategoriaViewModel> model;
-            lock (SyncRoot)
+            try
             {
-                model = Categorias.Select(Clone).OrderBy(x => x.DepartamentoNombre).ThenBy(x => x.Codigo).ToList();
-            }
+                List<CategoriaViewModel> model = new CT_Category()
+                    .GetAll("", 0, 0)
+                    .Select(MapCategoria)
+                    .OrderBy(x => x.DepartamentoNombre)
+                    .ThenBy(x => x.Codigo)
+                    .ToList();
 
-            return View(model);
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                TempData["CategoriaError"] = "No se pudo cargar categorias desde SQL: " + ex.Message;
+                return View(Enumerable.Empty<CategoriaViewModel>());
+            }
         }
 
         public ActionResult Registro(int? id)
         {
+            List<DepartamentoCatalogo> departamentos = GetDepartamentos();
             CategoriaViewModel model = null;
             if (id.HasValue)
             {
-                lock (SyncRoot)
+                try
                 {
-                    model = Categorias.Where(x => x.ID == id.Value).Select(Clone).FirstOrDefault();
+                    EN_Category category = GetCategoriaById(id.Value);
+                    if (category == null)
+                        TempData["CategoriaError"] = "No se encontro la categoria en SQL.";
+                    else
+                        model = MapCategoria(category, departamentos);
+                }
+                catch (Exception ex)
+                {
+                    TempData["CategoriaError"] = "No se pudo leer la categoria desde SQL: " + ex.Message;
                 }
             }
 
-            PrepareCatalogs();
-            return View(model ?? CreateNewCategoria());
+            PrepareCatalogs(departamentos);
+            return View(model ?? CreateNewCategoria(departamentos));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Registro(CategoriaViewModel model)
         {
+            List<DepartamentoCatalogo> departamentos = GetDepartamentos();
             Normalize(model);
-            ApplyDepartamento(model);
-            ValidateCategoria(model);
+            ApplyDepartamento(model, departamentos);
+            ValidateCategoria(model, departamentos);
 
             if (!ModelState.IsValid)
             {
-                PrepareCatalogs();
+                PrepareCatalogs(departamentos);
                 return View(model);
             }
 
-            lock (SyncRoot)
+            try
             {
-                var existing = Categorias.FirstOrDefault(x => x.ID == model.ID);
-                if (existing == null)
+                EN_Category category = new EN_Category
                 {
-                    model.ID = Categorias.Count == 0 ? 1 : Categorias.Max(x => x.ID) + 1;
-                    model.HQID = 0;
-                    model.UsuarioCrea = GetCurrentUser();
-                    model.FechaCrea = DateTime.Now;
-                    Categorias.Add(Clone(model));
-                    TempData["CategoriaMessage"] = "Categoria creada correctamente.";
-                }
-                else
+                    HQID = model.HQID,
+                    ID = model.ID,
+                    DepartmentID = model.DepartamentoID,
+                    Code = model.Codigo,
+                    Name = model.Nombre
+                };
+
+                Respuesta response = new CT_Category().Save(category);
+                if (!response.Status)
                 {
-                    model.HQID = existing.HQID;
-                    model.UsuarioCrea = existing.UsuarioCrea;
-                    model.FechaCrea = existing.FechaCrea;
-                    model.UsuarioModifica = GetCurrentUser();
-                    model.FechaModifica = DateTime.Now;
-                    CopyValues(model, existing);
-                    TempData["CategoriaMessage"] = "Categoria actualizada correctamente.";
+                    ModelState.AddModelError("", "SQL rechazo el guardado de la categoria: " + response.Message);
+                    PrepareCatalogs(departamentos);
+                    return View(model);
                 }
+
+                TempData["CategoriaMessage"] = model.ID > 0 ? "Categoria actualizada correctamente en SQL." : "Categoria creada correctamente en SQL.";
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "No se pudo guardar la categoria en SQL. " + ex.Message);
+                PrepareCatalogs(departamentos);
+                return View(model);
             }
 
             return RedirectToAction("Inicio");
@@ -100,31 +104,29 @@ namespace UltraERP.Controllers
         [HttpPost]
         public JsonResult CambiarEstado(int id)
         {
-            lock (SyncRoot)
-            {
-                var categoria = Categorias.FirstOrDefault(x => x.ID == id);
-                if (categoria == null)
-                    return Json(new JsonResponse("Categoria no encontrada.", "No se encontro la categoria.", null, false));
-
-                categoria.Activa = !categoria.Activa;
-                categoria.UsuarioModifica = GetCurrentUser();
-                categoria.FechaModifica = DateTime.Now;
-
-                return Json(new JsonResponse("", categoria.Activa ? "Categoria activada." : "Categoria inactivada.", Clone(categoria), true));
-            }
+            return Json(new JsonResponse(
+                "Pendiente de migracion",
+                "El catalogo de categorias ya consulta SQL. La activacion e inactivacion se conectara cuando el procedimiento exponga estado.",
+                null,
+                false));
         }
 
-        private void ValidateCategoria(CategoriaViewModel model)
+        private void ValidateCategoria(CategoriaViewModel model, List<DepartamentoCatalogo> departamentos)
         {
             if (model == null)
                 return;
 
-            if (model.DepartamentoID <= 0 || !Departamentos.Any(x => x.ID == model.DepartamentoID))
+            if (model.DepartamentoID <= 0 || !departamentos.Any(x => x.ID == model.DepartamentoID))
                 ModelState.AddModelError("DepartamentoID", "Seleccione un departamento valido.");
 
-            lock (SyncRoot)
+            try
             {
-                var codeExists = Categorias.Any(x =>
+                List<CategoriaViewModel> categorias = new CT_Category()
+                    .GetAll("", 0, 0)
+                    .Select(MapCategoria)
+                    .ToList();
+
+                bool codeExists = categorias.Any(x =>
                     x.ID != model.ID &&
                     x.DepartamentoID == model.DepartamentoID &&
                     String.Equals(x.Codigo, model.Codigo, StringComparison.OrdinalIgnoreCase));
@@ -132,13 +134,17 @@ namespace UltraERP.Controllers
                 if (codeExists)
                     ModelState.AddModelError("Codigo", "Ya existe una categoria con este codigo en el departamento seleccionado.");
 
-                var nameExists = Categorias.Any(x =>
+                bool nameExists = categorias.Any(x =>
                     x.ID != model.ID &&
                     x.DepartamentoID == model.DepartamentoID &&
                     String.Equals(x.Nombre, model.Nombre, StringComparison.OrdinalIgnoreCase));
 
                 if (nameExists)
                     ModelState.AddModelError("Nombre", "Ya existe una categoria con este nombre en el departamento seleccionado.");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "No se pudo validar la categoria contra SQL. " + ex.Message);
             }
         }
 
@@ -154,10 +160,15 @@ namespace UltraERP.Controllers
 
         private static void ApplyDepartamento(CategoriaViewModel model)
         {
+            ApplyDepartamento(model, GetDepartamentos());
+        }
+
+        private static void ApplyDepartamento(CategoriaViewModel model, List<DepartamentoCatalogo> departamentos)
+        {
             if (model == null)
                 return;
 
-            var departamento = Departamentos.FirstOrDefault(x => x.ID == model.DepartamentoID);
+            DepartamentoCatalogo departamento = departamentos.FirstOrDefault(x => x.ID == model.DepartamentoID);
             if (departamento == null)
             {
                 model.DepartamentoCodigo = "";
@@ -175,91 +186,77 @@ namespace UltraERP.Controllers
 
         private void PrepareCatalogs()
         {
-            ViewBag.Departamentos = Departamentos
+            PrepareCatalogs(GetDepartamentos());
+        }
+
+        private void PrepareCatalogs(List<DepartamentoCatalogo> departamentos)
+        {
+            ViewBag.Departamentos = departamentos
                 .Select(x => new SelectListItem { Text = x.FamiliaCodigo + " / " + x.Codigo + " - " + x.Nombre, Value = x.ID.ToString() })
                 .ToList();
         }
 
         private CategoriaViewModel CreateNewCategoria()
         {
+            return CreateNewCategoria(GetDepartamentos());
+        }
+
+        private CategoriaViewModel CreateNewCategoria(List<DepartamentoCatalogo> departamentos)
+        {
+            DepartamentoCatalogo firstDepartamento = departamentos.FirstOrDefault();
             var model = new CategoriaViewModel
             {
                 Activa = true,
-                DepartamentoID = Departamentos.First().ID,
+                DepartamentoID = firstDepartamento == null ? 0 : firstDepartamento.ID,
                 FechaCrea = DateTime.Now,
                 UsuarioCrea = GetCurrentUser()
             };
 
-            ApplyDepartamento(model);
+            ApplyDepartamento(model, departamentos);
             return model;
         }
 
-        private static CategoriaViewModel CreateCategoria(int id, int departamentoID, string codigo, string nombre, string descripcion, bool activa, int cantidadSubcategorias, int cantidadArticulos)
+        private static CategoriaViewModel MapCategoria(EN_Category category)
         {
-            var model = new CategoriaViewModel
-            {
-                ID = id,
-                HQID = 0,
-                DepartamentoID = departamentoID,
-                Codigo = codigo,
-                Nombre = nombre,
-                Descripcion = descripcion,
-                Activa = activa,
-                CantidadSubcategorias = cantidadSubcategorias,
-                CantidadArticulos = cantidadArticulos,
-                UsuarioCrea = "Soporte",
-                FechaCrea = DateTime.Now.AddDays(-2)
-            };
-
-            ApplyDepartamento(model);
-            return model;
+            return MapCategoria(category, GetDepartamentos());
         }
 
-        private static CategoriaViewModel Clone(CategoriaViewModel source)
+        private static CategoriaViewModel MapCategoria(EN_Category category, List<DepartamentoCatalogo> departamentos)
         {
-            if (source == null)
+            if (category == null)
                 return null;
+
+            DepartamentoCatalogo departamento = departamentos.FirstOrDefault(x => x.ID == category.DepartmentID);
 
             return new CategoriaViewModel
             {
-                ID = source.ID,
-                HQID = source.HQID,
-                DepartamentoID = source.DepartamentoID,
-                DepartamentoCodigo = source.DepartamentoCodigo,
-                DepartamentoNombre = source.DepartamentoNombre,
-                FamiliaCodigo = source.FamiliaCodigo,
-                FamiliaNombre = source.FamiliaNombre,
-                Codigo = source.Codigo,
-                Nombre = source.Nombre,
-                Descripcion = source.Descripcion,
-                Activa = source.Activa,
-                CantidadSubcategorias = source.CantidadSubcategorias,
-                CantidadArticulos = source.CantidadArticulos,
-                UsuarioCrea = source.UsuarioCrea,
-                FechaCrea = source.FechaCrea,
-                UsuarioModifica = source.UsuarioModifica,
-                FechaModifica = source.FechaModifica
+                ID = category.ID,
+                HQID = category.HQID,
+                DepartamentoID = category.DepartmentID,
+                DepartamentoCodigo = departamento == null ? "" : departamento.Codigo,
+                DepartamentoNombre = departamento == null ? "" : departamento.Nombre,
+                FamiliaCodigo = departamento == null ? "" : departamento.FamiliaCodigo,
+                FamiliaNombre = departamento == null ? "" : departamento.FamiliaNombre,
+                Codigo = category.Code,
+                Nombre = category.Name,
+                Descripcion = "",
+                Activa = true
             };
         }
 
-        private static void CopyValues(CategoriaViewModel source, CategoriaViewModel target)
+        private EN_Category GetCategoriaById(int id)
         {
-            target.HQID = source.HQID;
-            target.DepartamentoID = source.DepartamentoID;
-            target.DepartamentoCodigo = source.DepartamentoCodigo;
-            target.DepartamentoNombre = source.DepartamentoNombre;
-            target.FamiliaCodigo = source.FamiliaCodigo;
-            target.FamiliaNombre = source.FamiliaNombre;
-            target.Codigo = source.Codigo;
-            target.Nombre = source.Nombre;
-            target.Descripcion = source.Descripcion;
-            target.Activa = source.Activa;
-            target.CantidadSubcategorias = source.CantidadSubcategorias;
-            target.CantidadArticulos = source.CantidadArticulos;
-            target.UsuarioCrea = source.UsuarioCrea;
-            target.FechaCrea = source.FechaCrea;
-            target.UsuarioModifica = source.UsuarioModifica;
-            target.FechaModifica = source.FechaModifica;
+            return new CT_Category()
+                .GetAll("", 0, 0)
+                .FirstOrDefault(x => x.ID == id);
+        }
+
+        private static List<DepartamentoCatalogo> GetDepartamentos()
+        {
+            return new CT_Department()
+                .GetAll("", 0, 0)
+                .Select(x => new DepartamentoCatalogo(x.ID, x.Code, x.Name, x.FamilyCode, x.FamilyName))
+                .ToList();
         }
 
         private string GetCurrentUser()
