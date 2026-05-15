@@ -70,6 +70,16 @@
         <div class="table-toolbar-main">
             <input id="hist_search" type="search" class="form-control" placeholder="Buscar en historico" />
             <span id="hist_results_hint" class="toolbar-chip">0 resultados</span>
+            <label class="page-size-control" for="page_size">
+                Mostrar
+                <select id="page_size" class="form-select form-select-sm">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </label>
         </div>
         <span id="hist_loading" class="loading-state">Cargando...</span>
     </div>
@@ -92,6 +102,11 @@
             </thead>
             <tbody id="historico_body"></tbody>
         </table>
+    </div>
+    <div class="table-pagination">
+        <button id="btnPrevPage" class="btn btn-outline-secondary btn-sm" type="button">Anterior</button>
+        <span id="page_hint" class="toolbar-chip">Pagina 1 de 1</span>
+        <button id="btnNextPage" class="btn btn-outline-secondary btn-sm" type="button">Siguiente</button>
     </div>
 </section>
 
@@ -149,8 +164,10 @@
             historico: '@Url.Action("GetHistoricoAjustes", "DocumentosInventario")'
         };
         var historico = [];
+        var pager = null;
 
         $(function () {
+            pager = window.UltraERP.createTablePager({ resultsSelector: "#hist_results_hint", onChange: renderHistorico });
             $("#btnHistConsultar").on("click", getHistorico);
             $("#hist_search").on("input", renderHistorico);
             $("#btnHistLimpiar").on("click", function () {
@@ -161,6 +178,7 @@
                 $("#hist_factura").val("");
                 $("#hist_producto").val("");
                 $("#hist_search").val("");
+                if (pager) pager.reset();
                 getHistorico();
             });
             getHistorico();
@@ -187,6 +205,7 @@
                     }
 
                     historico = data.Result || [];
+                    if (pager) pager.reset();
                     renderHistorico();
                     updateHistoricoSummary();
                 })
@@ -207,7 +226,8 @@
                 });
             });
 
-            var html = rows.map(function (d) {
+            var pageRows = pager ? pager.pageRows(rows) : rows;
+            var html = pageRows.map(function (d) {
                 return "<tr>" +
                     "<td>" + escapeHtml(d.Numero) + "</td>" +
                     "<td>" + escapeHtml(d.Tipo) + "</td>" +
@@ -226,7 +246,8 @@
                     "</tr>";
             }).join("");
 
-            $("#hist_results_hint").text(rows.length + " resultados");
+            if (pager) pager.update(rows, pageRows);
+            else $("#hist_results_hint").text(rows.length + " resultados");
             $("#historico_body").html(html || "<tr><td colspan='11' class='empty-state'>Sin documentos cerrados para los filtros aplicados.</td></tr>");
         }
 

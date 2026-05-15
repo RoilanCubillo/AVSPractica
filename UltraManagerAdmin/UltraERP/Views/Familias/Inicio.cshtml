@@ -21,19 +21,16 @@
     <div class="alert alert-success">@TempData["FamiliaMessage"]</div>
 }
 
+@if (TempData["FamiliaError"] != null)
+{
+    <div class="alert alert-warning">@TempData["FamiliaError"]</div>
+}
+
 <section class="filter-panel">
     <div class="row g-3">
-        <div class="col-12 col-md-3">
-            <label for="filter_estado" class="form-label">Estado</label>
-            <select id="filter_estado" class="form-select">
-                <option value="Todos">Todos</option>
-                <option value="Activa">Activa</option>
-                <option value="Inactiva">Inactiva</option>
-            </select>
-        </div>
         <div class="col-12 col-md-5">
             <label for="table_search" class="form-label">Buscar</label>
-            <input id="table_search" type="search" class="form-control" placeholder="Codigo, nombre o descripcion" />
+            <input id="table_search" type="search" class="form-control" placeholder="Codigo o nombre" />
         </div>
     </div>
     <div class="filter-actions">
@@ -48,12 +45,8 @@
         <strong id="summary_count">0</strong>
     </article>
     <article>
-        <span>Activas</span>
-        <strong id="summary_active">0</strong>
-    </article>
-    <article>
-        <span>Art&iacute;culos asociados</span>
-        <strong id="summary_items">0</strong>
+        <span>C&oacute;digos visibles</span>
+        <strong id="summary_codes">0</strong>
     </article>
 </section>
 
@@ -61,6 +54,16 @@
     <div class="table-toolbar">
         <div class="table-toolbar-main">
             <span id="results_hint" class="toolbar-chip">0 resultados</span>
+            <label class="page-size-control" for="page_size">
+                Mostrar
+                <select id="page_size" class="form-select form-select-sm">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </label>
         </div>
         <span id="loading_state" class="loading-state">Cargando...</span>
     </div>
@@ -70,16 +73,16 @@
                 <tr>
                     <th>C&oacute;digo</th>
                     <th>Nombre</th>
-                    <th>Descripci&oacute;n</th>
-                    <th>Art&iacute;culos</th>
-                    <th>Estado</th>
-                    <th>Creado por</th>
-                    <th>Fecha crea</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody id="familias_body"></tbody>
         </table>
+    </div>
+    <div class="table-pagination">
+        <button id="btnPrevPage" class="btn btn-outline-secondary btn-sm" type="button">Anterior</button>
+        <span id="page_hint" class="toolbar-chip">Pagina 1 de 1</span>
+        <button id="btnNextPage" class="btn btn-outline-secondary btn-sm" type="button">Siguiente</button>
     </div>
 </section>
 
@@ -98,19 +101,10 @@
                             <h2 id="fam_view_title" class="document-view-title"></h2>
                             <p id="fam_view_subtitle" class="document-view-subtitle"></p>
                         </div>
-                        <div class="document-view-total">
-                            <span>Art&iacute;culos</span>
-                            <strong id="fam_view_items"></strong>
-                        </div>
                     </section>
-                    <div id="fam_view_badges" class="document-view-badges"></div>
                     <section class="document-view-section">
                         <h3>Datos generales</h3>
                         <div id="fam_view_summary" class="document-view-grid"></div>
-                    </section>
-                    <section class="document-view-section">
-                        <h3>Auditor&iacute;a</h3>
-                        <div id="fam_view_audit" class="document-view-grid"></div>
                     </section>
                 </div>
             </div>
@@ -126,8 +120,10 @@
         };
         var familias = @Html.Raw(familiasJson);
         var filteredRows = [];
+        var pager = null;
 
         $(function () {
+            pager = window.UltraERP.createTablePager({ onChange: renderTable });
             bindEvents();
             renderTable();
             setLoading(false);
@@ -136,43 +132,37 @@
         function bindEvents() {
             $("#btnConsultar").on("click", renderTable);
             $("#table_search").on("input", renderTable);
-            $("#filter_estado").on("change", renderTable);
             $("#btnLimpiar").on("click", function () {
-                $("#filter_estado").val("Todos");
                 $("#table_search").val("");
+                if (pager) pager.reset();
                 renderTable();
             });
         }
 
         function renderTable() {
             filteredRows = getFilteredRows();
-            var html = filteredRows.map(function (f) {
+            var pageRows = pager ? pager.pageRows(filteredRows) : filteredRows;
+            var html = pageRows.map(function (f) {
                 return "<tr>" +
                     "<td><strong>" + escapeHtml(f.Codigo) + "</strong></td>" +
                     "<td>" + escapeHtml(f.Nombre) + "</td>" +
-                    "<td>" + escapeHtml(f.Descripcion || "-") + "</td>" +
-                    "<td>" + formatNumber(f.CantidadArticulos) + "</td>" +
-                    "<td>" + getEstadoBadge(f.EstadoTexto) + "</td>" +
-                    "<td>" + escapeHtml(f.UsuarioCrea || "-") + "</td>" +
-                    "<td>" + escapeHtml(f.FechaCreaTexto || "-") + "</td>" +
                     "<td>" + getActionButtons(f) + "</td>" +
                     "</tr>";
             }).join("");
 
-            $("#results_hint").text(filteredRows.length + " resultados");
-            $("#familias_body").html(html || "<tr><td colspan='8' class='empty-state'>Sin familias para los filtros aplicados.</td></tr>");
+            if (pager) pager.update(filteredRows, pageRows);
+            else $("#results_hint").text(filteredRows.length + " resultados");
+            $("#familias_body").html(html || "<tr><td colspan='3' class='empty-state'>Sin familias para los filtros aplicados.</td></tr>");
             updateSummary();
         }
 
         function getFilteredRows() {
-            var estado = $("#filter_estado").val();
             var text = ($("#table_search").val() || "").toLowerCase();
 
             return familias.filter(function (f) {
-                if (estado !== "Todos" && f.EstadoTexto !== estado) return false;
                 if (!text) return true;
 
-                return [f.Codigo, f.Nombre, f.Descripcion]
+                return [f.Codigo, f.Nombre]
                     .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
             });
         }
@@ -181,7 +171,6 @@
             return "<div class='action-stack'>" +
                 "<button class='icon-button info' type='button' onclick='onVer(" + familia.ID + ")'>Ver</button>" +
                 "<button class='icon-button primary' type='button' onclick='onEditar(" + familia.ID + ")'>Editar</button>" +
-                "<button class='icon-button " + (familia.Activa ? "danger" : "success") + "' type='button' onclick='onCambiarEstado(" + familia.ID + ")'>" + (familia.Activa ? "Inactivar" : "Activar") + "</button>" +
                 "</div>";
         }
 
@@ -192,19 +181,9 @@
             $("#familiaModalTitle").text("Familia " + familia.Codigo);
             $("#fam_view_title").text(familia.Codigo);
             $("#fam_view_subtitle").text(familia.Nombre);
-            $("#fam_view_items").text(formatNumber(familia.CantidadArticulos));
-            $("#fam_view_badges").html(getEstadoBadge(familia.EstadoTexto));
             $("#fam_view_summary").html(renderViewGrid([
                 { label: "Codigo", value: familia.Codigo },
-                { label: "Nombre", value: familia.Nombre },
-                { label: "Descripcion", value: familia.Descripcion || "-" },
-                { label: "Articulos asociados", value: formatNumber(familia.CantidadArticulos) }
-            ]));
-            $("#fam_view_audit").html(renderViewGrid([
-                { label: "Usuario crea", value: familia.UsuarioCrea || "-" },
-                { label: "Fecha crea", value: familia.FechaCreaTexto || "-" },
-                { label: "Usuario modifica", value: familia.UsuarioModifica || "-" },
-                { label: "Fecha modifica", value: familia.FechaModificaTexto || "-" }
+                { label: "Nombre", value: familia.Nombre }
             ]));
             new bootstrap.Modal(document.getElementById("familiaModal")).show();
         }
@@ -217,48 +196,14 @@
             window.location.href = urls.registro + "?id=" + encodeURIComponent(id);
         }
 
-        function onCambiarEstado(id) {
-            var familia = findFamilia(id);
-            if (!familia) return;
-
-            var accion = familia.Activa ? "inactivar" : "activar";
-            if (!confirm("Desea " + accion + " la familia " + familia.Codigo + "?")) return;
-
-            $.post(urls.cambiarEstado, { id: id }).done(function (data) {
-                if (!data.Status) {
-                    showToast(data.Message || "No se pudo actualizar la familia.");
-                    return;
-                }
-
-                var index = familias.findIndex(function (x) { return x.ID === id; });
-                if (index >= 0) {
-                    familias[index] = data.Result;
-                }
-
-                showToast(data.Message || "Familia actualizada.");
-                renderTable();
-            }).fail(function () {
-                showToast("No se pudo actualizar la familia.");
-            });
-        }
-
         function findFamilia(id) {
             return familias.find(function (item) { return item.ID === id; });
         }
 
         function updateSummary() {
             var rows = filteredRows.length ? filteredRows : getFilteredRows();
-            var active = rows.filter(function (f) { return f.Activa; }).length;
-            var items = rows.reduce(function (sum, f) { return sum + Number(f.CantidadArticulos || 0); }, 0);
             $("#summary_count").text(rows.length);
-            $("#summary_active").text(active);
-            $("#summary_items").text(formatNumber(items));
-        }
-
-        function getEstadoBadge(estado) {
-            return estado === "Activa"
-                ? "<span class='status-badge received'>Activa</span>"
-                : "<span class='status-badge closed'>Inactiva</span>";
+            $("#summary_codes").text(rows.filter(function (f) { return String(f.Codigo || "").trim().length > 0; }).length);
         }
 
         function renderViewGrid(items) {

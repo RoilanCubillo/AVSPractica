@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
+using UltraERP.BusinessEntities;
+using UltraERP.BusinessLogic;
 using UltraERP.Models;
 
 namespace UltraERP.Controllers
@@ -9,39 +11,53 @@ namespace UltraERP.Controllers
     [Authorize]
     public class FamiliasController : Controller
     {
-        private static readonly object SyncRoot = new object();
-
-        private static readonly List<FamiliaViewModel> Familias = new List<FamiliaViewModel>
-        {
-            CreateFamilia(1, "ABAR", "Abarrotes ticos", "Granos, salsas y productos de consumo diario en Costa Rica.", true, 38),
-            CreateFamilia(2, "LACT", "Lacteos y frescos", "Productos refrigerados de consumo masivo costarricense.", true, 21),
-            CreateFamilia(3, "BEB", "Bebidas y cafe", "Cafe, refrescos y bebidas presentes en comercios nacionales.", true, 24),
-            CreateFamilia(4, "LIMP", "Limpieza y hogar", "Detergentes, jabones y articulos para el hogar vendidos en Costa Rica.", true, 16)
-        };
-
         public ActionResult Inicio()
         {
-            List<FamiliaViewModel> model;
-            lock (SyncRoot)
+            try
             {
-                model = Familias.Select(Clone).OrderBy(x => x.Codigo).ToList();
-            }
+                List<FamiliaViewModel> model = new CT_ExtCentral_Family()
+                    .GetAll("", 0, 0)
+                    .Select(MapFamilia)
+                    .OrderBy(x => x.Codigo)
+                    .ToList();
 
-            return View(model);
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                TempData["FamiliaError"] = "No se pudo cargar familias desde SQL: " + ex.Message;
+                return View(Enumerable.Empty<FamiliaViewModel>());
+            }
         }
 
         public ActionResult Registro(int? id)
         {
             FamiliaViewModel model = null;
+
             if (id.HasValue)
             {
-                lock (SyncRoot)
+                try
                 {
-                    model = Familias.Where(x => x.ID == id.Value).Select(Clone).FirstOrDefault();
+                    EN_ExtCentral_Family family = GetFamiliaById(id.Value);
+                    if (family == null)
+                        TempData["FamiliaError"] = "No se encontro la familia en SQL.";
+                    else
+                        model = MapFamilia(family);
+                }
+                catch (Exception ex)
+                {
+                    TempData["FamiliaError"] = "No se pudo leer la familia desde SQL: " + ex.Message;
                 }
             }
 
             return View(model ?? CreateNewFamilia());
+        }
+
+        private EN_ExtCentral_Family GetFamiliaById(int id)
+        {
+            return new CT_ExtCentral_Family()
+                .GetAll("", 0, 0)
+                .FirstOrDefault(x => x.ID == id);
         }
 
         [HttpPost]
@@ -54,46 +70,40 @@ namespace UltraERP.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            lock (SyncRoot)
+            try
             {
-                var existing = Familias.FirstOrDefault(x => x.ID == model.ID);
-                if (existing == null)
+                EN_ExtCentral_Family family = new EN_ExtCentral_Family
                 {
-                    model.ID = Familias.Count == 0 ? 1 : Familias.Max(x => x.ID) + 1;
-                    model.UsuarioCrea = GetCurrentUser();
-                    model.FechaCrea = DateTime.Now;
-                    Familias.Add(Clone(model));
-                    TempData["FamiliaMessage"] = "Familia creada correctamente.";
-                }
-                else
-                {
-                    model.UsuarioCrea = existing.UsuarioCrea;
-                    model.FechaCrea = existing.FechaCrea;
-                    model.UsuarioModifica = GetCurrentUser();
-                    model.FechaModifica = DateTime.Now;
-                    CopyValues(model, existing);
-                    TempData["FamiliaMessage"] = "Familia actualizada correctamente.";
-                }
-            }
+                    ID = model.ID,
+                    Code = model.Codigo,
+                    Name = model.Nombre
+                };
 
-            return RedirectToAction("Inicio");
+                Respuesta response = new CT_ExtCentral_Family().Save(family);
+                if (!response.Status)
+                {
+                    ModelState.AddModelError("", "SQL rechazo el guardado de la familia: " + response.Message);
+                    return View(model);
+                }
+
+                TempData["FamiliaMessage"] = model.ID > 0 ? "Familia actualizada correctamente en SQL." : "Familia creada correctamente en SQL.";
+                return RedirectToAction("Inicio");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "No se pudo guardar la familia en SQL. " + ex.Message);
+                return View(model);
+            }
         }
 
         [HttpPost]
         public JsonResult CambiarEstado(int id)
         {
-            lock (SyncRoot)
-            {
-                var familia = Familias.FirstOrDefault(x => x.ID == id);
-                if (familia == null)
-                    return Json(new JsonResponse("Familia no encontrada.", "No se encontro la familia.", null, false));
-
-                familia.Activa = !familia.Activa;
-                familia.UsuarioModifica = GetCurrentUser();
-                familia.FechaModifica = DateTime.Now;
-
-                return Json(new JsonResponse("", familia.Activa ? "Familia activada." : "Familia inactivada.", Clone(familia), true));
-            }
+            return Json(new JsonResponse(
+                "Pendiente de migracion",
+                "El catalogo de familias ya consulta SQL. La activacion e inactivacion se conectara cuando el procedimiento exponga estado.",
+                null,
+                false));
         }
 
         private void ValidateFamilia(FamiliaViewModel model)
@@ -101,16 +111,39 @@ namespace UltraERP.Controllers
             if (model == null)
                 return;
 
-            lock (SyncRoot)
+            try
             {
-                var codeExists = Familias.Any(x => x.ID != model.ID && String.Equals(x.Codigo, model.Codigo, StringComparison.OrdinalIgnoreCase));
+                List<EN_ExtCentral_Family> families = new CT_ExtCentral_Family().GetAll("", 0, 0);
+
+                bool codeExists = families.Any(x =>
+                    x.ID != model.ID &&
+                    String.Equals(x.Code, model.Codigo, StringComparison.OrdinalIgnoreCase));
+
                 if (codeExists)
                     ModelState.AddModelError("Codigo", "Ya existe una familia con este codigo.");
 
-                var nameExists = Familias.Any(x => x.ID != model.ID && String.Equals(x.Nombre, model.Nombre, StringComparison.OrdinalIgnoreCase));
+                bool nameExists = families.Any(x =>
+                    x.ID != model.ID &&
+                    String.Equals(x.Name, model.Nombre, StringComparison.OrdinalIgnoreCase));
+
                 if (nameExists)
                     ModelState.AddModelError("Nombre", "Ya existe una familia con este nombre.");
             }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "No se pudo validar la familia contra SQL. " + ex.Message);
+            }
+        }
+
+        private static FamiliaViewModel MapFamilia(EN_ExtCentral_Family family)
+        {
+            return new FamiliaViewModel
+            {
+                ID = family.ID,
+                Codigo = family.Code,
+                Nombre = family.Name,
+                Activa = true
+            };
         }
 
         private static void Normalize(FamiliaViewModel model)
@@ -120,72 +153,14 @@ namespace UltraERP.Controllers
 
             model.Codigo = (model.Codigo ?? "").Trim().ToUpperInvariant();
             model.Nombre = (model.Nombre ?? "").Trim();
-            model.Descripcion = (model.Descripcion ?? "").Trim();
         }
 
         private FamiliaViewModel CreateNewFamilia()
         {
             return new FamiliaViewModel
             {
-                Activa = true,
-                FechaCrea = DateTime.Now,
-                UsuarioCrea = GetCurrentUser()
+                Activa = true
             };
-        }
-
-        private static FamiliaViewModel CreateFamilia(int id, string codigo, string nombre, string descripcion, bool activa, int cantidadArticulos)
-        {
-            return new FamiliaViewModel
-            {
-                ID = id,
-                Codigo = codigo,
-                Nombre = nombre,
-                Descripcion = descripcion,
-                Activa = activa,
-                CantidadArticulos = cantidadArticulos,
-                UsuarioCrea = "Soporte",
-                FechaCrea = DateTime.Now.AddDays(-4)
-            };
-        }
-
-        private static FamiliaViewModel Clone(FamiliaViewModel source)
-        {
-            if (source == null)
-                return null;
-
-            return new FamiliaViewModel
-            {
-                ID = source.ID,
-                Codigo = source.Codigo,
-                Nombre = source.Nombre,
-                Descripcion = source.Descripcion,
-                Activa = source.Activa,
-                CantidadArticulos = source.CantidadArticulos,
-                UsuarioCrea = source.UsuarioCrea,
-                FechaCrea = source.FechaCrea,
-                UsuarioModifica = source.UsuarioModifica,
-                FechaModifica = source.FechaModifica
-            };
-        }
-
-        private static void CopyValues(FamiliaViewModel source, FamiliaViewModel target)
-        {
-            target.Codigo = source.Codigo;
-            target.Nombre = source.Nombre;
-            target.Descripcion = source.Descripcion;
-            target.Activa = source.Activa;
-            target.CantidadArticulos = source.CantidadArticulos;
-            target.UsuarioCrea = source.UsuarioCrea;
-            target.FechaCrea = source.FechaCrea;
-            target.UsuarioModifica = source.UsuarioModifica;
-            target.FechaModifica = source.FechaModifica;
-        }
-
-        private string GetCurrentUser()
-        {
-            return User != null && User.Identity != null && !String.IsNullOrWhiteSpace(User.Identity.Name)
-                ? User.Identity.Name
-                : "Soporte";
         }
     }
 }

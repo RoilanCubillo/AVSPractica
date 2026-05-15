@@ -21,23 +21,20 @@
     <div class="alert alert-success">@TempData["DepartamentoMessage"]</div>
 }
 
+@if (TempData["DepartamentoError"] != null)
+{
+    <div class="alert alert-warning">@TempData["DepartamentoError"]</div>
+}
+
 <section class="filter-panel">
     <div class="row g-3">
-        <div class="col-12 col-md-3">
-            <label for="filter_estado" class="form-label">Estado</label>
-            <select id="filter_estado" class="form-select">
-                <option value="Todos">Todos</option>
-                <option value="Activo">Activo</option>
-                <option value="Inactivo">Inactivo</option>
-            </select>
-        </div>
         <div class="col-12 col-md-3">
             <label for="filter_familia" class="form-label">Familia</label>
             <input id="filter_familia" type="text" class="form-control" />
         </div>
         <div class="col-12 col-md-5">
             <label for="table_search" class="form-label">Buscar</label>
-            <input id="table_search" type="search" class="form-control" placeholder="Codigo, nombre o descripcion" />
+            <input id="table_search" type="search" class="form-control" placeholder="Codigo, nombre o familia" />
         </div>
     </div>
     <div class="filter-actions">
@@ -52,12 +49,8 @@
         <strong id="summary_count">0</strong>
     </article>
     <article>
-        <span>Activos</span>
-        <strong id="summary_active">0</strong>
-    </article>
-    <article>
-        <span>Art&iacute;culos asociados</span>
-        <strong id="summary_items">0</strong>
+        <span>C&oacute;digos visibles</span>
+        <strong id="summary_codes">0</strong>
     </article>
 </section>
 
@@ -65,8 +58,23 @@
     <div class="table-toolbar">
         <div class="table-toolbar-main">
             <span id="results_hint" class="toolbar-chip">0 resultados</span>
+            <label class="page-size-control" for="page_size">
+                Mostrar
+                <select id="page_size" class="form-select form-select-sm">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </label>
         </div>
-        <span id="loading_state" class="loading-state">Cargando...</span>
+        <div class="table-pagination">
+            <button id="btnPrevPage" class="btn btn-outline-secondary btn-sm" type="button">Anterior</button>
+            <span id="page_hint" class="toolbar-chip">Pagina 1 de 1</span>
+            <button id="btnNextPage" class="btn btn-outline-secondary btn-sm" type="button">Siguiente</button>
+            <span id="loading_state" class="loading-state">Cargando...</span>
+        </div>
     </div>
     <div class="table-responsive">
         <table class="table align-middle document-table department-list-table">
@@ -75,11 +83,6 @@
                     <th>C&oacute;digo</th>
                     <th>Nombre</th>
                     <th>Familia</th>
-                    <th>Descripci&oacute;n</th>
-                    <th>Categor&iacute;as</th>
-                    <th>Art&iacute;culos</th>
-                    <th>Estado</th>
-                    <th>Fecha crea</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -103,19 +106,10 @@
                             <h2 id="dep_view_title" class="document-view-title"></h2>
                             <p id="dep_view_subtitle" class="document-view-subtitle"></p>
                         </div>
-                        <div class="document-view-total">
-                            <span>Art&iacute;culos</span>
-                            <strong id="dep_view_items"></strong>
-                        </div>
                     </section>
-                    <div id="dep_view_badges" class="document-view-badges"></div>
                     <section class="document-view-section">
                         <h3>Datos generales</h3>
                         <div id="dep_view_summary" class="document-view-grid"></div>
-                    </section>
-                    <section class="document-view-section">
-                        <h3>Auditor&iacute;a</h3>
-                        <div id="dep_view_audit" class="document-view-grid"></div>
                     </section>
                 </div>
             </div>
@@ -131,6 +125,7 @@
         };
         var departamentos = @Html.Raw(departamentosJson);
         var filteredRows = [];
+        var currentPage = 1;
 
         $(function () {
             bindEvents();
@@ -139,49 +134,85 @@
         });
 
         function bindEvents() {
-            $("#btnConsultar").on("click", renderTable);
-            $("#table_search, #filter_familia").on("input", renderTable);
-            $("#filter_estado").on("change", renderTable);
+            $("#btnConsultar").on("click", function () {
+                currentPage = 1;
+                renderTable();
+            });
+            $("#table_search, #filter_familia").on("input", function () {
+                currentPage = 1;
+                renderTable();
+            });
+            $("#page_size").on("change", function () {
+                currentPage = 1;
+                renderTable();
+            });
+            $("#btnPrevPage").on("click", function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTable();
+                }
+            });
+            $("#btnNextPage").on("click", function () {
+                currentPage++;
+                renderTable();
+            });
             $("#btnLimpiar").on("click", function () {
-                $("#filter_estado").val("Todos");
                 $("#filter_familia").val("");
                 $("#table_search").val("");
+                currentPage = 1;
                 renderTable();
             });
         }
 
         function renderTable() {
             filteredRows = getFilteredRows();
-            var html = filteredRows.map(function (d) {
+            var pageSize = getPageSize();
+            var totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+            currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+            var pageRows = getPagedRows(filteredRows, pageSize);
+            var html = pageRows.map(function (d) {
                 return "<tr>" +
                     "<td><strong>" + escapeHtml(d.Codigo) + "</strong></td>" +
                     "<td>" + escapeHtml(d.Nombre) + "</td>" +
                     "<td>" + escapeHtml(d.FamiliaTexto || "-") + "</td>" +
-                    "<td>" + escapeHtml(d.Descripcion || "-") + "</td>" +
-                    "<td>" + formatNumber(d.CantidadCategorias) + "</td>" +
-                    "<td>" + formatNumber(d.CantidadArticulos) + "</td>" +
-                    "<td>" + getEstadoBadge(d.EstadoTexto) + "</td>" +
-                    "<td>" + escapeHtml(d.FechaCreaTexto || "-") + "</td>" +
                     "<td>" + getActionButtons(d) + "</td>" +
                     "</tr>";
             }).join("");
 
-            $("#results_hint").text(filteredRows.length + " resultados");
-            $("#departamentos_body").html(html || "<tr><td colspan='9' class='empty-state'>Sin departamentos para los filtros aplicados.</td></tr>");
+            updatePagination(pageRows, pageSize, totalPages);
+            $("#departamentos_body").html(html || "<tr><td colspan='4' class='empty-state'>Sin departamentos para los filtros aplicados.</td></tr>");
             updateSummary();
         }
 
+        function getPageSize() {
+            return Number($("#page_size").val() || 10);
+        }
+
+        function getPagedRows(rows, pageSize) {
+            var start = (currentPage - 1) * pageSize;
+            return rows.slice(start, start + pageSize);
+        }
+
+        function updatePagination(pageRows, pageSize, totalPages) {
+            var total = filteredRows.length;
+            var start = total === 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
+            var end = total === 0 ? 0 : start + pageRows.length - 1;
+
+            $("#results_hint").text(start + "-" + end + " de " + total + " resultados");
+            $("#page_hint").text("Pagina " + currentPage + " de " + totalPages);
+            $("#btnPrevPage").prop("disabled", currentPage <= 1);
+            $("#btnNextPage").prop("disabled", currentPage >= totalPages);
+        }
+
         function getFilteredRows() {
-            var estado = $("#filter_estado").val();
             var familia = ($("#filter_familia").val() || "").toLowerCase();
             var text = ($("#table_search").val() || "").toLowerCase();
 
             return departamentos.filter(function (d) {
-                if (estado !== "Todos" && d.EstadoTexto !== estado) return false;
                 if (familia && String(d.FamiliaTexto || "").toLowerCase().indexOf(familia) < 0) return false;
                 if (!text) return true;
 
-                return [d.Codigo, d.Nombre, d.Descripcion, d.FamiliaTexto]
+                return [d.Codigo, d.Nombre, d.FamiliaTexto]
                     .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
             });
         }
@@ -190,7 +221,6 @@
             return "<div class='action-stack'>" +
                 "<button class='icon-button info' type='button' onclick='onVer(" + departamento.ID + ")'>Ver</button>" +
                 "<button class='icon-button primary' type='button' onclick='onEditar(" + departamento.ID + ")'>Editar</button>" +
-                "<button class='icon-button " + (departamento.Activo ? "danger" : "success") + "' type='button' onclick='onCambiarEstado(" + departamento.ID + ")'>" + (departamento.Activo ? "Inactivar" : "Activar") + "</button>" +
                 "</div>";
         }
 
@@ -201,21 +231,10 @@
             $("#departamentoModalTitle").text("Departamento " + departamento.Codigo);
             $("#dep_view_title").text(departamento.Codigo);
             $("#dep_view_subtitle").text(departamento.Nombre);
-            $("#dep_view_items").text(formatNumber(departamento.CantidadArticulos));
-            $("#dep_view_badges").html(getEstadoBadge(departamento.EstadoTexto));
             $("#dep_view_summary").html(renderViewGrid([
                 { label: "Codigo", value: departamento.Codigo },
                 { label: "Nombre", value: departamento.Nombre },
-                { label: "Familia", value: departamento.FamiliaTexto || "-" },
-                { label: "Descripcion", value: departamento.Descripcion || "-" },
-                { label: "Categorias", value: formatNumber(departamento.CantidadCategorias) },
-                { label: "Articulos asociados", value: formatNumber(departamento.CantidadArticulos) }
-            ]));
-            $("#dep_view_audit").html(renderViewGrid([
-                { label: "Usuario crea", value: departamento.UsuarioCrea || "-" },
-                { label: "Fecha crea", value: departamento.FechaCreaTexto || "-" },
-                { label: "Usuario modifica", value: departamento.UsuarioModifica || "-" },
-                { label: "Fecha modifica", value: departamento.FechaModificaTexto || "-" }
+                { label: "Familia", value: departamento.FamiliaTexto || "-" }
             ]));
             new bootstrap.Modal(document.getElementById("departamentoModal")).show();
         }
@@ -228,48 +247,14 @@
             window.location.href = urls.registro + "?id=" + encodeURIComponent(id);
         }
 
-        function onCambiarEstado(id) {
-            var departamento = findDepartamento(id);
-            if (!departamento) return;
-
-            var accion = departamento.Activo ? "inactivar" : "activar";
-            if (!confirm("Desea " + accion + " el departamento " + departamento.Codigo + "?")) return;
-
-            $.post(urls.cambiarEstado, { id: id }).done(function (data) {
-                if (!data.Status) {
-                    showToast(data.Message || "No se pudo actualizar el departamento.");
-                    return;
-                }
-
-                var index = departamentos.findIndex(function (x) { return x.ID === id; });
-                if (index >= 0) {
-                    departamentos[index] = data.Result;
-                }
-
-                showToast(data.Message || "Departamento actualizado.");
-                renderTable();
-            }).fail(function () {
-                showToast("No se pudo actualizar el departamento.");
-            });
-        }
-
         function findDepartamento(id) {
             return departamentos.find(function (item) { return item.ID === id; });
         }
 
         function updateSummary() {
             var rows = filteredRows.length ? filteredRows : getFilteredRows();
-            var active = rows.filter(function (d) { return d.Activo; }).length;
-            var items = rows.reduce(function (sum, d) { return sum + Number(d.CantidadArticulos || 0); }, 0);
             $("#summary_count").text(rows.length);
-            $("#summary_active").text(active);
-            $("#summary_items").text(formatNumber(items));
-        }
-
-        function getEstadoBadge(estado) {
-            return estado === "Activo"
-                ? "<span class='status-badge received'>Activo</span>"
-                : "<span class='status-badge closed'>Inactivo</span>";
+            $("#summary_codes").text(rows.filter(function (d) { return String(d.Codigo || "").trim().length > 0; }).length);
         }
 
         function renderViewGrid(items) {

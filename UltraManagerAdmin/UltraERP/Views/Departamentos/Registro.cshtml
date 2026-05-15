@@ -16,17 +16,16 @@
     </div>
 </section>
 
+@if (TempData["DepartamentoError"] != null)
+{
+    <div class="alert alert-warning">@TempData["DepartamentoError"]</div>
+}
+
 @using (Html.BeginForm("Registro", "Departamentos", FormMethod.Post, new { id = "departamentoForm", @class = "document-form" }))
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.ID)
     @Html.HiddenFor(m => m.HQID)
-    @Html.HiddenFor(m => m.FamiliaCodigo)
-    @Html.HiddenFor(m => m.FamiliaNombre)
-    @Html.HiddenFor(m => m.UsuarioCrea)
-    @Html.HiddenFor(m => m.FechaCrea)
-    @Html.HiddenFor(m => m.UsuarioModifica)
-    @Html.HiddenFor(m => m.FechaModifica)
 
     if (!ViewData.ModelState.IsValid)
     {
@@ -56,26 +55,6 @@
                 <label class="form-label required" for="Nombre">Nombre</label>
                 @Html.TextBoxFor(m => m.Nombre, new { @class = "form-control", maxlength = "30", autocomplete = "off", placeholder = "Ej: Productos secos" })
                 @Html.ValidationMessageFor(m => m.Nombre, "", new { @class = "text-danger small" })
-            </div>
-            <div class="col-12 col-md-3">
-                <label class="form-label" for="CantidadCategorias">Categor&iacute;as</label>
-                @Html.TextBoxFor(m => m.CantidadCategorias, new { @class = "form-control", type = "number", min = "0", step = "1" })
-            </div>
-            <div class="col-12 col-md-3">
-                <label class="form-label" for="CantidadArticulos">Art&iacute;culos</label>
-                @Html.TextBoxFor(m => m.CantidadArticulos, new { @class = "form-control", type = "number", min = "0", step = "1" })
-            </div>
-            <div class="col-12 col-md-3">
-                <label class="form-label" for="Activo">Estado</label>
-                <div class="article-switch">
-                    @Html.CheckBoxFor(m => m.Activo)
-                    <span>Activo</span>
-                </div>
-            </div>
-            <div class="col-12">
-                <label class="form-label" for="Descripcion">Descripci&oacute;n</label>
-                @Html.TextAreaFor(m => m.Descripcion, 4, 30, new { @class = "form-control", maxlength = "180", placeholder = "Uso o alcance de este departamento dentro de la familia." })
-                @Html.ValidationMessageFor(m => m.Descripcion, "", new { @class = "text-danger small" })
             </div>
         </div>
     </section>

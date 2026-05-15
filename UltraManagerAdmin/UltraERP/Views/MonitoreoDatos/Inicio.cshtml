@@ -122,10 +122,25 @@
                 <button class="monitoring-tab" type="button" data-tab="asientos">Asientos ERP</button>
             </div>
             <span id="results_hint" class="toolbar-chip">0 resultados</span>
+            <label class="page-size-control" for="page_size">
+                Mostrar
+                <select id="page_size" class="form-select form-select-sm">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </label>
         </div>
         <span id="active_context" class="toolbar-chip secondary">Hacienda</span>
     </div>
     <div id="monitoring_table_wrap" class="table-responsive monitoring-table-responsive"></div>
+    <div class="table-pagination">
+        <button id="btnPrevPage" class="btn btn-outline-secondary btn-sm" type="button">Anterior</button>
+        <span id="page_hint" class="toolbar-chip">Pagina 1 de 1</span>
+        <button id="btnNextPage" class="btn btn-outline-secondary btn-sm" type="button">Siguiente</button>
+    </div>
 </section>
 
 <div class="modal fade" id="monitoringModal" tabindex="-1" aria-hidden="true">
@@ -152,9 +167,11 @@
             filteredAsientos: []
         };
         var monitoringModal = null;
+        var pager = null;
 
         $(function () {
             monitoringModal = new bootstrap.Modal(document.getElementById("monitoringModal"));
+            pager = window.UltraERP.createTablePager({ onChange: renderTable });
             bindEvents();
             renderAll();
         });
@@ -169,15 +186,18 @@
                 $("#filter_from").val("2026-05-10");
                 $("#filter_to").val("2026-05-14");
                 $("#table_search").val("");
+                if (pager) pager.reset();
                 renderAll();
             });
             $(".monitoring-tab").on("click", function () {
                 state.tab = String($(this).data("tab") || "mh");
+                if (pager) pager.reset();
                 renderTable();
             });
         }
 
         function renderAll() {
+            if (pager) pager.reset();
             state.filteredMH = filterRows(pantalla.DocumentosMH || []);
             state.filteredERP = filterRows(pantalla.DocumentosERP || []);
             state.filteredAsientos = filterRows(pantalla.AsientosERP || []);
@@ -286,10 +306,11 @@
         }
 
         function renderDocumentTable(rows, type) {
+            var pageRows = pager ? pager.pageRows(rows) : rows;
             var html = "<table class='table align-middle document-table monitoring-document-table'><thead><tr>" +
                 "<th>Consecutivo</th><th>Tipo</th><th>Cliente</th><th>Tienda</th><th>Fecha</th><th>Sincronizacion</th><th>Total</th><th>Estado</th><th>Acciones</th>" +
                 "</tr></thead><tbody>" +
-                rows.map(function (row) {
+                pageRows.map(function (row) {
                     return "<tr>" +
                         "<td><div class='monitoring-document-id'><strong>" + escapeHtml(row.Consecutivo) + "</strong><span class='monitoring-key'>" + escapeHtml(row.Clave) + "</span></div></td>" +
                         "<td>" + escapeHtml(row.ComprobanteTipo) + "</td>" +
@@ -304,15 +325,17 @@
                 }).join("") +
                 "</tbody></table>";
 
-            $("#results_hint").text(rows.length + " resultados");
-            $("#monitoring_table_wrap").html(rows.length ? html : "<div class='empty-state'>Sin documentos para los filtros aplicados.</div>");
+            if (pager) pager.update(rows, pageRows);
+            else $("#results_hint").text(rows.length + " resultados");
+            $("#monitoring_table_wrap").html(pageRows.length ? html : "<div class='empty-state'>Sin documentos para los filtros aplicados.</div>");
         }
 
         function renderAccountingTable(rows) {
+            var pageRows = pager ? pager.pageRows(rows) : rows;
             var html = "<table class='table align-middle document-table monitoring-accounting-table'><thead><tr>" +
                 "<th>Asiento</th><th>Referencia</th><th>Tipo</th><th>Tienda</th><th>Fecha</th><th>Sincronizacion</th><th>Debito</th><th>Credito</th><th>Estado</th><th>Acciones</th>" +
                 "</tr></thead><tbody>" +
-                rows.map(function (row) {
+                pageRows.map(function (row) {
                     return "<tr>" +
                         "<td><strong class='monitoring-code'>" + escapeHtml(row.NumeroAsiento) + "</strong></td>" +
                         "<td><span class='monitoring-key compact'>" + escapeHtml(row.Referencia) + "</span></td>" +
@@ -328,8 +351,9 @@
                 }).join("") +
                 "</tbody></table>";
 
-            $("#results_hint").text(rows.length + " resultados");
-            $("#monitoring_table_wrap").html(rows.length ? html : "<div class='empty-state'>Sin asientos para los filtros aplicados.</div>");
+            if (pager) pager.update(rows, pageRows);
+            else $("#results_hint").text(rows.length + " resultados");
+            $("#monitoring_table_wrap").html(pageRows.length ? html : "<div class='empty-state'>Sin asientos para los filtros aplicados.</div>");
         }
 
         function showDocumentDetail(id, type) {

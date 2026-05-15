@@ -16,6 +16,11 @@
     </div>
 </section>
 
+@if (TempData["ArticuloError"] != null)
+{
+    <div class="alert alert-warning">@TempData["ArticuloError"]</div>
+}
+
 @using (Html.BeginForm("Registro", "Articulos", FormMethod.Post, new { id = "articuloForm", @class = "document-form" }))
 {
     @Html.AntiForgeryToken()

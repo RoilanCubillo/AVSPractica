@@ -1,7 +1,11 @@
+using Security.EntitiesAVS;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Web.Mvc;
+using UltraERP.BusinessEntities;
+using UltraERP.BusinessLogic;
 using UltraERP.Models;
 
 namespace UltraERP.Controllers
@@ -9,7 +13,7 @@ namespace UltraERP.Controllers
     [Authorize]
     public class ArticulosController : Controller
     {
-        private static readonly object SyncRoot = new object();
+        private const int DefaultResultCount = 500;
 
         private static readonly List<string> Unidades = new List<string> { "UND", "KG", "CJ", "GAL", "L", "QQ", "BQ" };
         private static readonly List<string> Proveedores = new List<string> { "Cooperativa Dos Pinos", "Cafe Britt Costa Rica", "Irex de Costa Rica", "Distribuidora San Jose", "Central de Abarrotes Cartago" };
@@ -53,123 +57,212 @@ namespace UltraERP.Controllers
             new SubCategoriaCatalogo(7, 6, "POLVO", "Detergente en polvo")
         };
 
-        private static readonly List<ArticuloViewModel> Articulos = new List<ArticuloViewModel>
-        {
-            CreateArticulo(1, "ARR-TP-2K", "Arroz Tio Pelon 2 kg", "KG", 1, "Distribuidora San Jose", "Bodega Central Heredia", 1650m, 2195m, 1m, 80m, 20m, 160m, true, true, false),
-            CreateArticulo(2, "FRJ-DP-900", "Frijoles rojos Don Pedro 900 g", "UND", 3, "Central de Abarrotes Cartago", "Bodega Central Heredia", 1225m, 1695m, 1m, 50m, 12m, 120m, true, true, false),
-            CreateArticulo(3, "SAL-LIZ-700", "Salsa Lizano 700 ml", "UND", 4, "Distribuidora San Jose", "Sucursal Sabana", 1850m, 2495m, 13m, 36m, 10m, 90m, true, true, false),
-            CreateArticulo(4, "LEC-DP-1L", "Leche Dos Pinos 1 L", "L", 5, "Cooperativa Dos Pinos", "Sucursal Escazu", 710m, 995m, 1m, 120m, 30m, 240m, true, true, false),
-            CreateArticulo(5, "CAF-1820-500", "Cafe 1820 molido 500 g", "UND", 6, "Cafe Britt Costa Rica", "Bodega Central Heredia", 2525m, 3495m, 13m, 42m, 12m, 96m, true, true, false),
-            CreateArticulo(6, "DET-IRX-1K", "Detergente Irex 1 kg", "UND", 7, "Irex de Costa Rica", "Sucursal Cartago", 2325m, 3195m, 13m, 28m, 8m, 72m, true, true, false)
-        };
-
         public ActionResult Inicio()
         {
-            List<ArticuloViewModel> model;
-            lock (SyncRoot)
+            try
             {
-                model = Articulos.Select(Clone).OrderBy(x => x.Codigo).ToList();
-            }
+                var model = GetArticulosFromDatabase("", DefaultResultCount)
+                    .OrderBy(x => x.Codigo)
+                    .ToList();
 
-            return View(model);
+                ViewBag.ArticulosDataSource = "SQL";
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                TempData["ArticuloError"] = "No se pudo cargar articulos desde SQL: " + ex.Message;
+                ViewBag.ArticulosDataSource = "SQL";
+                return View(Enumerable.Empty<ArticuloViewModel>());
+            }
         }
 
         public ActionResult Registro(int? id)
         {
             ArticuloViewModel model = null;
+
             if (id.HasValue)
             {
-                lock (SyncRoot)
+                try
                 {
-                    model = Articulos.Where(x => x.ID == id.Value).Select(Clone).FirstOrDefault();
+                    model = GetArticuloById(id.Value);
+                    if (model == null)
+                        TempData["ArticuloError"] = "No se encontro el articulo en SQL.";
+                }
+                catch (Exception ex)
+                {
+                    TempData["ArticuloError"] = "No se pudo leer el articulo desde SQL: " + ex.Message;
                 }
             }
 
-            PrepareCatalogs();
-            return View(model ?? CreateNewArticulo());
+            CatalogData catalog = GetCatalogDataSafe();
+            PrepareCatalogs(catalog);
+            return View(model ?? CreateNewArticulo(catalog));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Registro(ArticuloViewModel model)
         {
+            CatalogData catalog = GetCatalogDataSafe();
+
             Normalize(model);
-            ApplyClasificacion(model);
-            ValidateArticulo(model);
+            ApplyClasificacion(model, catalog);
+            ValidateArticulo(model, catalog);
 
             if (!ModelState.IsValid)
             {
-                PrepareCatalogs();
+                PrepareCatalogs(catalog);
                 return View(model);
             }
 
-            lock (SyncRoot)
+            try
             {
-                var existing = Articulos.FirstOrDefault(x => x.ID == model.ID);
-                if (existing == null)
-                {
-                    model.ID = Articulos.Count == 0 ? 1 : Articulos.Max(x => x.ID) + 1;
-                    model.UsuarioCrea = GetCurrentUser();
-                    model.FechaCrea = DateTime.Now;
-                    Articulos.Add(Clone(model));
-                    TempData["ArticuloMessage"] = "Articulo creado correctamente.";
-                }
-                else
-                {
-                    model.UsuarioCrea = existing.UsuarioCrea;
-                    model.FechaCrea = existing.FechaCrea;
-                    model.UsuarioModifica = GetCurrentUser();
-                    model.FechaModifica = DateTime.Now;
-                    CopyValues(model, existing);
-                    TempData["ArticuloMessage"] = "Articulo actualizado correctamente.";
-                }
-            }
+                EN_Item item = BuildItem(model, catalog);
+                string title = "AVS WEB:" + model.Codigo + "-" + GetCurrentUser(42 - model.Codigo.Length);
+                Dictionary<string, object> result = new CT_Item().Save(item, title, GetCurrentUserID());
+                string response = result.ContainsKey("RESPUESTA") ? Convert.ToString(result["RESPUESTA"]) : "";
 
-            return RedirectToAction("Inicio");
+                if (response.IndexOf("error", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    ModelState.AddModelError("", "SQL rechazo el guardado del articulo: " + response);
+                    PrepareCatalogs(catalog);
+                    return View(model);
+                }
+
+                TempData["ArticuloMessage"] = model.ID > 0 ? "Articulo actualizado correctamente en SQL." : "Articulo creado correctamente en SQL.";
+                return RedirectToAction("Inicio");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "No se pudo guardar el articulo en SQL. " + ex.Message);
+                PrepareCatalogs(catalog);
+                return View(model);
+            }
         }
 
         [HttpPost]
         public JsonResult CambiarEstado(int id)
         {
-            lock (SyncRoot)
-            {
-                var articulo = Articulos.FirstOrDefault(x => x.ID == id);
-                if (articulo == null)
-                    return Json(new JsonResponse("Articulo no encontrado.", "No se encontro el articulo.", null, false));
-
-                articulo.Activo = !articulo.Activo;
-                articulo.UsuarioModifica = GetCurrentUser();
-                articulo.FechaModifica = DateTime.Now;
-
-                return Json(new JsonResponse("", articulo.Activo ? "Articulo activado." : "Articulo inactivado.", Clone(articulo), true));
-            }
+            return Json(new JsonResponse(
+                "Pendiente de migracion",
+                "El listado de articulos ya consulta SQL. La activacion e inactivacion se conectara cuando migremos el procedimiento de estado.",
+                null,
+                false));
         }
 
-        private void ValidateArticulo(ArticuloViewModel model)
+        private List<ArticuloViewModel> GetArticulosFromDatabase(string searchValue, int take)
+        {
+            int recordLimit = take <= 0 ? 10000 : take;
+
+            return new CT_Item()
+                .GetDynamicList(searchValue ?? "", 1, "asc", 0, recordLimit, null, null, null, null, null, GetStoresAvailable())
+                .Select(MapArticulo)
+                .ToList();
+        }
+
+        private ArticuloViewModel GetArticuloById(int id)
+        {
+            return GetArticulosFromDatabase("", 0).FirstOrDefault(x => x.ID == id);
+        }
+
+        private static ArticuloViewModel MapArticulo(EN_Item item)
+        {
+            decimal costo = item.ReplacementCost > 0 ? item.ReplacementCost : item.Cost;
+            decimal precio = item.Price > 0 ? item.Price : CalculatePrice(costo, item.Utility);
+
+            return new ArticuloViewModel
+            {
+                ID = item.ID,
+                Codigo = item.ItemLookupCode,
+                Descripcion = item.Description,
+                DescripcionExtendida = item.ExtendedDescription,
+                UnidadMedida = item.UnitOfMeasure,
+                FamiliaID = item.FamilyID,
+                DepartamentoID = item.DepartmentID,
+                CategoriaID = item.CategoryID,
+                SubCategoriaID = item.SubCategoryID,
+                Familia = JoinCodeName(item.FamilyCode, item.FamilyName),
+                Departamento = JoinCodeName(item.DepartmentCode, item.DepartmentName),
+                Categoria = JoinCodeName(item.CategoryCode, item.CategoryName),
+                SubCategoria = JoinCodeName(item.SubCategoryCode, item.SubCategoryName),
+                Proveedor = !String.IsNullOrWhiteSpace(item.SupplierName) ? item.SupplierName : item.SupplierCode,
+                Bodega = item.StoresNameSelected,
+                Costo = costo,
+                PrecioVenta = precio,
+                ImpuestoPorcentaje = Convert.ToDecimal(item.TaxPercentage),
+                Existencia = Convert.ToDecimal(item.Quantity),
+                ExistenciaMinima = 0,
+                ExistenciaMaxima = 0,
+                Activo = !item.Inactive,
+                Inventariable = true,
+                Exento = item.TaxPercentage <= 0,
+                UsuarioCrea = "SQL",
+                FechaCrea = item.DateCreated == DateTime.MinValue || item.DateCreated.Year <= 1900 ? DateTime.Now : item.DateCreated,
+                FechaModifica = item.LastUpdated
+            };
+        }
+
+        private static decimal CalculatePrice(decimal cost, decimal utility)
+        {
+            if (cost <= 0)
+                return 0;
+
+            return Math.Round(cost + (cost * utility / 100), 2);
+        }
+
+        private EN_Item BuildItem(ArticuloViewModel model, CatalogData catalog)
+        {
+            EN_Item item = new CT_Item().GetByItemLookupCode(model.Codigo, GetStoresAvailable()) ?? new EN_Item();
+
+            item.ID = model.ID;
+            item.ItemLookupCode = model.Codigo;
+            item.Description = model.Descripcion;
+            item.ExtendedDescription = model.DescripcionExtendida;
+            item.UnitOfMeasure = model.UnidadMedida;
+            item.FamilyID = model.FamiliaID;
+            item.DepartmentID = model.DepartamentoID;
+            item.CategoryID = model.CategoriaID;
+            item.SubCategoryID = model.SubCategoriaID;
+            item.ReplacementCost = model.Costo;
+            item.Cost = model.Costo;
+            item.Price = model.PrecioVenta;
+            item.Utility = model.Costo > 0 ? Math.Round(((model.PrecioVenta - model.Costo) / model.Costo) * 100, 2) : item.Utility;
+            item.SupplierID = ResolveSupplierID(model.Proveedor, catalog, item.SupplierID);
+            item.TaxID = ResolveTaxID(model.ImpuestoPorcentaje, catalog, item.TaxID);
+            item.StoresSelected = String.IsNullOrWhiteSpace(item.StoresSelected) ? GetStoresAvailable() : item.StoresSelected;
+
+            return item;
+        }
+
+        private void ValidateArticulo(ArticuloViewModel model, CatalogData catalog)
         {
             if (model == null)
                 return;
 
-            if (!Familias.Any(x => x.ID == model.FamiliaID))
+            if (!catalog.Familias.Any(x => x.ID == model.FamiliaID))
                 ModelState.AddModelError("FamiliaID", "Seleccione una familia valida.");
 
-            var departamento = Departamentos.FirstOrDefault(x => x.ID == model.DepartamentoID);
+            var departamento = catalog.Departamentos.FirstOrDefault(x => x.ID == model.DepartamentoID);
             if (departamento == null || departamento.FamiliaID != model.FamiliaID)
                 ModelState.AddModelError("DepartamentoID", "Seleccione un departamento valido para la familia.");
 
-            var categoria = Categorias.FirstOrDefault(x => x.ID == model.CategoriaID);
+            var categoria = catalog.Categorias.FirstOrDefault(x => x.ID == model.CategoriaID);
             if (categoria == null || categoria.DepartamentoID != model.DepartamentoID)
                 ModelState.AddModelError("CategoriaID", "Seleccione una categoria valida para el departamento.");
 
-            var subCategoria = SubCategorias.FirstOrDefault(x => x.ID == model.SubCategoriaID);
+            var subCategoria = catalog.SubCategorias.FirstOrDefault(x => x.ID == model.SubCategoriaID);
             if (subCategoria == null || subCategoria.CategoriaID != model.CategoriaID)
                 ModelState.AddModelError("SubCategoriaID", "Seleccione una subcategoria valida para la categoria.");
 
-            lock (SyncRoot)
+            try
             {
-                var exists = Articulos.Any(x => x.ID != model.ID && String.Equals(x.Codigo, model.Codigo, StringComparison.OrdinalIgnoreCase));
-                if (exists)
+                EN_Item existing = new CT_Item().GetByItemLookupCode(model.Codigo, GetStoresAvailable());
+                if (existing != null && existing.ID != model.ID)
                     ModelState.AddModelError("Codigo", "Ya existe un articulo con este codigo.");
+            }
+            catch
+            {
+                ModelState.AddModelError("", "No se pudo validar el codigo del articulo contra SQL.");
             }
 
             if (model.ExistenciaMaxima > 0 && model.ExistenciaMinima > model.ExistenciaMaxima)
@@ -179,7 +272,7 @@ namespace UltraERP.Controllers
                 model.ImpuestoPorcentaje = 0;
         }
 
-        private void Normalize(ArticuloViewModel model)
+        private static void Normalize(ArticuloViewModel model)
         {
             if (model == null)
                 return;
@@ -192,15 +285,15 @@ namespace UltraERP.Controllers
             model.Bodega = (model.Bodega ?? "").Trim();
         }
 
-        private static void ApplyClasificacion(ArticuloViewModel model)
+        private static void ApplyClasificacion(ArticuloViewModel model, CatalogData catalog)
         {
             if (model == null)
                 return;
 
-            var familia = Familias.FirstOrDefault(x => x.ID == model.FamiliaID);
-            var departamento = Departamentos.FirstOrDefault(x => x.ID == model.DepartamentoID);
-            var categoria = Categorias.FirstOrDefault(x => x.ID == model.CategoriaID);
-            var subCategoria = SubCategorias.FirstOrDefault(x => x.ID == model.SubCategoriaID);
+            var familia = catalog.Familias.FirstOrDefault(x => x.ID == model.FamiliaID);
+            var departamento = catalog.Departamentos.FirstOrDefault(x => x.ID == model.DepartamentoID);
+            var categoria = catalog.Categorias.FirstOrDefault(x => x.ID == model.CategoriaID);
+            var subCategoria = catalog.SubCategorias.FirstOrDefault(x => x.ID == model.SubCategoriaID);
 
             model.Familia = familia == null ? "" : familia.Texto;
             model.Departamento = departamento == null ? "" : departamento.Texto;
@@ -208,21 +301,54 @@ namespace UltraERP.Controllers
             model.SubCategoria = subCategoria == null ? "" : subCategoria.Texto;
         }
 
-        private void PrepareCatalogs()
+        private void PrepareCatalogs(CatalogData catalog)
         {
-            ViewBag.Unidades = ToSelectList(Unidades);
-            ViewBag.Proveedores = ToSelectList(Proveedores);
-            ViewBag.Bodegas = ToSelectList(Bodegas);
-            ViewBag.Familias = Familias.Select(x => new SelectListItem { Text = x.Texto, Value = x.ID.ToString() }).ToList();
-            ViewBag.Departamentos = Departamentos.Select(x => new SelectListItem { Text = x.Texto, Value = x.ID.ToString() }).ToList();
-            ViewBag.Categorias = Categorias.Select(x => new SelectListItem { Text = x.Texto, Value = x.ID.ToString() }).ToList();
-            ViewBag.SubCategorias = SubCategorias.Select(x => new SelectListItem { Text = x.Texto, Value = x.ID.ToString() }).ToList();
+            ViewBag.Unidades = ToSelectList(catalog.Unidades);
+            ViewBag.Proveedores = ToSelectList(catalog.Proveedores.Select(x => x.Name).Where(x => !String.IsNullOrWhiteSpace(x)));
+            ViewBag.Bodegas = ToSelectList(catalog.Bodegas.Select(x => x.NameS).Where(x => !String.IsNullOrWhiteSpace(x)));
+            ViewBag.Familias = catalog.Familias.Select(x => new SelectListItem { Text = x.Texto, Value = x.ID.ToString() }).ToList();
+            ViewBag.Departamentos = catalog.Departamentos.Select(x => new SelectListItem { Text = x.Texto, Value = x.ID.ToString() }).ToList();
+            ViewBag.Categorias = catalog.Categorias.Select(x => new SelectListItem { Text = x.Texto, Value = x.ID.ToString() }).ToList();
+            ViewBag.SubCategorias = catalog.SubCategorias.Select(x => new SelectListItem { Text = x.Texto, Value = x.ID.ToString() }).ToList();
             ViewBag.ClasificacionJson = Newtonsoft.Json.JsonConvert.SerializeObject(new
             {
-                departamentos = Departamentos,
-                categorias = Categorias,
-                subCategorias = SubCategorias
+                departamentos = catalog.Departamentos,
+                categorias = catalog.Categorias,
+                subCategorias = catalog.SubCategorias
             });
+        }
+
+        private CatalogData GetCatalogDataSafe()
+        {
+            try
+            {
+                string storesAvailable = GetStoresAvailable();
+                return new CatalogData
+                {
+                    Unidades = new CT_UOM().GetAllByInactive(false).Select(x => x.Code).Where(x => !String.IsNullOrWhiteSpace(x)).ToList(),
+                    Proveedores = new CT_Supplier().GetAll(storesAvailable, "", 0, 0),
+                    Bodegas = new CT_Store().GetAll("", 0, 0),
+                    Familias = new CT_ExtCentral_Family().GetAll("", 0, 0).Select(x => new FamiliaCatalogo(x.ID, x.Code, x.Name)).ToList(),
+                    Departamentos = new CT_Department().GetAll("", 0, 0).Select(x => new DepartamentoCatalogo(x.ID, x.FamilyID, x.Code, x.Name)).ToList(),
+                    Categorias = new CT_Category().GetAll("", 0, 0).Select(x => new CategoriaCatalogo(x.ID, x.DepartmentID, x.Code, x.Name)).ToList(),
+                    SubCategorias = new CT_ExtCentral_SubCategory().GetAll("", 0, 0).Select(x => new SubCategoriaCatalogo(x.ID, x.CategoryID, x.Code, x.Description)).ToList(),
+                    Impuestos = new CT_Tax().GetAll("", 0, 0)
+                };
+            }
+            catch
+            {
+                return new CatalogData
+                {
+                    Unidades = Unidades,
+                    Proveedores = Proveedores.Select((x, i) => new EN_Supplier(i + 1, x, x)).ToList(),
+                    Bodegas = Bodegas.Select((x, i) => new EN_Store(i + 1, x, x)).ToList(),
+                    Familias = Familias,
+                    Departamentos = Departamentos,
+                    Categorias = Categorias,
+                    SubCategorias = SubCategorias,
+                    Impuestos = new List<EN_Tax>()
+                };
+            }
         }
 
         private static IEnumerable<SelectListItem> ToSelectList(IEnumerable<string> values)
@@ -230,63 +356,86 @@ namespace UltraERP.Controllers
             return values.Select(x => new SelectListItem { Text = x, Value = x });
         }
 
-        private ArticuloViewModel CreateNewArticulo()
+        private ArticuloViewModel CreateNewArticulo(CatalogData catalog)
         {
+            var familia = catalog.Familias.FirstOrDefault();
+            var departamento = catalog.Departamentos.FirstOrDefault(x => familia != null && x.FamiliaID == familia.ID) ?? catalog.Departamentos.FirstOrDefault();
+            var categoria = catalog.Categorias.FirstOrDefault(x => departamento != null && x.DepartamentoID == departamento.ID) ?? catalog.Categorias.FirstOrDefault();
+            var subCategoria = catalog.SubCategorias.FirstOrDefault(x => categoria != null && x.CategoriaID == categoria.ID) ?? catalog.SubCategorias.FirstOrDefault();
+
             var model = new ArticuloViewModel
             {
                 Activo = true,
                 Inventariable = true,
-                UnidadMedida = "UND",
-                FamiliaID = 1,
-                DepartamentoID = 1,
-                CategoriaID = 1,
-                SubCategoriaID = 1,
-                Proveedor = "Distribuidora San Jose",
-                Bodega = "Bodega Central Heredia",
+                UnidadMedida = catalog.Unidades.FirstOrDefault() ?? "UND",
+                FamiliaID = familia == null ? 0 : familia.ID,
+                DepartamentoID = departamento == null ? 0 : departamento.ID,
+                CategoriaID = categoria == null ? 0 : categoria.ID,
+                SubCategoriaID = subCategoria == null ? 0 : subCategoria.ID,
+                Proveedor = catalog.Proveedores.Select(x => x.Name).FirstOrDefault() ?? "",
+                Bodega = catalog.Bodegas.Select(x => x.NameS).FirstOrDefault() ?? "",
                 ImpuestoPorcentaje = 13m,
                 FechaCrea = DateTime.Now,
                 UsuarioCrea = GetCurrentUser()
             };
 
-            ApplyClasificacion(model);
+            ApplyClasificacion(model, catalog);
             return model;
         }
 
-        private static ArticuloViewModel CreateArticulo(int id, string codigo, string descripcion, string unidad, int subCategoriaID, string proveedor, string bodega, decimal costo, decimal precio, decimal impuesto, decimal existencia, decimal minimo, decimal maximo, bool activo, bool inventariable, bool exento)
+        private string GetStoresAvailable()
         {
-            var subCategoria = SubCategorias.First(x => x.ID == subCategoriaID);
-            var categoria = Categorias.First(x => x.ID == subCategoria.CategoriaID);
-            var departamento = Departamentos.First(x => x.ID == categoria.DepartamentoID);
-            var familia = Familias.First(x => x.ID == departamento.FamiliaID);
+            string dataStoreCode = ConfigurationManager.AppSettings["DataStoreCode"] ?? "uerp-store";
+            EN_SC_DataAccess[] dataAccess = Session["USER_DATAACCESS"] as EN_SC_DataAccess[];
 
-            var model = new ArticuloViewModel
-            {
-                ID = id,
-                Codigo = codigo,
-                Descripcion = descripcion,
-                DescripcionExtendida = descripcion + " para gestion de inventario.",
-                UnidadMedida = unidad,
-                FamiliaID = familia.ID,
-                DepartamentoID = departamento.ID,
-                CategoriaID = categoria.ID,
-                SubCategoriaID = subCategoria.ID,
-                Proveedor = proveedor,
-                Bodega = bodega,
-                Costo = costo,
-                PrecioVenta = precio,
-                ImpuestoPorcentaje = impuesto,
-                Existencia = existencia,
-                ExistenciaMinima = minimo,
-                ExistenciaMaxima = maximo,
-                Activo = activo,
-                Inventariable = inventariable,
-                Exento = exento,
-                UsuarioCrea = "Soporte",
-                FechaCrea = DateTime.Now.AddDays(-2)
-            };
+            if (dataAccess == null || dataAccess.Length == 0)
+                return "%";
 
-            ApplyClasificacion(model);
-            return model;
+            EN_SC_DataAccess[] storesAccess = dataAccess.Where(x => x.Code == dataStoreCode).ToArray();
+            if (storesAccess.Length == 0 || storesAccess.Any(x => x.EnableAll))
+                return "%";
+
+            return String.Join(",", storesAccess.Where(x => !String.IsNullOrWhiteSpace(x.DataIDs)).Select(x => x.DataIDs));
+        }
+
+        private string GetCurrentUser(int maxLength = 0)
+        {
+            string name = User != null && User.Identity != null && !String.IsNullOrWhiteSpace(User.Identity.Name)
+                ? User.Identity.Name
+                : "Soporte";
+
+            return maxLength > 0 && name.Length > maxLength ? name.Substring(0, maxLength) : name;
+        }
+
+        private string GetCurrentUserID()
+        {
+            return Session["USER_AUTOID"] == null ? "" : Convert.ToString(Session["USER_AUTOID"]);
+        }
+
+        private static int ResolveSupplierID(string supplierName, CatalogData catalog, int currentSupplierID)
+        {
+            EN_Supplier supplier = catalog.Proveedores.FirstOrDefault(x =>
+                String.Equals(x.Name, supplierName, StringComparison.OrdinalIgnoreCase) ||
+                String.Equals(x.Code, supplierName, StringComparison.OrdinalIgnoreCase));
+
+            return supplier == null ? currentSupplierID : supplier.ID;
+        }
+
+        private static int ResolveTaxID(decimal percentage, CatalogData catalog, int currentTaxID)
+        {
+            EN_Tax tax = catalog.Impuestos.FirstOrDefault(x => Math.Abs(Convert.ToDecimal(x.Percentage) - percentage) < 0.01m);
+            return tax == null ? currentTaxID : tax.ID;
+        }
+
+        private static string JoinCodeName(string code, string name)
+        {
+            if (String.IsNullOrWhiteSpace(code))
+                return name ?? "";
+
+            if (String.IsNullOrWhiteSpace(name))
+                return code;
+
+            return code + " - " + name;
         }
 
         private static ArticuloViewModel Clone(ArticuloViewModel source)
@@ -327,42 +476,28 @@ namespace UltraERP.Controllers
             };
         }
 
-        private static void CopyValues(ArticuloViewModel source, ArticuloViewModel target)
+        private class CatalogData
         {
-            target.Codigo = source.Codigo;
-            target.Descripcion = source.Descripcion;
-            target.DescripcionExtendida = source.DescripcionExtendida;
-            target.UnidadMedida = source.UnidadMedida;
-            target.FamiliaID = source.FamiliaID;
-            target.DepartamentoID = source.DepartamentoID;
-            target.CategoriaID = source.CategoriaID;
-            target.SubCategoriaID = source.SubCategoriaID;
-            target.Familia = source.Familia;
-            target.Departamento = source.Departamento;
-            target.Categoria = source.Categoria;
-            target.SubCategoria = source.SubCategoria;
-            target.Proveedor = source.Proveedor;
-            target.Bodega = source.Bodega;
-            target.Costo = source.Costo;
-            target.PrecioVenta = source.PrecioVenta;
-            target.ImpuestoPorcentaje = source.ImpuestoPorcentaje;
-            target.Existencia = source.Existencia;
-            target.ExistenciaMinima = source.ExistenciaMinima;
-            target.ExistenciaMaxima = source.ExistenciaMaxima;
-            target.Activo = source.Activo;
-            target.Inventariable = source.Inventariable;
-            target.Exento = source.Exento;
-            target.UsuarioCrea = source.UsuarioCrea;
-            target.FechaCrea = source.FechaCrea;
-            target.UsuarioModifica = source.UsuarioModifica;
-            target.FechaModifica = source.FechaModifica;
-        }
+            public CatalogData()
+            {
+                Unidades = new List<string>();
+                Proveedores = new List<EN_Supplier>();
+                Bodegas = new List<EN_Store>();
+                Familias = new List<FamiliaCatalogo>();
+                Departamentos = new List<DepartamentoCatalogo>();
+                Categorias = new List<CategoriaCatalogo>();
+                SubCategorias = new List<SubCategoriaCatalogo>();
+                Impuestos = new List<EN_Tax>();
+            }
 
-        private string GetCurrentUser()
-        {
-            return User != null && User.Identity != null && !String.IsNullOrWhiteSpace(User.Identity.Name)
-                ? User.Identity.Name
-                : "Soporte";
+            public IList<string> Unidades { get; set; }
+            public IList<EN_Supplier> Proveedores { get; set; }
+            public IList<EN_Store> Bodegas { get; set; }
+            public IList<FamiliaCatalogo> Familias { get; set; }
+            public IList<DepartamentoCatalogo> Departamentos { get; set; }
+            public IList<CategoriaCatalogo> Categorias { get; set; }
+            public IList<SubCategoriaCatalogo> SubCategorias { get; set; }
+            public IList<EN_Tax> Impuestos { get; set; }
         }
 
         private class FamiliaCatalogo

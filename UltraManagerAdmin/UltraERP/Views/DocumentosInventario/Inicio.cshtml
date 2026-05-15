@@ -89,6 +89,16 @@
         <div class="table-toolbar-main">
             <input id="table_search" type="search" class="form-control" placeholder="Buscar en resultados" />
             <span id="results_hint" class="toolbar-chip">0 resultados</span>
+            <label class="page-size-control" for="page_size">
+                Mostrar
+                <select id="page_size" class="form-select form-select-sm">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </label>
         </div>
         <span id="loading_state" class="loading-state">Cargando...</span>
     </div>
@@ -112,6 +122,11 @@
             </thead>
             <tbody id="documentos_body"></tbody>
         </table>
+    </div>
+    <div class="table-pagination">
+        <button id="btnPrevPage" class="btn btn-outline-secondary btn-sm" type="button">Anterior</button>
+        <span id="page_hint" class="toolbar-chip">Pagina 1 de 1</span>
+        <button id="btnNextPage" class="btn btn-outline-secondary btn-sm" type="button">Siguiente</button>
     </div>
 </section>
 
@@ -172,8 +187,10 @@
             accion: '@Url.Action("EjecutarAccion", "DocumentosInventario")'
         };
         var documentos = [];
+        var pager = null;
 
         $(function () {
+            pager = window.UltraERP.createTablePager({ onChange: renderTable });
             bindEvents();
             getDocumentos();
         });
@@ -191,6 +208,7 @@
                 $("#filter_factura").val("");
                 $("#filter_persona").val("");
                 $("#table_search").val("");
+                if (pager) pager.reset();
                 getDocumentos();
             });
         }
@@ -218,6 +236,7 @@
                     }
 
                     documentos = data.Result || [];
+                    if (pager) pager.reset();
                     renderTable();
                     updateSummary();
                 })
@@ -238,7 +257,8 @@
                 });
             });
 
-            var html = rows.map(function (d) {
+            var pageRows = pager ? pager.pageRows(rows) : rows;
+            var html = pageRows.map(function (d) {
                 return "<tr>" +
                     "<td>" + escapeHtml(d.Numero) + "</td>" +
                     "<td>" + escapeHtml(d.Tipo) + "</td>" +
@@ -255,7 +275,8 @@
                     "</tr>";
             }).join("");
 
-            $("#results_hint").text(rows.length + " resultados");
+            if (pager) pager.update(rows, pageRows);
+            else $("#results_hint").text(rows.length + " resultados");
             $("#documentos_body").html(html || "<tr><td colspan='12' class='empty-state'>Sin documentos para los filtros aplicados.</td></tr>");
         }
 

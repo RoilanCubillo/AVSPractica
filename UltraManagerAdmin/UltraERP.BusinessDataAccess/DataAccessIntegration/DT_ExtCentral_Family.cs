@@ -53,18 +53,13 @@ namespace UltraERP.BusinessDataAccess.DataAccessIntegration
 
         public virtual Respuesta Get(int ID)
         {
-            SqlParameter[] parameters = new SqlParameter[] { new SqlParameter("@ID", ID) };
-
             try
             {
-                using (SqlDataReader dataReader = SqlHelper.ExecuteReader(cn, CommandType.StoredProcedure, "UEP_EXTCENTRAL_FAMILY_GET", parameters))
-                {
-                    if (dataReader.Read())
-                    {
-                        return new Respuesta("", "", MakeEN_ExtCentral_Family(dataReader), true);
-                    }
-                    return new Respuesta("RESULTADO: NO LEIDO", "error_leer_proc", null, false);
-                }
+                EN_ExtCentral_Family family = GetAll("", 0, 0).FirstOrDefault(x => x.ID == ID);
+                if (family != null)
+                    return new Respuesta("", "", family, true);
+
+                return new Respuesta("RESULTADO: NO LEIDO", "error_leer_proc", null, false);
             }
             catch (Exception e)
             {

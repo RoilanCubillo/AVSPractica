@@ -61,22 +61,7 @@ namespace UltraERP.BusinessDataAccess.DataAccessIntegration
         /// </summary>
         public virtual EN_Department Get(int iD)
         {
-            SqlParameter[] parameters = new SqlParameter[]
-            {
-                new SqlParameter("@ID", iD)
-            };
-
-            using (SqlDataReader dataReader = SqlHelper.ExecuteReader(cn, CommandType.StoredProcedure, "UEP_DEPARTMENT_GET", parameters))
-            {
-                if (dataReader.Read())
-                {
-                    return MakeEN_Department(dataReader);
-                }
-                else
-                {
-                    return null;
-                }
-            }
+            return GetAll("", 0, 0).FirstOrDefault(x => x.ID == iD);
         }
 
         /// <summary>

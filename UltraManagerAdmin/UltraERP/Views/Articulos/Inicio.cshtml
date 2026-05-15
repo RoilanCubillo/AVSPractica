@@ -21,6 +21,11 @@
     <div class="alert alert-success">@TempData["ArticuloMessage"]</div>
 }
 
+@if (TempData["ArticuloError"] != null)
+{
+    <div class="alert alert-warning">@TempData["ArticuloError"]</div>
+}
+
 <section class="filter-panel">
     <div class="row g-3">
         <div class="col-12 col-md-3">
@@ -81,8 +86,23 @@
     <div class="table-toolbar">
         <div class="table-toolbar-main">
             <span id="results_hint" class="toolbar-chip">0 resultados</span>
+            <label class="page-size-control" for="page_size">
+                Mostrar
+                <select id="page_size" class="form-select form-select-sm">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </label>
         </div>
-        <span id="loading_state" class="loading-state">Cargando...</span>
+        <div class="table-pagination">
+            <button id="btnPrevPage" class="btn btn-outline-secondary btn-sm" type="button">Anterior</button>
+            <span id="page_hint" class="toolbar-chip">Pagina 1 de 1</span>
+            <button id="btnNextPage" class="btn btn-outline-secondary btn-sm" type="button">Siguiente</button>
+            <span id="loading_state" class="loading-state">Cargando...</span>
+        </div>
     </div>
     <div class="table-responsive">
         <table class="table align-middle document-table article-list-table">
@@ -151,6 +171,7 @@
         };
         var articulos = @Html.Raw(articulosJson);
         var filteredRows = [];
+        var currentPage = 1;
 
         $(function () {
             bindEvents();
@@ -159,9 +180,32 @@
         });
 
         function bindEvents() {
-            $("#btnConsultar").on("click", renderTable);
-            $("#table_search, #filter_familia, #filter_departamento, #filter_categoria, #filter_subcategoria, #filter_proveedor").on("input", renderTable);
-            $("#filter_estado").on("change", renderTable);
+            $("#btnConsultar").on("click", function () {
+                currentPage = 1;
+                renderTable();
+            });
+            $("#table_search, #filter_familia, #filter_departamento, #filter_categoria, #filter_subcategoria, #filter_proveedor").on("input", function () {
+                currentPage = 1;
+                renderTable();
+            });
+            $("#filter_estado").on("change", function () {
+                currentPage = 1;
+                renderTable();
+            });
+            $("#page_size").on("change", function () {
+                currentPage = 1;
+                renderTable();
+            });
+            $("#btnPrevPage").on("click", function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTable();
+                }
+            });
+            $("#btnNextPage").on("click", function () {
+                currentPage++;
+                renderTable();
+            });
             $("#btnLimpiar").on("click", function () {
                 $("#filter_estado").val("Todos");
                 $("#filter_familia").val("");
@@ -170,13 +214,18 @@
                 $("#filter_subcategoria").val("");
                 $("#filter_proveedor").val("");
                 $("#table_search").val("");
+                currentPage = 1;
                 renderTable();
             });
         }
 
         function renderTable() {
             filteredRows = getFilteredRows();
-            var html = filteredRows.map(function (a) {
+            var pageSize = getPageSize();
+            var totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
+            currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+            var pageRows = getPagedRows(filteredRows, pageSize);
+            var html = pageRows.map(function (a) {
                 return "<tr>" +
                     "<td><strong>" + escapeHtml(a.Codigo) + "</strong></td>" +
                     "<td>" + escapeHtml(a.Descripcion) + "</td>" +
@@ -194,9 +243,29 @@
                     "</tr>";
             }).join("");
 
-            $("#results_hint").text(filteredRows.length + " resultados");
+            updatePagination(pageRows, pageSize, totalPages);
             $("#articulos_body").html(html || "<tr><td colspan='13' class='empty-state'>Sin articulos para los filtros aplicados.</td></tr>");
             updateSummary();
+        }
+
+        function getPageSize() {
+            return Number($("#page_size").val() || 10);
+        }
+
+        function getPagedRows(rows, pageSize) {
+            var start = (currentPage - 1) * pageSize;
+            return rows.slice(start, start + pageSize);
+        }
+
+        function updatePagination(pageRows, pageSize, totalPages) {
+            var total = filteredRows.length;
+            var start = total === 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
+            var end = total === 0 ? 0 : start + pageRows.length - 1;
+
+            $("#results_hint").text(start + "-" + end + " de " + total + " resultados");
+            $("#page_hint").text("Pagina " + currentPage + " de " + totalPages);
+            $("#btnPrevPage").prop("disabled", currentPage <= 1);
+            $("#btnNextPage").prop("disabled", currentPage >= totalPages);
         }
 
         function getFilteredRows() {

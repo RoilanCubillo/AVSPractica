@@ -2029,6 +2029,30 @@ body {
     gap: 10px;
 }
 
+.page-size-control,
+.table-pagination {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.page-size-control {
+    color: var(--app-muted);
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.page-size-control .form-select {
+    width: 82px;
+    min-height: 38px;
+}
+
+.table-pagination {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
 .table-toolbar .form-control {
     max-width: 360px;
 }

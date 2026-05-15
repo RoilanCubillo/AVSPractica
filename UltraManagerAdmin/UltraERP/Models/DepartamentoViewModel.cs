@@ -9,7 +9,6 @@ namespace UltraERP.Models
         public int HQID { get; set; }
 
         [Required(ErrorMessage = "La familia es obligatoria.")]
-        [Range(1, int.MaxValue, ErrorMessage = "Seleccione una familia.")]
         public int FamiliaID { get; set; }
 
         public string FamiliaCodigo { get; set; }

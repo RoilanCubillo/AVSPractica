@@ -16,14 +16,15 @@
     </div>
 </section>
 
+@if (TempData["FamiliaError"] != null)
+{
+    <div class="alert alert-warning">@TempData["FamiliaError"]</div>
+}
+
 @using (Html.BeginForm("Registro", "Familias", FormMethod.Post, new { id = "familiaForm", @class = "document-form" }))
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.ID)
-    @Html.HiddenFor(m => m.UsuarioCrea)
-    @Html.HiddenFor(m => m.FechaCrea)
-    @Html.HiddenFor(m => m.UsuarioModifica)
-    @Html.HiddenFor(m => m.FechaModifica)
 
     if (!ViewData.ModelState.IsValid)
     {
@@ -48,22 +49,6 @@
                 <label class="form-label required" for="Nombre">Nombre</label>
                 @Html.TextBoxFor(m => m.Nombre, new { @class = "form-control", maxlength = "30", autocomplete = "off", placeholder = "Ej: Abarrotes" })
                 @Html.ValidationMessageFor(m => m.Nombre, "", new { @class = "text-danger small" })
-            </div>
-            <div class="col-12 col-md-2">
-                <label class="form-label" for="CantidadArticulos">Art&iacute;culos</label>
-                @Html.TextBoxFor(m => m.CantidadArticulos, new { @class = "form-control", type = "number", min = "0", step = "1" })
-            </div>
-            <div class="col-12 col-md-2">
-                <label class="form-label" for="Activa">Estado</label>
-                <div class="article-switch">
-                    @Html.CheckBoxFor(m => m.Activa)
-                    <span>Activa</span>
-                </div>
-            </div>
-            <div class="col-12">
-                <label class="form-label" for="Descripcion">Descripci&oacute;n</label>
-                @Html.TextAreaFor(m => m.Descripcion, 4, 30, new { @class = "form-control", maxlength = "180", placeholder = "Uso o alcance de esta familia dentro del inventario." })
-                @Html.ValidationMessageFor(m => m.Descripcion, "", new { @class = "text-danger small" })
             </div>
         </div>
     </section>

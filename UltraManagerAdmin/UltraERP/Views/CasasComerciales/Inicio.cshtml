@@ -65,6 +65,16 @@
     <div class="table-toolbar">
         <div class="table-toolbar-main">
             <span id="results_hint" class="toolbar-chip">0 resultados</span>
+            <label class="page-size-control" for="page_size">
+                Mostrar
+                <select id="page_size" class="form-select form-select-sm">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </label>
         </div>
         <span id="loading_state" class="loading-state">Cargando...</span>
     </div>
@@ -84,6 +94,11 @@
             </thead>
             <tbody id="casas_body"></tbody>
         </table>
+    </div>
+    <div class="table-pagination">
+        <button id="btnPrevPage" class="btn btn-outline-secondary btn-sm" type="button">Anterior</button>
+        <span id="page_hint" class="toolbar-chip">Pagina 1 de 1</span>
+        <button id="btnNextPage" class="btn btn-outline-secondary btn-sm" type="button">Siguiente</button>
     </div>
 </section>
 
@@ -128,8 +143,10 @@
         };
         var casas = @Html.Raw(casasJson);
         var filteredRows = [];
+        var pager = null;
 
         $(function () {
+            pager = window.UltraERP.createTablePager({ onChange: renderTable });
             bindEvents();
             renderTable();
             setLoading(false);
@@ -143,13 +160,15 @@
                 $("#filter_codigo").val("");
                 $("#table_search").val("");
                 $("#filter_estado").val("Todos");
+                if (pager) pager.reset();
                 renderTable();
             });
         }
 
         function renderTable() {
             filteredRows = getFilteredRows();
-            var html = filteredRows.map(function (casa) {
+            var pageRows = pager ? pager.pageRows(filteredRows) : filteredRows;
+            var html = pageRows.map(function (casa) {
                 return "<tr>" +
                     "<td><strong>" + escapeHtml(casa.Codigo) + "</strong></td>" +
                     "<td>" + escapeHtml(casa.CodigoExtra || "-") + "</td>" +
@@ -162,7 +181,8 @@
                     "</tr>";
             }).join("");
 
-            $("#results_hint").text(filteredRows.length + " resultados");
+            if (pager) pager.update(filteredRows, pageRows);
+            else $("#results_hint").text(filteredRows.length + " resultados");
             $("#casas_body").html(html || "<tr><td colspan='8' class='empty-state'>Sin casas comerciales para los filtros aplicados.</td></tr>");
             updateSummary();
         }

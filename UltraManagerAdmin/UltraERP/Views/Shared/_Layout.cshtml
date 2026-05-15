@@ -178,6 +178,88 @@
             window.UltraERP.showPageLoader = showPageLoader;
             window.UltraERP.hidePageLoader = hidePageLoader;
             window.UltraERP.downloadFile = downloadFile;
+            window.UltraERP.createTablePager = function (options) {
+                var settings = options || {};
+                var currentPage = 1;
+                var pageSizeSelector = settings.pageSizeSelector || "#page_size";
+                var previousSelector = settings.previousSelector || "#btnPrevPage";
+                var nextSelector = settings.nextSelector || "#btnNextPage";
+                var pageHintSelector = settings.pageHintSelector || "#page_hint";
+                var resultsSelector = settings.resultsSelector || "#results_hint";
+                var label = settings.label || "resultados";
+
+                function getPageSize() {
+                    return Number($(pageSizeSelector).val() || settings.defaultPageSize || 10);
+                }
+
+                function getTotalPages(totalRows) {
+                    return Math.max(1, Math.ceil(totalRows / getPageSize()));
+                }
+
+                function clamp(totalRows) {
+                    var totalPages = getTotalPages(totalRows);
+                    if (currentPage > totalPages) {
+                        currentPage = totalPages;
+                    }
+                    if (currentPage < 1) {
+                        currentPage = 1;
+                    }
+                    return totalPages;
+                }
+
+                function pageRows(rows) {
+                    rows = rows || [];
+                    clamp(rows.length);
+                    var pageSize = getPageSize();
+                    var start = (currentPage - 1) * pageSize;
+                    return rows.slice(start, start + pageSize);
+                }
+
+                function update(rows, rowsOnPage) {
+                    rows = rows || [];
+                    rowsOnPage = rowsOnPage || [];
+                    var pageSize = getPageSize();
+                    var totalPages = clamp(rows.length);
+                    var total = rows.length;
+                    var start = total === 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
+                    var end = total === 0 ? 0 : start + rowsOnPage.length - 1;
+
+                    $(resultsSelector).text(start + "-" + end + " de " + total + " " + label);
+                    $(pageHintSelector).text("Pagina " + currentPage + " de " + totalPages);
+                    $(previousSelector).prop("disabled", currentPage <= 1);
+                    $(nextSelector).prop("disabled", currentPage >= totalPages);
+                }
+
+                function reset() {
+                    currentPage = 1;
+                }
+
+                function onChange() {
+                    if (typeof settings.onChange === "function") {
+                        settings.onChange();
+                    }
+                }
+
+                $(previousSelector).off("click.ultraPager").on("click.ultraPager", function () {
+                    if (currentPage <= 1) return;
+                    currentPage -= 1;
+                    onChange();
+                });
+                $(nextSelector).off("click.ultraPager").on("click.ultraPager", function () {
+                    currentPage += 1;
+                    onChange();
+                });
+                $(pageSizeSelector).off("change.ultraPager").on("change.ultraPager", function () {
+                    reset();
+                    onChange();
+                });
+
+                return {
+                    reset: reset,
+                    pageRows: pageRows,
+                    update: update
+                };
+            };
 
             document.addEventListener("DOMContentLoaded", function () {
                 function bindSectionToggle(toggleId, menuId) {
