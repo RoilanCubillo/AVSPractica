@@ -16,6 +16,11 @@
     </div>
 </section>
 
+@if (TempData["DescuentoError"] != null)
+{
+    <div class="alert alert-warning">@TempData["DescuentoError"]</div>
+}
+
 @using (Html.BeginForm("Registro", "Descuentos", FormMethod.Post, new { id = "descuentoForm", @class = "document-form" }))
 {
     @Html.AntiForgeryToken()
@@ -49,9 +54,15 @@
                 @Html.TextBoxFor(m => m.Descripcion, new { @class = "form-control", maxlength = "30", autocomplete = "off", placeholder = "Ej: Cafe CR mayoreo" })
                 @Html.ValidationMessageFor(m => m.Descripcion, "", new { @class = "text-danger small" })
             </div>
+            @Html.HiddenFor(m => m.Tipo, new { id = "Tipo" })
             <div class="col-12 col-md-4">
-                <label class="form-label required" for="Tipo">Tipo</label>
-                @Html.DropDownListFor(m => m.Tipo, (IEnumerable<SelectListItem>)ViewBag.Tipos, new { @class = "form-select", id = "Tipo" })
+                <label class="form-label required">Tipo de descuento</label>
+                <div class="discount-type-options">
+                    <label><input type="radio" name="TipoOption" value="1" @(Model.Tipo == 1 ? "checked" : "") /> Mezcle y Combine: Precio Unitario</label>
+                    <label><input type="radio" name="TipoOption" value="3" @(Model.Tipo == 3 ? "checked" : "") /> Mezcle y Combine: Porcentaje de Descuento</label>
+                    <label><input type="radio" name="TipoOption" value="2" @(Model.Tipo == 2 ? "checked" : "") /> Compre X y lleve Y por Z: Precio Unitario</label>
+                    <label><input type="radio" name="TipoOption" value="4" @(Model.Tipo == 4 ? "checked" : "") /> Compre X y lleve Y por Z: Porcentaje de Descuento</label>
+                </div>
                 @Html.ValidationMessageFor(m => m.Tipo, "", new { @class = "text-danger small" })
             </div>
             <div class="col-12 col-md-2">
@@ -70,102 +81,190 @@
             <h2>Regla de descuento</h2>
         </div>
 
-        <div class="row g-3 discount-rule-grid">
-            <div class="col-12 col-md-3">
-                <label class="form-label" for="Cantidad1">Cantidad 1</label>
-                @Html.TextBoxFor(m => m.Cantidad1, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
-                @Html.ValidationMessageFor(m => m.Cantidad1, "", new { @class = "text-danger small" })
-            </div>
-            <div class="col-12 col-md-3 matrix-field">
-                <label class="form-label" for="Cantidad2">Cantidad 2</label>
-                @Html.TextBoxFor(m => m.Cantidad2, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
-                @Html.ValidationMessageFor(m => m.Cantidad2, "", new { @class = "text-danger small" })
-            </div>
-            <div class="col-12 col-md-3 matrix-only">
-                <label class="form-label" for="Cantidad3">Cantidad 3</label>
-                @Html.TextBoxFor(m => m.Cantidad3, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
-            </div>
-            <div class="col-12 col-md-3 matrix-only">
-                <label class="form-label" for="Cantidad4">Cantidad 4</label>
-                @Html.TextBoxFor(m => m.Cantidad4, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
+        <div class="discount-matrix">
+            <div class="table-responsive matrix-price matrix-section">
+                <table class="table table-bordered align-middle">
+                    <thead>
+                        <tr>
+                            <th>Cantidad</th>
+                            <th>Precio Reg.</th>
+                            <th>Nivel A</th>
+                            <th>Nivel B</th>
+                            <th>Nivel C</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>@Html.TextBoxFor(m => m.Cantidad1, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Precio1, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Precio1A, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Precio1B, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Precio1C, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                        </tr>
+                        <tr>
+                            <td>@Html.TextBoxFor(m => m.Cantidad2, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Precio2, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Precio2A, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Precio2B, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Precio2C, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                        </tr>
+                        <tr>
+                            <td>@Html.TextBoxFor(m => m.Cantidad3, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Precio3, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Precio3A, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Precio3B, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Precio3C, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                        </tr>
+                        <tr>
+                            <td>@Html.TextBoxFor(m => m.Cantidad4, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Precio4, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Precio4A, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Precio4B, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Precio4C, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
-            <div class="col-12 col-md-3 price-field">
-                <label class="form-label" for="Precio1">Precio 1</label>
-                @Html.TextBoxFor(m => m.Precio1, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
-                @Html.ValidationMessageFor(m => m.Precio1, "", new { @class = "text-danger small" })
-            </div>
-            <div class="col-12 col-md-3 price-field">
-                <label class="form-label" for="Precio2">Precio 2</label>
-                @Html.TextBoxFor(m => m.Precio2, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
-                @Html.ValidationMessageFor(m => m.Precio2, "", new { @class = "text-danger small" })
-            </div>
-            <div class="col-12 col-md-3 price-field matrix-only">
-                <label class="form-label" for="Precio3">Precio 3</label>
-                @Html.TextBoxFor(m => m.Precio3, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
-            </div>
-            <div class="col-12 col-md-3 price-field matrix-only">
-                <label class="form-label" for="Precio4">Precio 4</label>
-                @Html.TextBoxFor(m => m.Precio4, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
+            <div class="table-responsive matrix-percent matrix-section">
+                <table class="table table-bordered align-middle">
+                    <thead>
+                        <tr>
+                            <th>Cantidad</th>
+                            <th>Porcentaje Reg.</th>
+                            <th>Nivel A</th>
+                            <th>Nivel B</th>
+                            <th>Nivel C</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>@Html.TextBoxFor(m => m.Cantidad1, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Porcentaje1, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Porcentaje1A, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Porcentaje1B, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Porcentaje1C, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })</td>
+                        </tr>
+                        <tr>
+                            <td>@Html.TextBoxFor(m => m.Cantidad2, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Porcentaje2, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Porcentaje2A, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Porcentaje2B, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Porcentaje2C, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })</td>
+                        </tr>
+                        <tr>
+                            <td>@Html.TextBoxFor(m => m.Cantidad3, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Porcentaje3, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Porcentaje3A, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Porcentaje3B, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Porcentaje3C, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })</td>
+                        </tr>
+                        <tr>
+                            <td>@Html.TextBoxFor(m => m.Cantidad4, new { @class = "form-control", type = "number", min = "0", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Porcentaje4, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Porcentaje4A, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Porcentaje4B, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })</td>
+                            <td>@Html.TextBoxFor(m => m.Porcentaje4C, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
-            <div class="col-12 col-md-3 percent-field">
-                <label class="form-label" for="Porcentaje1">Porcentaje 1</label>
-                @Html.TextBoxFor(m => m.Porcentaje1, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })
-                @Html.ValidationMessageFor(m => m.Porcentaje1, "", new { @class = "text-danger small" })
-            </div>
-            <div class="col-12 col-md-3 percent-field">
-                <label class="form-label" for="Porcentaje2">Porcentaje 2</label>
-                @Html.TextBoxFor(m => m.Porcentaje2, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })
-                @Html.ValidationMessageFor(m => m.Porcentaje2, "", new { @class = "text-danger small" })
-            </div>
-            <div class="col-12 col-md-3 percent-field matrix-only">
-                <label class="form-label" for="Porcentaje3">Porcentaje 3</label>
-                @Html.TextBoxFor(m => m.Porcentaje3, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })
-            </div>
-            <div class="col-12 col-md-3 percent-field matrix-only">
-                <label class="form-label" for="Porcentaje4">Porcentaje 4</label>
-                @Html.TextBoxFor(m => m.Porcentaje4, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })
+            <div class="row g-3 xy-section">
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="Cantidad1">Cantidad a comprar</label>
+                    @Html.TextBoxFor(m => m.Cantidad1, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="Cantidad2">Cantidad con descuento</label>
+                    @Html.TextBoxFor(m => m.Cantidad2, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
+                </div>
+                <div class="col-12 col-md-3 xy-price">
+                    <label class="form-label" for="Precio2">Precio descuento</label>
+                    @Html.TextBoxFor(m => m.Precio2, new { @class = "form-control", type = "number", min = "0", step = "0.01" })
+                </div>
+                <div class="col-12 col-md-3 xy-percent">
+                    <label class="form-label" for="Porcentaje2">Porcentaje descuento</label>
+                    @Html.TextBoxFor(m => m.Porcentaje2, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.01" })
+                </div>
             </div>
         </div>
     </section>
 
-    <section class="form-panel">
-        <div class="section-title">
-            <span>3.</span>
-            <h2>Alcance</h2>
-        </div>
-
-        <div class="row g-3">
-            <div class="col-12 col-md-3">
-                <label class="form-label" for="TiendasAsociadas">Tiendas asociadas</label>
-                @Html.TextBoxFor(m => m.TiendasAsociadas, new { @class = "form-control", type = "number", min = "0", step = "1" })
-            </div>
-            <div class="col-12 col-md-3">
-                <label class="form-label" for="ArticulosAsociados">Art&iacute;culos asociados</label>
-                @Html.TextBoxFor(m => m.ArticulosAsociados, new { @class = "form-control", type = "number", min = "0", step = "1" })
-            </div>
-        </div>
-    </section>
 }
 
 @section scripts {
     <script>
         $(function () {
-            $("#Tipo").on("change", syncDiscountType);
+            hydrateNumberInputs();
+            $("input[name='TipoOption']").on("change", function () {
+                $("#Tipo").val($(this).val());
+                syncDiscountType();
+            });
+            $("#descuentoForm").on("submit", normalizeDiscountForm);
             syncDiscountType();
         });
 
+        function hydrateNumberInputs() {
+            $("#descuentoForm input[type='number']").each(function () {
+                var input = this;
+                var rawValue = input.getAttribute("value");
+                if (input.value || !rawValue) return;
+
+                var normalizedValue = normalizeNumberValue(rawValue);
+                if (normalizedValue !== rawValue) {
+                    input.value = normalizedValue;
+                }
+            });
+        }
+
+        function normalizeNumberValue(value) {
+            value = String(value || "").trim();
+            if (!value) return value;
+
+            var hasComma = value.indexOf(",") >= 0;
+            var hasDot = value.indexOf(".") >= 0;
+
+            if (hasComma && hasDot && value.lastIndexOf(",") > value.lastIndexOf(".")) {
+                return formatTwoDecimals(value.replace(/\./g, "").replace(",", "."));
+            }
+
+            if (hasComma && hasDot) {
+                return formatTwoDecimals(value.replace(/,/g, ""));
+            }
+
+            if (hasComma) {
+                return formatTwoDecimals(value.replace(",", "."));
+            }
+
+            return formatTwoDecimals(value);
+        }
+
+        function formatTwoDecimals(value) {
+            var number = Number(value);
+            if (!isFinite(number)) return value;
+
+            return number.toFixed(2);
+        }
+
         function syncDiscountType() {
             var type = Number($("#Tipo").val() || 1);
-            var isMatrix = type === 1 || type === 3;
-            var usesPrice = type === 1 || type === 2;
-            var usesPercent = type === 3 || type === 4;
+            $(".matrix-price").toggle(type === 1).find(":input").prop("disabled", type !== 1);
+            $(".matrix-percent").toggle(type === 3).find(":input").prop("disabled", type !== 3);
+            $(".xy-section").toggle(type === 2 || type === 4).find(":input").prop("disabled", type !== 2 && type !== 4);
+            $(".xy-price").toggle(type === 2).find(":input").prop("disabled", type !== 2);
+            $(".xy-percent").toggle(type === 4).find(":input").prop("disabled", type !== 4);
+        }
 
-            $(".matrix-only").toggle(isMatrix);
-            $(".price-field").toggle(usesPrice);
-            $(".percent-field").toggle(usesPercent);
-            $(".matrix-field").toggle(isMatrix || type === 2 || type === 4);
+        function normalizeDiscountForm() {
+            var type = Number($("#Tipo").val() || 1);
+
+            $("#descuentoForm input[type='number']:enabled").each(function () {
+                var $input = $(this);
+                if (!$input.val()) {
+                    $input.val(0);
+                }
+            });
         }
     </script>
 }

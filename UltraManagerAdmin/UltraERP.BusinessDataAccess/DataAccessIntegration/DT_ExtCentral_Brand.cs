@@ -25,12 +25,19 @@ namespace UltraERP.BusinessDataAccess.DataAccessIntegration
 
         public Respuesta Save(int iD, string description)
         {
-            Respuesta respuesta = new Respuesta("NO ACCIONADO", "error_guardar", null, false);
+            try
+            {
+                Respuesta respuesta = new Respuesta("NO ACCIONADO", "error_guardar", null, false);
 
-            foreach(var i in db.UEP_EXTCENTRAL_BRAND_INSERT_UPDATE(iD, description))
-                respuesta = new Respuesta("", i.RESPUESTA, i.SCOPE, !i.RESPUESTA.Contains("error"));
+                foreach (var i in db.UEP_EXTCENTRAL_BRAND_INSERT_UPDATE(iD, description))
+                    respuesta = new Respuesta("", i.RESPUESTA, i.SCOPE, i.RESPUESTA.IndexOf("error", StringComparison.OrdinalIgnoreCase) < 0);
 
-            return respuesta;
+                return respuesta;
+            }
+            catch (Exception e)
+            {
+                return new Respuesta(e.Message, "error_guardar", null, false);
+            }
         }
     }
 }

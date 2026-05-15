@@ -21,6 +21,11 @@
     <div class="alert alert-success">@TempData["FabricanteMessage"]</div>
 }
 
+@if (TempData["FabricanteError"] != null)
+{
+    <div class="alert alert-warning">@TempData["FabricanteError"]</div>
+}
+
 <section class="filter-panel">
     <div class="row g-3">
         <div class="col-12 col-md-3">
@@ -29,7 +34,7 @@
         </div>
         <div class="col-12 col-md-6">
             <label for="table_search" class="form-label">Buscar</label>
-            <input id="table_search" type="search" class="form-control" placeholder="Descripcion o nota" />
+            <input id="table_search" type="search" class="form-control" placeholder="Descripcion" />
         </div>
     </div>
     <div class="filter-actions">
@@ -44,12 +49,12 @@
         <strong id="summary_count">0</strong>
     </article>
     <article>
-        <span>Con art&iacute;culos</span>
-        <strong id="summary_with_items">0</strong>
+        <span>Con c&oacute;digo</span>
+        <strong id="summary_with_code">0</strong>
     </article>
     <article>
-        <span>Art&iacute;culos asociados</span>
-        <strong id="summary_items">0</strong>
+        <span>Visibles</span>
+        <strong id="summary_visible">0</strong>
     </article>
 </section>
 
@@ -76,9 +81,6 @@
                 <tr>
                     <th>C&oacute;digo</th>
                     <th>Descripci&oacute;n</th>
-                    <th>Nota</th>
-                    <th>Art&iacute;culos</th>
-                    <th>Fecha crea</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -108,17 +110,13 @@
                             <p id="manufacturer_view_subtitle" class="document-view-subtitle"></p>
                         </div>
                         <div class="document-view-total">
-                            <span>Art&iacute;culos</span>
-                            <strong id="manufacturer_view_items"></strong>
+                            <span>C&oacute;digo</span>
+                            <strong id="manufacturer_view_code"></strong>
                         </div>
                     </section>
                     <section class="document-view-section">
                         <h3>Datos generales</h3>
                         <div id="manufacturer_view_summary" class="document-view-grid"></div>
-                    </section>
-                    <section class="document-view-section">
-                        <h3>Auditor&iacute;a</h3>
-                        <div id="manufacturer_view_audit" class="document-view-grid"></div>
                     </section>
                 </div>
             </div>
@@ -160,16 +158,13 @@
                 return "<tr>" +
                     "<td><strong>" + escapeHtml(f.CodigoTexto) + "</strong></td>" +
                     "<td>" + escapeHtml(f.Descripcion) + "</td>" +
-                    "<td>" + escapeHtml(f.Nota || "-") + "</td>" +
-                    "<td>" + formatNumber(f.CantidadArticulos) + "</td>" +
-                    "<td>" + escapeHtml(f.FechaCreaTexto || "-") + "</td>" +
                     "<td>" + getActionButtons(f) + "</td>" +
                     "</tr>";
             }).join("");
 
             if (pager) pager.update(filteredRows, pageRows);
             else $("#results_hint").text(filteredRows.length + " resultados");
-            $("#fabricantes_body").html(html || "<tr><td colspan='6' class='empty-state'>Sin fabricantes para los filtros aplicados.</td></tr>");
+            $("#fabricantes_body").html(html || "<tr><td colspan='3' class='empty-state'>Sin fabricantes para los filtros aplicados.</td></tr>");
             updateSummary();
         }
 
@@ -181,7 +176,7 @@
                 if (codigo && String(f.CodigoTexto || "").toLowerCase().indexOf(codigo) < 0) return false;
                 if (!text) return true;
 
-                return [f.Descripcion, f.Nota]
+                return [f.Descripcion]
                     .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
             });
         }
@@ -200,18 +195,10 @@
             $("#fabricanteModalTitle").text("Fabricante " + fabricante.CodigoTexto);
             $("#manufacturer_view_title").text(fabricante.Descripcion);
             $("#manufacturer_view_subtitle").text("Codigo " + fabricante.CodigoTexto);
-            $("#manufacturer_view_items").text(formatNumber(fabricante.CantidadArticulos));
+            $("#manufacturer_view_code").text(fabricante.CodigoTexto);
             $("#manufacturer_view_summary").html(renderViewGrid([
                 { label: "Codigo", value: fabricante.CodigoTexto },
-                { label: "Descripcion", value: fabricante.Descripcion },
-                { label: "Nota", value: fabricante.Nota || "-" },
-                { label: "Articulos asociados", value: formatNumber(fabricante.CantidadArticulos) }
-            ]));
-            $("#manufacturer_view_audit").html(renderViewGrid([
-                { label: "Usuario crea", value: fabricante.UsuarioCrea || "-" },
-                { label: "Fecha crea", value: fabricante.FechaCreaTexto || "-" },
-                { label: "Usuario modifica", value: fabricante.UsuarioModifica || "-" },
-                { label: "Fecha modifica", value: fabricante.FechaModificaTexto || "-" }
+                { label: "Descripcion", value: fabricante.Descripcion }
             ]));
             new bootstrap.Modal(document.getElementById("fabricanteModal")).show();
         }
@@ -230,11 +217,10 @@
 
         function updateSummary() {
             var rows = filteredRows;
-            var withItems = rows.filter(function (f) { return Number(f.CantidadArticulos || 0) > 0; }).length;
-            var items = rows.reduce(function (sum, f) { return sum + Number(f.CantidadArticulos || 0); }, 0);
+            var withCode = rows.filter(function (f) { return Number(f.ID || 0) > 0; }).length;
             $("#summary_count").text(rows.length);
-            $("#summary_with_items").text(withItems);
-            $("#summary_items").text(formatNumber(items));
+            $("#summary_with_code").text(withCode);
+            $("#summary_visible").text(rows.length);
         }
 
         function renderViewGrid(items) {

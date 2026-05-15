@@ -21,13 +21,37 @@ namespace UltraERP.Models
         public decimal Cantidad3 { get; set; }
         public decimal Cantidad4 { get; set; }
         public decimal Precio1 { get; set; }
+        public decimal Precio1A { get; set; }
+        public decimal Precio1B { get; set; }
+        public decimal Precio1C { get; set; }
         public decimal Precio2 { get; set; }
+        public decimal Precio2A { get; set; }
+        public decimal Precio2B { get; set; }
+        public decimal Precio2C { get; set; }
         public decimal Precio3 { get; set; }
+        public decimal Precio3A { get; set; }
+        public decimal Precio3B { get; set; }
+        public decimal Precio3C { get; set; }
         public decimal Precio4 { get; set; }
+        public decimal Precio4A { get; set; }
+        public decimal Precio4B { get; set; }
+        public decimal Precio4C { get; set; }
         public decimal Porcentaje1 { get; set; }
+        public decimal Porcentaje1A { get; set; }
+        public decimal Porcentaje1B { get; set; }
+        public decimal Porcentaje1C { get; set; }
         public decimal Porcentaje2 { get; set; }
+        public decimal Porcentaje2A { get; set; }
+        public decimal Porcentaje2B { get; set; }
+        public decimal Porcentaje2C { get; set; }
         public decimal Porcentaje3 { get; set; }
+        public decimal Porcentaje3A { get; set; }
+        public decimal Porcentaje3B { get; set; }
+        public decimal Porcentaje3C { get; set; }
         public decimal Porcentaje4 { get; set; }
+        public decimal Porcentaje4A { get; set; }
+        public decimal Porcentaje4B { get; set; }
+        public decimal Porcentaje4C { get; set; }
         public int TiendasAsociadas { get; set; }
         public int ArticulosAsociados { get; set; }
         public string UsuarioCrea { get; set; }
@@ -46,10 +70,10 @@ namespace UltraERP.Models
             {
                 switch (Tipo)
                 {
-                    case 1: return "Precio por cantidad";
-                    case 2: return "Compre X y lleve Y a precio";
-                    case 3: return "Porcentaje por cantidad";
-                    case 4: return "Compre X y lleve Y con porcentaje";
+                    case 1: return "Mezcle y Combine: Precio Unitario";
+                    case 2: return "Compre X y lleve Y por Z: Precio Unitario";
+                    case 3: return "Mezcle y Combine: Porcentaje de Descuento";
+                    case 4: return "Compre X y lleve Y por Z: Porcentaje de Descuento";
                     default: return "-";
                 }
             }
@@ -60,13 +84,13 @@ namespace UltraERP.Models
             get
             {
                 if (Tipo == 1)
-                    return Cantidad1.ToString("0.##") + "+ desde " + Precio1.ToString("N2");
+                    return Cantidad1.ToString("0.##") + "+ desde " + Precio1.ToString("N2") + " / A " + Precio1A.ToString("N2") + " / B " + Precio1B.ToString("N2") + " / C " + Precio1C.ToString("N2");
 
                 if (Tipo == 2)
                     return "Compre " + Cantidad1.ToString("0.##") + " y lleve " + Cantidad2.ToString("0.##") + " a " + Precio2.ToString("N2");
 
                 if (Tipo == 3)
-                    return Cantidad1.ToString("0.##") + "+ con " + Porcentaje1.ToString("0.##") + "%";
+                    return Cantidad1.ToString("0.##") + "+ con " + Porcentaje1.ToString("0.##") + "% / A " + Porcentaje1A.ToString("0.##") + "% / B " + Porcentaje1B.ToString("0.##") + "% / C " + Porcentaje1C.ToString("0.##") + "%";
 
                 if (Tipo == 4)
                     return "Compre " + Cantidad1.ToString("0.##") + " y lleve " + Cantidad2.ToString("0.##") + " con " + Porcentaje2.ToString("0.##") + "%";

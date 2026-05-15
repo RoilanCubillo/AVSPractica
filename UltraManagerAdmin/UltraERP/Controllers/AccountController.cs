@@ -28,10 +28,18 @@ namespace UltraERP.Controllers
 
         public ActionResult Login(string returnUrl)
         {
+            DisableResponseCache();
+
             if (Request.IsAuthenticated)
                 return RedirectToAction("Inicio", "DocumentosInventario");
 
-            return View(new LoginViewModel { ReturnUrl = returnUrl });
+            return View(new LoginViewModel
+            {
+                ReturnUrl = returnUrl,
+                LoginMessage = String.Equals(Request.QueryString["reason"], "token", StringComparison.OrdinalIgnoreCase)
+                    ? "La sesion o el formulario anterior ya no eran validos. Ingrese de nuevo para continuar."
+                    : ""
+            });
         }
 
         [HttpPost]
@@ -43,6 +51,7 @@ namespace UltraERP.Controllers
 
             try
             {
+                model.UserName = (model.UserName ?? "").Trim();
                 var userLogic = new CT_User();
                 var securityUserLogic = new CT_SC_User();
 
@@ -164,6 +173,14 @@ namespace UltraERP.Controllers
             Response.Cache.SetCacheability(HttpCacheability.NoCache);
             Response.Cache.SetExpires(DateTime.Now.AddSeconds(-1));
             Response.Cache.SetNoStore();
+        }
+
+        private void DisableResponseCache()
+        {
+            Response.Cache.SetCacheability(HttpCacheability.NoCache);
+            Response.Cache.SetNoStore();
+            Response.Cache.SetExpires(DateTime.UtcNow.AddMinutes(-1));
+            Response.Cache.SetRevalidation(HttpCacheRevalidation.AllCaches);
         }
     }
 }

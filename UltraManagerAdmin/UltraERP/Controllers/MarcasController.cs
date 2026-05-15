@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
+using UltraERP.BusinessEntities;
+using UltraERP.BusinessLogic;
 using UltraERP.Models;
 
 namespace UltraERP.Controllers
@@ -9,39 +11,42 @@ namespace UltraERP.Controllers
     [Authorize]
     public class MarcasController : Controller
     {
-        private static readonly object SyncRoot = new object();
-
-        private static readonly List<MarcaViewModel> Marcas = new List<MarcaViewModel>
-        {
-            CreateMarca(1, "Dos Pinos", "Lacteos y bebidas de alta presencia en Costa Rica.", 18),
-            CreateMarca(2, "Salsa Lizano", "Salsas y condimentos reconocidos en la mesa costarricense.", 9),
-            CreateMarca(3, "Cafe Britt", "Cafe costarricense para retail y turismo.", 7),
-            CreateMarca(4, "Cafe 1820", "Cafe molido de consumo masivo nacional.", 8),
-            CreateMarca(5, "Irex", "Productos de limpieza y cuidado del hogar.", 12),
-            CreateMarca(6, "Tio Pelon", "Arroces y granos disponibles en supermercados nacionales.", 10),
-            CreateMarca(7, "Pozuelo", "Galletas y snacks populares en Costa Rica.", 11),
-            CreateMarca(8, "Tropical", "Bebidas listas y refrescos distribuidos localmente.", 6)
-        };
-
         public ActionResult Inicio()
         {
-            List<MarcaViewModel> model;
-            lock (SyncRoot)
+            try
             {
-                model = Marcas.Select(Clone).OrderBy(x => x.Descripcion).ToList();
-            }
+                List<MarcaViewModel> model = new CT_ExtCentral_Brand()
+                    .GetAll()
+                    .Select(MapMarca)
+                    .OrderBy(x => x.Descripcion)
+                    .ToList();
 
-            return View(model);
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                TempData["MarcaError"] = "No se pudo cargar marcas desde SQL: " + ex.Message;
+                return View(Enumerable.Empty<MarcaViewModel>());
+            }
         }
 
         public ActionResult Registro(int? id)
         {
             MarcaViewModel model = null;
+
             if (id.HasValue)
             {
-                lock (SyncRoot)
+                try
                 {
-                    model = Marcas.Where(x => x.ID == id.Value).Select(Clone).FirstOrDefault();
+                    EN_ExtCentral_Brand brand = GetMarcaById(id.Value);
+                    if (brand == null)
+                        TempData["MarcaError"] = "No se encontro la marca en SQL.";
+                    else
+                        model = MapMarca(brand);
+                }
+                catch (Exception ex)
+                {
+                    TempData["MarcaError"] = "No se pudo leer la marca desde SQL: " + ex.Message;
                 }
             }
 
@@ -58,29 +63,23 @@ namespace UltraERP.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            lock (SyncRoot)
+            try
             {
-                var existing = Marcas.FirstOrDefault(x => x.ID == model.ID);
-                if (existing == null)
+                Respuesta response = new CT_ExtCentral_Brand().Save(model.ID, model.Descripcion);
+                if (!response.Status)
                 {
-                    model.ID = Marcas.Count == 0 ? 1 : Marcas.Max(x => x.ID) + 1;
-                    model.UsuarioCrea = GetCurrentUser();
-                    model.FechaCrea = DateTime.Now;
-                    Marcas.Add(Clone(model));
-                    TempData["MarcaMessage"] = "Marca creada correctamente.";
+                    ModelState.AddModelError("", "SQL rechazo el guardado de la marca: " + response.Message);
+                    return View(model);
                 }
-                else
-                {
-                    model.UsuarioCrea = existing.UsuarioCrea;
-                    model.FechaCrea = existing.FechaCrea;
-                    model.UsuarioModifica = GetCurrentUser();
-                    model.FechaModifica = DateTime.Now;
-                    CopyValues(model, existing);
-                    TempData["MarcaMessage"] = "Marca actualizada correctamente.";
-                }
-            }
 
-            return RedirectToAction("Inicio");
+                TempData["MarcaMessage"] = model.ID > 0 ? "Marca actualizada correctamente en SQL." : "Marca creada correctamente en SQL.";
+                return RedirectToAction("Inicio");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "No se pudo guardar la marca en SQL. " + ex.Message);
+                return View(model);
+            }
         }
 
         private void ValidateMarca(MarcaViewModel model)
@@ -88,14 +87,23 @@ namespace UltraERP.Controllers
             if (model == null)
                 return;
 
-            lock (SyncRoot)
+            try
             {
-                var exists = Marcas.Any(x =>
+                List<MarcaViewModel> marcas = new CT_ExtCentral_Brand()
+                    .GetAll()
+                    .Select(MapMarca)
+                    .ToList();
+
+                bool exists = marcas.Any(x =>
                     x.ID != model.ID &&
                     String.Equals(x.Descripcion, model.Descripcion, StringComparison.OrdinalIgnoreCase));
 
                 if (exists)
                     ModelState.AddModelError("Descripcion", "Ya existe una marca con esta descripcion.");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "No se pudo validar la marca contra SQL. " + ex.Message);
             }
         }
 
@@ -108,6 +116,27 @@ namespace UltraERP.Controllers
             model.Nota = (model.Nota ?? "").Trim();
         }
 
+        private EN_ExtCentral_Brand GetMarcaById(int id)
+        {
+            return new CT_ExtCentral_Brand()
+                .GetAll()
+                .FirstOrDefault(x => x.ID == id);
+        }
+
+        private static MarcaViewModel MapMarca(EN_ExtCentral_Brand brand)
+        {
+            if (brand == null)
+                return null;
+
+            return new MarcaViewModel
+            {
+                ID = brand.ID,
+                Descripcion = brand.Description,
+                Nota = "",
+                CantidadArticulos = 0
+            };
+        }
+
         private MarcaViewModel CreateNewMarca()
         {
             return new MarcaViewModel
@@ -115,48 +144,6 @@ namespace UltraERP.Controllers
                 FechaCrea = DateTime.Now,
                 UsuarioCrea = GetCurrentUser()
             };
-        }
-
-        private static MarcaViewModel CreateMarca(int id, string descripcion, string nota, int cantidadArticulos)
-        {
-            return new MarcaViewModel
-            {
-                ID = id,
-                Descripcion = descripcion,
-                Nota = nota,
-                CantidadArticulos = cantidadArticulos,
-                UsuarioCrea = "Soporte",
-                FechaCrea = DateTime.Now.AddDays(-1)
-            };
-        }
-
-        private static MarcaViewModel Clone(MarcaViewModel source)
-        {
-            if (source == null)
-                return null;
-
-            return new MarcaViewModel
-            {
-                ID = source.ID,
-                Descripcion = source.Descripcion,
-                Nota = source.Nota,
-                CantidadArticulos = source.CantidadArticulos,
-                UsuarioCrea = source.UsuarioCrea,
-                FechaCrea = source.FechaCrea,
-                UsuarioModifica = source.UsuarioModifica,
-                FechaModifica = source.FechaModifica
-            };
-        }
-
-        private static void CopyValues(MarcaViewModel source, MarcaViewModel target)
-        {
-            target.Descripcion = source.Descripcion;
-            target.Nota = source.Nota;
-            target.CantidadArticulos = source.CantidadArticulos;
-            target.UsuarioCrea = source.UsuarioCrea;
-            target.FechaCrea = source.FechaCrea;
-            target.UsuarioModifica = source.UsuarioModifica;
-            target.FechaModifica = source.FechaModifica;
         }
 
         private string GetCurrentUser()

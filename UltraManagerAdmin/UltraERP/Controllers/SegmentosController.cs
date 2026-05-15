@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
+using UltraERP.BusinessEntities;
+using UltraERP.BusinessLogic;
 using UltraERP.Models;
 
 namespace UltraERP.Controllers
@@ -9,107 +11,112 @@ namespace UltraERP.Controllers
     [Authorize]
     public class SegmentosController : Controller
     {
-        private static readonly object SyncRoot = new object();
-
-        private static readonly List<SubCategoriaCatalogo> SubCategorias = new List<SubCategoriaCatalogo>
-        {
-            new SubCategoriaCatalogo(1, "GRANO", "Arroz grano entero", "ARROZ", "Arroces", "GRANOS", "Granos basicos", "ABAR", "Abarrotes ticos"),
-            new SubCategoriaCatalogo(2, "PRECOC", "Arroz precocido", "ARROZ", "Arroces", "GRANOS", "Granos basicos", "ABAR", "Abarrotes ticos"),
-            new SubCategoriaCatalogo(3, "ROJOS", "Frijoles rojos", "FRIJ", "Frijoles", "GRANOS", "Granos basicos", "ABAR", "Abarrotes ticos"),
-            new SubCategoriaCatalogo(4, "MESA", "Salsas de mesa", "SALT", "Salsas ticas", "SALSAS", "Salsas y condimentos", "ABAR", "Abarrotes ticos"),
-            new SubCategoriaCatalogo(5, "FLUIDA", "Leche fluida", "LECHE", "Leches y lacteos", "REFRI", "Refrigerados", "LACT", "Lacteos y frescos"),
-            new SubCategoriaCatalogo(6, "MOLIDO", "Cafe molido", "CAFCR", "Cafe costarricense", "CAFE", "Cafe y bebidas", "BEB", "Bebidas y cafe"),
-            new SubCategoriaCatalogo(7, "POLVO", "Detergente en polvo", "DETER", "Detergentes", "HOGAR", "Cuidado del hogar", "LIMP", "Limpieza y hogar")
-        };
-
-        private static readonly List<SegmentoViewModel> Segmentos = new List<SegmentoViewModel>
-        {
-            CreateSegmento(1, 1, "2KG", "Bolsa 2 kg", "Arroz grano entero en presentacion familiar.", 8),
-            CreateSegmento(2, 1, "5KG", "Bolsa 5 kg", "Arroz grano entero para mayor consumo.", 4),
-            CreateSegmento(3, 2, "RAPIDO", "Coccion rapida", "Arroz precocido de preparacion rapida.", 6),
-            CreateSegmento(4, 3, "900G", "Bolsa 900 g", "Frijol rojo empacado para supermercado y pulperia.", 7),
-            CreateSegmento(5, 4, "LIZANO", "Salsa tipo Lizano", "Salsas de mesa inspiradas en el gusto costarricense.", 9),
-            CreateSegmento(6, 5, "ENTERA", "Leche entera", "Leche fluida entera de alta rotacion.", 11),
-            CreateSegmento(7, 6, "TARRAZU", "Origen Tarrazu", "Cafe molido de zonas cafetaleras costarricenses.", 5),
-            CreateSegmento(8, 7, "BIO", "Biodegradable", "Detergentes biodegradables de uso domestico.", 4)
-        };
-
         public ActionResult Inicio()
         {
-            List<SegmentoViewModel> model;
-            lock (SyncRoot)
+            try
             {
-                model = Segmentos.Select(Clone).OrderBy(x => x.SubCategoriaNombre).ThenBy(x => x.Codigo).ToList();
-            }
+                List<SubCategoriaCatalogo> subCategorias = GetSubCategorias();
+                List<SegmentoViewModel> model = new CT_ExtCentral_Segment()
+                    .GetAll()
+                    .Select(x => MapSegmento(x, subCategorias))
+                    .OrderBy(x => x.SubCategoriaNombre)
+                    .ThenBy(x => x.Codigo)
+                    .ToList();
 
-            return View(model);
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                TempData["SegmentoError"] = "No se pudo cargar segmentos desde SQL: " + ex.Message;
+                return View(Enumerable.Empty<SegmentoViewModel>());
+            }
         }
 
         public ActionResult Registro(int? id)
         {
+            List<SubCategoriaCatalogo> subCategorias = GetSubCategorias();
             SegmentoViewModel model = null;
+
             if (id.HasValue)
             {
-                lock (SyncRoot)
+                try
                 {
-                    model = Segmentos.Where(x => x.ID == id.Value).Select(Clone).FirstOrDefault();
+                    EN_ExtCentral_Segment segment = GetSegmentoById(id.Value);
+                    if (segment == null)
+                        TempData["SegmentoError"] = "No se encontro el segmento en SQL.";
+                    else
+                        model = MapSegmento(segment, subCategorias);
+                }
+                catch (Exception ex)
+                {
+                    TempData["SegmentoError"] = "No se pudo leer el segmento desde SQL: " + ex.Message;
                 }
             }
 
-            PrepareCatalogs();
-            return View(model ?? CreateNewSegmento());
+            PrepareCatalogs(subCategorias);
+            return View(model ?? CreateNewSegmento(subCategorias));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult Registro(SegmentoViewModel model)
         {
+            List<SubCategoriaCatalogo> subCategorias = GetSubCategorias();
             Normalize(model);
-            ApplySubCategoria(model);
-            ValidateSegmento(model);
+            ApplySubCategoria(model, subCategorias);
+            ValidateSegmento(model, subCategorias);
 
             if (!ModelState.IsValid)
             {
-                PrepareCatalogs();
+                PrepareCatalogs(subCategorias);
                 return View(model);
             }
 
-            lock (SyncRoot)
+            try
             {
-                var existing = Segmentos.FirstOrDefault(x => x.ID == model.ID);
-                if (existing == null)
+                EN_ExtCentral_Segment segment = new EN_ExtCentral_Segment
                 {
-                    model.ID = Segmentos.Count == 0 ? 1 : Segmentos.Max(x => x.ID) + 1;
-                    model.UsuarioCrea = GetCurrentUser();
-                    model.FechaCrea = DateTime.Now;
-                    Segmentos.Add(Clone(model));
-                    TempData["SegmentoMessage"] = "Segmento creado correctamente.";
-                }
-                else
-                {
-                    model.UsuarioCrea = existing.UsuarioCrea;
-                    model.FechaCrea = existing.FechaCrea;
-                    model.UsuarioModifica = GetCurrentUser();
-                    model.FechaModifica = DateTime.Now;
-                    CopyValues(model, existing);
-                    TempData["SegmentoMessage"] = "Segmento actualizado correctamente.";
-                }
-            }
+                    ID = model.ID,
+                    SubCategoryID = model.SubCategoriaID,
+                    Code = model.Codigo,
+                    Description = model.Descripcion
+                };
 
-            return RedirectToAction("Inicio");
+                Respuesta response = new CT_ExtCentral_Segment().Save(segment);
+                if (!response.Status)
+                {
+                    ModelState.AddModelError("", "SQL rechazo el guardado del segmento: " + response.Message);
+                    PrepareCatalogs(subCategorias);
+                    return View(model);
+                }
+
+                TempData["SegmentoMessage"] = model.ID > 0 ? "Segmento actualizado correctamente en SQL." : "Segmento creado correctamente en SQL.";
+                return RedirectToAction("Inicio");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "No se pudo guardar el segmento en SQL. " + ex.Message);
+                PrepareCatalogs(subCategorias);
+                return View(model);
+            }
         }
 
-        private void ValidateSegmento(SegmentoViewModel model)
+        private void ValidateSegmento(SegmentoViewModel model, List<SubCategoriaCatalogo> subCategorias)
         {
             if (model == null)
                 return;
 
-            if (model.SubCategoriaID <= 0 || !SubCategorias.Any(x => x.ID == model.SubCategoriaID))
+            if (model.SubCategoriaID <= 0 || !subCategorias.Any(x => x.ID == model.SubCategoriaID))
                 ModelState.AddModelError("SubCategoriaID", "Seleccione una subcategoria valida.");
 
-            lock (SyncRoot)
+            try
             {
-                var codeExists = Segmentos.Any(x =>
+                List<SegmentoViewModel> segmentos = new CT_ExtCentral_Segment()
+                    .GetAll()
+                    .Select(x => MapSegmento(x, subCategorias))
+                    .ToList();
+
+                bool codeExists = segmentos.Any(x =>
                     x.ID != model.ID &&
                     x.SubCategoriaID == model.SubCategoriaID &&
                     String.Equals(x.Codigo, model.Codigo, StringComparison.OrdinalIgnoreCase));
@@ -117,13 +124,17 @@ namespace UltraERP.Controllers
                 if (codeExists)
                     ModelState.AddModelError("Codigo", "Ya existe un segmento con este codigo en la subcategoria seleccionada.");
 
-                var nameExists = Segmentos.Any(x =>
+                bool nameExists = segmentos.Any(x =>
                     x.ID != model.ID &&
                     x.SubCategoriaID == model.SubCategoriaID &&
                     String.Equals(x.Descripcion, model.Descripcion, StringComparison.OrdinalIgnoreCase));
 
                 if (nameExists)
                     ModelState.AddModelError("Descripcion", "Ya existe un segmento con esta descripcion en la subcategoria seleccionada.");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "No se pudo validar el segmento contra SQL. " + ex.Message);
             }
         }
 
@@ -137,12 +148,12 @@ namespace UltraERP.Controllers
             model.Nota = (model.Nota ?? "").Trim();
         }
 
-        private static void ApplySubCategoria(SegmentoViewModel model)
+        private static void ApplySubCategoria(SegmentoViewModel model, List<SubCategoriaCatalogo> subCategorias)
         {
             if (model == null)
                 return;
 
-            var subCategoria = SubCategorias.FirstOrDefault(x => x.ID == model.SubCategoriaID);
+            SubCategoriaCatalogo subCategoria = subCategorias.FirstOrDefault(x => x.ID == model.SubCategoriaID);
             if (subCategoria == null)
             {
                 model.SubCategoriaCodigo = "";
@@ -166,91 +177,93 @@ namespace UltraERP.Controllers
             model.FamiliaNombre = subCategoria.FamiliaNombre;
         }
 
-        private void PrepareCatalogs()
+        private void PrepareCatalogs(List<SubCategoriaCatalogo> subCategorias)
         {
-            ViewBag.SubCategorias = SubCategorias
-                .Select(x => new SelectListItem { Text = x.FamiliaCodigo + " / " + x.DepartamentoCodigo + " / " + x.CategoriaCodigo + " / " + x.Codigo + " - " + x.Nombre, Value = x.ID.ToString() })
+            ViewBag.SubCategorias = subCategorias
+                .Select(x => new SelectListItem
+                {
+                    Text = x.FamiliaCodigo + " / " + x.DepartamentoCodigo + " / " + x.CategoriaCodigo + " / " + x.Codigo + " - " + x.Nombre,
+                    Value = x.ID.ToString()
+                })
                 .ToList();
         }
 
-        private SegmentoViewModel CreateNewSegmento()
+        private SegmentoViewModel CreateNewSegmento(List<SubCategoriaCatalogo> subCategorias)
         {
+            SubCategoriaCatalogo firstSubCategoria = subCategorias.FirstOrDefault();
             var model = new SegmentoViewModel
             {
-                SubCategoriaID = SubCategorias.First().ID,
+                SubCategoriaID = firstSubCategoria == null ? 0 : firstSubCategoria.ID,
                 FechaCrea = DateTime.Now,
                 UsuarioCrea = GetCurrentUser()
             };
 
-            ApplySubCategoria(model);
+            ApplySubCategoria(model, subCategorias);
             return model;
         }
 
-        private static SegmentoViewModel CreateSegmento(int id, int subCategoriaID, string codigo, string descripcion, string nota, int cantidadArticulos)
+        private EN_ExtCentral_Segment GetSegmentoById(int id)
         {
-            var model = new SegmentoViewModel
-            {
-                ID = id,
-                SubCategoriaID = subCategoriaID,
-                Codigo = codigo,
-                Descripcion = descripcion,
-                Nota = nota,
-                CantidadArticulos = cantidadArticulos,
-                UsuarioCrea = "Soporte",
-                FechaCrea = DateTime.Now.AddDays(-1)
-            };
-
-            ApplySubCategoria(model);
-            return model;
+            return new CT_ExtCentral_Segment()
+                .GetAll()
+                .FirstOrDefault(x => x.ID == id);
         }
 
-        private static SegmentoViewModel Clone(SegmentoViewModel source)
+        private static SegmentoViewModel MapSegmento(EN_ExtCentral_Segment segment)
         {
-            if (source == null)
+            return MapSegmento(segment, GetSubCategorias());
+        }
+
+        private static SegmentoViewModel MapSegmento(EN_ExtCentral_Segment segment, List<SubCategoriaCatalogo> subCategorias)
+        {
+            if (segment == null)
                 return null;
+
+            SubCategoriaCatalogo subCategoria = subCategorias.FirstOrDefault(x => x.ID == segment.SubCategoryID);
 
             return new SegmentoViewModel
             {
-                ID = source.ID,
-                SubCategoriaID = source.SubCategoriaID,
-                SubCategoriaCodigo = source.SubCategoriaCodigo,
-                SubCategoriaNombre = source.SubCategoriaNombre,
-                CategoriaCodigo = source.CategoriaCodigo,
-                CategoriaNombre = source.CategoriaNombre,
-                DepartamentoCodigo = source.DepartamentoCodigo,
-                DepartamentoNombre = source.DepartamentoNombre,
-                FamiliaCodigo = source.FamiliaCodigo,
-                FamiliaNombre = source.FamiliaNombre,
-                Codigo = source.Codigo,
-                Descripcion = source.Descripcion,
-                Nota = source.Nota,
-                CantidadArticulos = source.CantidadArticulos,
-                UsuarioCrea = source.UsuarioCrea,
-                FechaCrea = source.FechaCrea,
-                UsuarioModifica = source.UsuarioModifica,
-                FechaModifica = source.FechaModifica
+                ID = segment.ID,
+                SubCategoriaID = segment.SubCategoryID,
+                SubCategoriaCodigo = subCategoria == null ? "" : subCategoria.Codigo,
+                SubCategoriaNombre = subCategoria == null ? "" : subCategoria.Nombre,
+                CategoriaCodigo = subCategoria == null ? "" : subCategoria.CategoriaCodigo,
+                CategoriaNombre = subCategoria == null ? "" : subCategoria.CategoriaNombre,
+                DepartamentoCodigo = subCategoria == null ? "" : subCategoria.DepartamentoCodigo,
+                DepartamentoNombre = subCategoria == null ? "" : subCategoria.DepartamentoNombre,
+                FamiliaCodigo = subCategoria == null ? "" : subCategoria.FamiliaCodigo,
+                FamiliaNombre = subCategoria == null ? "" : subCategoria.FamiliaNombre,
+                Codigo = segment.Code,
+                Descripcion = segment.Description,
+                Nota = "",
+                CantidadArticulos = 0
             };
         }
 
-        private static void CopyValues(SegmentoViewModel source, SegmentoViewModel target)
+        private static List<SubCategoriaCatalogo> GetSubCategorias()
         {
-            target.SubCategoriaID = source.SubCategoriaID;
-            target.SubCategoriaCodigo = source.SubCategoriaCodigo;
-            target.SubCategoriaNombre = source.SubCategoriaNombre;
-            target.CategoriaCodigo = source.CategoriaCodigo;
-            target.CategoriaNombre = source.CategoriaNombre;
-            target.DepartamentoCodigo = source.DepartamentoCodigo;
-            target.DepartamentoNombre = source.DepartamentoNombre;
-            target.FamiliaCodigo = source.FamiliaCodigo;
-            target.FamiliaNombre = source.FamiliaNombre;
-            target.Codigo = source.Codigo;
-            target.Descripcion = source.Descripcion;
-            target.Nota = source.Nota;
-            target.CantidadArticulos = source.CantidadArticulos;
-            target.UsuarioCrea = source.UsuarioCrea;
-            target.FechaCrea = source.FechaCrea;
-            target.UsuarioModifica = source.UsuarioModifica;
-            target.FechaModifica = source.FechaModifica;
+            List<EN_Department> departamentos = new CT_Department().GetAll("", 0, 0);
+            List<EN_Category> categorias = new CT_Category().GetAll("", 0, 0);
+
+            return new CT_ExtCentral_SubCategory()
+                .GetAll("", 0, 0)
+                .Select(x =>
+                {
+                    EN_Category categoria = categorias.FirstOrDefault(c => c.ID == x.CategoryID);
+                    EN_Department departamento = categoria == null ? null : departamentos.FirstOrDefault(d => d.ID == categoria.DepartmentID);
+
+                    return new SubCategoriaCatalogo(
+                        x.ID,
+                        x.Code,
+                        x.Description,
+                        categoria == null ? "" : categoria.Code,
+                        categoria == null ? "" : categoria.Name,
+                        departamento == null ? "" : departamento.Code,
+                        departamento == null ? "" : departamento.Name,
+                        departamento == null ? "" : departamento.FamilyCode,
+                        departamento == null ? "" : departamento.FamilyName);
+                })
+                .ToList();
         }
 
         private string GetCurrentUser()

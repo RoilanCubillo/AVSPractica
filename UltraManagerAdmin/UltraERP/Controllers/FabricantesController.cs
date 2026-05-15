@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
+using UltraERP.BusinessEntities;
+using UltraERP.BusinessLogic;
 using UltraERP.Models;
 
 namespace UltraERP.Controllers
@@ -9,38 +11,42 @@ namespace UltraERP.Controllers
     [Authorize]
     public class FabricantesController : Controller
     {
-        private static readonly object SyncRoot = new object();
-
-        private static readonly List<FabricanteViewModel> Fabricantes = new List<FabricanteViewModel>
-        {
-            CreateFabricante(1, "Cooperativa de Productores de Leche Dos Pinos R.L.", "Fabricante nacional de lacteos y bebidas refrigeradas.", 18),
-            CreateFabricante(2, "Productos Lizano S.A.", "Fabricante de salsas y condimentos tradicionales de Costa Rica.", 9),
-            CreateFabricante(3, "Cafe Britt Costa Rica S.A.", "Tostador y productor de cafe costarricense para retail y turismo.", 7),
-            CreateFabricante(4, "Compania Numar S.A.", "Fabricante y distribuidor de productos alimenticios de consumo masivo.", 12),
-            CreateFabricante(5, "Irex de Costa Rica S.A.", "Fabricante costarricense de productos de limpieza y cuidado del hogar.", 14),
-            CreateFabricante(6, "Pozuelo Pro S.A.", "Fabricante local de galletas y snacks de alta rotacion.", 11),
-            CreateFabricante(7, "Florida Bebidas S.A.", "Fabricante y distribuidor nacional de bebidas.", 10)
-        };
-
         public ActionResult Inicio()
         {
-            List<FabricanteViewModel> model;
-            lock (SyncRoot)
+            try
             {
-                model = Fabricantes.Select(Clone).OrderBy(x => x.Descripcion).ToList();
-            }
+                List<FabricanteViewModel> model = new CT_ExtCentral_Manufacturer()
+                    .GetAll()
+                    .Select(MapFabricante)
+                    .OrderBy(x => x.Descripcion)
+                    .ToList();
 
-            return View(model);
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                TempData["FabricanteError"] = "No se pudo cargar fabricantes desde SQL: " + ex.Message;
+                return View(Enumerable.Empty<FabricanteViewModel>());
+            }
         }
 
         public ActionResult Registro(int? id)
         {
             FabricanteViewModel model = null;
+
             if (id.HasValue)
             {
-                lock (SyncRoot)
+                try
                 {
-                    model = Fabricantes.Where(x => x.ID == id.Value).Select(Clone).FirstOrDefault();
+                    EN_ExtCentral_Manufacturer manufacturer = GetFabricanteById(id.Value);
+                    if (manufacturer == null)
+                        TempData["FabricanteError"] = "No se encontro el fabricante en SQL.";
+                    else
+                        model = MapFabricante(manufacturer);
+                }
+                catch (Exception ex)
+                {
+                    TempData["FabricanteError"] = "No se pudo leer el fabricante desde SQL: " + ex.Message;
                 }
             }
 
@@ -57,29 +63,23 @@ namespace UltraERP.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            lock (SyncRoot)
+            try
             {
-                var existing = Fabricantes.FirstOrDefault(x => x.ID == model.ID);
-                if (existing == null)
+                Respuesta response = new CT_ExtCentral_Manufacturer().Save(model.ID, model.Descripcion);
+                if (!response.Status)
                 {
-                    model.ID = Fabricantes.Count == 0 ? 1 : Fabricantes.Max(x => x.ID) + 1;
-                    model.UsuarioCrea = GetCurrentUser();
-                    model.FechaCrea = DateTime.Now;
-                    Fabricantes.Add(Clone(model));
-                    TempData["FabricanteMessage"] = "Fabricante creado correctamente.";
+                    ModelState.AddModelError("", "SQL rechazo el guardado del fabricante: " + response.Message);
+                    return View(model);
                 }
-                else
-                {
-                    model.UsuarioCrea = existing.UsuarioCrea;
-                    model.FechaCrea = existing.FechaCrea;
-                    model.UsuarioModifica = GetCurrentUser();
-                    model.FechaModifica = DateTime.Now;
-                    CopyValues(model, existing);
-                    TempData["FabricanteMessage"] = "Fabricante actualizado correctamente.";
-                }
-            }
 
-            return RedirectToAction("Inicio");
+                TempData["FabricanteMessage"] = model.ID > 0 ? "Fabricante actualizado correctamente en SQL." : "Fabricante creado correctamente en SQL.";
+                return RedirectToAction("Inicio");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "No se pudo guardar el fabricante en SQL. " + ex.Message);
+                return View(model);
+            }
         }
 
         private void ValidateFabricante(FabricanteViewModel model)
@@ -87,14 +87,23 @@ namespace UltraERP.Controllers
             if (model == null)
                 return;
 
-            lock (SyncRoot)
+            try
             {
-                var exists = Fabricantes.Any(x =>
+                List<FabricanteViewModel> fabricantes = new CT_ExtCentral_Manufacturer()
+                    .GetAll()
+                    .Select(MapFabricante)
+                    .ToList();
+
+                bool exists = fabricantes.Any(x =>
                     x.ID != model.ID &&
                     String.Equals(x.Descripcion, model.Descripcion, StringComparison.OrdinalIgnoreCase));
 
                 if (exists)
                     ModelState.AddModelError("Descripcion", "Ya existe un fabricante con esta descripcion.");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "No se pudo validar el fabricante contra SQL. " + ex.Message);
             }
         }
 
@@ -107,6 +116,27 @@ namespace UltraERP.Controllers
             model.Nota = (model.Nota ?? "").Trim();
         }
 
+        private EN_ExtCentral_Manufacturer GetFabricanteById(int id)
+        {
+            return new CT_ExtCentral_Manufacturer()
+                .GetAll()
+                .FirstOrDefault(x => x.ID == id);
+        }
+
+        private static FabricanteViewModel MapFabricante(EN_ExtCentral_Manufacturer manufacturer)
+        {
+            if (manufacturer == null)
+                return null;
+
+            return new FabricanteViewModel
+            {
+                ID = manufacturer.ID,
+                Descripcion = manufacturer.Description,
+                Nota = "",
+                CantidadArticulos = 0
+            };
+        }
+
         private FabricanteViewModel CreateNewFabricante()
         {
             return new FabricanteViewModel
@@ -114,48 +144,6 @@ namespace UltraERP.Controllers
                 FechaCrea = DateTime.Now,
                 UsuarioCrea = GetCurrentUser()
             };
-        }
-
-        private static FabricanteViewModel CreateFabricante(int id, string descripcion, string nota, int cantidadArticulos)
-        {
-            return new FabricanteViewModel
-            {
-                ID = id,
-                Descripcion = descripcion,
-                Nota = nota,
-                CantidadArticulos = cantidadArticulos,
-                UsuarioCrea = "Soporte",
-                FechaCrea = DateTime.Now.AddDays(-1)
-            };
-        }
-
-        private static FabricanteViewModel Clone(FabricanteViewModel source)
-        {
-            if (source == null)
-                return null;
-
-            return new FabricanteViewModel
-            {
-                ID = source.ID,
-                Descripcion = source.Descripcion,
-                Nota = source.Nota,
-                CantidadArticulos = source.CantidadArticulos,
-                UsuarioCrea = source.UsuarioCrea,
-                FechaCrea = source.FechaCrea,
-                UsuarioModifica = source.UsuarioModifica,
-                FechaModifica = source.FechaModifica
-            };
-        }
-
-        private static void CopyValues(FabricanteViewModel source, FabricanteViewModel target)
-        {
-            target.Descripcion = source.Descripcion;
-            target.Nota = source.Nota;
-            target.CantidadArticulos = source.CantidadArticulos;
-            target.UsuarioCrea = source.UsuarioCrea;
-            target.FechaCrea = source.FechaCrea;
-            target.UsuarioModifica = source.UsuarioModifica;
-            target.FechaModifica = source.FechaModifica;
         }
 
         private string GetCurrentUser()

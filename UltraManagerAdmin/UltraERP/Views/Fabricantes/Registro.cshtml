@@ -16,6 +16,11 @@
     </div>
 </section>
 
+@if (TempData["FabricanteError"] != null)
+{
+    <div class="alert alert-warning">@TempData["FabricanteError"]</div>
+}
+
 @using (Html.BeginForm("Registro", "Fabricantes", FormMethod.Post, new { id = "fabricanteForm", @class = "document-form" }))
 {
     @Html.AntiForgeryToken()
@@ -45,17 +50,8 @@
             </div>
             <div class="col-12 col-md-6">
                 <label class="form-label required" for="Descripcion">Descripci&oacute;n</label>
-                @Html.TextBoxFor(m => m.Descripcion, new { @class = "form-control", maxlength = "150", autocomplete = "off", placeholder = "Ej: Cooperativa de Productores de Leche Dos Pinos R.L." })
+                @Html.TextBoxFor(m => m.Descripcion, new { @class = "form-control", maxlength = "50", autocomplete = "off", placeholder = "Ej: Dos Pinos" })
                 @Html.ValidationMessageFor(m => m.Descripcion, "", new { @class = "text-danger small" })
-            </div>
-            <div class="col-12 col-md-3">
-                <label class="form-label" for="CantidadArticulos">Art&iacute;culos</label>
-                @Html.TextBoxFor(m => m.CantidadArticulos, new { @class = "form-control", type = "number", min = "0", step = "1" })
-            </div>
-            <div class="col-12">
-                <label class="form-label" for="Nota">Nota</label>
-                @Html.TextAreaFor(m => m.Nota, 4, 30, new { @class = "form-control", maxlength = "180", placeholder = "Uso o alcance de este fabricante dentro del catalogo." })
-                @Html.ValidationMessageFor(m => m.Nota, "", new { @class = "text-danger small" })
             </div>
         </div>
     </section>

@@ -8,7 +8,7 @@ namespace UltraERP.Models
         public int ID { get; set; }
 
         [Required(ErrorMessage = "La descripcion es obligatoria.")]
-        [StringLength(150, ErrorMessage = "La descripcion no puede superar 150 caracteres.")]
+        [StringLength(50, ErrorMessage = "La descripcion no puede superar 50 caracteres.")]
         public string Descripcion { get; set; }
 
         [StringLength(180, ErrorMessage = "La nota no puede superar 180 caracteres.")]

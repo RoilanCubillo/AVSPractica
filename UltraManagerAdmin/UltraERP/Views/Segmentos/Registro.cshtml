@@ -16,6 +16,11 @@
     </div>
 </section>
 
+@if (TempData["SegmentoError"] != null)
+{
+    <div class="alert alert-warning">@TempData["SegmentoError"]</div>
+}
+
 @using (Html.BeginForm("Registro", "Segmentos", FormMethod.Post, new { id = "segmentoForm", @class = "document-form" }))
 {
     @Html.AntiForgeryToken()
@@ -61,15 +66,6 @@
                 <label class="form-label required" for="Descripcion">Descripci&oacute;n</label>
                 @Html.TextBoxFor(m => m.Descripcion, new { @class = "form-control", maxlength = "80", autocomplete = "off", placeholder = "Ej: Grano largo" })
                 @Html.ValidationMessageFor(m => m.Descripcion, "", new { @class = "text-danger small" })
-            </div>
-            <div class="col-12 col-md-3">
-                <label class="form-label" for="CantidadArticulos">Art&iacute;culos</label>
-                @Html.TextBoxFor(m => m.CantidadArticulos, new { @class = "form-control", type = "number", min = "0", step = "1" })
-            </div>
-            <div class="col-12">
-                <label class="form-label" for="Nota">Nota</label>
-                @Html.TextAreaFor(m => m.Nota, 4, 30, new { @class = "form-control", maxlength = "180", placeholder = "Uso o alcance de este segmento dentro de la subcategoria." })
-                @Html.ValidationMessageFor(m => m.Nota, "", new { @class = "text-danger small" })
             </div>
         </div>
     </section>

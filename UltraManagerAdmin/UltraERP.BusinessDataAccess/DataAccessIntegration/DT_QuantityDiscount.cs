@@ -95,16 +95,22 @@ namespace UltraERP.BusinessDataAccess.DataAccessIntegration
                 new SqlParameter("@ID", iD)
             };
 
-            using (SqlDataReader dataReader = SqlHelper.ExecuteReader(cn, CommandType.StoredProcedure, "UEP_QUANTITYDISCOUNT_GET", parameters))
+            try
             {
-                if (dataReader.Read())
+                using (SqlDataReader dataReader = SqlHelper.ExecuteReader(cn, CommandType.StoredProcedure, "UEP_QUANTITYDISCOUNT_GET", parameters))
                 {
-                    return MakeEN_QuantityDiscount(dataReader);
-                }
-                else
-                {
+                    if (dataReader.Read())
+                    {
+                        return MakeEN_QuantityDiscount(dataReader);
+                    }
+
                     return null;
                 }
+            }
+            catch
+            {
+                List<EN_QuantityDiscount> list = GetAll(0, 0);
+                return list == null ? null : list.Find(x => x.ID == iD);
             }
         }
 

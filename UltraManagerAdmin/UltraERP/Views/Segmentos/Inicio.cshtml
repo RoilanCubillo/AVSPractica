@@ -21,6 +21,11 @@
     <div class="alert alert-success">@TempData["SegmentoMessage"]</div>
 }
 
+@if (TempData["SegmentoError"] != null)
+{
+    <div class="alert alert-warning">@TempData["SegmentoError"]</div>
+}
+
 <section class="filter-panel">
     <div class="row g-3">
         <div class="col-12 col-md-3">
@@ -52,8 +57,8 @@
         <strong id="summary_subcategories">0</strong>
     </article>
     <article>
-        <span>Art&iacute;culos asociados</span>
-        <strong id="summary_items">0</strong>
+        <span>Categor&iacute;as</span>
+        <strong id="summary_categories">0</strong>
     </article>
 </section>
 
@@ -84,7 +89,6 @@
                     <th>Categor&iacute;a</th>
                     <th>Departamento</th>
                     <th>Familia</th>
-                    <th>Art&iacute;culos</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -114,8 +118,8 @@
                             <p id="seg_view_subtitle" class="document-view-subtitle"></p>
                         </div>
                         <div class="document-view-total">
-                            <span>Art&iacute;culos</span>
-                            <strong id="seg_view_items"></strong>
+                            <span>Subcategor&iacute;a</span>
+                            <strong id="seg_view_subcategory"></strong>
                         </div>
                     </section>
                     <section class="document-view-section">
@@ -171,14 +175,13 @@
                     "<td>" + escapeHtml(s.CategoriaTexto || "-") + "</td>" +
                     "<td>" + escapeHtml(s.DepartamentoTexto || "-") + "</td>" +
                     "<td>" + escapeHtml(s.FamiliaTexto || "-") + "</td>" +
-                    "<td>" + formatNumber(s.CantidadArticulos) + "</td>" +
                     "<td>" + getActionButtons(s) + "</td>" +
                     "</tr>";
             }).join("");
 
             if (pager) pager.update(filteredRows, pageRows);
             else $("#results_hint").text(filteredRows.length + " resultados");
-            $("#segmentos_body").html(html || "<tr><td colspan='8' class='empty-state'>Sin segmentos para los filtros aplicados.</td></tr>");
+            $("#segmentos_body").html(html || "<tr><td colspan='7' class='empty-state'>Sin segmentos para los filtros aplicados.</td></tr>");
             updateSummary();
         }
 
@@ -211,16 +214,14 @@
             $("#segmentoModalTitle").text("Segmento " + segmento.Codigo);
             $("#seg_view_title").text(segmento.Codigo);
             $("#seg_view_subtitle").text(segmento.Descripcion);
-            $("#seg_view_items").text(formatNumber(segmento.CantidadArticulos));
+            $("#seg_view_subcategory").text(segmento.SubCategoriaTexto || "-");
             $("#seg_view_summary").html(renderViewGrid([
                 { label: "Codigo", value: segmento.Codigo },
                 { label: "Descripcion", value: segmento.Descripcion },
                 { label: "Subcategoria", value: segmento.SubCategoriaTexto || "-" },
                 { label: "Categoria", value: segmento.CategoriaTexto || "-" },
                 { label: "Departamento", value: segmento.DepartamentoTexto || "-" },
-                { label: "Familia", value: segmento.FamiliaTexto || "-" },
-                { label: "Nota", value: segmento.Nota || "-" },
-                { label: "Articulos asociados", value: formatNumber(segmento.CantidadArticulos) }
+                { label: "Familia", value: segmento.FamiliaTexto || "-" }
             ]));
             $("#seg_view_audit").html(renderViewGrid([
                 { label: "Usuario crea", value: segmento.UsuarioCrea || "-" },
@@ -246,14 +247,15 @@
         function updateSummary() {
             var rows = filteredRows;
             var subcategories = {};
-            var items = rows.reduce(function (sum, s) {
+            var categories = {};
+            rows.forEach(function (s) {
                 subcategories[s.SubCategoriaID] = true;
-                return sum + Number(s.CantidadArticulos || 0);
-            }, 0);
+                categories[s.CategoriaTexto || ""] = true;
+            });
 
             $("#summary_count").text(rows.length);
             $("#summary_subcategories").text(Object.keys(subcategories).length);
-            $("#summary_items").text(formatNumber(items));
+            $("#summary_categories").text(Object.keys(categories).filter(function (key) { return key; }).length);
         }
 
         function renderViewGrid(items) {

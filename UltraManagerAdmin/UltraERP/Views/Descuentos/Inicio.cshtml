@@ -21,16 +21,21 @@
     <div class="alert alert-success">@TempData["DescuentoMessage"]</div>
 }
 
+@if (TempData["DescuentoError"] != null)
+{
+    <div class="alert alert-warning">@TempData["DescuentoError"]</div>
+}
+
 <section class="filter-panel">
     <div class="row g-3">
         <div class="col-12 col-md-3">
             <label for="filter_tipo" class="form-label">Tipo</label>
             <select id="filter_tipo" class="form-select">
                 <option value="Todos">Todos</option>
-                <option value="Precio por cantidad">Precio por cantidad</option>
-                <option value="Compre X y lleve Y a precio">Compre X y lleve Y a precio</option>
-                <option value="Porcentaje por cantidad">Porcentaje por cantidad</option>
-                <option value="Compre X y lleve Y con porcentaje">Compre X y lleve Y con porcentaje</option>
+                <option value="Mezcle y Combine: Precio Unitario">Mezcle y Combine: Precio Unitario</option>
+                <option value="Mezcle y Combine: Porcentaje de Descuento">Mezcle y Combine: Porcentaje de Descuento</option>
+                <option value="Compre X y lleve Y por Z: Precio Unitario">Compre X y lleve Y por Z: Precio Unitario</option>
+                <option value="Compre X y lleve Y por Z: Porcentaje de Descuento">Compre X y lleve Y por Z: Porcentaje de Descuento</option>
             </select>
         </div>
         <div class="col-12 col-md-6">
@@ -50,12 +55,12 @@
         <strong id="summary_count">0</strong>
     </article>
     <article>
-        <span>Tiendas asociadas</span>
-        <strong id="summary_stores">0</strong>
+        <span>Tipos</span>
+        <strong id="summary_types">0</strong>
     </article>
     <article>
-        <span>Art&iacute;culos asociados</span>
-        <strong id="summary_items">0</strong>
+        <span>Con impares</span>
+        <strong id="summary_odd">0</strong>
     </article>
 </section>
 
@@ -84,8 +89,6 @@
                     <th>Descripci&oacute;n</th>
                     <th>Tipo</th>
                     <th>Resumen</th>
-                    <th>Tiendas</th>
-                    <th>Art&iacute;culos</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -115,17 +118,13 @@
                             <p id="discount_view_subtitle" class="document-view-subtitle"></p>
                         </div>
                         <div class="document-view-total">
-                            <span>Art&iacute;culos</span>
-                            <strong id="discount_view_items"></strong>
+                            <span>Tipo</span>
+                            <strong id="discount_view_type"></strong>
                         </div>
                     </section>
                     <section class="document-view-section">
                         <h3>Datos generales</h3>
                         <div id="discount_view_summary" class="document-view-grid"></div>
-                    </section>
-                    <section class="document-view-section">
-                        <h3>Auditor&iacute;a</h3>
-                        <div id="discount_view_audit" class="document-view-grid"></div>
                     </section>
                 </div>
             </div>
@@ -170,15 +169,13 @@
                     "<td>" + escapeHtml(d.Descripcion) + "</td>" +
                     "<td>" + escapeHtml(d.TipoTexto) + "</td>" +
                     "<td>" + escapeHtml(d.ResumenTexto) + "</td>" +
-                    "<td>" + formatNumber(d.TiendasAsociadas) + "</td>" +
-                    "<td>" + formatNumber(d.ArticulosAsociados) + "</td>" +
                     "<td>" + getActionButtons(d) + "</td>" +
                     "</tr>";
             }).join("");
 
             if (pager) pager.update(filteredRows, pageRows);
             else $("#results_hint").text(filteredRows.length + " resultados");
-            $("#descuentos_body").html(html || "<tr><td colspan='7' class='empty-state'>Sin descuentos para los filtros aplicados.</td></tr>");
+            $("#descuentos_body").html(html || "<tr><td colspan='5' class='empty-state'>Sin descuentos para los filtros aplicados.</td></tr>");
             updateSummary();
         }
 
@@ -209,21 +206,13 @@
             $("#descuentoModalTitle").text("Descuento " + descuento.CodigoTexto);
             $("#discount_view_title").text(descuento.Descripcion);
             $("#discount_view_subtitle").text(descuento.TipoTexto);
-            $("#discount_view_items").text(formatNumber(descuento.ArticulosAsociados));
+            $("#discount_view_type").text(descuento.TipoTexto);
             $("#discount_view_summary").html(renderViewGrid([
                 { label: "Codigo", value: descuento.CodigoTexto },
                 { label: "Descripcion", value: descuento.Descripcion },
                 { label: "Tipo", value: descuento.TipoTexto },
                 { label: "Resumen", value: descuento.ResumenTexto },
-                { label: "Descontar impares", value: descuento.DescontarImpares ? "Si" : "No" },
-                { label: "Tiendas asociadas", value: formatNumber(descuento.TiendasAsociadas) },
-                { label: "Articulos asociados", value: formatNumber(descuento.ArticulosAsociados) }
-            ]));
-            $("#discount_view_audit").html(renderViewGrid([
-                { label: "Usuario crea", value: descuento.UsuarioCrea || "-" },
-                { label: "Fecha crea", value: descuento.FechaCreaTexto || "-" },
-                { label: "Usuario modifica", value: descuento.UsuarioModifica || "-" },
-                { label: "Fecha modifica", value: descuento.FechaModificaTexto || "-" }
+                { label: "Descontar impares", value: descuento.DescontarImpares ? "Si" : "No" }
             ]));
             new bootstrap.Modal(document.getElementById("descuentoCatalogoModal")).show();
         }
@@ -241,11 +230,15 @@
         }
 
         function updateSummary() {
-            var stores = filteredRows.reduce(function (sum, d) { return sum + Number(d.TiendasAsociadas || 0); }, 0);
-            var items = filteredRows.reduce(function (sum, d) { return sum + Number(d.ArticulosAsociados || 0); }, 0);
+            var types = {};
+            var odd = 0;
+            filteredRows.forEach(function (d) {
+                types[d.TipoTexto || ""] = true;
+                if (d.DescontarImpares) odd += 1;
+            });
             $("#summary_count").text(filteredRows.length);
-            $("#summary_stores").text(formatNumber(stores));
-            $("#summary_items").text(formatNumber(items));
+            $("#summary_types").text(Object.keys(types).filter(function (key) { return key; }).length);
+            $("#summary_odd").text(odd);
         }
 
         function renderViewGrid(items) {
