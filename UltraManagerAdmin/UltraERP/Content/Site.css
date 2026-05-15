@@ -2301,11 +2301,13 @@ body {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 132px;
     gap: 12px;
-    align-items: start;
+    align-items: stretch;
 }
 
 .property-store-grid .form-select {
     min-height: 124px;
+    padding: 10px 12px;
+    border-radius: 12px;
 }
 
 .property-form-grid {
@@ -2316,6 +2318,8 @@ body {
 
 .property-field {
     min-width: 0;
+    display: flex;
+    flex-direction: column;
     padding: 14px;
     border: 1px solid var(--app-border);
     border-radius: 12px;
@@ -2339,8 +2343,19 @@ body {
     text-transform: uppercase;
 }
 
+.property-help {
+    flex: 1;
+    margin: -2px 0 12px;
+    color: var(--app-muted);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
 .property-switch {
     margin: 0;
+    min-height: 40px;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 .document-table thead {

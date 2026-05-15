@@ -145,6 +145,7 @@ namespace UltraERP.Models
     {
         public int ItemID { get; set; }
         public string Tiendas { get; set; }
+        public string PropiedadesJson { get; set; }
         public IList<ArticuloPropiedadValorViewModel> Propiedades { get; set; }
 
         public GuardarPropiedadesArticuloViewModel()

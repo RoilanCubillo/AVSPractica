@@ -13,6 +13,16 @@
     </div>
 </section>
 
+@if (TempData["PropiedadArticuloMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["PropiedadArticuloMessage"]</div>
+}
+
+@if (TempData["PropiedadArticuloError"] != null)
+{
+    <div class="alert alert-warning">@TempData["PropiedadArticuloError"]</div>
+}
+
 <section class="filter-panel item-property-filter">
     <div class="row g-3">
         <div class="col-12 col-md-3">
@@ -154,10 +164,15 @@
         var currentItem = null;
         var propiedadesModal = null;
         var modalMode = "edit";
+        var syncingStores = false;
+        var defaultStoreSelection = [];
+        var storeSelectionsByItem = {};
+        var storeSelectionKey = "UltraERP.PropiedadesArticulos.StoreSelectionByItem";
 
         $(function () {
             propiedadesModal = new bootstrap.Modal(document.getElementById("propiedadesModal"));
             pager = window.UltraERP.createTablePager({ onChange: renderTable });
+            restoreStoreSelection();
             bindEvents();
             renderStores();
             renderTable();
@@ -176,10 +191,13 @@
             });
             $("#chk_all_stores").on("change", function () {
                 var selected = this.checked ? tiendas.map(function (t) { return t.ID; }) : [];
+                syncingStores = true;
                 $("#stores_select").val(selected);
+                syncingStores = false;
             });
             $("#stores_select").on("change", function () {
-                $("#chk_all_stores").prop("checked", getSelectedStores().length === tiendas.length);
+                if (syncingStores) return;
+                $("#chk_all_stores").prop("checked", false);
             });
             $("#btnGuardarPropiedades").on("click", saveProperties);
         }
@@ -267,8 +285,7 @@
             $("#property_view_title").text(currentItem.Descripcion);
             $("#property_view_subtitle").text(currentItem.Codigo + " - " + (currentItem.DescripcionExtendida || ""));
             $("#property_view_count").text((currentItem.Propiedades || []).length);
-            $("#chk_all_stores").prop("checked", true);
-            $("#stores_select").val(tiendas.map(function (t) { return t.ID; }));
+            applyStoreSelection();
             renderPropertyForm(currentItem);
             syncModalState();
             propiedadesModal.show();
@@ -279,17 +296,79 @@
                 return "<option value='" + escapeHtml(store.ID) + "'>" + escapeHtml(store.Texto) + "</option>";
             }).join("");
             $("#stores_select").html(html);
+            defaultStoreSelection = tiendas.map(function (t) { return t.ID; });
+            applyStoreSelection();
+        }
+
+        function applyStoreSelection() {
+            var state = getCurrentStoreSelectionState();
+            var availableIds = defaultStoreSelection.length ? defaultStoreSelection : tiendas.map(function (t) { return t.ID; });
+            var selected = state.all ? availableIds : state.stores.filter(function (id) {
+                return availableIds.indexOf(id) >= 0;
+            });
+
+            if (!selected.length && availableIds.length) {
+                selected = availableIds;
+                state.all = true;
+            }
+
+            syncingStores = true;
+            $("#chk_all_stores").prop("checked", state.all);
+            $("#stores_select").val(selected);
+            syncingStores = false;
+        }
+
+        function getCurrentStoreSelectionState() {
+            var key = getCurrentItemKey();
+            var saved = key ? storeSelectionsByItem[key] : null;
+
+            if (saved && Array.isArray(saved.stores)) {
+                return {
+                    all: saved.all === true,
+                    stores: saved.stores
+                };
+            }
+
+            return {
+                all: true,
+                stores: defaultStoreSelection.slice()
+            };
         }
 
         function renderPropertyForm(item) {
             var html = (item.Propiedades || []).map(function (property, index) {
                 return "<div class='property-field'>" +
-                    "<label class='form-label' for='property_" + index + "'>" + escapeHtml(property.Nombre) + "<small>" + escapeHtml(property.TipoTexto) + "</small></label>" +
+                    "<label class='form-label' for='property_" + index + "'>" + escapeHtml(getPropertyTitle(property)) + "<small>" + escapeHtml(property.TipoTexto) + "</small></label>" +
+                    "<p class='property-help'>" + escapeHtml(getPropertyHelp(property)) + "</p>" +
                     renderInput(property, index) +
                     "</div>";
             }).join("");
 
             $("#property_form_grid").html(html);
+        }
+
+        function getPropertyTitle(property) {
+            var name = String(property.Nombre || "");
+            if (name === "DoNotAllowEditUnitOfMeasure") return "Bloquear cambio de unidad de medida";
+            if (name === "WholeNumber") return "Permitir solo cantidades enteras";
+            return name;
+        }
+
+        function getPropertyHelp(property) {
+            var name = String(property.Nombre || "");
+            if (name === "DoNotAllowEditUnitOfMeasure") {
+                return "Activo: la tienda no puede cambiar la unidad de medida del articulo. Inactivo: permite modificarla si el usuario tiene permiso.";
+            }
+
+            if (name === "WholeNumber") {
+                return "Activo: el articulo se maneja en unidades completas, sin decimales. Inactivo: permite cantidades fraccionadas, por ejemplo peso o volumen.";
+            }
+
+            if (property.Tipo === 4) {
+                return "Marque Activo para aplicar esta propiedad al articulo; deje sin marcar para no aplicarla.";
+            }
+
+            return "Complete el valor que debe enviarse a las tiendas seleccionadas para este articulo.";
         }
 
         function syncModalState() {
@@ -336,6 +415,8 @@
                 return;
             }
 
+            var selectedAllStores = $("#chk_all_stores").is(":checked");
+
             var payload = {
                 ItemID: currentItem.ID,
                 Tiendas: selectedStores.join(","),
@@ -357,14 +438,14 @@
             $.ajax({
                 url: urls.guardar,
                 method: "POST",
-                data: JSON.stringify(payload),
-                contentType: "application/json; charset=utf-8"
+                data: toFormPayload(payload)
             }).done(function (response) {
                 if (!response || !response.Status) {
                     showToast(response && response.Message ? response.Message : "No se pudieron guardar las propiedades.");
                     return;
                 }
 
+                persistStoreSelection(selectedAllStores, selectedStores);
                 replaceItem(response.Result);
                 renderTable();
                 propiedadesModal.hide();
@@ -376,7 +457,29 @@
             });
         }
 
+        function toFormPayload(payload) {
+            var formPayload = {
+                ItemID: payload.ItemID,
+                Tiendas: payload.Tiendas,
+                PropiedadesJson: JSON.stringify(payload.Propiedades || [])
+            };
+
+            (payload.Propiedades || []).forEach(function (property, index) {
+                formPayload["Propiedades[" + index + "].ID"] = property.ID;
+                formPayload["Propiedades[" + index + "].ItemID"] = property.ItemID;
+                formPayload["Propiedades[" + index + "].Nombre"] = property.Nombre;
+                formPayload["Propiedades[" + index + "].Tipo"] = property.Tipo;
+                formPayload["Propiedades[" + index + "].Inactivo"] = property.Inactivo;
+                formPayload["Propiedades[" + index + "].ListaValores"] = property.ListaValores;
+                formPayload["Propiedades[" + index + "].Valor"] = property.Valor;
+            });
+
+            return formPayload;
+        }
+
         function replaceItem(item) {
+            if (!item) return;
+
             for (var i = 0; i < articulos.length; i++) {
                 if (articulos[i].ID === item.ID) {
                     articulos[i] = item;
@@ -390,7 +493,39 @@
         }
 
         function getSelectedStores() {
+            if ($("#chk_all_stores").is(":checked")) {
+                return tiendas.map(function (t) { return t.ID; });
+            }
+
             return $("#stores_select").val() || [];
+        }
+
+        function restoreStoreSelection() {
+            try {
+                var saved = JSON.parse(window.localStorage.getItem(storeSelectionKey) || "{}");
+                storeSelectionsByItem = saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
+            } catch (e) {
+                storeSelectionsByItem = {};
+            }
+        }
+
+        function persistStoreSelection(allStores, selectedStores) {
+            var key = getCurrentItemKey();
+            if (!key) return;
+
+            storeSelectionsByItem[key] = {
+                all: allStores === true,
+                stores: selectedStores || []
+            };
+
+            try {
+                window.localStorage.setItem(storeSelectionKey, JSON.stringify(storeSelectionsByItem));
+            } catch (e) {
+            }
+        }
+
+        function getCurrentItemKey() {
+            return currentItem && currentItem.ID ? String(currentItem.ID) : "";
         }
 
         function updateSummary() {

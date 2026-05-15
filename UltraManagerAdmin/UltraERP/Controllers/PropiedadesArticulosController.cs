@@ -1,8 +1,15 @@
+using Security.EntitiesAVS;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
+using System.Data;
+using System.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
+using System.Security;
 using System.Web.Mvc;
+using UltraERP.BusinessEntities;
+using UltraERP.BusinessLogic;
 using UltraERP.Models;
 
 namespace UltraERP.Controllers
@@ -10,112 +17,31 @@ namespace UltraERP.Controllers
     [Authorize]
     public class PropiedadesArticulosController : Controller
     {
-        private static readonly object SyncRoot = new object();
-
-        private static readonly List<PropiedadPersonalizadaViewModel> PropiedadesDisponibles = new List<PropiedadPersonalizadaViewModel>
-        {
-            CreatePropiedad(1, "CABYS", 0, ""),
-            CreatePropiedad(2, "Registro sanitario", 0, ""),
-            CreatePropiedad(3, "Fecha vencimiento registro", 1, ""),
-            CreatePropiedad(4, "Peso neto", 2, ""),
-            CreatePropiedad(5, "Requiere refrigeracion", 4, ""),
-            CreatePropiedad(6, "Origen", 5, "Costa Rica,Importado"),
-            CreatePropiedad(7, "Presentacion", 0, "")
-        };
-
-        private static readonly List<TiendaAplicacionViewModel> Tiendas = new List<TiendaAplicacionViewModel>
-        {
-            new TiendaAplicacionViewModel { ID = "1", Codigo = "SJ01", Nombre = "San Jose Centro" },
-            new TiendaAplicacionViewModel { ID = "2", Codigo = "HD01", Nombre = "Heredia" },
-            new TiendaAplicacionViewModel { ID = "3", Codigo = "CT01", Nombre = "Cartago" },
-            new TiendaAplicacionViewModel { ID = "4", Codigo = "AL01", Nombre = "Alajuela" },
-            new TiendaAplicacionViewModel { ID = "5", Codigo = "GTE01", Nombre = "Guanacaste" }
-        };
-
-        private static readonly List<ArticuloPropiedadViewModel> Articulos = new List<ArticuloPropiedadViewModel>
-        {
-            CreateArticulo(1, "ARR-TP-2K", "Arroz Tio Pelon 2 kg", "Arroz nacional grano entero para gondola y mayoreo.",
-                new Dictionary<string, string>
-                {
-                    { "CABYS", "1006100000000" },
-                    { "Registro sanitario", "A-CR-11245" },
-                    { "Fecha vencimiento registro", "2027-08-31" },
-                    { "Peso neto", "2" },
-                    { "Requiere refrigeracion", "false" },
-                    { "Origen", "Costa Rica" },
-                    { "Presentacion", "Bolsa 2 kg" }
-                }),
-            CreateArticulo(2, "FRJ-DP-900", "Frijoles rojos Don Pedro 900 g", "Frijol rojo empacado para consumo masivo.",
-                new Dictionary<string, string>
-                {
-                    { "CABYS", "0713330000000" },
-                    { "Registro sanitario", "A-CR-88412" },
-                    { "Fecha vencimiento registro", "2027-04-15" },
-                    { "Peso neto", "0.9" },
-                    { "Requiere refrigeracion", "false" },
-                    { "Origen", "Costa Rica" },
-                    { "Presentacion", "Bolsa 900 g" }
-                }),
-            CreateArticulo(3, "SAL-LIZ-700", "Salsa Lizano 700 ml", "Salsa de mesa tradicional para abarrotes.",
-                new Dictionary<string, string>
-                {
-                    { "CABYS", "2103900000000" },
-                    { "Registro sanitario", "A-CR-55102" },
-                    { "Fecha vencimiento registro", "2028-02-20" },
-                    { "Peso neto", "0.7" },
-                    { "Requiere refrigeracion", "false" },
-                    { "Origen", "Costa Rica" },
-                    { "Presentacion", "Botella 700 ml" }
-                }),
-            CreateArticulo(4, "LEC-DP-1L", "Leche Dos Pinos 1 L", "Leche fluida refrigerada de alta rotacion.",
-                new Dictionary<string, string>
-                {
-                    { "CABYS", "0401200000000" },
-                    { "Registro sanitario", "A-CR-22401" },
-                    { "Fecha vencimiento registro", "2026-11-30" },
-                    { "Peso neto", "1" },
-                    { "Requiere refrigeracion", "true" },
-                    { "Origen", "Costa Rica" },
-                    { "Presentacion", "Caja 1 L" }
-                }),
-            CreateArticulo(5, "CAF-1820-500", "Cafe 1820 molido 500 g", "Cafe molido tostado nacional.",
-                new Dictionary<string, string>
-                {
-                    { "CABYS", "0901210000000" },
-                    { "Registro sanitario", "A-CR-33075" },
-                    { "Fecha vencimiento registro", "2027-12-10" },
-                    { "Peso neto", "0.5" },
-                    { "Requiere refrigeracion", "false" },
-                    { "Origen", "Costa Rica" },
-                    { "Presentacion", "Bolsa 500 g" }
-                }),
-            CreateArticulo(6, "DET-IRX-1K", "Detergente Irex 1 kg", "Detergente en polvo para cuidado del hogar.",
-                new Dictionary<string, string>
-                {
-                    { "CABYS", "3402200000000" },
-                    { "Registro sanitario", "" },
-                    { "Fecha vencimiento registro", "" },
-                    { "Peso neto", "1" },
-                    { "Requiere refrigeracion", "false" },
-                    { "Origen", "Costa Rica" },
-                    { "Presentacion", "Bolsa 1 kg" }
-                })
-        };
+        private const int DefaultResultCount = 500;
 
         public ActionResult Inicio()
         {
-            PropiedadesArticuloInicioViewModel model;
-            lock (SyncRoot)
+            try
             {
-                model = new PropiedadesArticuloInicioViewModel
-                {
-                    Articulos = Articulos.Select(CloneArticulo).OrderBy(x => x.Codigo).ToList(),
-                    PropiedadesDisponibles = PropiedadesDisponibles.Select(ClonePropiedad).ToList(),
-                    Tiendas = Tiendas.Select(CloneTienda).ToList()
-                };
-            }
+                IList<PropiedadPersonalizadaViewModel> propiedades = GetPropiedadesDisponibles();
 
-            return View(model);
+                var model = new PropiedadesArticuloInicioViewModel
+                {
+                    Articulos = GetArticulosFromDatabase(propiedades, "", DefaultResultCount),
+                    PropiedadesDisponibles = propiedades,
+                    Tiendas = GetTiendasDisponibles()
+                };
+
+                ViewBag.PropiedadesArticulosDataSource = "SQL";
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                TempData["PropiedadArticuloError"] = "No se pudieron cargar las propiedades de articulos desde SQL: " + ex.Message;
+                ViewBag.PropiedadesArticulosDataSource = "SQL";
+
+                return View(new PropiedadesArticuloInicioViewModel());
+            }
         }
 
         [HttpPost]
@@ -124,105 +50,292 @@ namespace UltraERP.Controllers
             if (model == null)
                 return Json(new JsonResponse("Solicitud vacia.", "No se recibieron propiedades para guardar.", null, false));
 
+            if (model.ItemID <= 0)
+                return Json(new JsonResponse("Articulo invalido.", "Seleccione un articulo valido.", null, false));
+
             if (String.IsNullOrWhiteSpace(model.Tiendas))
                 return Json(new JsonResponse("Sin tiendas.", "Seleccione al menos una tienda para aplicar los cambios.", null, false));
 
-            lock (SyncRoot)
+            if (model.Propiedades == null || model.Propiedades.Count == 0)
+                return Json(new JsonResponse("Sin propiedades.", "No se recibieron propiedades para actualizar.", null, false));
+
+            try
             {
-                var articulo = Articulos.FirstOrDefault(x => x.ID == model.ItemID);
-                if (articulo == null)
-                    return Json(new JsonResponse("Articulo no encontrado.", "No se encontro el articulo seleccionado.", null, false));
+                IList<PropiedadPersonalizadaViewModel> propiedades = GetPropiedadesDisponibles();
+                string propertiesAvailable = GetPropertiesAvailable();
+                string xml = BuildPropertiesXml(model.Propiedades, propiedades, propertiesAvailable);
 
-                foreach (var property in model.Propiedades ?? new List<ArticuloPropiedadValorViewModel>())
-                {
-                    var catalogProperty = PropiedadesDisponibles.FirstOrDefault(x => String.Equals(x.Nombre, property.Nombre, StringComparison.OrdinalIgnoreCase));
-                    if (catalogProperty == null)
-                        continue;
+                Respuesta response = new CT_ItemProperties().Save_ItemExtProperty(
+                    xml,
+                    model.ItemID,
+                    propertiesAvailable,
+                    model.Tiendas,
+                    GetCurrentUserID());
 
-                    var current = articulo.Propiedades.FirstOrDefault(x => String.Equals(x.Nombre, catalogProperty.Nombre, StringComparison.OrdinalIgnoreCase));
-                    if (current == null)
-                        continue;
+                if (!response.Status)
+                    return Json(new JsonResponse(response.InternalMessage, response.Message, null, false));
 
-                    var normalized = NormalizeValue(property.Valor, catalogProperty);
-                    if (!String.IsNullOrEmpty(normalized.ErrorMessage))
-                        return Json(new JsonResponse(normalized.InternalMessage, normalized.ErrorMessage, null, false));
+                ArticuloPropiedadViewModel articulo = GetArticuloById(model.ItemID, propiedades);
+                ApplyPostedValues(articulo, model.Propiedades);
+                TempData["PropiedadArticuloMessage"] = "Propiedades actualizadas correctamente en SQL.";
 
-                    current.Valor = normalized.Value;
-                }
-
-                articulo.UsuarioModifica = GetCurrentUser();
-                articulo.FechaModifica = DateTime.Now;
-
-                return Json(new JsonResponse("", "Propiedades actualizadas correctamente.", CloneArticulo(articulo), true));
+                return Json(new JsonResponse(response.InternalMessage, "Propiedades actualizadas correctamente.", articulo, true));
+            }
+            catch (Exception ex)
+            {
+                return Json(new JsonResponse(ex.Message, "No se pudieron guardar las propiedades en SQL.", null, false));
             }
         }
 
-        private static PropiedadPersonalizadaViewModel CreatePropiedad(int id, string nombre, int tipo, string listaValores)
+        private IList<PropiedadPersonalizadaViewModel> GetPropiedadesDisponibles()
+        {
+            return new CT_ItemProperties()
+                .GetCustomProperty(GetPropertiesAvailable())
+                .Where(x => x != null && !String.IsNullOrWhiteSpace(x.Name))
+                .OrderBy(x => x.Name)
+                .Select(MapPropiedad)
+                .ToList();
+        }
+
+        private IList<ArticuloPropiedadViewModel> GetArticulosFromDatabase(IList<PropiedadPersonalizadaViewModel> propiedades, string searchValue, int take)
+        {
+            int recordLimit = take <= 0 ? 10000 : take;
+
+            return new CT_ItemProperties()
+                .GetAllItemsProperties(GetStoresAvailable(), GetPropertiesAvailable(), searchValue ?? "", 0, "asc", 0, recordLimit)
+                .Select(x => MapArticulo(x, propiedades))
+                .OrderBy(x => x.Codigo)
+                .ToList();
+        }
+
+        private ArticuloPropiedadViewModel GetArticuloById(int itemID, IList<PropiedadPersonalizadaViewModel> propiedades)
+        {
+            EN_ItemProperty item = new CT_ItemProperties()
+                .GetAllItemsProperties(GetStoresAvailable(), GetPropertiesAvailable(), "", 0, "asc", 0, 10000)
+                .FirstOrDefault(x => x.ID == itemID);
+
+            return item == null ? null : MapArticulo(item, propiedades);
+        }
+
+        private IList<TiendaAplicacionViewModel> GetTiendasDisponibles()
+        {
+            string storesAvailable = GetStoresAvailable();
+            var stores = new CT_Store().GetAll("", 0, 0);
+            if (stores == null || stores.Count == 0)
+                stores = GetStoresFromTable();
+
+            var filteredStores = stores;
+
+            if (storesAvailable != "%")
+            {
+                var allowedIds = storesAvailable
+                    .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(x => x.Trim())
+                    .ToList();
+
+                filteredStores = stores.Where(x => allowedIds.Contains(x.IDS.ToString(CultureInfo.InvariantCulture))).ToList();
+            }
+
+            if (filteredStores.Count == 0)
+                filteredStores = stores;
+
+            return filteredStores
+                .OrderBy(x => x.NameS)
+                .Select(x => new TiendaAplicacionViewModel
+                {
+                    ID = x.IDS.ToString(CultureInfo.InvariantCulture),
+                    Codigo = x.CodeS,
+                    Nombre = x.NameS
+                })
+                .ToList();
+        }
+
+        private static List<EN_Store> GetStoresFromTable()
+        {
+            var stores = new List<EN_Store>();
+            ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings["UltraERP.BusinessDataAccess.Properties.Settings.MasterDB"];
+
+            if (settings == null || String.IsNullOrWhiteSpace(settings.ConnectionString))
+                return stores;
+
+            using (var connection = new SqlConnection(settings.ConnectionString))
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandType = CommandType.Text;
+                command.CommandText = @"
+                    SELECT ID, StoreCode, Name
+                    FROM dbo.Store
+                    ORDER BY Name";
+
+                connection.Open();
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        stores.Add(new EN_Store
+                        {
+                            IDS = reader.IsDBNull(reader.GetOrdinal("ID")) ? 0 : reader.GetInt32(reader.GetOrdinal("ID")),
+                            CodeS = reader.IsDBNull(reader.GetOrdinal("StoreCode")) ? "" : Convert.ToString(reader["StoreCode"]),
+                            NameS = reader.IsDBNull(reader.GetOrdinal("Name")) ? "" : Convert.ToString(reader["Name"])
+                        });
+                    }
+                }
+            }
+
+            return stores;
+        }
+
+        private static PropiedadPersonalizadaViewModel MapPropiedad(EN_ItemCustomProperty source)
         {
             return new PropiedadPersonalizadaViewModel
             {
-                ID = id,
-                Nombre = nombre,
-                Tipo = tipo,
-                ListaValores = listaValores,
-                Inactivo = false
+                ID = source.ID,
+                Nombre = source.Name,
+                Tipo = source.Type,
+                Inactivo = source.Inactive,
+                ListaValores = source.ListValue
             };
         }
 
-        private static ArticuloPropiedadViewModel CreateArticulo(int id, string codigo, string descripcion, string descripcionExtendida, IDictionary<string, string> values)
+        private static ArticuloPropiedadViewModel MapArticulo(EN_ItemProperty item, IList<PropiedadPersonalizadaViewModel> propiedades)
         {
+            IDictionary<string, string> values = ParseProperties(item.Properties);
+
             return new ArticuloPropiedadViewModel
             {
-                ID = id,
-                Codigo = codigo,
-                Descripcion = descripcion,
-                DescripcionExtendida = descripcionExtendida,
-                UsuarioModifica = "Soporte",
-                FechaModifica = DateTime.Now.AddDays(-1),
-                Propiedades = PropiedadesDisponibles.Select(property => new ArticuloPropiedadValorViewModel
+                ID = item.ID,
+                Codigo = item.ItemLookupCode,
+                Descripcion = item.Description,
+                DescripcionExtendida = item.ExtDescription,
+                UsuarioModifica = "SQL",
+                FechaModifica = null,
+                Propiedades = propiedades.Select(property => new ArticuloPropiedadValorViewModel
                 {
                     ID = property.ID,
-                    ItemID = id,
+                    ItemID = item.ID,
                     Nombre = property.Nombre,
                     Tipo = property.Tipo,
                     Inactivo = property.Inactivo,
                     ListaValores = property.ListaValores,
-                    Valor = values.ContainsKey(property.Nombre) ? values[property.Nombre] : ""
+                    Valor = values.ContainsKey(property.Nombre) ? values[property.Nombre] : GetDefaultValue(property)
                 }).ToList()
             };
         }
 
-        private static NormalizedPropertyValue NormalizeValue(string value, PropiedadPersonalizadaViewModel property)
+        private static string GetDefaultValue(PropiedadPersonalizadaViewModel property)
+        {
+            return property != null && property.Tipo == 4 ? "false" : "";
+        }
+
+        private static void ApplyPostedValues(ArticuloPropiedadViewModel articulo, IEnumerable<ArticuloPropiedadValorViewModel> postedProperties)
+        {
+            if (articulo == null || articulo.Propiedades == null || postedProperties == null)
+                return;
+
+            foreach (ArticuloPropiedadValorViewModel postedProperty in postedProperties)
+            {
+                ArticuloPropiedadValorViewModel current = articulo.Propiedades.FirstOrDefault(x =>
+                    x.ID == postedProperty.ID ||
+                    String.Equals(x.Nombre, postedProperty.Nombre, StringComparison.OrdinalIgnoreCase));
+
+                if (current != null)
+                    current.Valor = NormalizeValue(postedProperty.Valor, new PropiedadPersonalizadaViewModel
+                    {
+                        ID = current.ID,
+                        Nombre = current.Nombre,
+                        Tipo = current.Tipo,
+                        Inactivo = current.Inactivo,
+                        ListaValores = current.ListaValores
+                    });
+            }
+        }
+
+        private static IDictionary<string, string> ParseProperties(string properties)
+        {
+            var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            if (String.IsNullOrWhiteSpace(properties))
+                return values;
+
+            foreach (string part in properties.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                int separator = part.IndexOf(':');
+                if (separator <= 0)
+                    continue;
+
+                string name = part.Substring(0, separator).Trim();
+                string value = part.Substring(separator + 1).Trim();
+
+                if (!values.ContainsKey(name))
+                    values.Add(name, value);
+            }
+
+            return values;
+        }
+
+        private static string BuildPropertiesXml(IEnumerable<ArticuloPropiedadValorViewModel> postedProperties, IList<PropiedadPersonalizadaViewModel> catalog, string propertiesAvailable)
+        {
+            var allowedNames = (propertiesAvailable ?? "")
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .ToList();
+
+            var xml = new System.Text.StringBuilder();
+
+            foreach (ArticuloPropiedadValorViewModel property in postedProperties ?? new List<ArticuloPropiedadValorViewModel>())
+            {
+                PropiedadPersonalizadaViewModel catalogProperty = catalog.FirstOrDefault(x =>
+                    x.ID == property.ID ||
+                    String.Equals(x.Nombre, property.Nombre, StringComparison.OrdinalIgnoreCase));
+
+                if (catalogProperty == null)
+                    continue;
+
+                if (propertiesAvailable != "%" && !allowedNames.Contains(catalogProperty.Nombre))
+                    continue;
+
+                string normalized = NormalizeValue(property.Valor, catalogProperty);
+
+                xml.Append("<Property Name=\"")
+                    .Append(EscapeXml(catalogProperty.Nombre))
+                    .Append("\" Type=\"")
+                    .Append(GetDataTypeProperty(catalogProperty.Tipo))
+                    .Append("\">")
+                    .Append(EscapeXml(normalized))
+                    .Append("</Property>");
+            }
+
+            return xml.ToString();
+        }
+
+        private static string NormalizeValue(string value, PropiedadPersonalizadaViewModel property)
         {
             var text = (value ?? "").Trim();
             if (String.IsNullOrWhiteSpace(text))
-                return new NormalizedPropertyValue("");
+                return "";
 
             if (property.Tipo == 1)
             {
                 DateTime date;
-                if (!DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out date) &&
-                    !DateTime.TryParse(text, CultureInfo.CurrentCulture, DateTimeStyles.None, out date))
-                    return new NormalizedPropertyValue("Fecha invalida", "La propiedad " + property.Nombre + " debe tener una fecha valida.");
+                if (DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out date) ||
+                    DateTime.TryParse(text, CultureInfo.CurrentCulture, DateTimeStyles.None, out date))
+                    return date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-                return new NormalizedPropertyValue(date.ToString("yyyy-MM-dd"));
+                return text;
             }
 
             if (property.Tipo == 2 || property.Tipo == 3)
             {
                 decimal number;
-                if (!Decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out number) &&
-                    !Decimal.TryParse(text, NumberStyles.Any, CultureInfo.CurrentCulture, out number))
-                    return new NormalizedPropertyValue("Numero invalido", "La propiedad " + property.Nombre + " debe tener un numero valido.");
+                if (Decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out number) ||
+                    Decimal.TryParse(text, NumberStyles.Any, CultureInfo.CurrentCulture, out number))
+                    return number.ToString("0.##", CultureInfo.InvariantCulture);
 
-                if (number < 0)
-                    return new NormalizedPropertyValue("Numero negativo", "La propiedad " + property.Nombre + " no puede ser negativa.");
-
-                return new NormalizedPropertyValue(number.ToString("0.##", CultureInfo.InvariantCulture));
+                return text;
             }
 
             if (property.Tipo == 4)
-                return new NormalizedPropertyValue(String.Equals(text, "true", StringComparison.OrdinalIgnoreCase) ? "true" : "false");
+                return String.Equals(text, "true", StringComparison.OrdinalIgnoreCase) ? "true" : "false";
 
             if (property.Tipo == 5)
             {
@@ -230,91 +343,60 @@ namespace UltraERP.Controllers
                     ? new List<string>()
                     : property.ListaValores.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
 
-                if (options.Count > 0 && !options.Any(x => String.Equals(x, text, StringComparison.OrdinalIgnoreCase)))
-                    return new NormalizedPropertyValue("Opcion invalida", "Seleccione una opcion valida para " + property.Nombre + ".");
-
-                return new NormalizedPropertyValue(options.FirstOrDefault(x => String.Equals(x, text, StringComparison.OrdinalIgnoreCase)) ?? text);
+                return options.FirstOrDefault(x => String.Equals(x, text, StringComparison.OrdinalIgnoreCase)) ?? text;
             }
 
-            return new NormalizedPropertyValue(text);
+            return text;
         }
 
-        private static ArticuloPropiedadViewModel CloneArticulo(ArticuloPropiedadViewModel source)
+        private static string GetDataTypeProperty(int type)
         {
-            if (source == null)
-                return null;
-
-            return new ArticuloPropiedadViewModel
+            switch (type)
             {
-                ID = source.ID,
-                Codigo = source.Codigo,
-                Descripcion = source.Descripcion,
-                DescripcionExtendida = source.DescripcionExtendida,
-                UsuarioModifica = source.UsuarioModifica,
-                FechaModifica = source.FechaModifica,
-                Propiedades = source.Propiedades.Select(CloneValor).ToList()
-            };
-        }
-
-        private static ArticuloPropiedadValorViewModel CloneValor(ArticuloPropiedadValorViewModel source)
-        {
-            return new ArticuloPropiedadValorViewModel
-            {
-                ID = source.ID,
-                ItemID = source.ItemID,
-                Nombre = source.Nombre,
-                Tipo = source.Tipo,
-                Inactivo = source.Inactivo,
-                ListaValores = source.ListaValores,
-                Valor = source.Valor
-            };
-        }
-
-        private static PropiedadPersonalizadaViewModel ClonePropiedad(PropiedadPersonalizadaViewModel source)
-        {
-            return new PropiedadPersonalizadaViewModel
-            {
-                ID = source.ID,
-                Nombre = source.Nombre,
-                Tipo = source.Tipo,
-                Inactivo = source.Inactivo,
-                ListaValores = source.ListaValores
-            };
-        }
-
-        private static TiendaAplicacionViewModel CloneTienda(TiendaAplicacionViewModel source)
-        {
-            return new TiendaAplicacionViewModel
-            {
-                ID = source.ID,
-                Codigo = source.Codigo,
-                Nombre = source.Nombre
-            };
-        }
-
-        private string GetCurrentUser()
-        {
-            return User != null && User.Identity != null && !String.IsNullOrWhiteSpace(User.Identity.Name)
-                ? User.Identity.Name
-                : "Soporte";
-        }
-
-        private class NormalizedPropertyValue
-        {
-            public NormalizedPropertyValue(string value)
-            {
-                Value = value;
+                case 1: return "System.DateTime";
+                case 2: return "System.Decimal";
+                case 3: return "System.Decimal";
+                case 4: return "System.Boolean";
+                case 5: return "System.Collections.ArrayList";
+                default: return "System.String";
             }
+        }
 
-            public NormalizedPropertyValue(string internalMessage, string errorMessage)
-            {
-                InternalMessage = internalMessage;
-                ErrorMessage = errorMessage;
-            }
+        private static string EscapeXml(string value)
+        {
+            return SecurityElement.Escape(value ?? "") ?? "";
+        }
 
-            public string Value { get; private set; }
-            public string InternalMessage { get; private set; }
-            public string ErrorMessage { get; private set; }
+        private string GetStoresAvailable()
+        {
+            return GetDataAccessAvailable(ConfigurationManager.AppSettings["DataStoreCode"] ?? "uerp-store");
+        }
+
+        private string GetPropertiesAvailable()
+        {
+            return GetDataAccessAvailable(ConfigurationManager.AppSettings["DataProperty"] ?? "uerp-item-property");
+        }
+
+        private string GetDataAccessAvailable(string dataCode)
+        {
+            EN_SC_DataAccess[] dataAccess = Session["USER_DATAACCESS"] as EN_SC_DataAccess[];
+
+            if (dataAccess == null || dataAccess.Length == 0)
+                return "%";
+
+            EN_SC_DataAccess[] access = dataAccess.Where(x => x.Code == dataCode).ToArray();
+            if (access.Length == 0 || access.Any(x => x.EnableAll))
+                return "%";
+
+            return String.Join(",", access.Where(x => !String.IsNullOrWhiteSpace(x.DataIDs)).Select(x => x.DataIDs));
+        }
+
+        private int GetCurrentUserID()
+        {
+            int userID;
+            return Session["USER_AUTOID"] != null && Int32.TryParse(Convert.ToString(Session["USER_AUTOID"]), out userID)
+                ? userID
+                : 0;
         }
     }
 }
