@@ -13,11 +13,16 @@
     </div>
 </section>
 
+@if (TempData["HojaTrabajoError"] != null)
+{
+    <div class="alert alert-warning">@TempData["HojaTrabajoError"]</div>
+}
+
 <section class="filter-panel worksheet-filter-panel">
     <div class="row g-3">
         <div class="col-12 col-md-3">
             <label for="worksheet_search" class="form-label">Buscar</label>
-            <input id="worksheet_search" type="search" class="form-control" placeholder="Titulo, tarea o usuario" />
+            <input id="worksheet_search" type="search" class="form-control" placeholder="T&iacute;tulo, tarea o usuario" />
         </div>
         <div class="col-12 col-md-3">
             <label for="worksheet_estado" class="form-label">Estado</label>
@@ -26,7 +31,7 @@
                 <option value="1">Sin aprobar</option>
                 <option value="2">Aprobado</option>
                 <option value="0">Suspendido</option>
-                <option value="4">Completado con exito</option>
+                <option value="4">Completado con &eacute;xito</option>
                 <option value="8">Completado sin cambios</option>
             </select>
         </div>
@@ -96,7 +101,7 @@
     </div>
     <div class="table-pagination">
         <button id="btnPrevPage" class="btn btn-outline-secondary btn-sm" type="button">Anterior</button>
-        <span id="page_hint" class="toolbar-chip">Pagina 1 de 1</span>
+        <span id="page_hint" class="toolbar-chip">P&aacute;gina 1 de 1</span>
         <button id="btnNextPage" class="btn btn-outline-secondary btn-sm" type="button">Siguiente</button>
     </div>
 </section>
@@ -268,7 +273,7 @@
                 { label: "Usuario", value: currentWorksheet.Usuario || "-" },
                 { label: "Fecha creada", value: currentWorksheet.FechaCreacionTexto || "-" },
                 { label: "Fecha efectiva", value: currentWorksheet.FechaEfectivaTexto || "-" },
-                { label: "Fecha aplicacion", value: currentWorksheet.FechaAplicacionTexto || "-" },
+                { label: "Fecha aplicaci\u00f3n", value: currentWorksheet.FechaAplicacionTexto || "-" },
                 { label: "Tiendas", value: formatNumber(currentWorksheet.CantidadTiendas) }
             ]));
             $("#worksheet_view_notes").text(currentWorksheet.Notas || "Sin notas registradas.");
@@ -325,17 +330,17 @@
             var columns = [
                 "<th>Tienda</th>",
                 "<th>Disp.</th>",
-                "<th>Cod. articulo</th>",
-                "<th>Descripcion</th>"
+                    "<th>Cod. art\u00edculo</th>",
+                    "<th>Descripci\u00f3n</th>"
             ];
 
             if (worksheet.EstiloID === 251) {
                 columns = columns.concat([
-                    "<th>Precio liquidacion</th>",
+                    "<th>Precio liquidaci\u00f3n</th>",
                     "<th>Inicio</th>",
                     "<th>Fin</th>",
                     "<th>Precio cantidad</th>",
-                    "<th>Cantidad liquidacion</th>"
+                    "<th>Cantidad liquidaci\u00f3n</th>"
                 ]);
             } else if (worksheet.EstiloID === 320) {
                 columns.push("<th>Impuesto</th>");
