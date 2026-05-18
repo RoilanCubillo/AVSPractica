@@ -406,14 +406,14 @@ namespace UltraERP.BusinessDataAccess.DataAccessIntegration
                 XDocument document = XDocument.Parse(xml);
                 foreach (XElement node in document.Descendants("Property"))
                 {
-                    string name = Convert.ToString(node.Attribute("Name"));
+                    string name = node.Attribute("Name") == null ? "" : node.Attribute("Name").Value;
                     if (String.IsNullOrWhiteSpace(name))
                         continue;
 
                     values[name] = new XmlPropertyValue
                     {
                         Name = name,
-                        TypeName = Convert.ToString(node.Attribute("Type")),
+                        TypeName = node.Attribute("Type") == null ? "" : node.Attribute("Type").Value,
                         Value = Convert.ToString(node.Value)
                     };
                 }

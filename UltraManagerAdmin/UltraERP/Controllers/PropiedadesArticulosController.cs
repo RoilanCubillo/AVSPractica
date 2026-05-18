@@ -56,6 +56,8 @@ namespace UltraERP.Controllers
             if (String.IsNullOrWhiteSpace(model.Tiendas))
                 return Json(new JsonResponse("Sin tiendas.", "Seleccione al menos una tienda para aplicar los cambios.", null, false));
 
+            HydratePostedProperties(model);
+
             if (model.Propiedades == null || model.Propiedades.Count == 0)
                 return Json(new JsonResponse("Sin propiedades.", "No se recibieron propiedades para actualizar.", null, false));
 
@@ -95,6 +97,22 @@ namespace UltraERP.Controllers
                 .OrderBy(x => x.Name)
                 .Select(MapPropiedad)
                 .ToList();
+        }
+
+        private static void HydratePostedProperties(GuardarPropiedadesArticuloViewModel model)
+        {
+            if (model == null || String.IsNullOrWhiteSpace(model.PropiedadesJson))
+                return;
+
+            try
+            {
+                var properties = Newtonsoft.Json.JsonConvert.DeserializeObject<List<ArticuloPropiedadValorViewModel>>(model.PropiedadesJson);
+                if (properties != null && properties.Count > 0)
+                    model.Propiedades = properties;
+            }
+            catch
+            {
+            }
         }
 
         private IList<ArticuloPropiedadViewModel> GetArticulosFromDatabase(IList<PropiedadPersonalizadaViewModel> propiedades, string searchValue, int take)
