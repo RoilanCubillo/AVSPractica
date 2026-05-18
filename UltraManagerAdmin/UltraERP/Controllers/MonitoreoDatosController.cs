@@ -1,6 +1,12 @@
+using Analitic.Entities;
+using Security.EntitiesAVS;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
+using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
+using System.ServiceModel;
 using System.Web.Mvc;
 using UltraERP.Models;
 
@@ -9,96 +15,363 @@ namespace UltraERP.Controllers
     [Authorize]
     public class MonitoreoDatosController : Controller
     {
+        private const int DefaultResultCount = 500;
+
         public ActionResult Inicio()
         {
-            return View(BuildModel());
+            MonitoreoDatosViewModel model = BuildModel();
+            return View(model);
         }
 
-        private static MonitoreoDatosViewModel BuildModel()
+        private MonitoreoDatosViewModel BuildModel()
         {
-            var tiendas = new List<MonitoreoTiendaViewModel>
-            {
-                CreateStore("1", "SJ-CTR", "San Jose Centro"),
-                CreateStore("2", "HER-PLZ", "Heredia Plaza"),
-                CreateStore("3", "CRT-EST", "Cartago Este"),
-                CreateStore("4", "ESC-GAM", "Escazu"),
-                CreateStore("5", "LBR-OCC", "Liberia")
-            };
+            var model = new MonitoreoDatosViewModel();
 
-            return new MonitoreoDatosViewModel
+            try
             {
-                Tiendas = tiendas,
-                DocumentosMH = new List<MonitoreoDocumentoViewModel>
+                model.Tiendas = GetStoresFromSql();
+                model.DocumentosMH = GetDocumentosHaciendaFromSql(DefaultResultCount);
+            }
+            catch (Exception ex)
+            {
+                model.Alertas.Add("No se pudieron cargar documentos de Hacienda desde SQL: " + ex.Message);
+            }
+
+            try
+            {
+                model.DocumentosERP = GetDocumentosErpFromAnalitica(DefaultResultCount);
+                model.AsientosERP = GetAsientosFromAnalitica(DefaultResultCount);
+            }
+            catch (Exception ex)
+            {
+                model.Alertas.Add(GetAnaliticaUnavailableMessage(ex));
+            }
+
+            ApplyDefaultDates(model);
+            return model;
+        }
+
+        private IList<MonitoreoTiendaViewModel> GetStoresFromSql()
+        {
+            var stores = new List<MonitoreoTiendaViewModel>();
+            ConnectionStringSettings settings = GetMasterConnection();
+
+            if (settings == null || String.IsNullOrWhiteSpace(settings.ConnectionString))
+                return stores;
+
+            using (var connection = new SqlConnection(settings.ConnectionString))
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandType = CommandType.Text;
+                command.CommandText = @"
+                    SELECT ID, StoreCode, Name
+                    FROM dbo.Store
+                    WHERE (@Stores = '%' OR ID IN (SELECT TRY_CONVERT(INT, value) FROM STRING_SPLIT(@Stores, ',') WHERE value <> ''))
+                    ORDER BY Name";
+                command.Parameters.AddWithValue("@Stores", GetStoresAvailable());
+
+                connection.Open();
+                using (SqlDataReader reader = command.ExecuteReader())
                 {
-                    CreateDocument(1, "MH", "1", "San Jose Centro", "00100001010000000531", "50613052600310123456700100001010000000531123456789", "Factura electronica", "Distribuidora La Sabana", new DateTime(2026, 5, 13, 9, 15, 0), new DateTime(2026, 5, 13, 9, 16, 0), 1854500m, 1, "Aceptado por Ministerio de Hacienda."),
-                    CreateDocument(2, "MH", "4", "Escazu", "00100001010000000532", "50613052600310123456700100001010000000532123456789", "Nota credito", "Cafe Costa Rica S.A.", new DateTime(2026, 5, 13, 10, 40, 0), new DateTime(2026, 5, 13, 10, 42, 0), 124980m, 1, "Documento aceptado."),
-                    CreateDocument(3, "MH", "2", "Heredia Plaza", "00100001010000000533", "50613052600310123456700100001010000000533123456789", "Factura electronica", "Central de Carnes CR", new DateTime(2026, 5, 12, 15, 5, 0), new DateTime(2026, 5, 12, 15, 9, 0), 879200m, 2, "Rechazado por detalle de impuesto."),
-                    CreateDocument(4, "MH", "3", "Cartago Este", "00100001010000000534", "50613052600310123456700100001010000000534123456789", "Tiquete electronico", "Cliente mostrador", new DateTime(2026, 5, 12, 18, 22, 0), null, 35460m, 3, "Pendiente de respuesta."),
-                    CreateDocument(5, "MH", "5", "Liberia", "00100001010000000535", "50613052600310123456700100001010000000535123456789", "Factura electronica", "Hotel Guanacaste Verde", new DateTime(2026, 5, 11, 11, 8, 0), new DateTime(2026, 5, 11, 11, 10, 0), 642300m, 1, "Aceptado por Ministerio de Hacienda."),
-                    CreateDocument(6, "MH", "1", "San Jose Centro", "00100001010000000536", "50613052600310123456700100001010000000536123456789", "Nota debito", "Proveedor Nacional", new DateTime(2026, 5, 10, 8, 55, 0), new DateTime(2026, 5, 10, 9, 1, 0), 74500m, 2, "Rechazado por clave duplicada.")
-                },
-                DocumentosERP = new List<MonitoreoDocumentoViewModel>
-                {
-                    CreateDocument(101, "ERP", "1", "San Jose Centro", "ERP-0009821", "ERP-SJ-0009821", "Factura electronica", "Distribuidora La Sabana", new DateTime(2026, 5, 13, 9, 18, 0), new DateTime(2026, 5, 13, 9, 19, 0), 1854500m, 1, "Sincronizado contra ERP."),
-                    CreateDocument(102, "ERP", "4", "Escazu", "ERP-0009822", "ERP-ESC-0009822", "Nota credito", "Cafe Costa Rica S.A.", new DateTime(2026, 5, 13, 10, 45, 0), new DateTime(2026, 5, 13, 10, 45, 0), 124980m, 1, "Sincronizado contra ERP."),
-                    CreateDocument(103, "ERP", "2", "Heredia Plaza", "ERP-0009823", "ERP-HER-0009823", "Factura electronica", "Central de Carnes CR", new DateTime(2026, 5, 12, 15, 12, 0), null, 879200m, 2, "No se encontro documento aceptado en Hacienda."),
-                    CreateDocument(104, "ERP", "3", "Cartago Este", "ERP-0009824", "ERP-CRT-0009824", "Tiquete electronico", "Cliente mostrador", new DateTime(2026, 5, 12, 18, 25, 0), null, 35460m, 3, "Pendiente de sincronizacion."),
-                    CreateDocument(105, "ERP", "5", "Liberia", "ERP-0009825", "ERP-LBR-0009825", "Factura electronica", "Hotel Guanacaste Verde", new DateTime(2026, 5, 11, 11, 15, 0), new DateTime(2026, 5, 11, 11, 16, 0), 642300m, 1, "Sincronizado contra ERP.")
-                },
-                AsientosERP = new List<MonitoreoAsientoViewModel>
-                {
-                    CreateAccounting(301, "1", "San Jose Centro", "AS-2026-0513-001", "ERP-0009821", "Venta diaria", new DateTime(2026, 5, 13), new DateTime(2026, 5, 13, 23, 10, 0), 1854500m, 1854500m, 1, "Asiento enviado correctamente."),
-                    CreateAccounting(302, "4", "Escazu", "AS-2026-0513-002", "ERP-0009822", "Nota credito", new DateTime(2026, 5, 13), new DateTime(2026, 5, 13, 23, 12, 0), 124980m, 124980m, 1, "Asiento enviado correctamente."),
-                    CreateAccounting(303, "2", "Heredia Plaza", "AS-2026-0512-004", "ERP-0009823", "Venta diaria", new DateTime(2026, 5, 12), null, 879200m, 879200m, 2, "Diferencia entre debito y credito por impuesto."),
-                    CreateAccounting(304, "3", "Cartago Este", "AS-2026-0512-005", "ERP-0009824", "Cierre de caja", new DateTime(2026, 5, 12), null, 35460m, 35460m, 0, "Pendiente de envio."),
-                    CreateAccounting(305, "5", "Liberia", "AS-2026-0511-002", "ERP-0009825", "Venta diaria", new DateTime(2026, 5, 11), new DateTime(2026, 5, 11, 23, 5, 0), 642300m, 642300m, 1, "Asiento enviado correctamente."),
-                    CreateAccounting(306, "1", "San Jose Centro", "AS-2026-0510-001", "ERP-0009818", "Ajuste contable", new DateTime(2026, 5, 10), null, 74500m, 74200m, 2, "Diferencia de 300 colones.")
+                    while (reader.Read())
+                    {
+                        string id = Convert.ToString(ReadInt(reader, "ID"));
+                        string code = ReadString(reader, "StoreCode");
+
+                        stores.Add(new MonitoreoTiendaViewModel
+                        {
+                            ID = id,
+                            Codigo = String.IsNullOrWhiteSpace(code) ? id : code,
+                            Nombre = ReadString(reader, "Name")
+                        });
+                    }
                 }
-            };
+            }
+
+            return stores;
         }
 
-        private static MonitoreoTiendaViewModel CreateStore(string id, string code, string name)
+        private IList<MonitoreoDocumentoViewModel> GetDocumentosHaciendaFromSql(int take)
         {
-            return new MonitoreoTiendaViewModel { ID = id, Codigo = code, Nombre = name };
-        }
+            var documents = new List<MonitoreoDocumentoViewModel>();
+            ConnectionStringSettings settings = GetMasterConnection();
 
-        private static MonitoreoDocumentoViewModel CreateDocument(int id, string origen, string tiendaID, string tienda, string consecutivo, string clave, string tipo, string cliente, DateTime fecha, DateTime? fechaSync, decimal total, int estadoID, string mensaje)
-        {
-            return new MonitoreoDocumentoViewModel
+            if (settings == null || String.IsNullOrWhiteSpace(settings.ConnectionString))
+                return documents;
+
+            using (var connection = new SqlConnection(settings.ConnectionString))
+            using (var command = connection.CreateCommand())
             {
-                ID = id,
-                Origen = origen,
-                TiendaID = tiendaID,
-                Tienda = tienda,
-                Consecutivo = consecutivo,
-                Clave = clave,
-                ComprobanteTipo = tipo,
-                Cliente = cliente,
-                Fecha = fecha,
-                FechaSincronizacion = fechaSync,
-                Total = total,
-                EstadoID = estadoID,
-                Mensaje = mensaje
-            };
+                command.CommandType = CommandType.Text;
+                command.CommandText = @"
+                    SELECT TOP (@Take)
+                        ROW_NUMBER() OVER (ORDER BY I.FECHA_TRANSAC DESC, I.TRANSACTIONNUMBER DESC) AS RowID,
+                        I.COD_SUCURSAL,
+                        ISNULL(S.Name, 'Tienda ' + I.COD_SUCURSAL) AS StoreName,
+                        I.TRANSACTIONNUMBER,
+                        I.CLAVE50,
+                        I.CLAVE20,
+                        I.COMPROBANTE_TIPO,
+                        I.COD_CLIENTE,
+                        I.NOMBRE_CLIENTE,
+                        I.FECHA_TRANSAC,
+                        I.FECHA_HACIENDA,
+                        I.ESTADO_HACIENDA,
+                        I.OBSERVACIONES,
+                        I.XML_RESPUESTA
+                    FROM dbo.AVS_INTEGRAFAST_01 I
+                    LEFT JOIN dbo.Store S ON S.ID = TRY_CONVERT(INT, I.COD_SUCURSAL)
+                    WHERE (@Stores = '%' OR TRY_CONVERT(INT, I.COD_SUCURSAL) IN (SELECT TRY_CONVERT(INT, value) FROM STRING_SPLIT(@Stores, ',') WHERE value <> ''))
+                    ORDER BY I.FECHA_TRANSAC DESC, I.TRANSACTIONNUMBER DESC";
+                command.Parameters.AddWithValue("@Take", take <= 0 ? DefaultResultCount : take);
+                command.Parameters.AddWithValue("@Stores", GetStoresAvailable());
+
+                connection.Open();
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        string estado = ReadString(reader, "ESTADO_HACIENDA");
+                        DateTime fecha = ReadNullableDate(reader, "FECHA_TRANSAC") ?? DateTime.MinValue;
+
+                        documents.Add(new MonitoreoDocumentoViewModel
+                        {
+                            ID = ReadInt(reader, "RowID"),
+                            Origen = "MH",
+                            TiendaID = ReadString(reader, "COD_SUCURSAL"),
+                            Tienda = ReadString(reader, "StoreName"),
+                            Consecutivo = ReadString(reader, "TRANSACTIONNUMBER"),
+                            Clave = ReadString(reader, "CLAVE50"),
+                            ComprobanteTipo = GetComprobanteDescription(ReadString(reader, "COMPROBANTE_TIPO")),
+                            Cliente = ReadString(reader, "NOMBRE_CLIENTE"),
+                            Fecha = fecha == DateTime.MinValue ? DateTime.Now : fecha,
+                            FechaSincronizacion = ReadNullableDate(reader, "FECHA_HACIENDA"),
+                            Total = 0,
+                            EstadoID = MapHaciendaStatus(estado),
+                            Mensaje = FirstNotEmpty(ReadString(reader, "OBSERVACIONES"), ReadString(reader, "XML_RESPUESTA"), "Sin mensaje registrado.")
+                        });
+                    }
+                }
+            }
+
+            return documents;
         }
 
-        private static MonitoreoAsientoViewModel CreateAccounting(int id, string tiendaID, string tienda, string numero, string referencia, string tipo, DateTime fecha, DateTime? fechaSync, decimal debito, decimal credito, int estadoID, string mensaje)
+        private IList<MonitoreoDocumentoViewModel> GetDocumentosErpFromAnalitica(int take)
         {
-            return new MonitoreoAsientoViewModel
+            EN_DocumentosERP[] records = ExecuteAnalitica(client => client.GetAllDocsERP(
+                GetStoresAvailable(),
+                "%",
+                "",
+                "",
+                0,
+                "desc",
+                0,
+                take <= 0 ? DefaultResultCount : take,
+                "",
+                ""));
+
+            return (records ?? new EN_DocumentosERP[0])
+                .Select((x, index) => new MonitoreoDocumentoViewModel
+                {
+                    ID = index + 1,
+                    Origen = "ERP",
+                    TiendaID = Convert.ToString(x.StoreId),
+                    Tienda = x.StoreName,
+                    Consecutivo = x.Documento,
+                    Clave = x.Documento,
+                    ComprobanteTipo = x.Tipo,
+                    Cliente = "Documento ERP",
+                    Fecha = x.Fecha_Envio ?? DateTime.Now,
+                    FechaSincronizacion = x.Fecha_Envio,
+                    Total = 0,
+                    EstadoID = MapErpDocumentStatus(x.Status),
+                    Mensaje = FirstNotEmpty(x.Detalles_Envio, x.Respuesta_Envio, "Sin detalle registrado.")
+                })
+                .ToList();
+        }
+
+        private IList<MonitoreoAsientoViewModel> GetAsientosFromAnalitica(int take)
+        {
+            EN_Asientos[] records = ExecuteAnalitica(client => client.GetAllAsientos(
+                GetStoresAvailable(),
+                "%",
+                "",
+                "",
+                0,
+                "desc",
+                0,
+                take <= 0 ? DefaultResultCount : take,
+                "",
+                ""));
+
+            return (records ?? new EN_Asientos[0])
+                .Select(x => new MonitoreoAsientoViewModel
+                {
+                    ID = x.ID,
+                    TiendaID = Convert.ToString(x.StoreId),
+                    Tienda = x.StoreName,
+                    NumeroAsiento = Convert.ToString(x.ID),
+                    Referencia = x.Referencia,
+                    Tipo = x.Descripcion,
+                    FechaAsiento = x.Fecha_Asiento ?? DateTime.Now,
+                    FechaSincronizacion = x.Fecha_Sync,
+                    Debito = 0,
+                    Credito = 0,
+                    EstadoID = MapAccountingStatus(x.Estado_Sync),
+                    Mensaje = FirstNotEmpty(x.Detalle_Sync, "Sin detalle registrado.")
+                })
+                .ToList();
+        }
+
+        private static void ApplyDefaultDates(MonitoreoDatosViewModel model)
+        {
+            IEnumerable<DateTime> dates = (model.DocumentosMH ?? new List<MonitoreoDocumentoViewModel>()).Select(x => x.Fecha)
+                .Concat((model.DocumentosERP ?? new List<MonitoreoDocumentoViewModel>()).Select(x => x.Fecha))
+                .Concat((model.AsientosERP ?? new List<MonitoreoAsientoViewModel>()).Select(x => x.FechaAsiento))
+                .Where(x => x > DateTime.MinValue);
+
+            DateTime maxDate = dates.Any() ? dates.Max() : DateTime.Today;
+            model.FechaHastaDefault = maxDate.ToString("yyyy-MM-dd");
+            model.FechaDesdeDefault = maxDate.AddDays(-30).ToString("yyyy-MM-dd");
+        }
+
+        private static string GetComprobanteDescription(string code)
+        {
+            switch ((code ?? "").TrimStart('0'))
             {
-                ID = id,
-                TiendaID = tiendaID,
-                Tienda = tienda,
-                NumeroAsiento = numero,
-                Referencia = referencia,
-                Tipo = tipo,
-                FechaAsiento = fecha,
-                FechaSincronizacion = fechaSync,
-                Debito = debito,
-                Credito = credito,
-                EstadoID = estadoID,
-                Mensaje = mensaje
-            };
+                case "1": return "Factura electronica";
+                case "3": return "Nota credito";
+                case "4": return "Tiquete electronico";
+                case "9": return "Factura exportacion";
+                default: return String.IsNullOrWhiteSpace(code) ? "Documento electronico" : "Tipo " + code;
+            }
+        }
+
+        private static int MapHaciendaStatus(string status)
+        {
+            switch ((status ?? "").TrimStart('0'))
+            {
+                case "1":
+                case "4":
+                    return 1;
+                case "2":
+                case "55":
+                    return 2;
+                default:
+                    return 3;
+            }
+        }
+
+        private static int MapErpDocumentStatus(int status)
+        {
+            return status == 2 || status == 4 ? 1 : status == 3 ? 2 : 3;
+        }
+
+        private static int MapAccountingStatus(int status)
+        {
+            return status == 1 ? 1 : status == 2 ? 2 : 0;
+        }
+
+        private static string FirstNotEmpty(params string[] values)
+        {
+            return values.FirstOrDefault(x => !String.IsNullOrWhiteSpace(x)) ?? "";
+        }
+
+        private static T ExecuteAnalitica<T>(Func<IAnaliticaService, T> action)
+        {
+            var binding = new BasicHttpBinding();
+            binding.OpenTimeout = TimeSpan.FromSeconds(8);
+            binding.SendTimeout = TimeSpan.FromSeconds(20);
+            binding.ReceiveTimeout = TimeSpan.FromSeconds(20);
+            binding.CloseTimeout = TimeSpan.FromSeconds(5);
+            binding.MaxReceivedMessageSize = 20000000;
+            binding.MaxBufferSize = 20000000;
+            binding.MaxBufferPoolSize = 20000000;
+
+            string serviceUrl = ConfigurationManager.AppSettings["AnaliticaServiceUrl"];
+            if (String.IsNullOrWhiteSpace(serviceUrl))
+                serviceUrl = "http://192.168.137.219:7580/UltraERP_Service/AnaliticaService.svc";
+
+            var factory = new ChannelFactory<IAnaliticaService>(binding, new EndpointAddress(serviceUrl));
+            IAnaliticaService channel = factory.CreateChannel();
+            IClientChannel clientChannel = (IClientChannel)channel;
+
+            try
+            {
+                T result = action(channel);
+                clientChannel.Close();
+                factory.Close();
+                return result;
+            }
+            catch
+            {
+                clientChannel.Abort();
+                factory.Abort();
+                throw;
+            }
+        }
+
+        [ServiceContract(Namespace = "http://tempuri.org/", ConfigurationName = "wcfAnalitica.IAnaliticaService")]
+        private interface IAnaliticaService
+        {
+            [OperationContract(Action = "http://tempuri.org/IAnaliticaService/GetAllDocsERP", ReplyAction = "http://tempuri.org/IAnaliticaService/GetAllDocsERPResponse")]
+            EN_DocumentosERP[] GetAllDocsERP(string storesID, string hqUsersID, string searchValue, string tipoDocumento, int orderColumn, string orderDirection, int skip, int take, string fromDate, string toDate);
+
+            [OperationContract(Action = "http://tempuri.org/IAnaliticaService/GetAllAsientos", ReplyAction = "http://tempuri.org/IAnaliticaService/GetAllAsientosResponse")]
+            EN_Asientos[] GetAllAsientos(string storesID, string hqUsersID, string searchValue, string estadoAsiento, int orderColumn, string orderDirection, int skip, int take, string fromDate, string toDate);
+        }
+
+        private static string GetAnaliticaUnavailableMessage(Exception ex)
+        {
+            string message = ex == null ? "" : ex.Message;
+
+            if (message.IndexOf("network-related", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                message.IndexOf("timed out", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                message.IndexOf("server was not found", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return "El servicio de Analitica no esta disponible en este momento. Se muestran los documentos de Hacienda y se omiten temporalmente Documentos ERP y Asientos ERP.";
+            }
+
+            return "No se pudo cargar la informacion de Analitica. Se muestran los documentos de Hacienda disponibles.";
+        }
+
+        private static ConnectionStringSettings GetMasterConnection()
+        {
+            return ConfigurationManager.ConnectionStrings["UltraERP.BusinessDataAccess.Properties.Settings.MasterDB"];
+        }
+
+        private string GetStoresAvailable()
+        {
+            string dataStoreCode = ConfigurationManager.AppSettings["DataStoreCode"] ?? "uerp-store";
+            EN_SC_DataAccess[] dataAccess = Session["USER_DATAACCESS"] as EN_SC_DataAccess[];
+
+            if (dataAccess == null || dataAccess.Length == 0)
+                return "%";
+
+            EN_SC_DataAccess[] storesAccess = dataAccess.Where(x => x.Code == dataStoreCode).ToArray();
+            if (storesAccess.Length == 0 || storesAccess.Any(x => x.EnableAll))
+                return "%";
+
+            return String.Join(",", storesAccess.Where(x => !String.IsNullOrWhiteSpace(x.DataIDs)).Select(x => x.DataIDs));
+        }
+
+        private static string ReadString(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? "" : Convert.ToString(reader[column]);
+        }
+
+        private static int ReadInt(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader[column]);
+        }
+
+        private static DateTime? ReadNullableDate(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? (DateTime?)null : Convert.ToDateTime(reader[column]);
         }
     }
 }

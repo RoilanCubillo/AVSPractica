@@ -17,6 +17,16 @@
     </div>
 </section>
 
+@if (Model.Alertas != null && Model.Alertas.Any())
+{
+    <div class="alert alert-warning">
+        @foreach (var alerta in Model.Alertas)
+        {
+            <div>@alerta</div>
+        }
+    </div>
+}
+
 <section class="filter-panel monitoring-filter-panel">
     <div class="monitoring-filter-grid">
         <div class="monitoring-filter-field">
@@ -41,11 +51,11 @@
         </div>
         <div class="monitoring-filter-field compact">
             <label for="filter_from" class="form-label">Desde</label>
-            <input id="filter_from" class="form-control" type="date" value="2026-05-10" />
+            <input id="filter_from" class="form-control" type="date" value="@Model.FechaDesdeDefault" />
         </div>
         <div class="monitoring-filter-field compact">
             <label for="filter_to" class="form-label">Hasta</label>
-            <input id="filter_to" class="form-control" type="date" value="2026-05-14" />
+            <input id="filter_to" class="form-control" type="date" value="@Model.FechaHastaDefault" />
         </div>
         <div class="monitoring-filter-field search">
             <label for="table_search" class="form-label">Buscar</label>
@@ -160,6 +170,8 @@
 @section scripts {
     <script>
         var pantalla = @Html.Raw(monitoreoJson);
+        var defaultFrom = "@Model.FechaDesdeDefault";
+        var defaultTo = "@Model.FechaHastaDefault";
         var state = {
             tab: "mh",
             filteredMH: [],
@@ -183,8 +195,8 @@
             $("#btnLimpiar").on("click", function () {
                 $("#filter_store").val("Todos");
                 $("#filter_status").val("Todos");
-                $("#filter_from").val("2026-05-10");
-                $("#filter_to").val("2026-05-14");
+                $("#filter_from").val(defaultFrom);
+                $("#filter_to").val(defaultTo);
                 $("#table_search").val("");
                 if (pager) pager.reset();
                 renderAll();

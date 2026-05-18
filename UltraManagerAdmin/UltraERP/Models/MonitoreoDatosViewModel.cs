@@ -10,6 +10,9 @@ namespace UltraERP.Models
         public IList<MonitoreoDocumentoViewModel> DocumentosMH { get; set; }
         public IList<MonitoreoDocumentoViewModel> DocumentosERP { get; set; }
         public IList<MonitoreoAsientoViewModel> AsientosERP { get; set; }
+        public IList<string> Alertas { get; set; }
+        public string FechaDesdeDefault { get; set; }
+        public string FechaHastaDefault { get; set; }
 
         public MonitoreoDatosViewModel()
         {
@@ -17,6 +20,7 @@ namespace UltraERP.Models
             DocumentosMH = new List<MonitoreoDocumentoViewModel>();
             DocumentosERP = new List<MonitoreoDocumentoViewModel>();
             AsientosERP = new List<MonitoreoAsientoViewModel>();
+            Alertas = new List<string>();
         }
 
         public int TotalDocumentos

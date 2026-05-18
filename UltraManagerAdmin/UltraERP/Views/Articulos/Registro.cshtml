@@ -1,13 +1,13 @@
 @model UltraERP.Models.ArticuloViewModel
 @{
-    ViewBag.Title = Model.ID > 0 ? "Editar Articulo" : "Nuevo Articulo";
+    ViewBag.Title = Model.ID > 0 ? "Editar Art\u00edculo" : "Nuevo Art\u00edculo";
     ViewBag.ActiveMenu = "Articulos";
 }
 
 <section class="document-topbar">
     <div class="document-topbar-copy">
         <span class="eyebrow">Creaci&oacute;n de art&iacute;culos</span>
-        <h1>@(Model.ID > 0 ? "Editar art&iacute;culo" : "Nuevo art&iacute;culo")</h1>
+        <h1>@Html.Raw(Model.ID > 0 ? "Editar art&iacute;culo" : "Nuevo art&iacute;culo")</h1>
         <p>Complete la ficha base del producto para usarlo luego en compras, entradas, salidas y b&uacute;squeda r&aacute;pida del detalle.</p>
     </div>
     <div class="topbar-actions">
@@ -33,7 +33,7 @@
     if (!ViewData.ModelState.IsValid)
     {
         <div class="alert alert-danger">
-            @Html.ValidationSummary(false, "Revise los datos del articulo:")
+            @Html.ValidationSummary(false, "Revise los datos del art\u00edculo:")
         </div>
     }
 
@@ -121,7 +121,7 @@
 
             <div class="row g-3">
                 <div class="col-12 col-md-4">
-                    <label class="form-label" for="Costo">Costo</label>
+                    <label class="form-label required" for="Costo">Costo</label>
                     @Html.TextBoxFor(m => m.Costo, new { @class = "form-control", type = "number", step = "0.01", min = "0" })
                     @Html.ValidationMessageFor(m => m.Costo, "", new { @class = "text-danger small" })
                 </div>
@@ -219,21 +219,53 @@
                 return Number(item.DepartamentoID) === departamentoId;
             });
 
+            if (!items.length) {
+                items = clasificacion.categorias || [];
+            }
+
             fillSelect("#CategoriaID", items, selected);
         }
 
         function fillSubCategorias(selectedId) {
             var categoriaId = Number($("#CategoriaID").val() || 0);
             var selected = Number(selectedId || $("#SubCategoriaID").val() || 0);
-            var items = (clasificacion.subCategorias || []).filter(function (item) {
+            var allSubCategorias = clasificacion.subCategorias || [];
+            var items = allSubCategorias.filter(function (item) {
                 return Number(item.CategoriaID) === categoriaId;
             });
+
+            if (!items.length) {
+                var departamentoId = Number($("#DepartamentoID").val() || 0);
+                var categoriasDepartamento = (clasificacion.categorias || []).filter(function (item) {
+                    return Number(item.DepartamentoID) === departamentoId;
+                });
+                var categoriaValida = categoriasDepartamento.find(function (categoria) {
+                    return allSubCategorias.some(function (subCategoria) {
+                        return Number(subCategoria.CategoriaID) === Number(categoria.ID);
+                    });
+                });
+
+                if (categoriaValida) {
+                    categoriaId = Number(categoriaValida.ID);
+                    $("#CategoriaID").val(String(categoriaId));
+                    items = allSubCategorias.filter(function (item) {
+                        return Number(item.CategoriaID) === categoriaId;
+                    });
+                }
+            }
 
             fillSelect("#SubCategoriaID", items, selected);
         }
 
         function fillSelect(selector, items, selectedId) {
             var select = $(selector);
+
+            if (!items || !items.length) {
+                select.html("<option value=''>Sin opciones disponibles</option>");
+                select.val("");
+                return;
+            }
+
             var html = items.map(function (item) {
                 var selected = Number(item.ID) === Number(selectedId) ? " selected" : "";
                 return "<option value='" + item.ID + "'" + selected + ">" + escapeHtml(item.Texto) + "</option>";

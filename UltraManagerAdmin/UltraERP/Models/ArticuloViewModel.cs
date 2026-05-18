@@ -7,15 +7,15 @@ namespace UltraERP.Models
     {
         public int ID { get; set; }
 
-        [Required(ErrorMessage = "El codigo es obligatorio.")]
-        [StringLength(25, ErrorMessage = "El codigo no puede superar 25 caracteres.")]
+        [Required(ErrorMessage = "El c\u00f3digo es obligatorio.")]
+        [StringLength(25, ErrorMessage = "El c\u00f3digo no puede superar 25 caracteres.")]
         public string Codigo { get; set; }
 
-        [Required(ErrorMessage = "La descripcion es obligatoria.")]
-        [StringLength(80, ErrorMessage = "La descripcion no puede superar 80 caracteres.")]
+        [Required(ErrorMessage = "La descripci\u00f3n es obligatoria.")]
+        [StringLength(80, ErrorMessage = "La descripci\u00f3n no puede superar 80 caracteres.")]
         public string Descripcion { get; set; }
 
-        [StringLength(180, ErrorMessage = "La descripcion extendida no puede superar 180 caracteres.")]
+        [StringLength(180, ErrorMessage = "La descripci\u00f3n extendida no puede superar 180 caracteres.")]
         public string DescripcionExtendida { get; set; }
 
         [Required(ErrorMessage = "La unidad de medida es obligatoria.")]
@@ -29,12 +29,12 @@ namespace UltraERP.Models
         [Range(1, int.MaxValue, ErrorMessage = "Seleccione un departamento.")]
         public int DepartamentoID { get; set; }
 
-        [Required(ErrorMessage = "La categoria es obligatoria.")]
-        [Range(1, int.MaxValue, ErrorMessage = "Seleccione una categoria.")]
+        [Required(ErrorMessage = "La categor\u00eda es obligatoria.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Seleccione una categor\u00eda.")]
         public int CategoriaID { get; set; }
 
-        [Required(ErrorMessage = "La subcategoria es obligatoria.")]
-        [Range(1, int.MaxValue, ErrorMessage = "Seleccione una subcategoria.")]
+        [Required(ErrorMessage = "La subcategor\u00eda es obligatoria.")]
+        [Range(1, int.MaxValue, ErrorMessage = "Seleccione una subcategor\u00eda.")]
         public int SubCategoriaID { get; set; }
 
         public string Familia { get; set; }
@@ -44,9 +44,11 @@ namespace UltraERP.Models
         public string Proveedor { get; set; }
         public string Bodega { get; set; }
 
+        [Required(ErrorMessage = "Ingrese el costo del art\u00edculo.")]
         [Range(0, 999999999, ErrorMessage = "El costo debe ser mayor o igual a cero.")]
         public decimal Costo { get; set; }
 
+        [Required(ErrorMessage = "Ingrese el precio de venta del art\u00edculo.")]
         [Range(0.01, 999999999, ErrorMessage = "El precio de venta debe ser mayor a cero.")]
         public decimal PrecioVenta { get; set; }
 
@@ -56,10 +58,10 @@ namespace UltraERP.Models
         [Range(0, 999999999, ErrorMessage = "La existencia no puede ser negativa.")]
         public decimal Existencia { get; set; }
 
-        [Range(0, 999999999, ErrorMessage = "La existencia minima no puede ser negativa.")]
+        [Range(0, 999999999, ErrorMessage = "La existencia m\u00ednima no puede ser negativa.")]
         public decimal ExistenciaMinima { get; set; }
 
-        [Range(0, 999999999, ErrorMessage = "La existencia maxima no puede ser negativa.")]
+        [Range(0, 999999999, ErrorMessage = "La existencia m\u00e1xima no puede ser negativa.")]
         public decimal ExistenciaMaxima { get; set; }
 
         public bool Activo { get; set; }

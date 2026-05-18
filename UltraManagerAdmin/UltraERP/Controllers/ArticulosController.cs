@@ -2,6 +2,8 @@ using Security.EntitiesAVS;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Web.Mvc;
 using UltraERP.BusinessEntities;
@@ -70,7 +72,7 @@ namespace UltraERP.Controllers
             }
             catch (Exception ex)
             {
-                TempData["ArticuloError"] = "No se pudo cargar articulos desde SQL: " + ex.Message;
+                TempData["ArticuloError"] = "No se pudo cargar art\u00edculos desde SQL: " + ex.Message;
                 ViewBag.ArticulosDataSource = "SQL";
                 return View(Enumerable.Empty<ArticuloViewModel>());
             }
@@ -86,11 +88,11 @@ namespace UltraERP.Controllers
                 {
                     model = GetArticuloById(id.Value);
                     if (model == null)
-                        TempData["ArticuloError"] = "No se encontro el articulo en SQL.";
+                        TempData["ArticuloError"] = "No se encontr\u00f3 el art\u00edculo en SQL.";
                 }
                 catch (Exception ex)
                 {
-                    TempData["ArticuloError"] = "No se pudo leer el articulo desde SQL: " + ex.Message;
+                    TempData["ArticuloError"] = "No se pudo leer el art\u00edculo desde SQL: " + ex.Message;
                 }
             }
 
@@ -105,6 +107,7 @@ namespace UltraERP.Controllers
         {
             CatalogData catalog = GetCatalogDataSafe();
 
+            TranslateModelBindingErrors();
             Normalize(model);
             ApplyClasificacion(model, catalog);
             ValidateArticulo(model, catalog);
@@ -118,23 +121,24 @@ namespace UltraERP.Controllers
             try
             {
                 EN_Item item = BuildItem(model, catalog);
-                string title = "AVS WEB:" + model.Codigo + "-" + GetCurrentUser(42 - model.Codigo.Length);
+                // TASK_CODE de EXTCENTRAL_WIZARD_LOG es varchar(20), por eso se envía un código corto fijo.
+                string title = "ACT. INDIVIDUAL PROD";
                 Dictionary<string, object> result = new CT_Item().Save(item, title, GetCurrentUserID());
                 string response = result.ContainsKey("RESPUESTA") ? Convert.ToString(result["RESPUESTA"]) : "";
 
                 if (response.IndexOf("error", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    ModelState.AddModelError("", "SQL rechazo el guardado del articulo: " + response);
+                    ModelState.AddModelError("", "SQL rechaz\u00f3 el guardado del art\u00edculo: " + response);
                     PrepareCatalogs(catalog);
                     return View(model);
                 }
 
-                TempData["ArticuloMessage"] = model.ID > 0 ? "Articulo actualizado correctamente en SQL." : "Articulo creado correctamente en SQL.";
+                TempData["ArticuloMessage"] = model.ID > 0 ? "Art\u00edculo actualizado correctamente en SQL." : "Art\u00edculo creado correctamente en SQL.";
                 return RedirectToAction("Inicio");
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("", "No se pudo guardar el articulo en SQL. " + ex.Message);
+                ModelState.AddModelError("", "No se pudo guardar el art\u00edculo en SQL. " + ex.Message);
                 PrepareCatalogs(catalog);
                 return View(model);
             }
@@ -144,8 +148,8 @@ namespace UltraERP.Controllers
         public JsonResult CambiarEstado(int id)
         {
             return Json(new JsonResponse(
-                "Pendiente de migracion",
-                "El listado de articulos ya consulta SQL. La activacion e inactivacion se conectara cuando migremos el procedimiento de estado.",
+                "Pendiente de migraci\u00f3n",
+                "El listado de art\u00edculos ya consulta SQL. La activaci\u00f3n e inactivaci\u00f3n se conectar\u00e1 cuando migremos el procedimiento de estado.",
                 null,
                 false));
         }
@@ -212,7 +216,8 @@ namespace UltraERP.Controllers
 
         private EN_Item BuildItem(ArticuloViewModel model, CatalogData catalog)
         {
-            EN_Item item = new CT_Item().GetByItemLookupCode(model.Codigo, GetStoresAvailable()) ?? new EN_Item();
+            string storesAvailable = GetStoresAvailable();
+            EN_Item item = new CT_Item().GetByItemLookupCode(model.Codigo, storesAvailable) ?? new EN_Item();
 
             item.ID = model.ID;
             item.ItemLookupCode = model.Codigo;
@@ -229,9 +234,26 @@ namespace UltraERP.Controllers
             item.Utility = model.Costo > 0 ? Math.Round(((model.PrecioVenta - model.Costo) / model.Costo) * 100, 2) : item.Utility;
             item.SupplierID = ResolveSupplierID(model.Proveedor, catalog, item.SupplierID);
             item.TaxID = ResolveTaxID(model.ImpuestoPorcentaje, catalog, item.TaxID);
-            item.StoresSelected = String.IsNullOrWhiteSpace(item.StoresSelected) ? GetStoresAvailable() : item.StoresSelected;
+            item.StoresSelected = ResolveStoresSelectedForSave(item.StoresSelected, storesAvailable, catalog);
 
             return item;
+        }
+
+        private void TranslateModelBindingErrors()
+        {
+            ReplaceModelBindingError("Costo", "Ingrese el costo del art\u00edculo.", "Ingrese un costo v\u00e1lido.");
+            ReplaceModelBindingError("PrecioVenta", "Ingrese el precio de venta del art\u00edculo.", "Ingrese un precio de venta v\u00e1lido.");
+        }
+
+        private void ReplaceModelBindingError(string fieldName, string requiredMessage, string invalidMessage)
+        {
+            ModelState state = ModelState[fieldName];
+            if (state == null || state.Errors.Count == 0)
+                return;
+
+            string value = Request.Form[fieldName];
+            ModelState.Remove(fieldName);
+            ModelState.AddModelError(fieldName, String.IsNullOrWhiteSpace(value) ? requiredMessage : invalidMessage);
         }
 
         private void ValidateArticulo(ArticuloViewModel model, CatalogData catalog)
@@ -239,34 +261,45 @@ namespace UltraERP.Controllers
             if (model == null)
                 return;
 
+            bool categoryHasSubCategories = model.CategoriaID > 0 && catalog.SubCategorias.Any(x => x.CategoriaID == model.CategoriaID);
+
             if (!catalog.Familias.Any(x => x.ID == model.FamiliaID))
-                ModelState.AddModelError("FamiliaID", "Seleccione una familia valida.");
+                ModelState.AddModelError("FamiliaID", "Seleccione una familia v\u00e1lida.");
 
             var departamento = catalog.Departamentos.FirstOrDefault(x => x.ID == model.DepartamentoID);
-            if (departamento == null || departamento.FamiliaID != model.FamiliaID)
-                ModelState.AddModelError("DepartamentoID", "Seleccione un departamento valido para la familia.");
+            if (model.DepartamentoID > 0 && (departamento == null || departamento.FamiliaID != model.FamiliaID))
+                ModelState.AddModelError("DepartamentoID", "Seleccione un departamento v\u00e1lido para la familia.");
 
             var categoria = catalog.Categorias.FirstOrDefault(x => x.ID == model.CategoriaID);
-            if (categoria == null || categoria.DepartamentoID != model.DepartamentoID)
-                ModelState.AddModelError("CategoriaID", "Seleccione una categoria valida para el departamento.");
+            if (model.CategoriaID > 0 && (categoria == null || categoria.DepartamentoID != model.DepartamentoID))
+                ModelState.AddModelError("CategoriaID", "Seleccione una categor\u00eda v\u00e1lida para el departamento.");
 
-            var subCategoria = catalog.SubCategorias.FirstOrDefault(x => x.ID == model.SubCategoriaID);
-            if (subCategoria == null || subCategoria.CategoriaID != model.CategoriaID)
-                ModelState.AddModelError("SubCategoriaID", "Seleccione una subcategoria valida para la categoria.");
+            if (categoryHasSubCategories)
+            {
+                var subCategoria = catalog.SubCategorias.FirstOrDefault(x => x.ID == model.SubCategoriaID);
+                if (model.SubCategoriaID > 0 && (subCategoria == null || subCategoria.CategoriaID != model.CategoriaID))
+                    ModelState.AddModelError("SubCategoriaID", "Seleccione una subcategor\u00eda v\u00e1lida para la categor\u00eda.");
+            }
+            else
+            {
+                model.SubCategoriaID = 0;
+                if (ModelState.ContainsKey("SubCategoriaID"))
+                    ModelState["SubCategoriaID"].Errors.Clear();
+            }
 
             try
             {
                 EN_Item existing = new CT_Item().GetByItemLookupCode(model.Codigo, GetStoresAvailable());
                 if (existing != null && existing.ID != model.ID)
-                    ModelState.AddModelError("Codigo", "Ya existe un articulo con este codigo.");
+                    ModelState.AddModelError("Codigo", "Ya existe un art\u00edculo con este c\u00f3digo.");
             }
             catch
             {
-                ModelState.AddModelError("", "No se pudo validar el codigo del articulo contra SQL.");
+                ModelState.AddModelError("", "No se pudo validar el c\u00f3digo del art\u00edculo contra SQL.");
             }
 
             if (model.ExistenciaMaxima > 0 && model.ExistenciaMinima > model.ExistenciaMaxima)
-                ModelState.AddModelError("ExistenciaMinima", "La existencia minima no puede ser mayor que la maxima.");
+                ModelState.AddModelError("ExistenciaMinima", "La existencia m\u00ednima no puede ser mayor que la m\u00e1xima.");
 
             if (model.Exento)
                 model.ImpuestoPorcentaje = 0;
@@ -323,7 +356,7 @@ namespace UltraERP.Controllers
             try
             {
                 string storesAvailable = GetStoresAvailable();
-                return new CatalogData
+                return NormalizeCatalogData(new CatalogData
                 {
                     Unidades = new CT_UOM().GetAllByInactive(false).Select(x => x.Code).Where(x => !String.IsNullOrWhiteSpace(x)).ToList(),
                     Proveedores = new CT_Supplier().GetAll(storesAvailable, "", 0, 0),
@@ -333,22 +366,135 @@ namespace UltraERP.Controllers
                     Categorias = new CT_Category().GetAll("", 0, 0).Select(x => new CategoriaCatalogo(x.ID, x.DepartmentID, x.Code, x.Name)).ToList(),
                     SubCategorias = new CT_ExtCentral_SubCategory().GetAll("", 0, 0).Select(x => new SubCategoriaCatalogo(x.ID, x.CategoryID, x.Code, x.Description)).ToList(),
                     Impuestos = new CT_Tax().GetAll("", 0, 0)
-                };
+                });
             }
             catch
             {
-                return new CatalogData
+                return NormalizeCatalogData(new CatalogData
                 {
-                    Unidades = Unidades,
+                    Unidades = new List<string>(),
                     Proveedores = Proveedores.Select((x, i) => new EN_Supplier(i + 1, x, x)).ToList(),
                     Bodegas = Bodegas.Select((x, i) => new EN_Store(i + 1, x, x)).ToList(),
-                    Familias = Familias,
-                    Departamentos = Departamentos,
-                    Categorias = Categorias,
-                    SubCategorias = SubCategorias,
+                    Familias = new List<FamiliaCatalogo>(),
+                    Departamentos = new List<DepartamentoCatalogo>(),
+                    Categorias = new List<CategoriaCatalogo>(),
+                    SubCategorias = new List<SubCategoriaCatalogo>(),
                     Impuestos = new List<EN_Tax>()
-                };
+                });
             }
+        }
+
+        private CatalogData NormalizeCatalogData(CatalogData catalog)
+        {
+            catalog = catalog ?? new CatalogData();
+
+            if (catalog.Unidades == null || !catalog.Unidades.Any())
+                catalog.Unidades = GetUnitsDirect();
+            if (catalog.Familias == null || !catalog.Familias.Any())
+                catalog.Familias = GetFamiliesDirect();
+            if (catalog.Departamentos == null || !catalog.Departamentos.Any())
+                catalog.Departamentos = GetDepartmentsDirect();
+            if (catalog.Categorias == null || !catalog.Categorias.Any())
+                catalog.Categorias = GetCategoriesDirect();
+            if (catalog.SubCategorias == null || !catalog.SubCategorias.Any())
+                catalog.SubCategorias = GetSubCategoriesDirect();
+
+            if (catalog.Unidades == null || !catalog.Unidades.Any())
+                catalog.Unidades = Unidades;
+            if (catalog.Familias == null || !catalog.Familias.Any())
+                catalog.Familias = Familias;
+            if (catalog.Departamentos == null || !catalog.Departamentos.Any())
+                catalog.Departamentos = Departamentos;
+            if (catalog.Categorias == null || !catalog.Categorias.Any())
+                catalog.Categorias = Categorias;
+            if (catalog.SubCategorias == null || !catalog.SubCategorias.Any())
+                catalog.SubCategorias = SubCategorias;
+
+            return catalog;
+        }
+
+        private IList<string> GetUnitsDirect()
+        {
+            return ReadCatalogRows(@"
+                SELECT Code
+                FROM dbo.POA_UOM
+                WHERE ISNULL(Inactive, 0) = 0
+                  AND Code IS NOT NULL
+                  AND LTRIM(RTRIM(Code)) <> ''
+                ORDER BY Code", reader => ReadString(reader, "Code"));
+        }
+
+        private IList<FamiliaCatalogo> GetFamiliesDirect()
+        {
+            return ReadCatalogRows(@"
+                SELECT ID, Code, Name
+                FROM dbo.ExtCentral_Family
+                ORDER BY ID", reader => new FamiliaCatalogo(
+                    ReadInt(reader, "ID"),
+                    ReadString(reader, "Code"),
+                    ReadString(reader, "Name")));
+        }
+
+        private IList<DepartamentoCatalogo> GetDepartmentsDirect()
+        {
+            return ReadCatalogRows(@"
+                SELECT D.ID, FD.FamilyID, D.code, D.Name
+                FROM dbo.Department D
+                INNER JOIN dbo.ExtCentral_FamilyDepartment FD ON FD.DepartmentID = D.ID
+                ORDER BY D.ID", reader => new DepartamentoCatalogo(
+                    ReadInt(reader, "ID"),
+                    ReadInt(reader, "FamilyID"),
+                    ReadString(reader, "code"),
+                    ReadString(reader, "Name")));
+        }
+
+        private IList<CategoriaCatalogo> GetCategoriesDirect()
+        {
+            return ReadCatalogRows(@"
+                SELECT ID, DepartmentID, Code, Name
+                FROM dbo.Category
+                ORDER BY ID", reader => new CategoriaCatalogo(
+                    ReadInt(reader, "ID"),
+                    ReadInt(reader, "DepartmentID"),
+                    ReadString(reader, "Code"),
+                    ReadString(reader, "Name")));
+        }
+
+        private IList<SubCategoriaCatalogo> GetSubCategoriesDirect()
+        {
+            return ReadCatalogRows(@"
+                SELECT ID, CategoryID, Code, Description
+                FROM dbo.ExtCentral_SubCategory
+                ORDER BY ID", reader => new SubCategoriaCatalogo(
+                    ReadInt(reader, "ID"),
+                    ReadInt(reader, "CategoryID"),
+                    ReadString(reader, "Code"),
+                    ReadString(reader, "Description")));
+        }
+
+        private IList<T> ReadCatalogRows<T>(string sql, Func<SqlDataReader, T> mapper)
+        {
+            var items = new List<T>();
+            ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings["UltraERP.BusinessDataAccess.Properties.Settings.MasterDB"];
+
+            if (settings == null || String.IsNullOrWhiteSpace(settings.ConnectionString))
+                return items;
+
+            using (var connection = new SqlConnection(settings.ConnectionString))
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandType = CommandType.Text;
+                command.CommandText = sql;
+                connection.Open();
+
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                        items.Add(mapper(reader));
+                }
+            }
+
+            return items;
         }
 
         private static IEnumerable<SelectListItem> ToSelectList(IEnumerable<string> values)
@@ -358,10 +504,16 @@ namespace UltraERP.Controllers
 
         private ArticuloViewModel CreateNewArticulo(CatalogData catalog)
         {
-            var familia = catalog.Familias.FirstOrDefault();
-            var departamento = catalog.Departamentos.FirstOrDefault(x => familia != null && x.FamiliaID == familia.ID) ?? catalog.Departamentos.FirstOrDefault();
-            var categoria = catalog.Categorias.FirstOrDefault(x => departamento != null && x.DepartamentoID == departamento.ID) ?? catalog.Categorias.FirstOrDefault();
-            var subCategoria = catalog.SubCategorias.FirstOrDefault(x => categoria != null && x.CategoriaID == categoria.ID) ?? catalog.SubCategorias.FirstOrDefault();
+            var subCategoria = catalog.SubCategorias.FirstOrDefault();
+            var categoria = subCategoria == null
+                ? catalog.Categorias.FirstOrDefault()
+                : catalog.Categorias.FirstOrDefault(x => x.ID == subCategoria.CategoriaID) ?? catalog.Categorias.FirstOrDefault();
+            var departamento = categoria == null
+                ? catalog.Departamentos.FirstOrDefault()
+                : catalog.Departamentos.FirstOrDefault(x => x.ID == categoria.DepartamentoID) ?? catalog.Departamentos.FirstOrDefault();
+            var familia = departamento == null
+                ? catalog.Familias.FirstOrDefault()
+                : catalog.Familias.FirstOrDefault(x => x.ID == departamento.FamiliaID) ?? catalog.Familias.FirstOrDefault();
 
             var model = new ArticuloViewModel
             {
@@ -381,6 +533,18 @@ namespace UltraERP.Controllers
 
             ApplyClasificacion(model, catalog);
             return model;
+        }
+
+        private static string ReadString(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? "" : Convert.ToString(reader.GetValue(ordinal));
+        }
+
+        private static int ReadInt(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal));
         }
 
         private string GetStoresAvailable()
@@ -425,6 +589,23 @@ namespace UltraERP.Controllers
         {
             EN_Tax tax = catalog.Impuestos.FirstOrDefault(x => Math.Abs(Convert.ToDecimal(x.Percentage) - percentage) < 0.01m);
             return tax == null ? currentTaxID : tax.ID;
+        }
+
+        private static string ResolveStoresSelectedForSave(string currentStores, string storesAvailable, CatalogData catalog)
+        {
+            if (!String.IsNullOrWhiteSpace(currentStores) && currentStores != "%")
+                return currentStores;
+
+            if (!String.IsNullOrWhiteSpace(storesAvailable) && storesAvailable != "%")
+                return storesAvailable;
+
+            var storeIds = (catalog.Bodegas ?? new List<EN_Store>())
+                .Where(x => x != null && x.IDS > 0)
+                .Select(x => x.IDS.ToString())
+                .Distinct()
+                .ToList();
+
+            return storeIds.Any() ? String.Join(",", storeIds) : "";
         }
 
         private static string JoinCodeName(string code, string name)
