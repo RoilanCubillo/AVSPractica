@@ -122,17 +122,17 @@
             <div class="row g-3">
                 <div class="col-12 col-md-4">
                     <label class="form-label required" for="Costo">Costo</label>
-                    @Html.TextBoxFor(m => m.Costo, new { @class = "form-control", type = "number", step = "0.01", min = "0" })
+                    @Html.TextBox("Costo", Model.Costo.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture), new { @class = "form-control", type = "number", step = "0.01", min = "0" })
                     @Html.ValidationMessageFor(m => m.Costo, "", new { @class = "text-danger small" })
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label required" for="PrecioVenta">Precio venta</label>
-                    @Html.TextBoxFor(m => m.PrecioVenta, new { @class = "form-control", type = "number", step = "0.01", min = "0.01" })
+                    @Html.TextBox("PrecioVenta", Model.PrecioVenta.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture), new { @class = "form-control", type = "number", step = "0.01", min = "0.01" })
                     @Html.ValidationMessageFor(m => m.PrecioVenta, "", new { @class = "text-danger small" })
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label" for="ImpuestoPorcentaje">Impuesto %</label>
-                    @Html.TextBoxFor(m => m.ImpuestoPorcentaje, new { @class = "form-control", type = "number", step = "0.01", min = "0", max = "100", id = "ImpuestoPorcentaje" })
+                    @Html.TextBox("ImpuestoPorcentaje", Model.ImpuestoPorcentaje.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture), new { @class = "form-control", type = "number", step = "0.01", min = "0", max = "100", id = "ImpuestoPorcentaje" })
                     @Html.ValidationMessageFor(m => m.ImpuestoPorcentaje, "", new { @class = "text-danger small" })
                 </div>
                 <div class="col-12 col-md-6">
@@ -229,40 +229,19 @@
         function fillSubCategorias(selectedId) {
             var categoriaId = Number($("#CategoriaID").val() || 0);
             var selected = Number(selectedId || $("#SubCategoriaID").val() || 0);
-            var allSubCategorias = clasificacion.subCategorias || [];
-            var items = allSubCategorias.filter(function (item) {
+            var items = (clasificacion.subCategorias || []).filter(function (item) {
                 return Number(item.CategoriaID) === categoriaId;
             });
 
-            if (!items.length) {
-                var departamentoId = Number($("#DepartamentoID").val() || 0);
-                var categoriasDepartamento = (clasificacion.categorias || []).filter(function (item) {
-                    return Number(item.DepartamentoID) === departamentoId;
-                });
-                var categoriaValida = categoriasDepartamento.find(function (categoria) {
-                    return allSubCategorias.some(function (subCategoria) {
-                        return Number(subCategoria.CategoriaID) === Number(categoria.ID);
-                    });
-                });
-
-                if (categoriaValida) {
-                    categoriaId = Number(categoriaValida.ID);
-                    $("#CategoriaID").val(String(categoriaId));
-                    items = allSubCategorias.filter(function (item) {
-                        return Number(item.CategoriaID) === categoriaId;
-                    });
-                }
-            }
-
-            fillSelect("#SubCategoriaID", items, selected);
+            fillSelect("#SubCategoriaID", items, selected, "Sin subcategor\u00edas disponibles");
         }
 
-        function fillSelect(selector, items, selectedId) {
+        function fillSelect(selector, items, selectedId, emptyText) {
             var select = $(selector);
 
             if (!items || !items.length) {
-                select.html("<option value=''>Sin opciones disponibles</option>");
-                select.val("");
+                select.html("<option value='0'>" + escapeHtml(emptyText || "Sin opciones disponibles") + "</option>");
+                select.val("0");
                 return;
             }
 

@@ -96,9 +96,6 @@ namespace UltraERP.Controllers
                     FormsAuthentication.SetAuthCookie(model.UserName, model.RememberMe);
                     SetUserSession(userResult.Item1, securityResult.Item1, companies.First(c => c.ID_Company == selectedCompanyId));
 
-                    // Pausa temporal para probar la animacion de carga antes de entrar al sistema.
-                    Thread.Sleep(5000);
-
                     if (!String.IsNullOrWhiteSpace(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
                         return Redirect(model.ReturnUrl);
 

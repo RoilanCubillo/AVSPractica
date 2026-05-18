@@ -15,7 +15,7 @@ namespace UltraERP.Controllers
     [Authorize]
     public class ArticulosController : Controller
     {
-        private const int DefaultResultCount = 500;
+        private const int DefaultResultCount = 10000;
 
         private static readonly List<string> Unidades = new List<string> { "UND", "KG", "CJ", "GAL", "L", "QQ", "BQ" };
         private static readonly List<string> Proveedores = new List<string> { "Cooperativa Dos Pinos", "Cafe Britt Costa Rica", "Irex de Costa Rica", "Distribuidora San Jose", "Central de Abarrotes Cartago" };
@@ -63,18 +63,40 @@ namespace UltraERP.Controllers
         {
             try
             {
-                var model = GetArticulosFromDatabase("", DefaultResultCount)
-                    .OrderBy(x => x.Codigo)
-                    .ToList();
-
                 ViewBag.ArticulosDataSource = "SQL";
-                return View(model);
+                return View(Enumerable.Empty<ArticuloViewModel>());
             }
             catch (Exception ex)
             {
                 TempData["ArticuloError"] = "No se pudo cargar art\u00edculos desde SQL: " + ex.Message;
                 ViewBag.ArticulosDataSource = "SQL";
                 return View(Enumerable.Empty<ArticuloViewModel>());
+            }
+        }
+
+        public JsonResult Buscar(int page = 1, int pageSize = 10, string search = "", string estado = "Todos", string familia = "", string departamento = "", string categoria = "", string subcategoria = "", string proveedor = "")
+        {
+            try
+            {
+                page = Math.Max(page, 1);
+                pageSize = new[] { 5, 10, 20, 50, 100 }.Contains(pageSize) ? pageSize : 10;
+
+                int total;
+                List<ArticuloViewModel> rows = SearchArticulos(page, pageSize, search, estado, familia, departamento, categoria, subcategoria, proveedor, out total);
+                int totalPages = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
+
+                return Json(new JsonResponse("", "", new
+                {
+                    Rows = rows,
+                    Total = total,
+                    TotalPages = totalPages,
+                    Page = Math.Min(page, totalPages),
+                    PageSize = pageSize
+                }, true), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new JsonResponse(ex.Message, "No se pudieron cargar los art\u00edculos desde SQL.", null, false), JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -214,6 +236,220 @@ namespace UltraERP.Controllers
             return Math.Round(cost + (cost * utility / 100), 2);
         }
 
+        private static DateTime GetArticuloSortDate(ArticuloViewModel item)
+        {
+            if (item == null)
+                return DateTime.MinValue;
+
+            if (item.FechaModifica.HasValue && item.FechaModifica.Value.Year > 1900)
+                return item.FechaModifica.Value;
+
+            return item.FechaCrea.Year > 1900 ? item.FechaCrea : DateTime.MinValue;
+        }
+
+        private List<ArticuloViewModel> SearchArticulos(int page, int pageSize, string search, string estado, string familia, string departamento, string categoria, string subcategoria, string proveedor, out int total)
+        {
+            var rows = new List<ArticuloViewModel>();
+            total = 0;
+
+            ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings["UltraERP.BusinessDataAccess.Properties.Settings.MasterDB"];
+            if (settings == null || String.IsNullOrWhiteSpace(settings.ConnectionString))
+                return rows;
+
+            using (var connection = new SqlConnection(settings.ConnectionString))
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandType = CommandType.Text;
+                command.CommandText = @"
+DECLARE @Filtered TABLE
+(
+    RowNum INT IDENTITY(1,1),
+    ID INT,
+    ItemLookupCode VARCHAR(25),
+    Description VARCHAR(80),
+    ExtendedDescription VARCHAR(MAX),
+    UnitOfMeasure VARCHAR(30),
+    FamilyID INT,
+    DepartmentID INT,
+    CategoryID INT,
+    SubCategoryID INT,
+    FamilyCode NVARCHAR(50),
+    FamilyName NVARCHAR(100),
+    DepartmentCode NVARCHAR(50),
+    DepartmentName NVARCHAR(100),
+    CategoryCode NVARCHAR(50),
+    CategoryName NVARCHAR(100),
+    SubCategoryCode NVARCHAR(50),
+    SubCategoryName NVARCHAR(100),
+    SupplierName NVARCHAR(200),
+    SupplierCode NVARCHAR(50),
+    ReplacementCost MONEY,
+    Cost MONEY,
+    Price MONEY,
+    TaxPercentage DECIMAL(18, 4),
+    Quantity DECIMAL(18, 4),
+    Inactive BIT,
+    DateCreated DATETIME,
+    LastUpdated DATETIME
+);
+
+INSERT INTO @Filtered
+(
+    ID,
+    ItemLookupCode,
+    Description,
+    ExtendedDescription,
+    UnitOfMeasure,
+    FamilyID,
+    DepartmentID,
+    CategoryID,
+    SubCategoryID,
+    FamilyCode,
+    FamilyName,
+    DepartmentCode,
+    DepartmentName,
+    CategoryCode,
+    CategoryName,
+    SubCategoryCode,
+    SubCategoryName,
+    SupplierName,
+    SupplierCode,
+    ReplacementCost,
+    Cost,
+    Price,
+    TaxPercentage,
+    Quantity,
+    Inactive,
+    DateCreated,
+    LastUpdated
+)
+SELECT
+    I.ID,
+    I.ItemLookupCode,
+    I.Description,
+    I.ExtendedDescription,
+    I.UnitOfMeasure,
+    ISNULL(EI.FamilyID, 0),
+    ISNULL(I.DepartmentID, 0),
+    ISNULL(I.CategoryID, 0),
+    ISNULL(EI.SubCategoryID, 0),
+    ISNULL(F.Code, ''),
+    ISNULL(F.Name, ''),
+    ISNULL(D.Code, ''),
+    ISNULL(D.Name, ''),
+    ISNULL(C.Code, ''),
+    ISNULL(C.Name, ''),
+    ISNULL(SC.Code, ''),
+    ISNULL(SC.Description, ''),
+    ISNULL(S.SupplierName, ''),
+    ISNULL(S.Code, ''),
+    ISNULL(I.ReplacementCost, 0),
+    ISNULL(I.Cost, 0),
+    ISNULL(I.Price, 0),
+    CONVERT(DECIMAL(18, 4), ISNULL(TD.Percentage, ISNULL(TI.Percentage, 0))),
+    0,
+    ISNULL(I.Inactive, 0),
+    I.DateCreated,
+    I.LastUpdated
+FROM dbo.Item I
+LEFT JOIN dbo.ExtCentral_Item EI ON EI.ItemID = I.ID
+LEFT JOIN dbo.ExtCentral_Family F ON F.ID = EI.FamilyID
+LEFT JOIN dbo.Department D ON D.ID = I.DepartmentID
+LEFT JOIN dbo.Category C ON C.ID = I.CategoryID
+LEFT JOIN dbo.ExtCentral_SubCategory SC ON SC.ID = EI.SubCategoryID
+LEFT JOIN dbo.Supplier S ON S.ID = I.SupplierID
+LEFT JOIN dbo.ItemTax IT ON IT.ID = I.TaxID
+LEFT JOIN dbo.Tax TD ON TD.ID = I.TaxID
+LEFT JOIN dbo.Tax TI ON TI.ID = IT.TaxID01
+WHERE (@Estado = 'Todos' OR (@Estado = 'Activo' AND ISNULL(I.Inactive, 0) = 0) OR (@Estado = 'Inactivo' AND ISNULL(I.Inactive, 0) = 1))
+  AND (@Search = '' OR I.ItemLookupCode LIKE @SearchLike OR I.Description LIKE @SearchLike OR ISNULL(I.ExtendedDescription, '') LIKE @SearchLike OR ISNULL(F.Code, '') LIKE @SearchLike OR ISNULL(F.Name, '') LIKE @SearchLike OR ISNULL(D.Code, '') LIKE @SearchLike OR ISNULL(D.Name, '') LIKE @SearchLike OR ISNULL(C.Code, '') LIKE @SearchLike OR ISNULL(C.Name, '') LIKE @SearchLike OR ISNULL(SC.Code, '') LIKE @SearchLike OR ISNULL(SC.Description, '') LIKE @SearchLike OR ISNULL(S.SupplierName, '') LIKE @SearchLike)
+  AND (@Familia = '' OR ISNULL(F.Code, '') LIKE @FamiliaLike OR ISNULL(F.Name, '') LIKE @FamiliaLike)
+  AND (@Departamento = '' OR ISNULL(D.Code, '') LIKE @DepartamentoLike OR ISNULL(D.Name, '') LIKE @DepartamentoLike)
+  AND (@Categoria = '' OR ISNULL(C.Code, '') LIKE @CategoriaLike OR ISNULL(C.Name, '') LIKE @CategoriaLike)
+  AND (@Subcategoria = '' OR ISNULL(SC.Code, '') LIKE @SubcategoriaLike OR ISNULL(SC.Description, '') LIKE @SubcategoriaLike)
+  AND (@Proveedor = '' OR ISNULL(S.SupplierName, '') LIKE @ProveedorLike OR ISNULL(S.Code, '') LIKE @ProveedorLike)
+ORDER BY ISNULL(I.LastUpdated, I.DateCreated) DESC, I.ID DESC;
+
+SELECT @Total = COUNT(*) FROM @Filtered;
+
+SELECT *
+FROM @Filtered
+WHERE RowNum BETWEEN @StartRow AND @EndRow
+ORDER BY RowNum;";
+
+                AddSearchParameters(command, search, estado, familia, departamento, categoria, subcategoria, proveedor);
+                command.Parameters.AddWithValue("@StartRow", ((page - 1) * pageSize) + 1);
+                command.Parameters.AddWithValue("@EndRow", page * pageSize);
+                SqlParameter totalParameter = command.Parameters.Add("@Total", SqlDbType.Int);
+                totalParameter.Direction = ParameterDirection.Output;
+
+                connection.Open();
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                        rows.Add(MapArticuloSearch(reader));
+                }
+
+                total = totalParameter.Value == DBNull.Value ? 0 : Convert.ToInt32(totalParameter.Value);
+            }
+
+            return rows;
+        }
+
+        private static void AddSearchParameters(SqlCommand command, string search, string estado, string familia, string departamento, string categoria, string subcategoria, string proveedor)
+        {
+            AddTextParameter(command, "@Search", search);
+            AddTextParameter(command, "@Estado", String.IsNullOrWhiteSpace(estado) ? "Todos" : estado);
+            AddTextParameter(command, "@Familia", familia);
+            AddTextParameter(command, "@Departamento", departamento);
+            AddTextParameter(command, "@Categoria", categoria);
+            AddTextParameter(command, "@Subcategoria", subcategoria);
+            AddTextParameter(command, "@Proveedor", proveedor);
+        }
+
+        private static void AddTextParameter(SqlCommand command, string name, string value)
+        {
+            string clean = (value ?? "").Trim();
+            command.Parameters.AddWithValue(name, clean);
+            command.Parameters.AddWithValue(name + "Like", "%" + clean + "%");
+        }
+
+        private static ArticuloViewModel MapArticuloSearch(SqlDataReader reader)
+        {
+            decimal costo = ReadDecimal(reader, "ReplacementCost") > 0 ? ReadDecimal(reader, "ReplacementCost") : ReadDecimal(reader, "Cost");
+            decimal precio = ReadDecimal(reader, "Price");
+
+            return new ArticuloViewModel
+            {
+                ID = ReadInt(reader, "ID"),
+                Codigo = ReadString(reader, "ItemLookupCode"),
+                Descripcion = ReadString(reader, "Description"),
+                DescripcionExtendida = ReadString(reader, "ExtendedDescription"),
+                UnidadMedida = ReadString(reader, "UnitOfMeasure"),
+                FamiliaID = ReadInt(reader, "FamilyID"),
+                DepartamentoID = ReadInt(reader, "DepartmentID"),
+                CategoriaID = ReadInt(reader, "CategoryID"),
+                SubCategoriaID = ReadInt(reader, "SubCategoryID"),
+                Familia = JoinCodeName(ReadString(reader, "FamilyCode"), ReadString(reader, "FamilyName")),
+                Departamento = JoinCodeName(ReadString(reader, "DepartmentCode"), ReadString(reader, "DepartmentName")),
+                Categoria = JoinCodeName(ReadString(reader, "CategoryCode"), ReadString(reader, "CategoryName")),
+                SubCategoria = JoinCodeName(ReadString(reader, "SubCategoryCode"), ReadString(reader, "SubCategoryName")),
+                Proveedor = !String.IsNullOrWhiteSpace(ReadString(reader, "SupplierName")) ? ReadString(reader, "SupplierName") : ReadString(reader, "SupplierCode"),
+                Costo = costo,
+                PrecioVenta = precio,
+                ImpuestoPorcentaje = ReadDecimal(reader, "TaxPercentage"),
+                Existencia = ReadDecimal(reader, "Quantity"),
+                ExistenciaMinima = 0,
+                ExistenciaMaxima = 0,
+                Activo = !ReadBool(reader, "Inactive"),
+                Inventariable = true,
+                Exento = ReadDecimal(reader, "TaxPercentage") <= 0,
+                UsuarioCrea = "SQL",
+                FechaCrea = ReadDateTime(reader, "DateCreated"),
+                FechaModifica = ReadNullableDateTime(reader, "LastUpdated")
+            };
+        }
+
         private EN_Item BuildItem(ArticuloViewModel model, CatalogData catalog)
         {
             string storesAvailable = GetStoresAvailable();
@@ -223,6 +459,14 @@ namespace UltraERP.Controllers
             item.ItemLookupCode = model.Codigo;
             item.Description = model.Descripcion;
             item.ExtendedDescription = model.DescripcionExtendida;
+            item.SubDescription3 = item.SubDescription3 ?? "";
+            item.SubDescription4 = item.SubDescription4 ?? "";
+            item.SubDescription5 = item.SubDescription5 ?? "";
+            item.SubDescription6 = item.SubDescription6 ?? "";
+            item.SubDescription7 = item.SubDescription7 ?? "";
+            item.SubDescription8 = item.SubDescription8 ?? "";
+            item.SubDescription9 = item.SubDescription9 ?? "";
+            item.SubDescription10 = item.SubDescription10 ?? "";
             item.UnitOfMeasure = model.UnidadMedida;
             item.FamilyID = model.FamiliaID;
             item.DepartmentID = model.DepartamentoID;
@@ -267,12 +511,12 @@ namespace UltraERP.Controllers
                 ModelState.AddModelError("FamiliaID", "Seleccione una familia v\u00e1lida.");
 
             var departamento = catalog.Departamentos.FirstOrDefault(x => x.ID == model.DepartamentoID);
-            if (model.DepartamentoID > 0 && (departamento == null || departamento.FamiliaID != model.FamiliaID))
-                ModelState.AddModelError("DepartamentoID", "Seleccione un departamento v\u00e1lido para la familia.");
+            if (model.DepartamentoID > 0 && departamento == null)
+                ModelState.AddModelError("DepartamentoID", "Seleccione un departamento v\u00e1lido.");
 
             var categoria = catalog.Categorias.FirstOrDefault(x => x.ID == model.CategoriaID);
-            if (model.CategoriaID > 0 && (categoria == null || categoria.DepartamentoID != model.DepartamentoID))
-                ModelState.AddModelError("CategoriaID", "Seleccione una categor\u00eda v\u00e1lida para el departamento.");
+            if (model.CategoriaID > 0 && categoria == null)
+                ModelState.AddModelError("CategoriaID", "Seleccione una categor\u00eda v\u00e1lida.");
 
             if (categoryHasSubCategories)
             {
@@ -390,6 +634,8 @@ namespace UltraERP.Controllers
 
             if (catalog.Unidades == null || !catalog.Unidades.Any())
                 catalog.Unidades = GetUnitsDirect();
+            if (catalog.Bodegas == null || !catalog.Bodegas.Any())
+                catalog.Bodegas = GetStoresDirect();
             if (catalog.Familias == null || !catalog.Familias.Any())
                 catalog.Familias = GetFamiliesDirect();
             if (catalog.Departamentos == null || !catalog.Departamentos.Any())
@@ -401,6 +647,8 @@ namespace UltraERP.Controllers
 
             if (catalog.Unidades == null || !catalog.Unidades.Any())
                 catalog.Unidades = Unidades;
+            if (catalog.Bodegas == null || !catalog.Bodegas.Any())
+                catalog.Bodegas = Bodegas.Select((x, i) => new EN_Store(i + 1, x, x)).ToList();
             if (catalog.Familias == null || !catalog.Familias.Any())
                 catalog.Familias = Familias;
             if (catalog.Departamentos == null || !catalog.Departamentos.Any())
@@ -422,6 +670,18 @@ namespace UltraERP.Controllers
                   AND Code IS NOT NULL
                   AND LTRIM(RTRIM(Code)) <> ''
                 ORDER BY Code", reader => ReadString(reader, "Code"));
+        }
+
+        private IList<EN_Store> GetStoresDirect()
+        {
+            return ReadCatalogRows(@"
+                SELECT ID, Name, StoreCode
+                FROM dbo.Store
+                WHERE ISNULL(Inactive, 0) = 0
+                ORDER BY ID", reader => new EN_Store(
+                    ReadInt(reader, "ID"),
+                    ReadString(reader, "Name"),
+                    ReadString(reader, "StoreCode")));
         }
 
         private IList<FamiliaCatalogo> GetFamiliesDirect()
@@ -545,6 +805,30 @@ namespace UltraERP.Controllers
         {
             int ordinal = reader.GetOrdinal(column);
             return reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal));
+        }
+
+        private static decimal ReadDecimal(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? 0 : Convert.ToDecimal(reader.GetValue(ordinal));
+        }
+
+        private static bool ReadBool(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return !reader.IsDBNull(ordinal) && Convert.ToBoolean(reader.GetValue(ordinal));
+        }
+
+        private static DateTime ReadDateTime(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? DateTime.Now : Convert.ToDateTime(reader.GetValue(ordinal));
+        }
+
+        private static DateTime? ReadNullableDateTime(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? (DateTime?)null : Convert.ToDateTime(reader.GetValue(ordinal));
         }
 
         private string GetStoresAvailable()

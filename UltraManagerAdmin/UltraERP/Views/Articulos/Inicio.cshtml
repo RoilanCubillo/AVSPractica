@@ -2,7 +2,6 @@
 @{
     ViewBag.Title = "Articulos";
     ViewBag.ActiveMenu = "Articulos";
-    var articulosJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
 }
 
 <section class="page-header">
@@ -97,12 +96,7 @@
                 </select>
             </label>
         </div>
-        <div class="table-pagination">
-            <button id="btnPrevPage" class="btn btn-outline-secondary btn-sm" type="button">Anterior</button>
-            <span id="page_hint" class="toolbar-chip">Pagina 1 de 1</span>
-            <button id="btnNextPage" class="btn btn-outline-secondary btn-sm" type="button">Siguiente</button>
-            <span id="loading_state" class="loading-state">Cargando...</span>
-        </div>
+        <span id="loading_state" class="loading-state">Cargando...</span>
     </div>
     <div class="table-responsive">
         <table class="table align-middle document-table article-list-table">
@@ -125,6 +119,11 @@
             </thead>
             <tbody id="articulos_body"></tbody>
         </table>
+    </div>
+    <div class="table-pagination table-pagination-bottom">
+        <button id="btnPrevPage" class="btn btn-outline-secondary btn-sm" type="button">Anterior</button>
+        <span id="page_hint" class="toolbar-chip">Pagina 1 de 1</span>
+        <button id="btnNextPage" class="btn btn-outline-secondary btn-sm" type="button">Siguiente</button>
     </div>
 </section>
 
@@ -167,44 +166,48 @@
     <script>
         var urls = {
             registro: '@Url.Action("Registro", "Articulos")',
+            buscar: '@Url.Action("Buscar", "Articulos")',
             cambiarEstado: '@Url.Action("CambiarEstado", "Articulos")'
         };
-        var articulos = @Html.Raw(articulosJson);
-        var filteredRows = [];
+        var articulos = [];
         var currentPage = 1;
+        var totalRows = 0;
+        var totalPages = 1;
+        var searchTimer = null;
 
         $(function () {
             bindEvents();
-            renderTable();
-            setLoading(false);
+            loadArticulos();
         });
 
         function bindEvents() {
             $("#btnConsultar").on("click", function () {
                 currentPage = 1;
-                renderTable();
+                loadArticulos();
             });
             $("#table_search, #filter_familia, #filter_departamento, #filter_categoria, #filter_subcategoria, #filter_proveedor").on("input", function () {
                 currentPage = 1;
-                renderTable();
+                queueLoad();
             });
             $("#filter_estado").on("change", function () {
                 currentPage = 1;
-                renderTable();
+                loadArticulos();
             });
             $("#page_size").on("change", function () {
                 currentPage = 1;
-                renderTable();
+                loadArticulos();
             });
             $("#btnPrevPage").on("click", function () {
                 if (currentPage > 1) {
                     currentPage--;
-                    renderTable();
+                    loadArticulos();
                 }
             });
             $("#btnNextPage").on("click", function () {
-                currentPage++;
-                renderTable();
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    loadArticulos();
+                }
             });
             $("#btnLimpiar").on("click", function () {
                 $("#filter_estado").val("Todos");
@@ -215,17 +218,61 @@
                 $("#filter_proveedor").val("");
                 $("#table_search").val("");
                 currentPage = 1;
-                renderTable();
+                loadArticulos();
             });
         }
 
+        function queueLoad() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(loadArticulos, 300);
+        }
+
+        function loadArticulos() {
+            setLoading(true);
+            $.get(urls.buscar, getQueryParams()).done(function (data) {
+                if (!data.Status) {
+                    articulos = [];
+                    totalRows = 0;
+                    totalPages = 1;
+                    renderTable();
+                    showToast(data.Message || "No se pudieron cargar los articulos.");
+                    return;
+                }
+
+                var result = data.Result || {};
+                articulos = result.Rows || [];
+                totalRows = Number(result.Total || 0);
+                totalPages = Math.max(1, Number(result.TotalPages || 1));
+                currentPage = Math.min(Math.max(Number(result.Page || currentPage), 1), totalPages);
+                renderTable();
+            }).fail(function () {
+                articulos = [];
+                totalRows = 0;
+                totalPages = 1;
+                renderTable();
+                showToast("No se pudieron cargar los articulos.");
+            }).always(function () {
+                setLoading(false);
+            });
+        }
+
+        function getQueryParams() {
+            return {
+                page: currentPage,
+                pageSize: getPageSize(),
+                search: $("#table_search").val() || "",
+                estado: $("#filter_estado").val() || "Todos",
+                familia: $("#filter_familia").val() || "",
+                departamento: $("#filter_departamento").val() || "",
+                categoria: $("#filter_categoria").val() || "",
+                subcategoria: $("#filter_subcategoria").val() || "",
+                proveedor: $("#filter_proveedor").val() || ""
+            };
+        }
+
         function renderTable() {
-            filteredRows = getFilteredRows();
             var pageSize = getPageSize();
-            var totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
-            currentPage = Math.min(Math.max(currentPage, 1), totalPages);
-            var pageRows = getPagedRows(filteredRows, pageSize);
-            var html = pageRows.map(function (a) {
+            var html = articulos.map(function (a) {
                 return "<tr>" +
                     "<td><strong>" + escapeHtml(a.Codigo) + "</strong></td>" +
                     "<td>" + escapeHtml(a.Descripcion) + "</td>" +
@@ -243,7 +290,7 @@
                     "</tr>";
             }).join("");
 
-            updatePagination(pageRows, pageSize, totalPages);
+            updatePagination(pageSize);
             $("#articulos_body").html(html || "<tr><td colspan='13' class='empty-state'>Sin articulos para los filtros aplicados.</td></tr>");
             updateSummary();
         }
@@ -252,43 +299,14 @@
             return Number($("#page_size").val() || 10);
         }
 
-        function getPagedRows(rows, pageSize) {
-            var start = (currentPage - 1) * pageSize;
-            return rows.slice(start, start + pageSize);
-        }
+        function updatePagination(pageSize) {
+            var start = totalRows === 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
+            var end = totalRows === 0 ? 0 : start + articulos.length - 1;
 
-        function updatePagination(pageRows, pageSize, totalPages) {
-            var total = filteredRows.length;
-            var start = total === 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
-            var end = total === 0 ? 0 : start + pageRows.length - 1;
-
-            $("#results_hint").text(start + "-" + end + " de " + total + " resultados");
+            $("#results_hint").text(start + "-" + end + " de " + totalRows + " resultados");
             $("#page_hint").text("Pagina " + currentPage + " de " + totalPages);
             $("#btnPrevPage").prop("disabled", currentPage <= 1);
             $("#btnNextPage").prop("disabled", currentPage >= totalPages);
-        }
-
-        function getFilteredRows() {
-            var estado = $("#filter_estado").val();
-            var familia = ($("#filter_familia").val() || "").toLowerCase();
-            var departamento = ($("#filter_departamento").val() || "").toLowerCase();
-            var categoria = ($("#filter_categoria").val() || "").toLowerCase();
-            var subcategoria = ($("#filter_subcategoria").val() || "").toLowerCase();
-            var proveedor = ($("#filter_proveedor").val() || "").toLowerCase();
-            var text = ($("#table_search").val() || "").toLowerCase();
-
-            return articulos.filter(function (a) {
-                if (estado !== "Todos" && a.EstadoTexto !== estado) return false;
-                if (familia && String(a.Familia || "").toLowerCase().indexOf(familia) < 0) return false;
-                if (departamento && String(a.Departamento || "").toLowerCase().indexOf(departamento) < 0) return false;
-                if (categoria && String(a.Categoria || "").toLowerCase().indexOf(categoria) < 0) return false;
-                if (subcategoria && String(a.SubCategoria || "").toLowerCase().indexOf(subcategoria) < 0) return false;
-                if (proveedor && String(a.Proveedor || "").toLowerCase().indexOf(proveedor) < 0) return false;
-                if (!text) return true;
-
-                return [a.Codigo, a.Descripcion, a.Familia, a.Departamento, a.Categoria, a.SubCategoria, a.UnidadMedida, a.Bodega]
-                    .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
-            });
         }
 
         function getActionButtons(articulo) {
@@ -371,10 +389,10 @@
         }
 
         function updateSummary() {
-            var rows = filteredRows.length ? filteredRows : getFilteredRows();
+            var rows = articulos;
             var active = rows.filter(function (a) { return a.Activo; }).length;
             var cost = rows.reduce(function (sum, a) { return sum + (Number(a.Costo || 0) * Number(a.Existencia || 0)); }, 0);
-            $("#summary_count").text(rows.length);
+            $("#summary_count").text(totalRows);
             $("#summary_active").text(active);
             $("#summary_cost").text(formatMoney(cost));
         }

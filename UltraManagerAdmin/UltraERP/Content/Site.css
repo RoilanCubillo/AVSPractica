@@ -2053,6 +2053,11 @@ body {
     justify-content: flex-end;
 }
 
+.table-pagination-bottom {
+    justify-content: flex-start;
+    margin-top: 14px;
+}
+
 .table-toolbar .form-control {
     max-width: 360px;
 }
