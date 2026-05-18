@@ -37,7 +37,7 @@ namespace UltraERP.Controllers
             }
             catch (Exception ex)
             {
-                TempData["PropiedadArticuloError"] = "No se pudieron cargar las propiedades de articulos desde SQL: " + ex.Message;
+                TempData["PropiedadArticuloError"] = "No se pudieron cargar las propiedades de art\u00edculos desde SQL: " + ex.Message;
                 ViewBag.PropiedadesArticulosDataSource = "SQL";
 
                 return View(new PropiedadesArticuloInicioViewModel());
@@ -48,10 +48,10 @@ namespace UltraERP.Controllers
         public JsonResult Guardar(GuardarPropiedadesArticuloViewModel model)
         {
             if (model == null)
-                return Json(new JsonResponse("Solicitud vacia.", "No se recibieron propiedades para guardar.", null, false));
+                return Json(new JsonResponse("Solicitud vac\u00eda.", "No se recibieron propiedades para guardar.", null, false));
 
             if (model.ItemID <= 0)
-                return Json(new JsonResponse("Articulo invalido.", "Seleccione un articulo valido.", null, false));
+                return Json(new JsonResponse("Art\u00edculo inv\u00e1lido.", "Seleccione un art\u00edculo v\u00e1lido.", null, false));
 
             if (String.IsNullOrWhiteSpace(model.Tiendas))
                 return Json(new JsonResponse("Sin tiendas.", "Seleccione al menos una tienda para aplicar los cambios.", null, false));

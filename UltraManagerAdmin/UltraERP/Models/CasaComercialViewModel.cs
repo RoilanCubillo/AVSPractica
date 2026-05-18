@@ -7,24 +7,24 @@ namespace UltraERP.Models
     {
         public int ID { get; set; }
 
-        [Required(ErrorMessage = "El codigo es obligatorio.")]
-        [StringLength(20, ErrorMessage = "El codigo no puede superar 20 caracteres.")]
+        [Required(ErrorMessage = "El c\u00f3digo es obligatorio.")]
+        [StringLength(20, ErrorMessage = "El c\u00f3digo no puede superar 20 caracteres.")]
         public string Codigo { get; set; }
 
-        [StringLength(20, ErrorMessage = "El codigo extra no puede superar 20 caracteres.")]
+        [StringLength(20, ErrorMessage = "El c\u00f3digo extra no puede superar 20 caracteres.")]
         public string CodigoExtra { get; set; }
 
         [Required(ErrorMessage = "El nombre es obligatorio.")]
         [StringLength(50, ErrorMessage = "El nombre no puede superar 50 caracteres.")]
         public string Nombre { get; set; }
 
-        [Required(ErrorMessage = "El correo electronico es obligatorio.")]
-        [StringLength(225, ErrorMessage = "El correo electronico no puede superar 225 caracteres.")]
-        [EmailAddress(ErrorMessage = "Ingrese un correo electronico valido.")]
+        [Required(ErrorMessage = "El correo electr\u00f3nico es obligatorio.")]
+        [StringLength(225, ErrorMessage = "El correo electr\u00f3nico no puede superar 225 caracteres.")]
+        [EmailAddress(ErrorMessage = "Ingrese un correo electr\u00f3nico v\u00e1lido.")]
         public string CorreoElectronico { get; set; }
 
-        [Required(ErrorMessage = "El telefono es obligatorio.")]
-        [StringLength(30, ErrorMessage = "El telefono no puede superar 30 caracteres.")]
+        [Required(ErrorMessage = "El tel\u00e9fono es obligatorio.")]
+        [StringLength(30, ErrorMessage = "El tel\u00e9fono no puede superar 30 caracteres.")]
         public string Telefono { get; set; }
 
         public bool Inactivo { get; set; }

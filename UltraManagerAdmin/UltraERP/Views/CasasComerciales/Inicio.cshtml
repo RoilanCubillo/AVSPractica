@@ -42,7 +42,7 @@
         </div>
         <div class="col-12 col-md-4">
             <label for="table_search" class="form-label">Buscar</label>
-            <input id="table_search" type="search" class="form-control" placeholder="Nombre, correo o telefono" />
+            <input id="table_search" type="search" class="form-control" placeholder="Nombre, correo o tel&eacute;fono" />
         </div>
     </div>
     <div class="filter-actions">
@@ -102,7 +102,7 @@
     </div>
     <div class="table-pagination">
         <button id="btnPrevPage" class="btn btn-outline-secondary btn-sm" type="button">Anterior</button>
-        <span id="page_hint" class="toolbar-chip">Pagina 1 de 1</span>
+        <span id="page_hint" class="toolbar-chip">P&aacute;gina 1 de 1</span>
         <button id="btnNextPage" class="btn btn-outline-secondary btn-sm" type="button">Siguiente</button>
     </div>
 </section>
@@ -225,7 +225,7 @@
 
             $("#casaModalTitle").text("Casa comercial " + casa.Codigo);
             $("#house_view_title").text(casa.Nombre);
-            $("#house_view_subtitle").text((casa.CodigoExtra || "Sin codigo extra") + " - " + casa.EstadoTexto);
+            $("#house_view_subtitle").text((casa.CodigoExtra || "Sin c\u00f3digo extra") + " - " + casa.EstadoTexto);
             $("#house_view_items").text(formatNumber(casa.ArticulosAsociados));
             $("#house_view_summary").html(renderViewGrid([
                 { label: "Codigo", value: casa.Codigo },

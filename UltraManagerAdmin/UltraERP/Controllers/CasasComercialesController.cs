@@ -121,7 +121,7 @@ namespace UltraERP.Controllers
                     String.Equals(x.Code, model.Codigo, StringComparison.OrdinalIgnoreCase));
 
                 if (duplicatedCode)
-                    ModelState.AddModelError("Codigo", "Ya existe una casa comercial con este codigo.");
+                    ModelState.AddModelError("Codigo", "Ya existe una casa comercial con este c\u00f3digo.");
 
                 bool duplicatedName = purchasers.Any(x =>
                     x.ID != model.ID &&

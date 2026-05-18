@@ -106,7 +106,7 @@ namespace UltraERP.Models
                     return "-";
 
                 if (Tipo == 4)
-                    return String.Equals(Valor, "true", StringComparison.OrdinalIgnoreCase) ? "Si" : "No";
+                    return String.Equals(Valor, "true", StringComparison.OrdinalIgnoreCase) ? "S\u00ed" : "No";
 
                 decimal number;
                 if ((Tipo == 2 || Tipo == 3) && Decimal.TryParse(Valor, NumberStyles.Any, CultureInfo.InvariantCulture, out number))

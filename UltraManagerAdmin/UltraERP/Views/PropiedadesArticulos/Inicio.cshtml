@@ -7,7 +7,7 @@
 
 <section class="page-header">
     <div class="page-header-copy">
-        <span class="eyebrow">Catalogo de articulos</span>
+        <span class="eyebrow">Cat&aacute;logo de art&iacute;culos</span>
         <h1>Propiedades de Art&iacute;culos</h1>
         <p>Actualice atributos extendidos como CABYS, registro sanitario, origen y presentaci&oacute;n para los productos del inventario.</p>
     </div>
@@ -50,7 +50,7 @@
 
 <section class="metric-grid">
     <article>
-        <span>Art&iacute;culos</span>
+        <span>Art&iacute;culo</span>
         <strong id="summary_count">0</strong>
     </article>
     <article>
@@ -98,7 +98,7 @@
     </div>
     <div class="table-pagination">
         <button id="btnPrevPage" class="btn btn-outline-secondary btn-sm" type="button">Anterior</button>
-        <span id="page_hint" class="toolbar-chip">Pagina 1 de 1</span>
+        <span id="page_hint" class="toolbar-chip">P&aacute;gina 1 de 1</span>
         <button id="btnNextPage" class="btn btn-outline-secondary btn-sm" type="button">Siguiente</button>
     </div>
 </section>
@@ -109,7 +109,7 @@
     <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 id="propiedadesModalTitle" class="modal-title">Propiedades de art&iacute;culo</h5>
+                <h5 id="propiedadesModalTitle" class="modal-title">Propiedades de Art&iacute;culo</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
@@ -245,7 +245,7 @@
             if (!configured.length) return "<span class='status-badge closed'>Sin propiedades</span>";
 
             var chips = configured.slice(0, 4).map(function (p) {
-                return "<article class='property-chip'><span>" + escapeHtml(p.Nombre) + "</span><strong>" + escapeHtml(p.ValorTexto || p.Valor || "-") + "</strong></article>";
+                return "<article class='property-chip'><span>" + escapeHtml(getPropertyTitle(p)) + "</span><strong>" + escapeHtml(p.ValorTexto || p.Valor || "-") + "</strong></article>";
             }).join("");
 
             if (configured.length > 4) {
@@ -337,9 +337,10 @@
 
         function renderPropertyForm(item) {
             var html = (item.Propiedades || []).map(function (property, index) {
+                var typeText = getPropertyTypeText(property);
                 return "<div class='property-field'>" +
-                    "<label class='form-label' for='property_" + index + "'>" + escapeHtml(getPropertyTitle(property)) + "<small>" + escapeHtml(property.TipoTexto) + "</small></label>" +
-                    "<p class='property-help'>" + escapeHtml(getPropertyHelp(property)) + "</p>" +
+                    "<label class='form-label' for='property_" + index + "'>" + escapeHtml(getPropertyTitle(property)) + (typeText ? "<small>" + escapeHtml(typeText) + "</small>" : "") + "</label>" +
+                    renderPropertyHelp(property) +
                     renderInput(property, index) +
                     "</div>";
             }).join("");
@@ -354,21 +355,32 @@
             return name;
         }
 
-        function getPropertyHelp(property) {
+        function getPropertyTypeText(property) {
+            if (Number(property.Tipo || 0) === 4) return "";
+            return property.TipoTexto || "Texto";
+        }
+
+        function renderPropertyHelp(property) {
             var name = String(property.Nombre || "");
             if (name === "DoNotAllowEditUnitOfMeasure") {
-                return "Activo: la tienda no puede cambiar la unidad de medida del articulo. Inactivo: permite modificarla si el usuario tiene permiso.";
+                return "<ul class='property-help property-help-list'>" +
+                    "<li>Activo: la tienda no puede cambiar la unidad de medida del art\u00edculo.</li>" +
+                    "<li>Inactivo: permite modificarla si el usuario tiene permiso.</li>" +
+                    "</ul>";
             }
 
             if (name === "WholeNumber") {
-                return "Activo: el articulo se maneja en unidades completas, sin decimales. Inactivo: permite cantidades fraccionadas, por ejemplo peso o volumen.";
+                return "<ul class='property-help property-help-list'>" +
+                    "<li>Activo: el art\u00edculo se maneja en unidades completas, sin decimales.</li>" +
+                    "<li>Inactivo: permite cantidades fraccionadas, por ejemplo peso o volumen.</li>" +
+                    "</ul>";
             }
 
             if (property.Tipo === 4) {
-                return "Marque Activo para aplicar esta propiedad al articulo; deje sin marcar para no aplicarla.";
+                return "<p class='property-help'>Marque Activo para aplicar esta propiedad al art\u00edculo; deje sin marcar para no aplicarla.</p>";
             }
 
-            return "Complete el valor que debe enviarse a las tiendas seleccionadas para este articulo.";
+            return "<p class='property-help'>Complete el valor que debe enviarse a las tiendas seleccionadas para este art\u00edculo.</p>";
         }
 
         function syncModalState() {

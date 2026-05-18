@@ -2351,6 +2351,14 @@ body {
     line-height: 1.45;
 }
 
+.property-help-list {
+    padding-left: 18px;
+}
+
+.property-help-list li + li {
+    margin-top: 4px;
+}
+
 .property-switch {
     margin: 0;
     min-height: 40px;
