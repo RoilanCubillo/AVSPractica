@@ -21,6 +21,11 @@
     <div class="alert alert-success">@TempData["CasaComercialMessage"]</div>
 }
 
+@if (TempData["CasaComercialError"] != null)
+{
+    <div class="alert alert-warning">@TempData["CasaComercialError"]</div>
+}
+
 <section class="filter-panel">
     <div class="row g-3">
         <div class="col-12 col-md-3">
