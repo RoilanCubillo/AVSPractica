@@ -1,9 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Globalization;
+using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Web.Mvc;
 using Newtonsoft.Json;
+using UltraERP.BusinessEntities;
+using UltraERP.BusinessLogic;
 using UltraERP.Models;
 
 namespace UltraERP.Controllers
@@ -140,6 +145,7 @@ namespace UltraERP.Controllers
 
         public ActionResult Inicio()
         {
+            ViewBag.DocumentProcessAdmin = IsCurrentProcessAdmin();
             return View();
         }
 
@@ -150,6 +156,9 @@ namespace UltraERP.Controllers
 
         public ActionResult Registro(int? id, string tipoDocumento)
         {
+            PrepareRegistroCatalogs();
+            ViewBag.DocumentProcessAdmin = IsCurrentProcessAdmin();
+
             if (id.HasValue)
             {
                 DocumentoInventarioViewModel documento;
@@ -161,9 +170,44 @@ namespace UltraERP.Controllers
 
                 if (documento != null)
                     return View(ToRegistroModel(documento));
+
+                if (IsCurrentProcessAdmin())
+                {
+                    documento = GetSqlDocumentoForOperation(id.Value);
+                    if (documento != null)
+                    {
+                        lock (SyncRoot)
+                        {
+                            if (!Documentos.Any(x => x.ID == documento.ID))
+                                Documentos.Add(Clone(documento));
+                        }
+
+                        return View(ToRegistroModel(documento));
+                    }
+                }
             }
 
             return View(CreateRegistroModel(tipoDocumento));
+        }
+
+        [HttpGet]
+        public JsonResult BuscarProveedores(string q, int take = 10)
+        {
+            var data = GetProveedoresSafe(q, take)
+                .Select(ToProveedorJson)
+                .ToList();
+
+            return Json(data, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpGet]
+        public JsonResult BuscarProductos(string q, int take = 20)
+        {
+            var data = GetProductosSafe(q, take)
+                .Select(ToProductoJson)
+                .ToList();
+
+            return Json(data, JsonRequestBehavior.AllowGet);
         }
 
         [HttpPost]
@@ -230,10 +274,13 @@ namespace UltraERP.Controllers
                     else
                     {
                         UpdateDocumentoFromRegistro(documento, model, detalleLineas);
+                        if (!isUpdate)
+                            documento.PersonaSolicita = GetCurrentUserName();
+
                         AddAuditoria(documento, isUpdate ? "Editado" : "Creado", GetCurrentUserName(), isUpdate ? "Documento actualizado desde registro." : "Documento creado en memoria.");
                     }
 
-                    var transitionMessage = ApplyEstadoFromAccion(documento, accion, GetCurrentUserName(), null);
+                    var transitionMessage = ApplyEstadoFromAccion(documento, accion, GetCurrentUserName(), null, IsCurrentProcessAdmin());
                     if (!String.IsNullOrWhiteSpace(transitionMessage))
                     {
                         return Json(new JsonResponse("Cambio de estado no permitido.", transitionMessage, null, false));
@@ -258,14 +305,8 @@ namespace UltraERP.Controllers
             {
                 DateTime? desde = ParseDate(fechaDesde);
                 DateTime? hasta = ParseDate(fechaHasta);
-                List<DocumentoInventarioViewModel> documentos;
-
-                lock (SyncRoot)
-                {
-                    documentos = Documentos.Select(Clone).ToList();
-                }
-
-                var result = documentos.Where(x =>
+                var documentos = GetHistoricoAjustesFromDatabase(tipoDocumento, "", proveedor, personaSolicita, facturaRef, "")
+                    .Where(x =>
                         IsTipoMatch(tipoDocumento, x.Tipo) &&
                         IsMatch(estado, "Todos", x.Estado) &&
                         (!desde.HasValue || x.FechaSolicitud.Date >= desde.Value.Date) &&
@@ -274,9 +315,37 @@ namespace UltraERP.Controllers
                         Contains(x.Numero, numeroDocumento) &&
                         Contains(x.FacturaRef, facturaRef) &&
                         Contains(x.PersonaSolicita, personaSolicita))
+                    .ToList();
+
+                if (IsCurrentProcessAdmin())
+                {
+                    var sqlNumbers = new HashSet<string>(documentos.Select(x => NormalizeLookup(x.Numero)), StringComparer.OrdinalIgnoreCase);
+                    List<DocumentoInventarioViewModel> localDocuments;
+                    lock (SyncRoot)
+                    {
+                        localDocuments = Documentos.Select(Clone).ToList();
+                    }
+
+                    documentos.AddRange(localDocuments.Where(x =>
+                        !sqlNumbers.Contains(NormalizeLookup(x.Numero)) &&
+                        IsTipoMatch(tipoDocumento, x.Tipo) &&
+                        IsMatch(estado, "Todos", x.Estado) &&
+                        (!desde.HasValue || x.FechaSolicitud.Date >= desde.Value.Date) &&
+                        (!hasta.HasValue || x.FechaSolicitud.Date <= hasta.Value.Date) &&
+                        Contains(x.Proveedor, proveedor) &&
+                        Contains(x.Numero, numeroDocumento) &&
+                        Contains(x.FacturaRef, facturaRef) &&
+                        Contains(x.PersonaSolicita, personaSolicita)));
+                }
+
+                documentos = documentos
                     .OrderByDescending(x => x.FechaSolicitud)
+                    .ThenByDescending(x => x.FechaAplicacion ?? DateTime.MinValue)
                     .ThenByDescending(x => x.ID)
-                    .Select(ToGrid)
+                    .ToList();
+
+                var result = documentos
+                    .Select(x => ToGrid(x, !IsCurrentProcessAdmin()))
                     .ToList();
 
                 return Json(new JsonResponse("", "", result, true), JsonRequestBehavior.AllowGet);
@@ -291,25 +360,17 @@ namespace UltraERP.Controllers
         {
             try
             {
-                DateTime? aplicacion = ParseDate(fechaAplicacion);
-                List<DocumentoInventarioViewModel> documentos;
+                var databaseDocuments = GetHistoricoAjustesFromDatabase(tipoDocumento, fechaAplicacion, proveedor, usuario, facturaRef, producto);
+                var localDocuments = GetHistoricoAjustesFromMemory(tipoDocumento, fechaAplicacion, proveedor, usuario, facturaRef, producto);
+                var databaseNumbers = new HashSet<string>(
+                    databaseDocuments.Select(x => NormalizeLookup(x.Numero)),
+                    StringComparer.OrdinalIgnoreCase);
 
-                lock (SyncRoot)
-                {
-                    documentos = Documentos.Select(Clone).ToList();
-                }
-
-                var result = documentos.Where(x =>
-                        String.Equals(x.Estado, "Cerrada", StringComparison.OrdinalIgnoreCase) &&
-                        IsTipoMatch(tipoDocumento, x.Tipo) &&
-                        (!aplicacion.HasValue || (x.FechaAplicacion.HasValue && x.FechaAplicacion.Value.Date == aplicacion.Value.Date)) &&
-                        Contains(x.Proveedor, proveedor) &&
-                        Contains(x.PersonaSolicita, usuario) &&
-                        Contains(x.FacturaRef, facturaRef) &&
-                        Contains(x.Producto, producto))
+                var result = databaseDocuments
+                    .Concat(localDocuments.Where(x => !databaseNumbers.Contains(NormalizeLookup(x.Numero))))
                     .OrderByDescending(x => x.FechaAplicacion ?? DateTime.MinValue)
                     .ThenByDescending(x => x.ID)
-                    .Select(ToGrid)
+                    .Select(x => ToGrid(x))
                     .ToList();
 
                 return Json(new JsonResponse("", "", result, true), JsonRequestBehavior.AllowGet);
@@ -320,17 +381,220 @@ namespace UltraERP.Controllers
             }
         }
 
+        private List<DocumentoInventarioViewModel> GetHistoricoAjustesFromMemory(string tipoDocumento, string fechaAplicacion, string proveedor, string usuario, string facturaRef, string producto)
+        {
+            DateTime? aplicacion = ParseDate(fechaAplicacion);
+            List<DocumentoInventarioViewModel> documentos;
+
+            lock (SyncRoot)
+            {
+                documentos = Documentos.Select(Clone).ToList();
+            }
+
+            return documentos
+                .Where(x =>
+                    IsTipoMatch(tipoDocumento, x.Tipo) &&
+                    String.Equals(x.Estado, "Cerrada", StringComparison.OrdinalIgnoreCase) &&
+                    (!aplicacion.HasValue || (x.FechaAplicacion.HasValue && x.FechaAplicacion.Value.Date == aplicacion.Value.Date)) &&
+                    Contains(x.Proveedor, proveedor) &&
+                    Contains(x.PersonaSolicita, usuario) &&
+                    Contains(x.FacturaRef, facturaRef) &&
+                    Contains(x.Producto, producto))
+                .Select(x =>
+                {
+                    x.ID = -Math.Abs(x.ID);
+                    x.FechaAplicacion = x.FechaAplicacion ?? DateTime.Today;
+                    x.EventosAuditoria = x.EventosAuditoria ?? new List<DocumentoAuditoriaEventoViewModel>();
+                    return x;
+                })
+                .ToList();
+        }
+
+        private List<DocumentoInventarioViewModel> GetHistoricoAjustesFromDatabase(string tipoDocumento, string fechaAplicacion, string proveedor, string usuario, string facturaRef, string producto)
+        {
+            var documentos = new Dictionary<int, DocumentoInventarioViewModel>();
+            DateTime? aplicacion = ParseDate(fechaAplicacion);
+            ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings["UltraERP.BusinessDataAccess.Properties.Settings.MasterDB"];
+
+            if (settings == null || String.IsNullOrWhiteSpace(settings.ConnectionString))
+                return documentos.Values.ToList();
+
+            using (var connection = new SqlConnection(settings.ConnectionString))
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandType = CommandType.Text;
+                command.CommandText = @"
+SELECT TOP 500
+    R.ID,
+    R.Number,
+    R.Reference,
+    R.SupplierDocNo,
+    R.DatePosted,
+    R.OrderDate,
+    R.RequiredDate,
+    R.TotalAmount,
+    R.PostingComment,
+    ISNULL(S.SupplierName, '') AS SupplierName,
+    ISNULL(S.Code, '') AS SupplierCode,
+    ISNULL(CA.Name, '') AS UserName,
+    E.ID AS LineID,
+    ISNULL(I.ItemLookupCode, '') AS ItemCode,
+    ISNULL(E.Description, I.Description) AS ItemDescription,
+    ISNULL(I.UnitOfMeasure, '') AS UnitOfMeasure,
+    ISNULL(E.Quantity, 0) AS Quantity,
+    ISNULL(E.QtyInvoiced, 0) AS QtyInvoiced,
+    ISNULL(E.UnitCost, 0) AS UnitCost,
+    ISNULL(E.LineDiscRate, 0) AS LineDiscRate,
+    ISNULL(E.Comment, '') AS LineComment
+FROM dbo.POD_Receipt R
+LEFT JOIN dbo.Supplier S ON S.ID = R.SupplierID
+LEFT JOIN dbo.Cashier CA ON CA.ID = R.UserID
+LEFT JOIN dbo.POD_ReceiptEntry E ON E.ReceiptID = R.ID
+LEFT JOIN dbo.Item I ON I.ID = E.EntryID
+WHERE (@TipoDocumento = '' OR @TipoDocumento = 'Todos' OR @TipoDocumento = 'Compra')
+  AND (@FechaAplicacion IS NULL OR CONVERT(date, R.DatePosted) = @FechaAplicacion)
+  AND (@Proveedor = '' OR ISNULL(S.SupplierName, '') LIKE @ProveedorLike OR ISNULL(S.Code, '') LIKE @ProveedorLike)
+  AND (@Usuario = '' OR ISNULL(CA.Name, '') LIKE @UsuarioLike OR ((ISNULL(CA.Name, '') = '' OR ISNULL(CA.Name, '') = 'SQL') AND 'Usuario no encontrado' LIKE @UsuarioLike))
+  AND (@FacturaRef = '' OR ISNULL(R.Reference, '') LIKE @FacturaRefLike OR ISNULL(R.SupplierDocNo, '') LIKE @FacturaRefLike OR ISNULL(R.Number, '') LIKE @FacturaRefLike)
+  AND (@Producto = '' OR ISNULL(I.ItemLookupCode, '') LIKE @ProductoLike OR ISNULL(E.Description, I.Description) LIKE @ProductoLike)
+ORDER BY R.DatePosted DESC, R.ID DESC, E.LineNumber ASC;";
+
+                command.Parameters.AddWithValue("@TipoDocumento", (tipoDocumento ?? "").Trim());
+                command.Parameters.Add("@FechaAplicacion", SqlDbType.Date).Value = aplicacion.HasValue ? (object)aplicacion.Value.Date : DBNull.Value;
+                AddLikeParameter(command, "@Proveedor", proveedor);
+                AddLikeParameter(command, "@Usuario", usuario);
+                AddLikeParameter(command, "@FacturaRef", facturaRef);
+                AddLikeParameter(command, "@Producto", producto);
+
+                connection.Open();
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        int id = ReadInt(reader, "ID");
+                        DocumentoInventarioViewModel documento;
+                        if (!documentos.TryGetValue(id, out documento))
+                        {
+                            string numero = ReadString(reader, "Number");
+                            string supplier = ReadString(reader, "SupplierName");
+                            string supplierCode = ReadString(reader, "SupplierCode");
+                            string userName = ReadString(reader, "UserName");
+                            string displayUserName = GetDisplayUserName(userName);
+                            DateTime postedDate = ReadDateTime(reader, "DatePosted");
+
+                            documento = new DocumentoInventarioViewModel
+                            {
+                                ID = id,
+                                Numero = numero,
+                                Tipo = "Compra",
+                                Proveedor = JoinCodeName(supplierCode, supplier),
+                                FacturaRef = FirstNonEmpty(ReadString(reader, "Reference"), ReadString(reader, "SupplierDocNo"), numero),
+                                FechaSolicitud = ReadDateTime(reader, "OrderDate"),
+                                FechaEntrega = ReadNullableDateTime(reader, "RequiredDate"),
+                                FechaAplicacion = postedDate,
+                                Estado = "Cerrada",
+                                Total = ReadDecimal(reader, "TotalAmount"),
+                                PersonaSolicita = displayUserName,
+                                JustificacionEntrada = ReadString(reader, "PostingComment"),
+                                DetalleLineas = new List<DocumentoDetalleLineaViewModel>(),
+                                LineasEspeciales = new List<DocumentoLineaEspecialViewModel>(),
+                                EventosAuditoria = new List<DocumentoAuditoriaEventoViewModel>
+                                {
+                                    new DocumentoAuditoriaEventoViewModel
+                                    {
+                                        Evento = "Aplicado",
+                                        Usuario = displayUserName,
+                                        FechaHora = postedDate,
+                                        Comentario = "Documento cargado desde POD_Receipt."
+                                    }
+                                }
+                            };
+
+                            documentos.Add(id, documento);
+                        }
+
+                        int lineId = ReadInt(reader, "LineID");
+                        if (lineId > 0)
+                        {
+                            decimal quantity = ReadDecimal(reader, "Quantity");
+                            decimal cost = ReadDecimal(reader, "UnitCost");
+                            decimal discount = ReadDecimal(reader, "LineDiscRate");
+                            decimal totalLine = quantity * cost * (1 - (discount / 100));
+                            var line = new DocumentoDetalleLineaViewModel
+                            {
+                                Codigo = ReadString(reader, "ItemCode"),
+                                Descripcion = ReadString(reader, "ItemDescription"),
+                                Unidad = ReadString(reader, "UnitOfMeasure"),
+                                Cantidad = quantity,
+                                CantidadSolicitada = quantity,
+                                CantidadRecibida = quantity,
+                                CantidadPendiente = 0,
+                                CostoUnitario = cost,
+                                DescuentoPorcentaje = discount,
+                                DescuentoMonto = quantity * cost * (discount / 100),
+                                ImpuestoPorcentaje = 0,
+                                TotalLinea = totalLine,
+                                Regalia = cost <= 0,
+                                Observacion = ReadString(reader, "LineComment")
+                            };
+
+                            documento.DetalleLineas.Add(line);
+                        }
+                    }
+                }
+            }
+
+            foreach (DocumentoInventarioViewModel documento in documentos.Values)
+            {
+                documento.CantidadLineasDetalle = documento.DetalleLineas.Count;
+                documento.LineasEspeciales = documento.DetalleLineas
+                    .Where(x => x.Regalia)
+                    .Select(x => new DocumentoLineaEspecialViewModel
+                    {
+                        CodigoProducto = x.Codigo,
+                        Descripcion = x.Descripcion,
+                        Cantidad = x.CantidadRecibida,
+                        Costo = x.CostoUnitario,
+                        TipoLinea = "Regalia",
+                        RequiereAuditoria = true
+                    })
+                    .ToList();
+                documento.CantidadLineasEspeciales = documento.LineasEspeciales.Count;
+                documento.TotalLineasEspeciales = documento.LineasEspeciales.Sum(x => x.Costo * x.Cantidad);
+                documento.ResumenAuditoria = documento.CantidadLineasEspeciales > 0
+                    ? documento.CantidadLineasEspeciales + " lineas especiales detectadas desde SQL."
+                    : "Sin lineas especiales.";
+                documento.Producto = documento.DetalleLineas.Count == 1
+                    ? documento.DetalleLineas[0].Descripcion
+                    : documento.DetalleLineas.Count + " lineas";
+            }
+
+            return documentos.Values.ToList();
+        }
+
         [HttpPost]
-        public JsonResult Duplicar(int id)
+        public JsonResult Duplicar(int id, string password)
         {
             try
             {
+                if (!IsProcessAuthorized(password))
+                    return Json(new JsonResponse("Clave invalida.", "La clave de autorizacion no es correcta.", null, false), JsonRequestBehavior.AllowGet);
+
+                DocumentoInventarioViewModel source;
                 lock (SyncRoot)
                 {
-                    var source = Documentos.FirstOrDefault(x => x.ID == id);
-                    if (source == null)
-                        return Json(new JsonResponse("Documento no encontrado.", "No se encontro el documento seleccionado.", null, false), JsonRequestBehavior.AllowGet);
+                    source = Documentos.FirstOrDefault(x => x.ID == id);
+                    source = source == null ? null : Clone(source);
+                }
 
+                if (source == null)
+                    source = GetHistoricoAjustesFromDatabase("", "", "", "", "", "").FirstOrDefault(x => x.ID == id);
+
+                if (source == null)
+                    return Json(new JsonResponse("Documento no encontrado.", "No se encontro el documento seleccionado.", null, false), JsonRequestBehavior.AllowGet);
+
+                lock (SyncRoot)
+                {
                     var nextId = Documentos.Count == 0 ? 1 : Documentos.Max(x => x.ID) + 1;
                     var copy = Clone(source);
                     copy.ID = nextId;
@@ -365,17 +629,36 @@ namespace UltraERP.Controllers
         }
 
         [HttpPost]
-        public JsonResult EjecutarAccion(int id, string accion, string motivo)
+        public JsonResult ValidarClaveProceso(string password)
+        {
+            if (!IsProcessAuthorized(password))
+                return Json(new JsonResponse("Clave invalida.", "La clave de autorizacion no es correcta.", null, false), JsonRequestBehavior.AllowGet);
+
+            return Json(new JsonResponse("", "Clave autorizada.", null, true), JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpPost]
+        public JsonResult EjecutarAccion(int id, string accion, string motivo, string password)
         {
             try
             {
+                if (!IsProcessAuthorized(password))
+                    return Json(new JsonResponse("Clave invalida.", "La clave de autorizacion no es correcta.", null, false), JsonRequestBehavior.AllowGet);
+
                 lock (SyncRoot)
                 {
                     var documento = Documentos.FirstOrDefault(x => x.ID == id);
+                    if (documento == null && IsCurrentProcessAdmin())
+                    {
+                        documento = GetSqlDocumentoForOperation(id);
+                        if (documento != null)
+                            Documentos.Add(documento);
+                    }
+
                     if (documento == null)
                         return Json(new JsonResponse("Documento no encontrado.", "No se encontro el documento seleccionado.", null, false), JsonRequestBehavior.AllowGet);
 
-                    var transitionMessage = ApplyEstadoFromAccion(documento, accion, GetCurrentUserName(), motivo);
+                    var transitionMessage = ApplyEstadoFromAccion(documento, accion, GetCurrentUserName(), motivo, IsCurrentProcessAdmin());
                     if (!String.IsNullOrWhiteSpace(transitionMessage))
                     {
                         return Json(new JsonResponse("Cambio de estado no permitido.", transitionMessage, null, false), JsonRequestBehavior.AllowGet);
@@ -404,7 +687,7 @@ namespace UltraERP.Controllers
                 FechaSolicitud = today,
                 FechaEntrega = today.AddDays(7),
                 FechaAplicacion = today,
-                PersonaSolicita = User.Identity.Name,
+                PersonaSolicita = GetCurrentUserName(),
                 PlazoCredito = 30,
                 EstadoFacturaMeCR = "Pendiente",
                 TipoSalida = "Est\u00e1ndar",
@@ -419,7 +702,7 @@ namespace UltraERP.Controllers
             };
         }
 
-        private static DocumentoInventarioRegistroViewModel ToRegistroModel(DocumentoInventarioViewModel documento)
+        private DocumentoInventarioRegistroViewModel ToRegistroModel(DocumentoInventarioViewModel documento)
         {
             var proveedor = FindProveedor(documento.Proveedor);
             var detalleLineas = (documento.DetalleLineas ?? new List<DocumentoDetalleLineaViewModel>())
@@ -645,6 +928,172 @@ namespace UltraERP.Controllers
                    (value ?? "").IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
+        private static void AddLikeParameter(SqlCommand command, string name, string value)
+        {
+            string clean = (value ?? "").Trim();
+            command.Parameters.AddWithValue(name, clean);
+            command.Parameters.AddWithValue(name + "Like", "%" + clean + "%");
+        }
+
+        private static string ReadString(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? "" : Convert.ToString(reader.GetValue(ordinal));
+        }
+
+        private static int ReadInt(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal));
+        }
+
+        private static decimal ReadDecimal(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? 0 : Convert.ToDecimal(reader.GetValue(ordinal));
+        }
+
+        private static DateTime ReadDateTime(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? DateTime.Today : Convert.ToDateTime(reader.GetValue(ordinal));
+        }
+
+        private static DateTime? ReadNullableDateTime(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? (DateTime?)null : Convert.ToDateTime(reader.GetValue(ordinal));
+        }
+
+        private static string FirstNonEmpty(params string[] values)
+        {
+            return values.FirstOrDefault(x => !String.IsNullOrWhiteSpace(x)) ?? "";
+        }
+
+        private static string JoinCodeName(string code, string name)
+        {
+            if (String.IsNullOrWhiteSpace(code))
+                return name ?? "";
+
+            if (String.IsNullOrWhiteSpace(name))
+                return code;
+
+            return code + " - " + name;
+        }
+
+        private void PrepareRegistroCatalogs()
+        {
+            ViewBag.ProveedoresJson = JsonConvert.SerializeObject(
+                GetProveedoresSafe("", 100).Select(ToProveedorJson).ToList());
+            ViewBag.ProductosJson = JsonConvert.SerializeObject(
+                GetProductosSafe("", 120).Select(ToProductoJson).ToList());
+        }
+
+        private List<ProveedorCatalogo> GetProveedoresSafe(string searchValue = "", int take = 100)
+        {
+            try
+            {
+                return new CT_Supplier()
+                    .GetAll("%", searchValue ?? "", 0, take)
+                    .Where(x => x != null)
+                    .Select(x => new ProveedorCatalogo(x.Code, x.Name, 0))
+                    .Where(x => !String.IsNullOrWhiteSpace(x.Codigo) || !String.IsNullOrWhiteSpace(x.Nombre))
+                    .OrderBy(x => x.Nombre)
+                    .ThenBy(x => x.Codigo)
+                    .ToList();
+            }
+            catch
+            {
+                var lookup = NormalizeLookup(searchValue);
+                return Proveedores
+                    .Where(x => String.IsNullOrWhiteSpace(lookup) ||
+                        NormalizeLookup(x.Key).Contains(lookup) ||
+                        NormalizeLookup(x.Codigo).Contains(lookup) ||
+                        NormalizeLookup(x.Nombre).Contains(lookup))
+                    .Take(take <= 0 ? Proveedores.Count : take)
+                    .ToList();
+            }
+        }
+
+        private List<ProductoCatalogo> GetProductosSafe(string searchValue = "", int take = 120)
+        {
+            try
+            {
+                int limit = take <= 0 ? 120 : take;
+                return new CT_Item()
+                    .GetDynamicList(searchValue ?? "", 1, "asc", 0, limit, null, null, null, null, null, "%")
+                    .Where(x => x != null)
+                    .Select(MapProducto)
+                    .Where(x => !String.IsNullOrWhiteSpace(x.Codigo) || !String.IsNullOrWhiteSpace(x.Descripcion))
+                    .OrderBy(x => x.Codigo)
+                    .ToList();
+            }
+            catch
+            {
+                return GetProductosDemo(searchValue, take);
+            }
+        }
+
+        private static ProductoCatalogo MapProducto(EN_Item item)
+        {
+            decimal cost = item.ReplacementCost > 0 ? item.ReplacementCost : item.Cost;
+
+            return new ProductoCatalogo
+            {
+                Codigo = item.ItemLookupCode,
+                Descripcion = item.Description,
+                Unidad = String.IsNullOrWhiteSpace(item.UnitOfMeasure) ? "UND" : item.UnitOfMeasure,
+                Costo = cost,
+                Impuesto = Convert.ToDecimal(item.TaxPercentage)
+            };
+        }
+
+        private static List<ProductoCatalogo> GetProductosDemo(string searchValue, int take)
+        {
+            var demo = new List<ProductoCatalogo>
+            {
+                new ProductoCatalogo { Codigo = "ACE-015", Descripcion = "Aceite vegetal", Unidad = "UND", Costo = 2590m, Impuesto = 13m },
+                new ProductoCatalogo { Codigo = "ARR-220", Descripcion = "Arroz precocido", Unidad = "KG", Costo = 2750m, Impuesto = 1m },
+                new ProductoCatalogo { Codigo = "CAF-009", Descripcion = "Cafe molido", Unidad = "BQ", Costo = 4521m, Impuesto = 13m },
+                new ProductoCatalogo { Codigo = "EMP-001", Descripcion = "Insumos de empaque", Unidad = "CJ", Costo = 4520.50m, Impuesto = 13m },
+                new ProductoCatalogo { Codigo = "FIL-014", Descripcion = "Film termico", Unidad = "UND", Costo = 1295.75m, Impuesto = 13m },
+                new ProductoCatalogo { Codigo = "HAR-112", Descripcion = "Harina preparada", Unidad = "QQ", Costo = 10900m, Impuesto = 1m },
+                new ProductoCatalogo { Codigo = "PROMO-1", Descripcion = "Producto de cortesia", Unidad = "UND", Costo = 0m, Impuesto = 0m },
+                new ProductoCatalogo { Codigo = "SAL-441", Descripcion = "Salsa base", Unidad = "GAL", Costo = 74850m, Impuesto = 13m }
+            };
+
+            var lookup = NormalizeLookup(searchValue);
+            return demo
+                .Where(x => String.IsNullOrWhiteSpace(lookup) ||
+                    NormalizeLookup(x.Codigo).Contains(lookup) ||
+                    NormalizeLookup(x.Descripcion).Contains(lookup))
+                .Take(take <= 0 ? demo.Count : take)
+                .ToList();
+        }
+
+        private static object ToProveedorJson(ProveedorCatalogo proveedor)
+        {
+            return new
+            {
+                key = proveedor.Key,
+                codigo = proveedor.Codigo,
+                nombre = proveedor.Nombre,
+                plazo = proveedor.PlazoCredito
+            };
+        }
+
+        private static object ToProductoJson(ProductoCatalogo producto)
+        {
+            return new
+            {
+                codigo = producto.Codigo,
+                descripcion = producto.Descripcion,
+                unidad = producto.Unidad,
+                costo = producto.Costo,
+                impuesto = producto.Impuesto
+            };
+        }
+
         private static DateTime? ParseDate(string value)
         {
             if (String.IsNullOrWhiteSpace(value))
@@ -699,11 +1148,12 @@ namespace UltraERP.Controllers
             };
         }
 
-        private static object ToGrid(DocumentoInventarioViewModel documento)
+        private static object ToGrid(DocumentoInventarioViewModel documento, bool soloLecturaSql = false)
         {
             return new
             {
                 documento.ID,
+                SoloLecturaSql = soloLecturaSql,
                 documento.Numero,
                 documento.Tipo,
                 documento.Proveedor,
@@ -952,7 +1402,7 @@ namespace UltraERP.Controllers
             return Math.Round(baseImponible + impuesto, 2);
         }
 
-        private static string ValidateEncabezado(DocumentoInventarioRegistroViewModel model, string accion)
+        private string ValidateEncabezado(DocumentoInventarioRegistroViewModel model, string accion)
         {
             if (String.IsNullOrWhiteSpace(model.TipoDocumento))
                 return "Seleccione el tipo de documento.";
@@ -993,30 +1443,77 @@ namespace UltraERP.Controllers
             return "";
         }
 
-        private static ProveedorCatalogo FindProveedor(DocumentoInventarioRegistroViewModel model)
+        private ProveedorCatalogo FindProveedor(DocumentoInventarioRegistroViewModel model)
         {
-            var codigo = NormalizeLookup(model.CodigoProveedor);
-            var nombre = NormalizeLookup(model.NombreProveedor);
-            var busqueda = NormalizeLookup(model.ProveedorBusqueda);
+            if (model == null)
+                return null;
 
-            return Proveedores.FirstOrDefault(x =>
+            var codigoOriginal = (model.CodigoProveedor ?? "").Trim();
+            var nombreOriginal = (model.NombreProveedor ?? "").Trim();
+            var busquedaOriginal = (model.ProveedorBusqueda ?? "").Trim();
+            var codigo = NormalizeLookup(codigoOriginal);
+            var nombre = NormalizeLookup(nombreOriginal);
+            var busqueda = NormalizeLookup(busquedaOriginal);
+            var candidates = new List<ProveedorCatalogo>();
+
+            AddProveedorCandidates(candidates, GetProveedoresSafe(codigoOriginal, 50));
+            AddProveedorCandidates(candidates, GetProveedoresSafe(nombreOriginal, 50));
+            AddProveedorCandidates(candidates, GetProveedoresSafe(busquedaOriginal, 50));
+
+            var proveedor = candidates.FirstOrDefault(x =>
                 NormalizeLookup(x.Codigo) == codigo ||
                 NormalizeLookup(x.Nombre) == nombre ||
                 NormalizeLookup(x.Key) == busqueda ||
                 NormalizeLookup(x.Codigo) == busqueda ||
                 NormalizeLookup(x.Nombre) == busqueda);
+
+            if (proveedor != null)
+                return proveedor;
+
+            if (!String.IsNullOrWhiteSpace(codigoOriginal) && !String.IsNullOrWhiteSpace(nombreOriginal))
+                return new ProveedorCatalogo(codigoOriginal, nombreOriginal, model.PlazoCredito);
+
+            return null;
         }
 
-        private static ProveedorCatalogo FindProveedor(string value)
+        private ProveedorCatalogo FindProveedor(string value)
         {
             var lookup = NormalizeLookup(value);
             if (String.IsNullOrWhiteSpace(lookup))
                 return null;
 
-            return Proveedores.FirstOrDefault(x =>
+            var proveedor = GetProveedoresSafe(value, 50).FirstOrDefault(x =>
                 NormalizeLookup(x.Codigo) == lookup ||
                 NormalizeLookup(x.Nombre) == lookup ||
                 NormalizeLookup(x.Key) == lookup);
+
+            if (proveedor != null)
+                return proveedor;
+
+            var parts = (value ?? "").Split(new[] { " - " }, 2, StringSplitOptions.None);
+            if (parts.Length == 2 && !String.IsNullOrWhiteSpace(parts[0]) && !String.IsNullOrWhiteSpace(parts[1]))
+                return new ProveedorCatalogo(parts[0].Trim(), parts[1].Trim(), 0);
+
+            return null;
+        }
+
+        private static void AddProveedorCandidates(List<ProveedorCatalogo> target, IEnumerable<ProveedorCatalogo> source)
+        {
+            if (target == null || source == null)
+                return;
+
+            foreach (var item in source)
+            {
+                if (item == null)
+                    continue;
+
+                bool exists = target.Any(x =>
+                    String.Equals(x.Codigo, item.Codigo, StringComparison.OrdinalIgnoreCase) &&
+                    String.Equals(x.Nombre, item.Nombre, StringComparison.OrdinalIgnoreCase));
+
+                if (!exists)
+                    target.Add(item);
+            }
         }
 
         private static string NormalizeLookup(string value)
@@ -1024,14 +1521,14 @@ namespace UltraERP.Controllers
             return (value ?? "").Trim().ToUpperInvariant();
         }
 
-        private static string ApplyEstadoFromAccion(DocumentoInventarioViewModel documento, string accion, string usuario, string motivoAnulacion)
+        private static string ApplyEstadoFromAccion(DocumentoInventarioViewModel documento, string accion, string usuario, string motivoAnulacion, bool allowAdminOverride = false)
         {
             var normalizedAction = NormalizeAccion(accion);
             var estadoActual = documento.Estado ?? "Borrador";
 
             if (normalizedAction == "Borrador")
             {
-                if (!String.Equals(estadoActual, "Borrador", StringComparison.OrdinalIgnoreCase))
+                if (!allowAdminOverride && !String.Equals(estadoActual, "Borrador", StringComparison.OrdinalIgnoreCase))
                     return "Solo los documentos en Borrador pueden guardarse como borrador.";
 
                 documento.Estado = "Borrador";
@@ -1040,7 +1537,7 @@ namespace UltraERP.Controllers
 
             if (normalizedAction == "Enviar")
             {
-                if (!String.Equals(estadoActual, "Borrador", StringComparison.OrdinalIgnoreCase))
+                if (!allowAdminOverride && !String.Equals(estadoActual, "Borrador", StringComparison.OrdinalIgnoreCase))
                     return "Solo los documentos en Borrador pueden enviarse.";
 
                 documento.Estado = "Enviada";
@@ -1051,7 +1548,8 @@ namespace UltraERP.Controllers
 
             if (normalizedAction == "Recibir")
             {
-                if (!String.Equals(estadoActual, "Enviada", StringComparison.OrdinalIgnoreCase) &&
+                if (!allowAdminOverride &&
+                    !String.Equals(estadoActual, "Enviada", StringComparison.OrdinalIgnoreCase) &&
                     !String.Equals(estadoActual, "Parcial", StringComparison.OrdinalIgnoreCase))
                     return "Solo los documentos Enviados o Parciales pueden recibirse.";
 
@@ -1064,7 +1562,8 @@ namespace UltraERP.Controllers
 
             if (normalizedAction == "Parcial")
             {
-                if (!String.Equals(estadoActual, "Enviada", StringComparison.OrdinalIgnoreCase) &&
+                if (!allowAdminOverride &&
+                    !String.Equals(estadoActual, "Enviada", StringComparison.OrdinalIgnoreCase) &&
                     !String.Equals(estadoActual, "Parcial", StringComparison.OrdinalIgnoreCase))
                     return "Solo los documentos Enviados o Parciales pueden guardarse como recepcion parcial.";
 
@@ -1076,7 +1575,7 @@ namespace UltraERP.Controllers
 
             if (normalizedAction == "Cerrar")
             {
-                if (!String.Equals(estadoActual, "Recibida", StringComparison.OrdinalIgnoreCase))
+                if (!allowAdminOverride && !String.Equals(estadoActual, "Recibida", StringComparison.OrdinalIgnoreCase))
                     return "Solo los documentos Recibidos pueden cerrarse.";
 
                 documento.Estado = "Cerrada";
@@ -1087,10 +1586,10 @@ namespace UltraERP.Controllers
 
             if (normalizedAction == "Anular")
             {
-                if (String.Equals(estadoActual, "Cerrada", StringComparison.OrdinalIgnoreCase))
+                if (!allowAdminOverride && String.Equals(estadoActual, "Cerrada", StringComparison.OrdinalIgnoreCase))
                     return "Los documentos Cerrados no pueden anularse desde esta pantalla.";
 
-                if (String.Equals(estadoActual, "Recibida", StringComparison.OrdinalIgnoreCase))
+                if (!allowAdminOverride && String.Equals(estadoActual, "Recibida", StringComparison.OrdinalIgnoreCase))
                     return "Los documentos Recibidos no pueden anularse sin generar una reversa de inventario.";
 
                 if (String.Equals(estadoActual, "Anulada", StringComparison.OrdinalIgnoreCase))
@@ -1181,8 +1680,54 @@ namespace UltraERP.Controllers
         private string GetCurrentUserName()
         {
             return User != null && User.Identity != null && !String.IsNullOrWhiteSpace(User.Identity.Name)
-                ? User.Identity.Name
+                ? User.Identity.Name.Trim()
                 : "Usuario actual";
+        }
+
+        private DocumentoInventarioViewModel GetSqlDocumentoForOperation(int id)
+        {
+            return GetHistoricoAjustesFromDatabase("", "", "", "", "", "")
+                .FirstOrDefault(x => x.ID == id);
+        }
+
+        private bool IsProcessAuthorized(string password)
+        {
+            return IsCurrentProcessAdmin() || IsProcessPasswordValid(password);
+        }
+
+        private bool IsCurrentProcessAdmin()
+        {
+            string account = ConfigurationManager.AppSettings["ProcessAuthorizationUserAccount"] ?? "100";
+            string identityName = User != null && User.Identity != null ? User.Identity.Name : "";
+            string sessionAccount = Session["USER_ACCOUNT"] == null ? "" : Convert.ToString(Session["USER_ACCOUNT"]);
+
+            return String.Equals((identityName ?? "").Trim(), account, StringComparison.OrdinalIgnoreCase) ||
+                   String.Equals((sessionAccount ?? "").Trim(), account, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsProcessPasswordValid(string password)
+        {
+            if (String.IsNullOrWhiteSpace(password))
+                return false;
+
+            try
+            {
+                string account = ConfigurationManager.AppSettings["ProcessAuthorizationUserAccount"] ?? "100";
+                var result = new CT_User().ValidateUser(account, password.Trim());
+                return result.Item1 != null && result.Item2 == 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static string GetDisplayUserName(string databaseUserName)
+        {
+            if (String.IsNullOrWhiteSpace(databaseUserName) || String.Equals(databaseUserName.Trim(), "SQL", StringComparison.OrdinalIgnoreCase))
+                return "Usuario no encontrado";
+
+            return databaseUserName.Trim();
         }
 
         private static string NormalizeTipoDocumento(string tipoDocumento)
@@ -1320,8 +1865,8 @@ namespace UltraERP.Controllers
         {
             public ProveedorCatalogo(string codigo, string nombre, int plazoCredito)
             {
-                Codigo = codigo;
-                Nombre = nombre;
+                Codigo = codigo ?? "";
+                Nombre = nombre ?? "";
                 PlazoCredito = plazoCredito;
             }
 
@@ -1329,6 +1874,15 @@ namespace UltraERP.Controllers
             public string Nombre { get; private set; }
             public int PlazoCredito { get; private set; }
             public string Key { get { return Codigo + " - " + Nombre; } }
+        }
+
+        private class ProductoCatalogo
+        {
+            public string Codigo { get; set; }
+            public string Descripcion { get; set; }
+            public string Unidad { get; set; }
+            public decimal Costo { get; set; }
+            public decimal Impuesto { get; set; }
         }
     }
 }

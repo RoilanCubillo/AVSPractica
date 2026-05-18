@@ -4,6 +4,7 @@
     ViewBag.ActiveMenu = "CambiosMasivos";
     var wizardJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
     var firstTaskCode = Model.Tareas.Count > 0 ? Model.Tareas[0].Codigo : "";
+    var dataSource = ViewBag.CambiosMasivosDataSource as string ?? "SQL";
 }
 
 <section class="page-header">
@@ -13,6 +14,7 @@
         <p>Prepare cargas por lote, revise la plantilla y cree hojas de trabajo listas para aprobacion sin salir del flujo nuevo.</p>
     </div>
     <div class="topbar-actions">
+        <span class="toolbar-chip secondary">Origen: @dataSource</span>
         <a class="btn btn-outline-secondary" href="@Url.Action("Inicio", "HojasTrabajo")">Ver hojas de trabajo</a>
     </div>
 </section>
@@ -94,14 +96,21 @@
                 <small>Las columnas esperadas cambian segun la tarea elegida.</small>
             </div>
             <div class="wizard-task-grid" id="wizardTaskGrid">
-                @foreach (var tarea in Model.Tareas)
+                @if (Model.Tareas.Count == 0)
                 {
-                    <button class="wizard-task-card @(tarea.Codigo == firstTaskCode ? "active" : "")" type="button" data-task-code="@tarea.Codigo">
-                        <span class="wizard-task-meta">@tarea.Categoria - T@tarea.Codigo</span>
-                        <strong>@tarea.Nombre</strong>
-                        <small>@tarea.Descripcion</small>
-                        <span class="wizard-task-summary">@tarea.Resumen</span>
-                    </button>
+                    <div class="empty-state">No hay tareas de Wizard disponibles.</div>
+                }
+                else
+                {
+                    foreach (var tarea in Model.Tareas)
+                    {
+                        <button class="wizard-task-card @(tarea.Codigo == firstTaskCode ? "active" : "")" type="button" data-task-code="@tarea.Codigo">
+                            <span class="wizard-task-meta">@tarea.Categoria - T@tarea.Codigo</span>
+                            <strong>@tarea.Nombre</strong>
+                            <small>@tarea.Descripcion</small>
+                            <span class="wizard-task-summary">@tarea.Resumen</span>
+                        </button>
+                    }
                 }
             </div>
 
@@ -112,9 +121,16 @@
             </div>
             <div class="wizard-store-toolbar">
                 <div id="wizardGroupFilters" class="wizard-group-filters">
-                    @foreach (var grupo in Model.GruposTienda)
+                    @if (Model.GruposTienda.Count == 0)
                     {
-                        <button class="wizard-group-chip active" type="button" data-group-id="@grupo.ID">@grupo.Nombre <small>@grupo.CantidadTiendas</small></button>
+                        <span class="empty-state wizard-empty-inline">Sin grupos de tiendas.</span>
+                    }
+                    else
+                    {
+                        foreach (var grupo in Model.GruposTienda)
+                        {
+                            <button class="wizard-group-chip active" type="button" data-group-id="@grupo.ID">@grupo.Nombre <small>@grupo.CantidadTiendas</small></button>
+                        }
                     }
                 </div>
                 <div class="topbar-actions">
@@ -123,14 +139,21 @@
                 </div>
             </div>
             <div id="wizardStoresGrid" class="wizard-store-grid">
-                @foreach (var tienda in Model.Tiendas)
+                @if (Model.Tiendas.Count == 0)
                 {
-                    <label class="wizard-store-card" data-store-id="@tienda.ID" data-group-id="@tienda.GrupoID">
-                        <input class="wizard-store-checkbox" type="checkbox" value="@tienda.ID" />
-                        <span class="wizard-store-mark"></span>
-                        <strong>@tienda.Codigo - @tienda.Nombre</strong>
-                        <small>@tienda.Ciudad</small>
-                    </label>
+                    <div class="empty-state">No hay tiendas disponibles para crear la hoja.</div>
+                }
+                else
+                {
+                    foreach (var tienda in Model.Tiendas)
+                    {
+                        <label class="wizard-store-card" data-store-id="@tienda.ID" data-group-id="@tienda.GrupoID">
+                            <input class="wizard-store-checkbox" type="checkbox" value="@tienda.ID" />
+                            <span class="wizard-store-mark"></span>
+                            <strong>@tienda.Codigo - @tienda.Nombre</strong>
+                            <small>@tienda.Ciudad</small>
+                        </label>
+                    }
                 }
             </div>
 

@@ -184,10 +184,12 @@
             documentos: '@Url.Action("GetDocumentos", "DocumentosInventario")',
             registro: '@Url.Action("Registro", "DocumentosInventario")',
             duplicar: '@Url.Action("Duplicar", "DocumentosInventario")',
-            accion: '@Url.Action("EjecutarAccion", "DocumentosInventario")'
+            accion: '@Url.Action("EjecutarAccion", "DocumentosInventario")',
+            validarClaveProceso: '@Url.Action("ValidarClaveProceso", "DocumentosInventario")'
         };
         var documentos = [];
         var pager = null;
+        var canRunDocumentProcesses = @((ViewBag.DocumentProcessAdmin == true).ToString().ToLowerInvariant());
 
         $(function () {
             pager = window.UltraERP.createTablePager({ onChange: renderTable });
@@ -285,9 +287,20 @@
             var estado = documento.Estado || "";
             var buttons = [
                 "<button class='icon-button info' title='Ver' onclick='onVer(" + id + ")'>Ver</button>",
-                "<button class='icon-button neutral' title='Duplicar' onclick='onDuplicar(" + id + ")'>Duplicar</button>",
                 "<button class='icon-button neutral' title='Imprimir' onclick='onImprimir(" + id + ")'>Imprimir</button>"
             ];
+
+            buttons.splice(1, 0, "<button class='icon-button neutral' title='Duplicar' onclick='onDuplicar(" + id + ")'>Duplicar</button>");
+
+            if (canRunDocumentProcesses) {
+                buttons.splice(1, 0, "<button class='icon-button primary' title='Editar' onclick='onEditar(" + id + ")'>Editar</button>");
+                buttons.push("<button class='icon-button warning' title='Enviar' onclick='onAccion(" + id + ", \"enviar\")'>Enviar</button>");
+                buttons.push("<button class='icon-button warning' title='Marcar parcial' onclick='onAccion(" + id + ", \"parcial\")'>Parcial</button>");
+                buttons.push("<button class='icon-button success' title='Recibir' onclick='onAccion(" + id + ", \"recibir\")'>Recibir</button>");
+                buttons.push("<button class='icon-button danger' title='Cerrar' onclick='onAccion(" + id + ", \"cerrar\")'>Cerrar</button>");
+                buttons.push("<button class='icon-button danger' title='Anular' onclick='onAccion(" + id + ", \"anular\")'>Anular</button>");
+                return "<div class='action-stack'>" + buttons.join("") + "</div>";
+            }
 
             if (estado === "Borrador") {
                 buttons.splice(1, 0, "<button class='icon-button primary' title='Editar' onclick='onEditar(" + id + ")'>Editar</button>");
@@ -345,23 +358,31 @@
         function onEditar(id) {
             var documento = findDocumento(id);
             if (!documento) return;
-            if (documento.Estado !== "Borrador" && documento.Estado !== "Enviada" && documento.Estado !== "Parcial") {
+            if (!canRunDocumentProcesses && documento.Estado !== "Borrador" && documento.Estado !== "Enviada" && documento.Estado !== "Parcial") {
                 showToast("Solo Borrador permite edicion completa. Enviada y Parcial permiten recepcion por linea.");
                 return;
             }
 
-            if (window.UltraERP && window.UltraERP.showPageLoader) {
-                window.UltraERP.showPageLoader(documento.Estado === "Borrador" ? "Abriendo edici\u00f3n" : "Abriendo recepci\u00f3n");
-            }
+            var password = requestProcessPassword("abrir este proceso");
+            if (password === null) return;
 
-            window.location.href = urls.registro + "?id=" + encodeURIComponent(id);
+            validateProcessPassword(password, function () {
+                if (window.UltraERP && window.UltraERP.showPageLoader) {
+                    window.UltraERP.showPageLoader(documento.Estado === "Borrador" ? "Abriendo edici\u00f3n" : "Abriendo recepci\u00f3n");
+                }
+
+                window.location.href = urls.registro + "?id=" + encodeURIComponent(id);
+            });
         }
 
         function onDuplicar(id) {
             var documento = findDocumento(id);
             if (!documento || !confirm("Desea duplicar " + documento.Numero + " como un nuevo borrador?")) return;
 
-            $.post(urls.duplicar, { id: id }).done(function (data) {
+            var password = requestProcessPassword("duplicar este documento");
+            if (password === null) return;
+
+            $.post(urls.duplicar, { id: id, password: password }).done(function (data) {
                 if (!data.Status) {
                     showToast(data.Message || "No se pudo duplicar.");
                     return;
@@ -392,6 +413,9 @@
             }[accion] || accion;
 
             if (!confirm("Desea " + accionTexto + " el documento " + documento.Numero + "?")) return;
+            var password = requestProcessPassword(accionTexto + " este documento");
+            if (password === null) return;
+
             var motivo = "";
             if (accion === "anular") {
                 motivo = prompt("Indique el motivo de anulacion para " + documento.Numero + ":") || "";
@@ -401,7 +425,7 @@
                 }
             }
 
-            $.post(urls.accion, { id: id, accion: accion, motivo: motivo }).done(function (data) {
+            $.post(urls.accion, { id: id, accion: accion, motivo: motivo, password: password }).done(function (data) {
                 if (!data.Status) {
                     showToast(data.Message || "No se pudo actualizar el documento.");
                     return;
@@ -411,6 +435,38 @@
                 getDocumentos();
             }).fail(function () {
                 showToast("No se pudo actualizar el documento.");
+            });
+        }
+
+        function requestProcessPassword(actionText) {
+            if (canRunDocumentProcesses) return "";
+
+            var password = prompt("Ingrese la clave del usuario autorizador para " + actionText + ":");
+            if (password === null) return null;
+
+            if (!String(password).trim()) {
+                showToast("Ingrese una clave de autorizacion.");
+                return null;
+            }
+
+            return String(password).trim();
+        }
+
+        function validateProcessPassword(password, onSuccess) {
+            if (canRunDocumentProcesses) {
+                if (typeof onSuccess === "function") onSuccess();
+                return;
+            }
+
+            $.post(urls.validarClaveProceso, { password: password }).done(function (data) {
+                if (!data.Status) {
+                    showToast(data.Message || "La clave de autorizacion no es correcta.");
+                    return;
+                }
+
+                if (typeof onSuccess === "function") onSuccess();
+            }).fail(function () {
+                showToast("No se pudo validar la clave de autorizacion.");
             });
         }
 

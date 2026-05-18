@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Globalization;
 using System.Linq;
 using System.Web.Mvc;
+using Security.EntitiesAVS;
+using UltraERP.BusinessEntities;
+using UltraERP.BusinessLogic;
 using UltraERP.Models;
 
 namespace UltraERP.Controllers
@@ -10,7 +14,7 @@ namespace UltraERP.Controllers
     [Authorize]
     public class CambiosMasivosWizardController : Controller
     {
-        private static readonly List<CambioMasivoTaskViewModel> Tareas = new List<CambioMasivoTaskViewModel>
+        private static readonly List<CambioMasivoTaskViewModel> TareasBase = new List<CambioMasivoTaskViewModel>
         {
             CreateTask("104", "Cambio de impuestos", "Actualice el impuesto de venta para multiples articulos en una sola solicitud.", "Fiscal", 320, "Recomendado para ajustes tributarios por categoria o reforma.", "Codigo de producto", "Impuesto actual", "Impuesto nuevo"),
             CreateTask("107", "Cambio de descripcion corta", "Renueve la descripcion corta visible en listado y punto de venta.", "Catalogo", 410, "Util para estandarizar nombres comerciales y marcas visibles.", "Codigo de producto", "Descripcion corta nueva"),
@@ -20,7 +24,7 @@ namespace UltraERP.Controllers
             CreateTask("201", "Cambio de propiedades", "Cambie propiedades extendidas como origen, registro o atributos logisticos.", "Propiedades", 410, "Complementa la pantalla de Propiedades de Articulos cuando el cambio viene por lote.", "Codigo de producto", "Propiedad", "Valor nuevo")
         };
 
-        private static readonly List<CambioMasivoTiendaViewModel> Tiendas = new List<CambioMasivoTiendaViewModel>
+        private static readonly List<CambioMasivoTiendaViewModel> TiendasDemo = new List<CambioMasivoTiendaViewModel>
         {
             CreateStore(1, 1, "SJ-CTR", "San Jose Centro", "San Jose"),
             CreateStore(2, 1, "HER-PLZ", "Heredia Plaza", "Heredia"),
@@ -33,7 +37,7 @@ namespace UltraERP.Controllers
             CreateStore(9, 3, "PZM-SUR", "Perez Zeledon", "San Jose")
         };
 
-        private static readonly List<CambioMasivoGrupoTiendaViewModel> Grupos = new List<CambioMasivoGrupoTiendaViewModel>
+        private static readonly List<CambioMasivoGrupoTiendaViewModel> GruposDemo = new List<CambioMasivoGrupoTiendaViewModel>
         {
             new CambioMasivoGrupoTiendaViewModel { ID = 1, Nombre = "Valle Central", CantidadTiendas = 3 },
             new CambioMasivoGrupoTiendaViewModel { ID = 2, Nombre = "GAM Premium", CantidadTiendas = 3 },
@@ -42,26 +46,16 @@ namespace UltraERP.Controllers
 
         public ActionResult Inicio()
         {
+            var catalog = GetStoreCatalogSafe();
             var model = new CambiosMasivosWizardViewModel
             {
                 FechaEfectivaSugerida = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd"),
-                Tareas = Tareas.Select(CloneTask).ToList(),
-                GruposTienda = Grupos.Select(x => new CambioMasivoGrupoTiendaViewModel
-                {
-                    ID = x.ID,
-                    Nombre = x.Nombre,
-                    CantidadTiendas = x.CantidadTiendas
-                }).ToList(),
-                Tiendas = Tiendas.Select(x => new CambioMasivoTiendaViewModel
-                {
-                    ID = x.ID,
-                    GrupoID = x.GrupoID,
-                    Codigo = x.Codigo,
-                    Nombre = x.Nombre,
-                    Ciudad = x.Ciudad
-                }).ToList()
+                Tareas = GetTareasSafe(),
+                GruposTienda = catalog.Grupos,
+                Tiendas = catalog.Tiendas
             };
 
+            ViewBag.CambiosMasivosDataSource = catalog.FromSql ? "SQL" : "Demo";
             return View(model);
         }
 
@@ -71,11 +65,13 @@ namespace UltraERP.Controllers
             if (request == null)
                 return Json(new JsonResponse("Solicitud vacia.", "No se recibio informacion del wizard.", null, false));
 
-            var tarea = Tareas.FirstOrDefault(x => String.Equals(x.Codigo, request.TaskCode, StringComparison.OrdinalIgnoreCase));
+            var tareas = GetTareasSafe();
+            var catalog = GetStoreCatalogSafe();
+            var tarea = tareas.FirstOrDefault(x => String.Equals(x.Codigo, request.TaskCode, StringComparison.OrdinalIgnoreCase));
             if (tarea == null)
                 return Json(new JsonResponse("Tarea no encontrada.", "Seleccione una tarea valida para continuar.", null, false));
 
-            var tiendasSeleccionadas = Tiendas
+            var tiendasSeleccionadas = catalog.Tiendas
                 .Where(x => request.StoreIDs != null && request.StoreIDs.Contains(x.ID))
                 .ToList();
 
@@ -152,6 +148,153 @@ namespace UltraERP.Controllers
                 RegisteredRows = registrada.CantidadContenido,
                 Stores = registrada.CantidadTiendas
             }, true));
+        }
+
+        private List<CambioMasivoTaskViewModel> GetTareasSafe()
+        {
+            try
+            {
+                var dbTasks = new CT_ExtCentral_WizardList()
+                    .GetAll()
+                    .Where(x => x != null && x.Estado != 'I')
+                    .ToList();
+
+                if (dbTasks.Count == 0)
+                    return TareasBase.Select(CloneTask).ToList();
+
+                return dbTasks
+                    .Select(MapTaskFromDatabase)
+                    .Where(x => x != null)
+                    .OrderBy(x => x.Codigo)
+                    .ToList();
+            }
+            catch
+            {
+                return TareasBase.Select(CloneTask).ToList();
+            }
+        }
+
+        private static CambioMasivoTaskViewModel MapTaskFromDatabase(EN_ExtCentral_WizardList source)
+        {
+            if (source == null || String.IsNullOrWhiteSpace(source.Codigo))
+                return null;
+
+            var template = TareasBase.FirstOrDefault(x => String.Equals(x.Codigo, source.Codigo, StringComparison.OrdinalIgnoreCase));
+            if (template != null)
+            {
+                var task = CloneTask(template);
+                if (!String.IsNullOrWhiteSpace(source.Descripcion))
+                {
+                    task.Nombre = source.Descripcion.Trim();
+                    task.Descripcion = source.Descripcion.Trim();
+                }
+
+                return task;
+            }
+
+            return CreateTask(
+                source.Codigo.Trim(),
+                String.IsNullOrWhiteSpace(source.Descripcion) ? "Tarea " + source.Codigo.Trim() : source.Descripcion.Trim(),
+                "Tarea disponible en el catalogo de Wizard.",
+                "Wizard",
+                410,
+                "Use las columnas base para preparar la hoja y revise el resultado antes de crearla.",
+                "Codigo de producto",
+                "Valor nuevo");
+        }
+
+        private StoreCatalogData GetStoreCatalogSafe()
+        {
+            try
+            {
+                string storesAvailable = GetStoresAvailable();
+                var groups = new CT_StoreGroup().GetAll(storesAvailable);
+                var stores = new List<CambioMasivoTiendaViewModel>();
+                var viewGroups = new List<CambioMasivoGrupoTiendaViewModel>();
+
+                if (groups != null && groups.Count > 0)
+                {
+                    foreach (var group in groups)
+                    {
+                        var groupStores = new CT_Store()
+                            .GetAll_By_StoreGroupID(group.ID, storesAvailable)
+                            .Select(x => MapStore(x, group.ID))
+                            .Where(x => x != null)
+                            .ToList();
+
+                        viewGroups.Add(new CambioMasivoGrupoTiendaViewModel
+                        {
+                            ID = group.ID,
+                            Nombre = FirstNonEmpty(group.Description, group.Code, "Grupo " + group.ID),
+                            CantidadTiendas = groupStores.Count
+                        });
+
+                        stores.AddRange(groupStores);
+                    }
+                }
+
+                if (stores.Count == 0)
+                {
+                    stores = new CT_Store()
+                        .GetAll("", 0, 0)
+                        .Select(x => MapStore(x, 1))
+                        .Where(x => x != null)
+                        .ToList();
+
+                    viewGroups = new List<CambioMasivoGrupoTiendaViewModel>
+                    {
+                        new CambioMasivoGrupoTiendaViewModel
+                        {
+                            ID = 1,
+                            Nombre = "Todas las tiendas",
+                            CantidadTiendas = stores.Count
+                        }
+                    };
+                }
+
+                stores = stores
+                    .GroupBy(x => x.ID)
+                    .Select(x => x.First())
+                    .OrderBy(x => x.Codigo)
+                    .ThenBy(x => x.Nombre)
+                    .ToList();
+
+                viewGroups = viewGroups
+                    .Where(x => stores.Any(store => store.GrupoID == x.ID))
+                    .OrderBy(x => x.Nombre)
+                    .ToList();
+
+                return new StoreCatalogData
+                {
+                    FromSql = stores.Count > 0,
+                    Grupos = viewGroups,
+                    Tiendas = stores
+                };
+            }
+            catch
+            {
+                return new StoreCatalogData
+                {
+                    FromSql = false,
+                    Grupos = GruposDemo.Select(CloneGroup).ToList(),
+                    Tiendas = TiendasDemo.Select(CloneStore).ToList()
+                };
+            }
+        }
+
+        private string GetStoresAvailable()
+        {
+            string dataStoreCode = ConfigurationManager.AppSettings["DataStoreCode"] ?? "uerp-store";
+            EN_SC_DataAccess[] dataAccess = Session["USER_DATAACCESS"] as EN_SC_DataAccess[];
+
+            if (dataAccess == null || dataAccess.Length == 0)
+                return "%";
+
+            EN_SC_DataAccess[] storesAccess = dataAccess.Where(x => x.Code == dataStoreCode).ToArray();
+            if (storesAccess.Length == 0 || storesAccess.Any(x => x.EnableAll))
+                return "%";
+
+            return String.Join(",", storesAccess.Where(x => !String.IsNullOrWhiteSpace(x.DataIDs)).Select(x => x.DataIDs));
         }
 
         private static string BuildNotes(string notes, string fileName, string separator, int rows)
@@ -321,6 +464,51 @@ namespace UltraERP.Controllers
             };
         }
 
+        private static CambioMasivoGrupoTiendaViewModel CloneGroup(CambioMasivoGrupoTiendaViewModel group)
+        {
+            return new CambioMasivoGrupoTiendaViewModel
+            {
+                ID = group.ID,
+                Nombre = group.Nombre,
+                CantidadTiendas = group.CantidadTiendas
+            };
+        }
+
+        private static CambioMasivoTiendaViewModel CloneStore(CambioMasivoTiendaViewModel store)
+        {
+            return new CambioMasivoTiendaViewModel
+            {
+                ID = store.ID,
+                GrupoID = store.GrupoID,
+                Codigo = store.Codigo,
+                Nombre = store.Nombre,
+                Ciudad = store.Ciudad
+            };
+        }
+
+        private static CambioMasivoTiendaViewModel MapStore(EN_Store store, int groupID)
+        {
+            if (store == null || store.IDS <= 0)
+                return null;
+
+            return new CambioMasivoTiendaViewModel
+            {
+                ID = store.IDS,
+                GrupoID = groupID,
+                Codigo = store.CodeS,
+                Nombre = FirstNonEmpty(store.NameS, store.CodeS, "Tienda " + store.IDS),
+                Ciudad = ""
+            };
+        }
+
+        private static string FirstNonEmpty(params string[] values)
+        {
+            if (values == null)
+                return "";
+
+            return values.FirstOrDefault(x => !String.IsNullOrWhiteSpace(x)) ?? "";
+        }
+
         private static CambioMasivoTaskViewModel CreateTask(string codigo, string nombre, string descripcion, string categoria, int estiloHojaID, string resumen, params string[] columnas)
         {
             return new CambioMasivoTaskViewModel
@@ -345,6 +533,19 @@ namespace UltraERP.Controllers
                 Nombre = nombre,
                 Ciudad = ciudad
             };
+        }
+
+        private class StoreCatalogData
+        {
+            public StoreCatalogData()
+            {
+                Grupos = new List<CambioMasivoGrupoTiendaViewModel>();
+                Tiendas = new List<CambioMasivoTiendaViewModel>();
+            }
+
+            public bool FromSql { get; set; }
+            public List<CambioMasivoGrupoTiendaViewModel> Grupos { get; set; }
+            public List<CambioMasivoTiendaViewModel> Tiendas { get; set; }
         }
     }
 }

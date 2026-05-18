@@ -437,34 +437,20 @@
     <script>
         var urls = {
             guardarEncabezado: '@Url.Action("GuardarEncabezado", "DocumentosInventario")',
-            inicio: '@Url.Action("Inicio", "DocumentosInventario")'
+            inicio: '@Url.Action("Inicio", "DocumentosInventario")',
+            buscarProveedores: '@Url.Action("BuscarProveedores", "DocumentosInventario")',
+            buscarProductos: '@Url.Action("BuscarProductos", "DocumentosInventario")'
         };
         var numerosPorTipo = {
             "Compra": "PO00040337",
             "Entrada de Inventario": "EN00000125",
             "Salida de Inventario": "SA00000125"
         };
-        var proveedores = [
-            { key: "00129 - CONEJO DORADO S.R.L.", codigo: "00129", nombre: "CONEJO DORADO S.R.L.", plazo: 30 },
-            { key: "00210 - Distribuidora Central", codigo: "00210", nombre: "Distribuidora Central", plazo: 15 },
-            { key: "00345 - Comercial La Union", codigo: "00345", nombre: "Comercial La Union", plazo: 45 },
-            { key: "00401 - Bodega Principal", codigo: "00401", nombre: "Bodega Principal", plazo: 0 },
-            { key: "00402 - Sucursal Escazu", codigo: "00402", nombre: "Sucursal Escazu", plazo: 0 },
-            { key: "00403 - Proveedor Demo", codigo: "00403", nombre: "Proveedor Demo", plazo: 30 },
-            { key: "00404 - Sucursal Sabana", codigo: "00404", nombre: "Sucursal Sabana", plazo: 0 }
-        ];
-        var productos = [
-            { codigo: "ACE-015", descripcion: "Aceite vegetal", unidad: "UND", costo: 2590, impuesto: 13 },
-            { codigo: "ARR-220", descripcion: "Arroz precocido", unidad: "KG", costo: 2750, impuesto: 1 },
-            { codigo: "CAF-009", descripcion: "Cafe molido", unidad: "BQ", costo: 4521, impuesto: 13 },
-            { codigo: "EMP-001", descripcion: "Insumos de empaque", unidad: "CJ", costo: 4520.50, impuesto: 13 },
-            { codigo: "FIL-014", descripcion: "Film termico", unidad: "UND", costo: 1295.75, impuesto: 13 },
-            { codigo: "HAR-112", descripcion: "Harina preparada", unidad: "QQ", costo: 10900, impuesto: 1 },
-            { codigo: "PROMO-1", descripcion: "Producto de cortesia", unidad: "UND", costo: 0, impuesto: 0 },
-            { codigo: "SAL-441", descripcion: "Salsa base", unidad: "GAL", costo: 74850, impuesto: 13 }
-        ];
+        var proveedores = @Html.Raw(ViewBag.ProveedoresJson ?? "[]");
+        var productos = @Html.Raw(ViewBag.ProductosJson ?? "[]");
         var detalleLineas = parseInitialDetalleLineas();
         var selectedRowIndex = detalleLineas.length ? 0 : -1;
+        var canRunDocumentProcesses = @((ViewBag.DocumentProcessAdmin == true).ToString().ToLowerInvariant());
         var isEditingExisting = Number($("#documentoId").val() || 0) > 0;
         var currentEstado = $("#estadoDocumento").val() || "Borrador";
         var isReceptionMode = currentEstado === "Enviada" || currentEstado === "Parcial";
@@ -479,6 +465,8 @@
         var activeProductMatchIndex = -1;
         var activeProductSearchResults = [];
         var activeProductSearchIndex = -1;
+        var productSearchTimer = null;
+        var providerSearchTimer = null;
         var addLineHotkey = "F7";
         var localDraftKey = "UltraERP.DocumentosInventario.Registro.LocalDraft.v1";
         var localDraftSaveTimer = null;
@@ -633,6 +621,54 @@
             }).join(""));
         }
 
+        function mergeProviders(items) {
+            if (!Array.isArray(items)) return;
+
+            items.forEach(function (item) {
+                if (!item || !item.codigo) return;
+                var exists = proveedores.some(function (current) {
+                    return normalizeLookup(current.codigo) === normalizeLookup(item.codigo);
+                });
+                if (!exists) proveedores.push(item);
+            });
+        }
+
+        function mergeProducts(items) {
+            if (!Array.isArray(items)) return;
+
+            items.forEach(function (item) {
+                if (!item || !item.codigo) return;
+                var exists = productos.some(function (current) {
+                    return normalizeLookup(current.codigo) === normalizeLookup(item.codigo);
+                });
+                if (!exists) productos.push(item);
+            });
+
+            seedProductDatalists();
+        }
+
+        function requestProviders(query, callback) {
+            window.clearTimeout(providerSearchTimer);
+            providerSearchTimer = window.setTimeout(function () {
+                $.getJSON(urls.buscarProveedores, { q: query || "", take: 10 })
+                    .done(function (data) {
+                        mergeProviders(data);
+                        if (typeof callback === "function") callback(data || []);
+                    });
+            }, 180);
+        }
+
+        function requestProducts(query, take, callback) {
+            window.clearTimeout(productSearchTimer);
+            productSearchTimer = window.setTimeout(function () {
+                $.getJSON(urls.buscarProductos, { q: query || "", take: take || 20 })
+                    .done(function (data) {
+                        mergeProducts(data);
+                        if (typeof callback === "function") callback(data || []);
+                    });
+            }, 180);
+        }
+
         function guardarEncabezado(accion) {
             syncDetalleLineas();
             if (detalleLineas.length === 0) {
@@ -783,7 +819,7 @@
 
         function applyReadOnlyStateByEstado() {
             var estado = $("#estadoDocumento").val() || "Borrador";
-            var locked = estado !== "Borrador";
+            var locked = estado !== "Borrador" && !canRunDocumentProcesses;
 
             if (!locked) return;
 
@@ -823,6 +859,15 @@
                 if (matches.length === 1) {
                     selected = matches[0];
                 } else {
+                    requestProviders(rawValue, function () {
+                        var remoteMatches = findProviderMatches(rawValue);
+                        if (remoteMatches.length === 1) {
+                            applyProveedorSelection(remoteMatches[0]);
+                            return;
+                        }
+
+                        updateProviderQuickPick();
+                    });
                     updateProviderQuickPick();
                     return;
                 }
@@ -884,6 +929,14 @@
             activeProviderMatches = findProviderMatches(query);
             activeProviderMatchIndex = activeProviderMatches.length ? 0 : -1;
             renderProviderQuickPick();
+
+            if (String(query || "").trim().length >= 2) {
+                requestProviders(query, function () {
+                    activeProviderMatches = findProviderMatches(query);
+                    activeProviderMatchIndex = activeProviderMatches.length ? 0 : -1;
+                    renderProviderQuickPick();
+                });
+            }
         }
 
         function renderProviderQuickPick() {
@@ -1232,6 +1285,10 @@
                     return;
                 }
 
+                if (field === "Codigo" || field === "Descripcion") {
+                    tryApplyProductAfterRemoteSearch(index, field);
+                }
+
                 moveToNextDetalleField($input);
                 return;
             }
@@ -1247,6 +1304,10 @@
                     e.preventDefault();
                     moveFocusAfterProduct(index);
                     return;
+                }
+
+                if (field === "Codigo" || field === "Descripcion") {
+                    tryApplyProductAfterRemoteSearch(index, field);
                 }
 
                 if (field === "Observacion") {
@@ -1381,6 +1442,17 @@
             return true;
         }
 
+        function tryApplyProductAfterRemoteSearch(index, field) {
+            var query = detalleLineas[index][field] || "";
+            if (!String(query || "").trim()) return;
+
+            requestProducts(query, 12, function () {
+                if (tryApplyBestProductMatch(index, field)) {
+                    moveFocusAfterProduct(index);
+                }
+            });
+        }
+
         function applyProductToLine(index, producto) {
             if (index < 0 || index >= detalleLineas.length || !producto) return;
 
@@ -1415,10 +1487,18 @@
 
             if (!activeProductMatches.length) {
                 hideProductQuickPick();
-                return;
+            } else {
+                renderProductQuickPick();
             }
 
-            renderProductQuickPick();
+            if (query.length >= 2) {
+                requestProducts(query, 12, function () {
+                    if (!activeProductInput || activeProductInput[0] !== input[0]) return;
+                    activeProductMatches = findProductMatches(query).slice(0, 8);
+                    activeProductMatchIndex = activeProductMatches.length ? 0 : -1;
+                    renderProductQuickPick();
+                });
+            }
         }
 
         function renderProductQuickPick() {
@@ -1578,6 +1658,17 @@
                     normalizeLookup(producto.codigo).indexOf(text) >= 0 ||
                     normalizeLookup(producto.descripcion).indexOf(text) >= 0;
             }));
+
+            if (text.length >= 2) {
+                requestProducts($("#productoSearch").val(), 30, function () {
+                    var refreshedText = normalizeLookup($("#productoSearch").val());
+                    renderProductSearchResults(productos.filter(function (producto) {
+                        return !refreshedText ||
+                            normalizeLookup(producto.codigo).indexOf(refreshedText) >= 0 ||
+                            normalizeLookup(producto.descripcion).indexOf(refreshedText) >= 0;
+                    }));
+                });
+            }
         }
 
         function setActiveProductSearchResult(index) {
@@ -1702,10 +1793,17 @@
 
             if (!activeRegaliaMatches.length) {
                 hideRegaliaQuickPick();
-                return;
+            } else {
+                renderRegaliaQuickPick();
             }
 
-            renderRegaliaQuickPick();
+            if (query.length >= 2) {
+                requestProducts(query, 12, function () {
+                    activeRegaliaMatches = findProductMatches(query).slice(0, 8);
+                    activeRegaliaMatchIndex = activeRegaliaMatches.length ? 0 : -1;
+                    renderRegaliaQuickPick();
+                });
+            }
         }
 
         function renderRegaliaQuickPick() {
