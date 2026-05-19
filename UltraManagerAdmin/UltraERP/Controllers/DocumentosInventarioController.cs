@@ -17,131 +17,8 @@ namespace UltraERP.Controllers
     public class DocumentosInventarioController : Controller
     {
         private static readonly object SyncRoot = new object();
-        private static readonly List<ProveedorCatalogo> Proveedores = new List<ProveedorCatalogo>
-        {
-            new ProveedorCatalogo("00129", "Cooperativa Dos Pinos", 30),
-            new ProveedorCatalogo("00210", "Cafe Britt Costa Rica", 15),
-            new ProveedorCatalogo("00345", "Irex de Costa Rica", 30),
-            new ProveedorCatalogo("00401", "Bodega Central Heredia", 0),
-            new ProveedorCatalogo("00402", "Sucursal Escazu", 0),
-            new ProveedorCatalogo("00403", "Distribuidora San Jose", 30),
-            new ProveedorCatalogo("00404", "Sucursal Sabana", 0),
-            new ProveedorCatalogo("00405", "Central de Abarrotes Cartago", 15)
-        };
-
-        private static readonly List<DocumentoInventarioViewModel> Documentos = new List<DocumentoInventarioViewModel>
-        {
-            CreateDocumento(
-                1,
-                "DOC-000124",
-                "Compra",
-                "Distribuidora San Jose",
-                "FAC-85412",
-                new DateTime(2026, 5, 1),
-                new DateTime(2026, 5, 4),
-                null,
-                "Borrador",
-                "Maria Lopez",
-                "",
-                "",
-                "",
-                new List<DocumentoDetalleLineaViewModel>
-                {
-                    CreateDetalle("ARR-TP-2K", "Arroz Tio Pelon 2 kg", "KG", 60m, 1650m, 0m, 0m, 1m, false, ""),
-                    CreateDetalle("SAL-LIZ-700", "Salsa Lizano 700 ml", "UND", 36m, 1850m, 0m, 0m, 13m, false, "")
-                }),
-            CreateDocumento(
-                2,
-                "DOC-000125",
-                "Entrada de Inventario",
-                "Bodega Central Heredia",
-                "TR-7781",
-                new DateTime(2026, 5, 2),
-                new DateTime(2026, 5, 3),
-                new DateTime(2026, 5, 3),
-                "Recibida",
-                "Carlos Mendez",
-                "",
-                "",
-                "Compra a proveedor",
-                new List<DocumentoDetalleLineaViewModel>
-                {
-                    CreateDetalle("FRJ-DP-900", "Frijoles rojos Don Pedro 900 g", "UND", 48m, 1225m, 0m, 0m, 1m, false, "")
-                }),
-            CreateDocumento(
-                3,
-                "DOC-000126",
-                "Salida de Inventario",
-                "Sucursal Escazu",
-                "",
-                new DateTime(2026, 5, 5),
-                null,
-                null,
-                "Enviada",
-                "Ana Vargas",
-                "Est\u00e1ndar",
-                "Uso interno",
-                "",
-                new List<DocumentoDetalleLineaViewModel>
-                {
-                    CreateDetalle("DET-IRX-1K", "Detergente Irex 1 kg", "UND", 12m, 2325m, 0m, 0m, 13m, false, "Solicitud operativa")
-                }),
-            CreateDocumento(
-                4,
-                "DOC-000127",
-                "Compra",
-                "Cooperativa Dos Pinos",
-                "FAC-99103",
-                new DateTime(2026, 4, 25),
-                new DateTime(2026, 4, 29),
-                new DateTime(2026, 4, 30),
-                "Parcial",
-                "Jose Ramirez",
-                "",
-                "",
-                "",
-                new List<DocumentoDetalleLineaViewModel>
-                {
-                    CreateDetalle("LEC-DP-1L", "Leche Dos Pinos 1 L", "L", 96m, 710m, 3m, 0m, 1m, false, "")
-                }),
-            CreateDocumento(
-                5,
-                "DOC-000128",
-                "Entrada de Inventario",
-                "Cafe Britt Costa Rica",
-                "FAC-12845",
-                new DateTime(2026, 5, 6),
-                null,
-                new DateTime(2026, 5, 6),
-                "Cerrada",
-                "Laura Solis",
-                "",
-                "",
-                "Ajuste positivo",
-                new List<DocumentoDetalleLineaViewModel>
-                {
-                    CreateDetalle("CAF-1820-500", "Cafe 1820 molido 500 g", "UND", 24m, 2525m, 0m, 0m, 13m, false, "")
-                }),
-            CreateDocumento(
-                6,
-                "SA00000112",
-                "Salida de Inventario",
-                "Sucursal Sabana",
-                "AJ-55820",
-                new DateTime(2026, 4, 28),
-                new DateTime(2026, 4, 28),
-                new DateTime(2026, 4, 29),
-                "Cerrada",
-                "Mario Rojas",
-                "Proveedor",
-                "Devoluci\u00f3n a proveedor",
-                "",
-                new List<DocumentoDetalleLineaViewModel>
-                {
-                    CreateDetalle("SAL-LIZ-700", "Salsa Lizano 700 ml", "UND", 10m, 1850m, 0m, 0m, 13m, false, ""),
-                    CreateDetalle("PROMO-CR", "Muestra de cafe costarricense", "UND", 4m, 0m, 0m, 0m, 0m, true, "Linea de regalia auditada")
-                })
-        };
+        private const int CustomDocumentClientIdOffset = 1000000000;
+        private static bool DocumentSqlSchemaEnsured;
 
         public ActionResult Inicio()
         {
@@ -162,28 +39,18 @@ namespace UltraERP.Controllers
             if (id.HasValue)
             {
                 DocumentoInventarioViewModel documento;
-                lock (SyncRoot)
+                if (IsCustomDocumentClientId(id.Value))
                 {
-                    documento = Documentos.FirstOrDefault(x => x.ID == id.Value);
-                    documento = documento == null ? null : Clone(documento);
+                    documento = GetCustomDocumentoByClientId(id.Value);
+                    if (documento != null)
+                        return View(ToRegistroModel(documento));
                 }
-
-                if (documento != null)
-                    return View(ToRegistroModel(documento));
 
                 if (IsCurrentProcessAdmin())
                 {
                     documento = GetSqlDocumentoForOperation(id.Value);
                     if (documento != null)
-                    {
-                        lock (SyncRoot)
-                        {
-                            if (!Documentos.Any(x => x.ID == documento.ID))
-                                Documentos.Add(Clone(documento));
-                        }
-
                         return View(ToRegistroModel(documento));
-                    }
                 }
             }
 
@@ -230,68 +97,63 @@ namespace UltraERP.Controllers
                     }
                 }
 
-                lock (SyncRoot)
+                var detalleLineas = ParseDetalleLineas(model.DetalleLineasJson);
+                var detalleValidationMessage = ValidateDetalleLineas(detalleLineas);
+                if (!String.IsNullOrWhiteSpace(detalleValidationMessage))
+                    return Json(new JsonResponse("Validacion de detalle.", detalleValidationMessage, null, false));
+
+                bool isUpdate = model.DocumentoId.HasValue && model.DocumentoId.Value > 0;
+                bool isCustomUpdate = isUpdate && IsCustomDocumentClientId(model.DocumentoId.Value);
+                if (isUpdate && !isCustomUpdate)
+                    return Json(new JsonResponse("Documento historico.", "Este documento viene del historico SQL y no se edita desde esta pantalla. Use Duplicar para crear un borrador editable.", null, false));
+
+                int? databaseID = isCustomUpdate ? DecodeCustomDocumentClientId(model.DocumentoId.Value) : (int?)null;
+                var documento = isCustomUpdate ? GetCustomDocumentoByDatabaseId(databaseID.Value) : null;
+                if (isCustomUpdate && documento == null)
+                    return Json(new JsonResponse("Documento no encontrado.", "No se encontro el documento que intenta editar.", null, false));
+
+                var isRecepcionPermitida = isCustomUpdate &&
+                    (String.Equals(documento.Estado, "Enviada", StringComparison.OrdinalIgnoreCase) ||
+                     String.Equals(documento.Estado, "Parcial", StringComparison.OrdinalIgnoreCase)) &&
+                    (normalizedAction == "Parcial" || normalizedAction == "Recibir");
+
+                if (isCustomUpdate &&
+                    !String.Equals(documento.Estado, "Borrador", StringComparison.OrdinalIgnoreCase) &&
+                    !isRecepcionPermitida &&
+                    !IsCurrentProcessAdmin())
+                    return Json(new JsonResponse("Edicion no permitida.", "Solo Borrador permite editar encabezado y detalle. En Parcial solo se actualizan cantidades recibidas.", null, false));
+
+                if (!isCustomUpdate)
                 {
-                    var detalleLineas = ParseDetalleLineas(model.DetalleLineasJson);
-                    var detalleValidationMessage = ValidateDetalleLineas(detalleLineas);
-                    if (!String.IsNullOrWhiteSpace(detalleValidationMessage))
+                    documento = new DocumentoInventarioViewModel
                     {
-                        return Json(new JsonResponse("Validacion de detalle.", detalleValidationMessage, null, false));
-                    }
-
-                    var isUpdate = model.DocumentoId.HasValue && model.DocumentoId.Value > 0;
-                    var documento = isUpdate
-                        ? Documentos.FirstOrDefault(x => x.ID == model.DocumentoId.Value)
-                        : null;
-
-                    if (isUpdate && documento == null)
-                        return Json(new JsonResponse("Documento no encontrado.", "No se encontro el documento que intenta editar.", null, false));
-
-                    var isRecepcionPermitida = isUpdate &&
-                        (String.Equals(documento.Estado, "Enviada", StringComparison.OrdinalIgnoreCase) ||
-                         String.Equals(documento.Estado, "Parcial", StringComparison.OrdinalIgnoreCase)) &&
-                        (normalizedAction == "Parcial" || normalizedAction == "Recibir");
-
-                    if (isUpdate &&
-                        !String.Equals(documento.Estado, "Borrador", StringComparison.OrdinalIgnoreCase) &&
-                        !isRecepcionPermitida)
-                        return Json(new JsonResponse("Edicion no permitida.", "Solo Borrador permite editar encabezado y detalle. En Parcial solo se actualizan cantidades recibidas.", null, false));
-
-                    if (!isUpdate)
-                    {
-                        documento = new DocumentoInventarioViewModel
-                        {
-                            ID = Documentos.Count == 0 ? 1 : Documentos.Max(x => x.ID) + 1,
-                            Numero = GetNextNumero(model.TipoDocumento),
-                            Estado = "Borrador"
-                        };
-                    }
-
-                    if (isRecepcionPermitida)
-                    {
-                        UpdateRecepcionFromRegistro(documento, detalleLineas);
-                    }
-                    else
-                    {
-                        UpdateDocumentoFromRegistro(documento, model, detalleLineas);
-                        if (!isUpdate)
-                            documento.PersonaSolicita = GetCurrentUserName();
-
-                        AddAuditoria(documento, isUpdate ? "Editado" : "Creado", GetCurrentUserName(), isUpdate ? "Documento actualizado desde registro." : "Documento creado en memoria.");
-                    }
-
-                    var transitionMessage = ApplyEstadoFromAccion(documento, accion, GetCurrentUserName(), null, IsCurrentProcessAdmin());
-                    if (!String.IsNullOrWhiteSpace(transitionMessage))
-                    {
-                        return Json(new JsonResponse("Cambio de estado no permitido.", transitionMessage, null, false));
-                    }
-
-                    if (!isUpdate)
-                        Documentos.Add(documento);
-
-                    var message = isUpdate ? "Documento actualizado correctamente." : "Documento guardado correctamente.";
-                    return Json(new JsonResponse("", message, ToGrid(documento), true));
+                        Numero = GetNextNumero(model.TipoDocumento),
+                        Estado = "Borrador",
+                        EventosAuditoria = new List<DocumentoAuditoriaEventoViewModel>()
+                    };
                 }
+
+                if (isRecepcionPermitida)
+                {
+                    UpdateRecepcionFromRegistro(documento, detalleLineas);
+                }
+                else
+                {
+                    UpdateDocumentoFromRegistro(documento, model, detalleLineas);
+                    if (!isCustomUpdate)
+                        documento.PersonaSolicita = GetCurrentUserName();
+
+                    AddAuditoria(documento, isCustomUpdate ? "Editado" : "Creado", GetCurrentUserName(), isCustomUpdate ? "Documento actualizado desde registro." : "Documento creado en SQL.");
+                }
+
+                var transitionMessage = ApplyEstadoFromAccion(documento, accion, GetCurrentUserName(), null, IsCurrentProcessAdmin());
+                if (!String.IsNullOrWhiteSpace(transitionMessage))
+                    return Json(new JsonResponse("Cambio de estado no permitido.", transitionMessage, null, false));
+
+                documento = SaveCustomDocumento(documento, databaseID);
+
+                var message = isCustomUpdate ? "Documento actualizado correctamente en SQL." : "Documento guardado correctamente en SQL.";
+                return Json(new JsonResponse("", message, ToGrid(documento), true));
             }
             catch (Exception e)
             {
@@ -317,35 +179,21 @@ namespace UltraERP.Controllers
                         Contains(x.PersonaSolicita, personaSolicita))
                     .ToList();
 
-                if (IsCurrentProcessAdmin())
-                {
-                    var sqlNumbers = new HashSet<string>(documentos.Select(x => NormalizeLookup(x.Numero)), StringComparer.OrdinalIgnoreCase);
-                    List<DocumentoInventarioViewModel> localDocuments;
-                    lock (SyncRoot)
-                    {
-                        localDocuments = Documentos.Select(Clone).ToList();
-                    }
-
-                    documentos.AddRange(localDocuments.Where(x =>
-                        !sqlNumbers.Contains(NormalizeLookup(x.Numero)) &&
-                        IsTipoMatch(tipoDocumento, x.Tipo) &&
-                        IsMatch(estado, "Todos", x.Estado) &&
-                        (!desde.HasValue || x.FechaSolicitud.Date >= desde.Value.Date) &&
-                        (!hasta.HasValue || x.FechaSolicitud.Date <= hasta.Value.Date) &&
-                        Contains(x.Proveedor, proveedor) &&
-                        Contains(x.Numero, numeroDocumento) &&
-                        Contains(x.FacturaRef, facturaRef) &&
-                        Contains(x.PersonaSolicita, personaSolicita)));
-                }
-
+                var customDocuments = GetCustomDocumentosFromDatabase(tipoDocumento, estado, fechaDesde, fechaHasta, "", proveedor, personaSolicita, facturaRef, "", false);
+                var customNumbers = new HashSet<string>(customDocuments.Select(x => NormalizeLookup(x.Numero)), StringComparer.OrdinalIgnoreCase);
                 documentos = documentos
+                    .Where(x => !customNumbers.Contains(NormalizeLookup(x.Numero)))
+                    .ToList();
+
+                documentos = customDocuments
+                    .Concat(documentos)
                     .OrderByDescending(x => x.FechaSolicitud)
                     .ThenByDescending(x => x.FechaAplicacion ?? DateTime.MinValue)
                     .ThenByDescending(x => x.ID)
                     .ToList();
 
                 var result = documentos
-                    .Select(x => ToGrid(x, !IsCurrentProcessAdmin()))
+                    .Select(x => ToGrid(x, !IsCustomDocumentClientId(x.ID)))
                     .ToList();
 
                 return Json(new JsonResponse("", "", result, true), JsonRequestBehavior.AllowGet);
@@ -361,13 +209,13 @@ namespace UltraERP.Controllers
             try
             {
                 var databaseDocuments = GetHistoricoAjustesFromDatabase(tipoDocumento, fechaAplicacion, proveedor, usuario, facturaRef, producto);
-                var localDocuments = GetHistoricoAjustesFromMemory(tipoDocumento, fechaAplicacion, proveedor, usuario, facturaRef, producto);
+                var customDocuments = GetCustomDocumentosFromDatabase(tipoDocumento, "Cerrada", "", "", fechaAplicacion, proveedor, usuario, facturaRef, producto, true);
                 var databaseNumbers = new HashSet<string>(
                     databaseDocuments.Select(x => NormalizeLookup(x.Numero)),
                     StringComparer.OrdinalIgnoreCase);
 
                 var result = databaseDocuments
-                    .Concat(localDocuments.Where(x => !databaseNumbers.Contains(NormalizeLookup(x.Numero))))
+                    .Concat(customDocuments.Where(x => !databaseNumbers.Contains(NormalizeLookup(x.Numero))))
                     .OrderByDescending(x => x.FechaAplicacion ?? DateTime.MinValue)
                     .ThenByDescending(x => x.ID)
                     .Select(x => ToGrid(x))
@@ -381,36 +229,7 @@ namespace UltraERP.Controllers
             }
         }
 
-        private List<DocumentoInventarioViewModel> GetHistoricoAjustesFromMemory(string tipoDocumento, string fechaAplicacion, string proveedor, string usuario, string facturaRef, string producto)
-        {
-            DateTime? aplicacion = ParseDate(fechaAplicacion);
-            List<DocumentoInventarioViewModel> documentos;
-
-            lock (SyncRoot)
-            {
-                documentos = Documentos.Select(Clone).ToList();
-            }
-
-            return documentos
-                .Where(x =>
-                    IsTipoMatch(tipoDocumento, x.Tipo) &&
-                    String.Equals(x.Estado, "Cerrada", StringComparison.OrdinalIgnoreCase) &&
-                    (!aplicacion.HasValue || (x.FechaAplicacion.HasValue && x.FechaAplicacion.Value.Date == aplicacion.Value.Date)) &&
-                    Contains(x.Proveedor, proveedor) &&
-                    Contains(x.PersonaSolicita, usuario) &&
-                    Contains(x.FacturaRef, facturaRef) &&
-                    Contains(x.Producto, producto))
-                .Select(x =>
-                {
-                    x.ID = -Math.Abs(x.ID);
-                    x.FechaAplicacion = x.FechaAplicacion ?? DateTime.Today;
-                    x.EventosAuditoria = x.EventosAuditoria ?? new List<DocumentoAuditoriaEventoViewModel>();
-                    return x;
-                })
-                .ToList();
-        }
-
-        private List<DocumentoInventarioViewModel> GetHistoricoAjustesFromDatabase(string tipoDocumento, string fechaAplicacion, string proveedor, string usuario, string facturaRef, string producto)
+        private List<DocumentoInventarioViewModel> GetHistoricoAjustesFromDatabase(string tipoDocumento, string fechaAplicacion, string proveedor, string usuario, string facturaRef, string producto, int? receiptID = null)
         {
             var documentos = new Dictionary<int, DocumentoInventarioViewModel>();
             DateTime? aplicacion = ParseDate(fechaAplicacion);
@@ -452,6 +271,7 @@ LEFT JOIN dbo.Cashier CA ON CA.ID = R.UserID
 LEFT JOIN dbo.POD_ReceiptEntry E ON E.ReceiptID = R.ID
 LEFT JOIN dbo.Item I ON I.ID = E.EntryID
 WHERE (@TipoDocumento = '' OR @TipoDocumento = 'Todos' OR @TipoDocumento = 'Compra')
+  AND (@ReceiptID IS NULL OR R.ID = @ReceiptID)
   AND (@FechaAplicacion IS NULL OR CONVERT(date, R.DatePosted) = @FechaAplicacion)
   AND (@Proveedor = '' OR ISNULL(S.SupplierName, '') LIKE @ProveedorLike OR ISNULL(S.Code, '') LIKE @ProveedorLike)
   AND (@Usuario = '' OR ISNULL(CA.Name, '') LIKE @UsuarioLike OR ((ISNULL(CA.Name, '') = '' OR ISNULL(CA.Name, '') = 'SQL') AND 'Usuario no encontrado' LIKE @UsuarioLike))
@@ -460,6 +280,7 @@ WHERE (@TipoDocumento = '' OR @TipoDocumento = 'Todos' OR @TipoDocumento = 'Comp
 ORDER BY R.DatePosted DESC, R.ID DESC, E.LineNumber ASC;";
 
                 command.Parameters.AddWithValue("@TipoDocumento", (tipoDocumento ?? "").Trim());
+                command.Parameters.Add("@ReceiptID", SqlDbType.Int).Value = receiptID.HasValue ? (object)receiptID.Value : DBNull.Value;
                 command.Parameters.Add("@FechaAplicacion", SqlDbType.Date).Value = aplicacion.HasValue ? (object)aplicacion.Value.Date : DBNull.Value;
                 AddLikeParameter(command, "@Proveedor", proveedor);
                 AddLikeParameter(command, "@Usuario", usuario);
@@ -580,47 +401,37 @@ ORDER BY R.DatePosted DESC, R.ID DESC, E.LineNumber ASC;";
                 if (!IsProcessAuthorized(password))
                     return Json(new JsonResponse("Clave invalida.", "La clave de autorizacion no es correcta.", null, false), JsonRequestBehavior.AllowGet);
 
-                DocumentoInventarioViewModel source;
-                lock (SyncRoot)
-                {
-                    source = Documentos.FirstOrDefault(x => x.ID == id);
-                    source = source == null ? null : Clone(source);
-                }
-
-                if (source == null)
-                    source = GetHistoricoAjustesFromDatabase("", "", "", "", "", "").FirstOrDefault(x => x.ID == id);
+                DocumentoInventarioViewModel source = IsCustomDocumentClientId(id)
+                    ? GetCustomDocumentoByClientId(id)
+                    : GetSqlDocumentoForOperation(id);
 
                 if (source == null)
                     return Json(new JsonResponse("Documento no encontrado.", "No se encontro el documento seleccionado.", null, false), JsonRequestBehavior.AllowGet);
 
-                lock (SyncRoot)
-                {
-                    var nextId = Documentos.Count == 0 ? 1 : Documentos.Max(x => x.ID) + 1;
-                    var copy = Clone(source);
-                    copy.ID = nextId;
-                    copy.Numero = GetNextNumero(copy.Tipo);
-                    copy.Estado = "Borrador";
-                    copy.MotivoAnulacion = "";
-                    copy.UsuarioAnula = "";
-                    copy.FechaHoraAnula = null;
-                    copy.FacturaRef = "";
-                    copy.FechaSolicitud = DateTime.Today;
-                    copy.FechaEntrega = null;
-                    copy.FechaAplicacion = null;
-                    ResetRecepcion(copy.DetalleLineas);
-                    copy.LineasEspeciales = BuildLineasEspeciales(copy.DetalleLineas);
-                    copy.CantidadLineasDetalle = copy.DetalleLineas == null ? 0 : copy.DetalleLineas.Count;
-                    copy.CantidadLineasEspeciales = copy.LineasEspeciales.Count;
-                    copy.TotalLineasEspeciales = copy.LineasEspeciales.Sum(x => x.Cantidad * x.Costo);
-                    copy.ResumenAuditoria = BuildResumenAuditoria(copy.LineasEspeciales);
-                    copy.Producto = BuildResumenProducto(copy.DetalleLineas, copy.LineasEspeciales);
-                    copy.EventosAuditoria = new List<DocumentoAuditoriaEventoViewModel>();
-                    AddAuditoria(copy, "Creado", GetCurrentUserName(), "Documento creado por duplicado.");
-                    AddAuditoria(copy, "Duplicado", GetCurrentUserName(), "Origen: " + source.Numero + ".");
-                    Documentos.Add(copy);
+                var copy = Clone(source);
+                copy.ID = 0;
+                copy.Numero = GetNextNumero(copy.Tipo);
+                copy.Estado = "Borrador";
+                copy.MotivoAnulacion = "";
+                copy.UsuarioAnula = "";
+                copy.FechaHoraAnula = null;
+                copy.FacturaRef = "";
+                copy.FechaSolicitud = DateTime.Today;
+                copy.FechaEntrega = null;
+                copy.FechaAplicacion = null;
+                ResetRecepcion(copy.DetalleLineas);
+                copy.LineasEspeciales = BuildLineasEspeciales(copy.DetalleLineas);
+                copy.CantidadLineasDetalle = copy.DetalleLineas == null ? 0 : copy.DetalleLineas.Count;
+                copy.CantidadLineasEspeciales = copy.LineasEspeciales.Count;
+                copy.TotalLineasEspeciales = copy.LineasEspeciales.Sum(x => x.Cantidad * x.Costo);
+                copy.ResumenAuditoria = BuildResumenAuditoria(copy.LineasEspeciales);
+                copy.Producto = BuildResumenProducto(copy.DetalleLineas, copy.LineasEspeciales);
+                copy.EventosAuditoria = new List<DocumentoAuditoriaEventoViewModel>();
+                AddAuditoria(copy, "Creado", GetCurrentUserName(), "Documento creado por duplicado.");
+                AddAuditoria(copy, "Duplicado", GetCurrentUserName(), "Origen: " + source.Numero + ".");
+                copy = SaveCustomDocumento(copy, null);
 
-                    return Json(new JsonResponse("", "Documento duplicado como borrador. Revise factura y fechas antes de enviarlo.", ToGrid(copy), true), JsonRequestBehavior.AllowGet);
-                }
+                return Json(new JsonResponse("", "Documento duplicado como borrador en SQL. Revise factura y fechas antes de enviarlo.", ToGrid(copy), true), JsonRequestBehavior.AllowGet);
             }
             catch (Exception e)
             {
@@ -645,27 +456,20 @@ ORDER BY R.DatePosted DESC, R.ID DESC, E.LineNumber ASC;";
                 if (!IsProcessAuthorized(password))
                     return Json(new JsonResponse("Clave invalida.", "La clave de autorizacion no es correcta.", null, false), JsonRequestBehavior.AllowGet);
 
-                lock (SyncRoot)
-                {
-                    var documento = Documentos.FirstOrDefault(x => x.ID == id);
-                    if (documento == null && IsCurrentProcessAdmin())
-                    {
-                        documento = GetSqlDocumentoForOperation(id);
-                        if (documento != null)
-                            Documentos.Add(documento);
-                    }
+                if (!IsCustomDocumentClientId(id))
+                    return Json(new JsonResponse("Documento historico.", "Este documento viene del historico SQL y no se modifica desde la bandeja. Use Duplicar para crear un borrador editable.", null, false), JsonRequestBehavior.AllowGet);
 
-                    if (documento == null)
-                        return Json(new JsonResponse("Documento no encontrado.", "No se encontro el documento seleccionado.", null, false), JsonRequestBehavior.AllowGet);
+                int databaseID = DecodeCustomDocumentClientId(id);
+                var documento = GetCustomDocumentoByDatabaseId(databaseID);
+                if (documento == null)
+                    return Json(new JsonResponse("Documento no encontrado.", "No se encontro el documento seleccionado.", null, false), JsonRequestBehavior.AllowGet);
 
-                    var transitionMessage = ApplyEstadoFromAccion(documento, accion, GetCurrentUserName(), motivo, IsCurrentProcessAdmin());
-                    if (!String.IsNullOrWhiteSpace(transitionMessage))
-                    {
-                        return Json(new JsonResponse("Cambio de estado no permitido.", transitionMessage, null, false), JsonRequestBehavior.AllowGet);
-                    }
+                var transitionMessage = ApplyEstadoFromAccion(documento, accion, GetCurrentUserName(), motivo, IsCurrentProcessAdmin());
+                if (!String.IsNullOrWhiteSpace(transitionMessage))
+                    return Json(new JsonResponse("Cambio de estado no permitido.", transitionMessage, null, false), JsonRequestBehavior.AllowGet);
 
-                    return Json(new JsonResponse("", "Documento actualizado correctamente.", ToGrid(documento), true), JsonRequestBehavior.AllowGet);
-                }
+                documento = SaveCustomDocumento(documento, databaseID);
+                return Json(new JsonResponse("", "Documento actualizado correctamente en SQL.", ToGrid(documento), true), JsonRequestBehavior.AllowGet);
             }
             catch (Exception e)
             {
@@ -822,89 +626,6 @@ ORDER BY R.DatePosted DESC, R.ID DESC, E.LineNumber ASC;";
             linea.CantidadPendiente = Math.Max(0m, linea.CantidadSolicitada - linea.CantidadRecibida);
         }
 
-        private static DocumentoInventarioViewModel CreateDocumento(
-            int id,
-            string numero,
-            string tipo,
-            string proveedor,
-            string facturaRef,
-            DateTime fechaSolicitud,
-            DateTime? fechaEntrega,
-            DateTime? fechaAplicacion,
-            string estado,
-            string personaSolicita,
-            string tipoSalida,
-            string justificacionSalida,
-            string justificacionEntrada,
-            List<DocumentoDetalleLineaViewModel> detalleLineas)
-        {
-            detalleLineas = detalleLineas ?? new List<DocumentoDetalleLineaViewModel>();
-            foreach (var linea in detalleLineas)
-                EnsureRecepcionLinea(linea, estado);
-
-            var lineasEspeciales = BuildLineasEspeciales(detalleLineas);
-
-            return new DocumentoInventarioViewModel
-            {
-                ID = id,
-                Numero = numero,
-                Tipo = tipo,
-                Proveedor = proveedor,
-                Producto = BuildResumenProducto(detalleLineas, lineasEspeciales),
-                FacturaRef = facturaRef,
-                FechaSolicitud = fechaSolicitud,
-                FechaEntrega = fechaEntrega,
-                FechaAplicacion = fechaAplicacion,
-                Estado = estado,
-                Total = detalleLineas.Sum(x => x.TotalLinea),
-                PersonaSolicita = personaSolicita,
-                TipoSalida = tipoSalida,
-                JustificacionSalida = justificacionSalida,
-                JustificacionEntrada = justificacionEntrada,
-                DetalleLineas = detalleLineas.Select(CloneDetalleLinea).ToList(),
-                CantidadLineasDetalle = detalleLineas.Count,
-                LineasEspeciales = lineasEspeciales,
-                CantidadLineasEspeciales = lineasEspeciales.Count,
-                TotalLineasEspeciales = lineasEspeciales.Sum(x => x.Cantidad * x.Costo),
-                ResumenAuditoria = BuildResumenAuditoria(lineasEspeciales),
-                EventosAuditoria = new List<DocumentoAuditoriaEventoViewModel>
-                {
-                    CreateAuditoriaEvento("Creado", personaSolicita, fechaSolicitud, "Documento inicial en memoria.")
-                }
-            };
-        }
-
-        private static DocumentoDetalleLineaViewModel CreateDetalle(
-            string codigo,
-            string descripcion,
-            string unidad,
-            decimal cantidad,
-            decimal costoUnitario,
-            decimal descuentoPorcentaje,
-            decimal descuentoMonto,
-            decimal impuestoPorcentaje,
-            bool regalia,
-            string observacion)
-        {
-            return new DocumentoDetalleLineaViewModel
-            {
-                Codigo = codigo,
-                Descripcion = descripcion,
-                Unidad = unidad,
-                Cantidad = cantidad,
-                CantidadSolicitada = cantidad,
-                CantidadRecibida = 0m,
-                CantidadPendiente = cantidad,
-                CostoUnitario = costoUnitario,
-                DescuentoPorcentaje = descuentoPorcentaje,
-                DescuentoMonto = descuentoMonto,
-                ImpuestoPorcentaje = impuestoPorcentaje,
-                TotalLinea = CalculateTotalLinea(cantidad, costoUnitario, descuentoPorcentaje, descuentoMonto, impuestoPorcentaje),
-                Regalia = regalia,
-                Observacion = observacion
-            };
-        }
-
         private static bool IsMatch(string filter, string allValue, string value)
         {
             return String.IsNullOrWhiteSpace(filter) ||
@@ -953,6 +674,12 @@ ORDER BY R.DatePosted DESC, R.ID DESC, E.LineNumber ASC;";
             return reader.IsDBNull(ordinal) ? 0 : Convert.ToDecimal(reader.GetValue(ordinal));
         }
 
+        private static bool ReadBool(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return !reader.IsDBNull(ordinal) && Convert.ToBoolean(reader.GetValue(ordinal));
+        }
+
         private static DateTime ReadDateTime(SqlDataReader reader, string column)
         {
             int ordinal = reader.GetOrdinal(column);
@@ -968,6 +695,550 @@ ORDER BY R.DatePosted DESC, R.ID DESC, E.LineNumber ASC;";
         private static string FirstNonEmpty(params string[] values)
         {
             return values.FirstOrDefault(x => !String.IsNullOrWhiteSpace(x)) ?? "";
+        }
+
+        private static bool IsCustomDocumentClientId(int id)
+        {
+            return id >= CustomDocumentClientIdOffset;
+        }
+
+        private static int ToCustomDocumentClientId(int databaseID)
+        {
+            return CustomDocumentClientIdOffset + databaseID;
+        }
+
+        private static int DecodeCustomDocumentClientId(int clientID)
+        {
+            return clientID - CustomDocumentClientIdOffset;
+        }
+
+        private static object DbString(string value)
+        {
+            return String.IsNullOrWhiteSpace(value) ? (object)"" : value.Trim();
+        }
+
+        private SqlConnection CreateMasterConnection()
+        {
+            ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings["UltraERP.BusinessDataAccess.Properties.Settings.MasterDB"];
+            if (settings == null || String.IsNullOrWhiteSpace(settings.ConnectionString))
+                throw new InvalidOperationException("No se encontro la conexion de la base de datos.");
+
+            return new SqlConnection(settings.ConnectionString);
+        }
+
+        private void EnsureDocumentSqlSchema()
+        {
+            if (DocumentSqlSchemaEnsured)
+                return;
+
+            lock (SyncRoot)
+            {
+                if (DocumentSqlSchemaEnsured)
+                    return;
+
+                using (SqlConnection connection = CreateMasterConnection())
+                using (SqlCommand command = connection.CreateCommand())
+                {
+                    command.CommandType = CommandType.Text;
+                    command.CommandText = @"
+IF OBJECT_ID('dbo.ExtCentral_DocumentoInventario', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ExtCentral_DocumentoInventario
+    (
+        ID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ExtCentral_DocumentoInventario PRIMARY KEY,
+        Numero NVARCHAR(50) NOT NULL,
+        Tipo NVARCHAR(40) NOT NULL,
+        ProveedorCodigo NVARCHAR(50) NOT NULL CONSTRAINT DF_ExtCentral_DocInv_ProveedorCodigo DEFAULT(''),
+        ProveedorNombre NVARCHAR(200) NOT NULL CONSTRAINT DF_ExtCentral_DocInv_ProveedorNombre DEFAULT(''),
+        FacturaRef NVARCHAR(80) NOT NULL CONSTRAINT DF_ExtCentral_DocInv_FacturaRef DEFAULT(''),
+        FechaSolicitud DATETIME NOT NULL,
+        FechaEntrega DATETIME NULL,
+        FechaAplicacion DATETIME NULL,
+        Estado NVARCHAR(30) NOT NULL CONSTRAINT DF_ExtCentral_DocInv_Estado DEFAULT('Borrador'),
+        MotivoAnulacion NVARCHAR(500) NOT NULL CONSTRAINT DF_ExtCentral_DocInv_Motivo DEFAULT(''),
+        UsuarioAnula NVARCHAR(100) NOT NULL CONSTRAINT DF_ExtCentral_DocInv_UsuarioAnula DEFAULT(''),
+        FechaHoraAnula DATETIME NULL,
+        Total DECIMAL(19,4) NOT NULL CONSTRAINT DF_ExtCentral_DocInv_Total DEFAULT(0),
+        PersonaSolicita NVARCHAR(100) NOT NULL CONSTRAINT DF_ExtCentral_DocInv_Persona DEFAULT(''),
+        TipoSalida NVARCHAR(80) NOT NULL CONSTRAINT DF_ExtCentral_DocInv_TipoSalida DEFAULT(''),
+        JustificacionSalida NVARCHAR(200) NOT NULL CONSTRAINT DF_ExtCentral_DocInv_JustSalida DEFAULT(''),
+        JustificacionEntrada NVARCHAR(200) NOT NULL CONSTRAINT DF_ExtCentral_DocInv_JustEntrada DEFAULT(''),
+        UsuarioCrea NVARCHAR(100) NOT NULL CONSTRAINT DF_ExtCentral_DocInv_UsuarioCrea DEFAULT(''),
+        FechaCrea DATETIME NOT NULL CONSTRAINT DF_ExtCentral_DocInv_FechaCrea DEFAULT(GETDATE()),
+        UsuarioModifica NVARCHAR(100) NOT NULL CONSTRAINT DF_ExtCentral_DocInv_UsuarioMod DEFAULT(''),
+        FechaModifica DATETIME NULL,
+        SyncGuid UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ExtCentral_DocInv_SyncGuid DEFAULT(NEWID())
+    );
+END;
+
+IF OBJECT_ID('dbo.ExtCentral_DocumentoInventarioDetalle', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ExtCentral_DocumentoInventarioDetalle
+    (
+        ID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ExtCentral_DocInvDetalle PRIMARY KEY,
+        DocumentoID INT NOT NULL,
+        LineNumber INT NOT NULL,
+        Codigo NVARCHAR(50) NOT NULL CONSTRAINT DF_ExtCentral_DocInvDet_Codigo DEFAULT(''),
+        Descripcion NVARCHAR(200) NOT NULL CONSTRAINT DF_ExtCentral_DocInvDet_Descripcion DEFAULT(''),
+        Unidad NVARCHAR(20) NOT NULL CONSTRAINT DF_ExtCentral_DocInvDet_Unidad DEFAULT(''),
+        Cantidad DECIMAL(19,4) NOT NULL CONSTRAINT DF_ExtCentral_DocInvDet_Cantidad DEFAULT(0),
+        CantidadSolicitada DECIMAL(19,4) NOT NULL CONSTRAINT DF_ExtCentral_DocInvDet_CantSol DEFAULT(0),
+        CantidadRecibida DECIMAL(19,4) NOT NULL CONSTRAINT DF_ExtCentral_DocInvDet_CantRec DEFAULT(0),
+        CantidadPendiente DECIMAL(19,4) NOT NULL CONSTRAINT DF_ExtCentral_DocInvDet_CantPen DEFAULT(0),
+        CostoUnitario DECIMAL(19,4) NOT NULL CONSTRAINT DF_ExtCentral_DocInvDet_Costo DEFAULT(0),
+        DescuentoPorcentaje DECIMAL(9,4) NOT NULL CONSTRAINT DF_ExtCentral_DocInvDet_DescPct DEFAULT(0),
+        DescuentoMonto DECIMAL(19,4) NOT NULL CONSTRAINT DF_ExtCentral_DocInvDet_DescMonto DEFAULT(0),
+        ImpuestoPorcentaje DECIMAL(9,4) NOT NULL CONSTRAINT DF_ExtCentral_DocInvDet_ImpPct DEFAULT(0),
+        TotalLinea DECIMAL(19,4) NOT NULL CONSTRAINT DF_ExtCentral_DocInvDet_Total DEFAULT(0),
+        Regalia BIT NOT NULL CONSTRAINT DF_ExtCentral_DocInvDet_Regalia DEFAULT(0),
+        Observacion NVARCHAR(500) NOT NULL CONSTRAINT DF_ExtCentral_DocInvDet_Obs DEFAULT(''),
+        CONSTRAINT FK_ExtCentral_DocInvDetalle_Documento FOREIGN KEY (DocumentoID) REFERENCES dbo.ExtCentral_DocumentoInventario(ID) ON DELETE CASCADE
+    );
+END;
+
+IF OBJECT_ID('dbo.ExtCentral_DocumentoInventarioAuditoria', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ExtCentral_DocumentoInventarioAuditoria
+    (
+        ID INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ExtCentral_DocInvAuditoria PRIMARY KEY,
+        DocumentoID INT NOT NULL,
+        Evento NVARCHAR(50) NOT NULL CONSTRAINT DF_ExtCentral_DocInvAud_Evento DEFAULT(''),
+        Usuario NVARCHAR(100) NOT NULL CONSTRAINT DF_ExtCentral_DocInvAud_Usuario DEFAULT(''),
+        FechaHora DATETIME NOT NULL CONSTRAINT DF_ExtCentral_DocInvAud_Fecha DEFAULT(GETDATE()),
+        Comentario NVARCHAR(500) NOT NULL CONSTRAINT DF_ExtCentral_DocInvAud_Comentario DEFAULT(''),
+        CONSTRAINT FK_ExtCentral_DocInvAuditoria_Documento FOREIGN KEY (DocumentoID) REFERENCES dbo.ExtCentral_DocumentoInventario(ID) ON DELETE CASCADE
+    );
+END;";
+
+                    connection.Open();
+                    command.ExecuteNonQuery();
+                }
+
+                DocumentSqlSchemaEnsured = true;
+            }
+        }
+
+        private DocumentoInventarioViewModel GetCustomDocumentoByClientId(int clientID)
+        {
+            return IsCustomDocumentClientId(clientID)
+                ? GetCustomDocumentoByDatabaseId(DecodeCustomDocumentClientId(clientID))
+                : null;
+        }
+
+        private DocumentoInventarioViewModel GetCustomDocumentoByDatabaseId(int databaseID)
+        {
+            return GetCustomDocumentosFromDatabase("", "Todos", "", "", "", "", "", "", "", false, databaseID).FirstOrDefault();
+        }
+
+        private List<DocumentoInventarioViewModel> GetCustomDocumentosFromDatabase(
+            string tipoDocumento,
+            string estado,
+            string fechaDesde,
+            string fechaHasta,
+            string fechaAplicacion,
+            string proveedor,
+            string usuario,
+            string facturaRef,
+            string producto,
+            bool cerradasOnly,
+            int? databaseID = null)
+        {
+            EnsureDocumentSqlSchema();
+
+            var documentos = new Dictionary<int, DocumentoInventarioViewModel>();
+            DateTime? desde = ParseDate(fechaDesde);
+            DateTime? hasta = ParseDate(fechaHasta);
+            DateTime? aplicacion = ParseDate(fechaAplicacion);
+
+            using (SqlConnection connection = CreateMasterConnection())
+            using (SqlCommand command = connection.CreateCommand())
+            {
+                command.CommandType = CommandType.Text;
+                command.CommandText = @"
+DECLARE @Selected TABLE (ID INT PRIMARY KEY);
+
+INSERT INTO @Selected (ID)
+SELECT TOP 500 D.ID
+FROM dbo.ExtCentral_DocumentoInventario D
+WHERE (@DocumentoID IS NULL OR D.ID = @DocumentoID)
+  AND (@TipoDocumento = '' OR @TipoDocumento = 'Todos' OR D.Tipo = @TipoDocumento
+       OR (@TipoDocumento = 'Entrada' AND D.Tipo = 'Entrada de Inventario')
+       OR (@TipoDocumento = 'Salida' AND D.Tipo = 'Salida de Inventario'))
+  AND (@Estado = '' OR @Estado = 'Todos' OR D.Estado = @Estado)
+  AND (@CerradasOnly = 0 OR D.Estado = 'Cerrada')
+  AND (@FechaDesde IS NULL OR CONVERT(date, D.FechaSolicitud) >= @FechaDesde)
+  AND (@FechaHasta IS NULL OR CONVERT(date, D.FechaSolicitud) <= @FechaHasta)
+  AND (@FechaAplicacion IS NULL OR CONVERT(date, D.FechaAplicacion) = @FechaAplicacion)
+  AND (@Proveedor = '' OR D.ProveedorCodigo LIKE @ProveedorLike OR D.ProveedorNombre LIKE @ProveedorLike)
+  AND (@Usuario = '' OR D.PersonaSolicita LIKE @UsuarioLike)
+  AND (@FacturaRef = '' OR D.FacturaRef LIKE @FacturaRefLike OR D.Numero LIKE @FacturaRefLike)
+  AND (@Producto = '' OR EXISTS (
+        SELECT 1
+        FROM dbo.ExtCentral_DocumentoInventarioDetalle L
+        WHERE L.DocumentoID = D.ID
+          AND (L.Codigo LIKE @ProductoLike OR L.Descripcion LIKE @ProductoLike)))
+ORDER BY D.FechaSolicitud DESC, ISNULL(D.FechaAplicacion, D.FechaSolicitud) DESC, D.ID DESC;
+
+SELECT D.*
+FROM dbo.ExtCentral_DocumentoInventario D
+JOIN @Selected S ON S.ID = D.ID
+ORDER BY D.FechaSolicitud DESC, D.ID DESC;
+
+SELECT L.*
+FROM dbo.ExtCentral_DocumentoInventarioDetalle L
+JOIN @Selected S ON S.ID = L.DocumentoID
+ORDER BY L.DocumentoID, L.LineNumber;
+
+SELECT A.*
+FROM dbo.ExtCentral_DocumentoInventarioAuditoria A
+JOIN @Selected S ON S.ID = A.DocumentoID
+ORDER BY A.DocumentoID, A.FechaHora, A.ID;";
+
+                command.Parameters.Add("@DocumentoID", SqlDbType.Int).Value = databaseID.HasValue ? (object)databaseID.Value : DBNull.Value;
+                command.Parameters.AddWithValue("@TipoDocumento", (tipoDocumento ?? "").Trim());
+                command.Parameters.AddWithValue("@Estado", (estado ?? "").Trim());
+                command.Parameters.Add("@CerradasOnly", SqlDbType.Bit).Value = cerradasOnly;
+                command.Parameters.Add("@FechaDesde", SqlDbType.Date).Value = desde.HasValue ? (object)desde.Value.Date : DBNull.Value;
+                command.Parameters.Add("@FechaHasta", SqlDbType.Date).Value = hasta.HasValue ? (object)hasta.Value.Date : DBNull.Value;
+                command.Parameters.Add("@FechaAplicacion", SqlDbType.Date).Value = aplicacion.HasValue ? (object)aplicacion.Value.Date : DBNull.Value;
+                AddLikeParameter(command, "@Proveedor", proveedor);
+                AddLikeParameter(command, "@Usuario", usuario);
+                AddLikeParameter(command, "@FacturaRef", facturaRef);
+                AddLikeParameter(command, "@Producto", producto);
+
+                connection.Open();
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        int id = ReadInt(reader, "ID");
+                        documentos[id] = new DocumentoInventarioViewModel
+                        {
+                            ID = ToCustomDocumentClientId(id),
+                            Numero = ReadString(reader, "Numero"),
+                            Tipo = ReadString(reader, "Tipo"),
+                            Proveedor = JoinCodeName(ReadString(reader, "ProveedorCodigo"), ReadString(reader, "ProveedorNombre")),
+                            FacturaRef = ReadString(reader, "FacturaRef"),
+                            FechaSolicitud = ReadDateTime(reader, "FechaSolicitud"),
+                            FechaEntrega = ReadNullableDateTime(reader, "FechaEntrega"),
+                            FechaAplicacion = ReadNullableDateTime(reader, "FechaAplicacion"),
+                            Estado = ReadString(reader, "Estado"),
+                            MotivoAnulacion = ReadString(reader, "MotivoAnulacion"),
+                            UsuarioAnula = ReadString(reader, "UsuarioAnula"),
+                            FechaHoraAnula = ReadNullableDateTime(reader, "FechaHoraAnula"),
+                            Total = ReadDecimal(reader, "Total"),
+                            PersonaSolicita = ReadString(reader, "PersonaSolicita"),
+                            TipoSalida = ReadString(reader, "TipoSalida"),
+                            JustificacionSalida = ReadString(reader, "JustificacionSalida"),
+                            JustificacionEntrada = ReadString(reader, "JustificacionEntrada"),
+                            DetalleLineas = new List<DocumentoDetalleLineaViewModel>(),
+                            LineasEspeciales = new List<DocumentoLineaEspecialViewModel>(),
+                            EventosAuditoria = new List<DocumentoAuditoriaEventoViewModel>()
+                        };
+                    }
+
+                    if (reader.NextResult())
+                    {
+                        while (reader.Read())
+                        {
+                            int documentoID = ReadInt(reader, "DocumentoID");
+                            DocumentoInventarioViewModel documento;
+                            if (!documentos.TryGetValue(documentoID, out documento))
+                                continue;
+
+                            documento.DetalleLineas.Add(new DocumentoDetalleLineaViewModel
+                            {
+                                Codigo = ReadString(reader, "Codigo"),
+                                Descripcion = ReadString(reader, "Descripcion"),
+                                Unidad = ReadString(reader, "Unidad"),
+                                Cantidad = ReadDecimal(reader, "Cantidad"),
+                                CantidadSolicitada = ReadDecimal(reader, "CantidadSolicitada"),
+                                CantidadRecibida = ReadDecimal(reader, "CantidadRecibida"),
+                                CantidadPendiente = ReadDecimal(reader, "CantidadPendiente"),
+                                CostoUnitario = ReadDecimal(reader, "CostoUnitario"),
+                                DescuentoPorcentaje = ReadDecimal(reader, "DescuentoPorcentaje"),
+                                DescuentoMonto = ReadDecimal(reader, "DescuentoMonto"),
+                                ImpuestoPorcentaje = ReadDecimal(reader, "ImpuestoPorcentaje"),
+                                TotalLinea = ReadDecimal(reader, "TotalLinea"),
+                                Regalia = ReadBool(reader, "Regalia"),
+                                Observacion = ReadString(reader, "Observacion")
+                            });
+                        }
+                    }
+
+                    if (reader.NextResult())
+                    {
+                        while (reader.Read())
+                        {
+                            int documentoID = ReadInt(reader, "DocumentoID");
+                            DocumentoInventarioViewModel documento;
+                            if (!documentos.TryGetValue(documentoID, out documento))
+                                continue;
+
+                            documento.EventosAuditoria.Add(CreateAuditoriaEvento(
+                                ReadString(reader, "Evento"),
+                                ReadString(reader, "Usuario"),
+                                ReadDateTime(reader, "FechaHora"),
+                                ReadString(reader, "Comentario")));
+                        }
+                    }
+                }
+            }
+
+            foreach (DocumentoInventarioViewModel documento in documentos.Values)
+                FinalizeDocumento(documento);
+
+            return documentos.Values.ToList();
+        }
+
+        private DocumentoInventarioViewModel SaveCustomDocumento(DocumentoInventarioViewModel documento, int? databaseID)
+        {
+            if (documento == null)
+                throw new ArgumentNullException("documento");
+
+            EnsureDocumentSqlSchema();
+            FinalizeDocumento(documento);
+
+            if (!databaseID.HasValue)
+                documento.Numero = GetNextNumero(documento.Tipo);
+
+            using (SqlConnection connection = CreateMasterConnection())
+            {
+                connection.Open();
+                using (SqlTransaction transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        int savedID = databaseID.HasValue
+                            ? UpdateCustomDocumento(connection, transaction, documento, databaseID.Value)
+                            : InsertCustomDocumento(connection, transaction, documento);
+
+                        ReplaceCustomDocumentoDetails(connection, transaction, savedID, documento.DetalleLineas);
+                        ReplaceCustomDocumentoAudit(connection, transaction, savedID, documento.EventosAuditoria);
+
+                        transaction.Commit();
+                        documento.ID = ToCustomDocumentClientId(savedID);
+                        return documento;
+                    }
+                    catch
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                }
+            }
+        }
+
+        private int InsertCustomDocumento(SqlConnection connection, SqlTransaction transaction, DocumentoInventarioViewModel documento)
+        {
+            using (SqlCommand command = connection.CreateCommand())
+            {
+                command.Transaction = transaction;
+                command.CommandType = CommandType.Text;
+                command.CommandText = @"
+INSERT INTO dbo.ExtCentral_DocumentoInventario
+(
+    Numero, Tipo, ProveedorCodigo, ProveedorNombre, FacturaRef, FechaSolicitud, FechaEntrega,
+    FechaAplicacion, Estado, MotivoAnulacion, UsuarioAnula, FechaHoraAnula, Total,
+    PersonaSolicita, TipoSalida, JustificacionSalida, JustificacionEntrada, UsuarioCrea
+)
+OUTPUT inserted.ID
+VALUES
+(
+    @Numero, @Tipo, @ProveedorCodigo, @ProveedorNombre, @FacturaRef, @FechaSolicitud, @FechaEntrega,
+    @FechaAplicacion, @Estado, @MotivoAnulacion, @UsuarioAnula, @FechaHoraAnula, @Total,
+    @PersonaSolicita, @TipoSalida, @JustificacionSalida, @JustificacionEntrada, @Usuario
+);";
+
+                AddCustomDocumentoParameters(command, documento);
+                command.Parameters.AddWithValue("@Usuario", GetCurrentUserName());
+                return Convert.ToInt32(command.ExecuteScalar());
+            }
+        }
+
+        private int UpdateCustomDocumento(SqlConnection connection, SqlTransaction transaction, DocumentoInventarioViewModel documento, int databaseID)
+        {
+            using (SqlCommand command = connection.CreateCommand())
+            {
+                command.Transaction = transaction;
+                command.CommandType = CommandType.Text;
+                command.CommandText = @"
+UPDATE dbo.ExtCentral_DocumentoInventario
+SET Tipo = @Tipo,
+    ProveedorCodigo = @ProveedorCodigo,
+    ProveedorNombre = @ProveedorNombre,
+    FacturaRef = @FacturaRef,
+    FechaSolicitud = @FechaSolicitud,
+    FechaEntrega = @FechaEntrega,
+    FechaAplicacion = @FechaAplicacion,
+    Estado = @Estado,
+    MotivoAnulacion = @MotivoAnulacion,
+    UsuarioAnula = @UsuarioAnula,
+    FechaHoraAnula = @FechaHoraAnula,
+    Total = @Total,
+    PersonaSolicita = @PersonaSolicita,
+    TipoSalida = @TipoSalida,
+    JustificacionSalida = @JustificacionSalida,
+    JustificacionEntrada = @JustificacionEntrada,
+    UsuarioModifica = @Usuario,
+    FechaModifica = GETDATE()
+WHERE ID = @ID;";
+
+                AddCustomDocumentoParameters(command, documento);
+                command.Parameters.AddWithValue("@Usuario", GetCurrentUserName());
+                command.Parameters.AddWithValue("@ID", databaseID);
+                command.ExecuteNonQuery();
+                return databaseID;
+            }
+        }
+
+        private static void AddCustomDocumentoParameters(SqlCommand command, DocumentoInventarioViewModel documento)
+        {
+            string proveedorCodigo;
+            string proveedorNombre;
+            SplitCodeName(documento.Proveedor, out proveedorCodigo, out proveedorNombre);
+
+            command.Parameters.AddWithValue("@Numero", DbString(documento.Numero));
+            command.Parameters.AddWithValue("@Tipo", DbString(ToListTipo(documento.Tipo)));
+            command.Parameters.AddWithValue("@ProveedorCodigo", DbString(proveedorCodigo));
+            command.Parameters.AddWithValue("@ProveedorNombre", DbString(proveedorNombre));
+            command.Parameters.AddWithValue("@FacturaRef", DbString(documento.FacturaRef));
+            command.Parameters.Add("@FechaSolicitud", SqlDbType.DateTime).Value = documento.FechaSolicitud == DateTime.MinValue ? DateTime.Today : documento.FechaSolicitud;
+            command.Parameters.Add("@FechaEntrega", SqlDbType.DateTime).Value = documento.FechaEntrega.HasValue ? (object)documento.FechaEntrega.Value : DBNull.Value;
+            command.Parameters.Add("@FechaAplicacion", SqlDbType.DateTime).Value = documento.FechaAplicacion.HasValue ? (object)documento.FechaAplicacion.Value : DBNull.Value;
+            command.Parameters.AddWithValue("@Estado", DbString(documento.Estado));
+            command.Parameters.AddWithValue("@MotivoAnulacion", DbString(documento.MotivoAnulacion));
+            command.Parameters.AddWithValue("@UsuarioAnula", DbString(documento.UsuarioAnula));
+            command.Parameters.Add("@FechaHoraAnula", SqlDbType.DateTime).Value = documento.FechaHoraAnula.HasValue ? (object)documento.FechaHoraAnula.Value : DBNull.Value;
+            command.Parameters.Add("@Total", SqlDbType.Decimal).Value = documento.Total;
+            command.Parameters["@Total"].Precision = 19;
+            command.Parameters["@Total"].Scale = 4;
+            command.Parameters.AddWithValue("@PersonaSolicita", DbString(documento.PersonaSolicita));
+            command.Parameters.AddWithValue("@TipoSalida", DbString(documento.TipoSalida));
+            command.Parameters.AddWithValue("@JustificacionSalida", DbString(documento.JustificacionSalida));
+            command.Parameters.AddWithValue("@JustificacionEntrada", DbString(documento.JustificacionEntrada));
+        }
+
+        private static void ReplaceCustomDocumentoDetails(SqlConnection connection, SqlTransaction transaction, int documentoID, IList<DocumentoDetalleLineaViewModel> lineas)
+        {
+            using (SqlCommand delete = connection.CreateCommand())
+            {
+                delete.Transaction = transaction;
+                delete.CommandText = "DELETE FROM dbo.ExtCentral_DocumentoInventarioDetalle WHERE DocumentoID = @DocumentoID";
+                delete.Parameters.AddWithValue("@DocumentoID", documentoID);
+                delete.ExecuteNonQuery();
+            }
+
+            int lineNumber = 1;
+            foreach (DocumentoDetalleLineaViewModel linea in lineas ?? new List<DocumentoDetalleLineaViewModel>())
+            {
+                using (SqlCommand insert = connection.CreateCommand())
+                {
+                    insert.Transaction = transaction;
+                    insert.CommandType = CommandType.Text;
+                    insert.CommandText = @"
+INSERT INTO dbo.ExtCentral_DocumentoInventarioDetalle
+(DocumentoID, LineNumber, Codigo, Descripcion, Unidad, Cantidad, CantidadSolicitada, CantidadRecibida,
+ CantidadPendiente, CostoUnitario, DescuentoPorcentaje, DescuentoMonto, ImpuestoPorcentaje,
+ TotalLinea, Regalia, Observacion)
+VALUES
+(@DocumentoID, @LineNumber, @Codigo, @Descripcion, @Unidad, @Cantidad, @CantidadSolicitada, @CantidadRecibida,
+ @CantidadPendiente, @CostoUnitario, @DescuentoPorcentaje, @DescuentoMonto, @ImpuestoPorcentaje,
+ @TotalLinea, @Regalia, @Observacion);";
+
+                    insert.Parameters.AddWithValue("@DocumentoID", documentoID);
+                    insert.Parameters.AddWithValue("@LineNumber", lineNumber++);
+                    insert.Parameters.AddWithValue("@Codigo", DbString(linea.Codigo));
+                    insert.Parameters.AddWithValue("@Descripcion", DbString(linea.Descripcion));
+                    insert.Parameters.AddWithValue("@Unidad", DbString(linea.Unidad));
+                    AddDecimalParameter(insert, "@Cantidad", linea.Cantidad);
+                    AddDecimalParameter(insert, "@CantidadSolicitada", linea.CantidadSolicitada);
+                    AddDecimalParameter(insert, "@CantidadRecibida", linea.CantidadRecibida);
+                    AddDecimalParameter(insert, "@CantidadPendiente", linea.CantidadPendiente);
+                    AddDecimalParameter(insert, "@CostoUnitario", linea.CostoUnitario);
+                    AddDecimalParameter(insert, "@DescuentoPorcentaje", linea.DescuentoPorcentaje, 9);
+                    AddDecimalParameter(insert, "@DescuentoMonto", linea.DescuentoMonto);
+                    AddDecimalParameter(insert, "@ImpuestoPorcentaje", linea.ImpuestoPorcentaje, 9);
+                    AddDecimalParameter(insert, "@TotalLinea", linea.TotalLinea);
+                    insert.Parameters.Add("@Regalia", SqlDbType.Bit).Value = linea.Regalia;
+                    insert.Parameters.AddWithValue("@Observacion", DbString(linea.Observacion));
+                    insert.ExecuteNonQuery();
+                }
+            }
+        }
+
+        private static void ReplaceCustomDocumentoAudit(SqlConnection connection, SqlTransaction transaction, int documentoID, IList<DocumentoAuditoriaEventoViewModel> eventos)
+        {
+            using (SqlCommand delete = connection.CreateCommand())
+            {
+                delete.Transaction = transaction;
+                delete.CommandText = "DELETE FROM dbo.ExtCentral_DocumentoInventarioAuditoria WHERE DocumentoID = @DocumentoID";
+                delete.Parameters.AddWithValue("@DocumentoID", documentoID);
+                delete.ExecuteNonQuery();
+            }
+
+            foreach (DocumentoAuditoriaEventoViewModel evento in eventos ?? new List<DocumentoAuditoriaEventoViewModel>())
+            {
+                using (SqlCommand insert = connection.CreateCommand())
+                {
+                    insert.Transaction = transaction;
+                    insert.CommandType = CommandType.Text;
+                    insert.CommandText = @"
+INSERT INTO dbo.ExtCentral_DocumentoInventarioAuditoria
+(DocumentoID, Evento, Usuario, FechaHora, Comentario)
+VALUES (@DocumentoID, @Evento, @Usuario, @FechaHora, @Comentario);";
+
+                    insert.Parameters.AddWithValue("@DocumentoID", documentoID);
+                    insert.Parameters.AddWithValue("@Evento", DbString(evento.Evento));
+                    insert.Parameters.AddWithValue("@Usuario", DbString(evento.Usuario));
+                    insert.Parameters.Add("@FechaHora", SqlDbType.DateTime).Value = evento.FechaHora == DateTime.MinValue ? DateTime.Now : evento.FechaHora;
+                    insert.Parameters.AddWithValue("@Comentario", DbString(evento.Comentario));
+                    insert.ExecuteNonQuery();
+                }
+            }
+        }
+
+        private static void AddDecimalParameter(SqlCommand command, string name, decimal value, byte precision = 19)
+        {
+            SqlParameter parameter = command.Parameters.Add(name, SqlDbType.Decimal);
+            parameter.Precision = precision;
+            parameter.Scale = 4;
+            parameter.Value = value;
+        }
+
+        private static void FinalizeDocumento(DocumentoInventarioViewModel documento)
+        {
+            if (documento == null)
+                return;
+
+            documento.DetalleLineas = documento.DetalleLineas ?? new List<DocumentoDetalleLineaViewModel>();
+            foreach (DocumentoDetalleLineaViewModel linea in documento.DetalleLineas)
+            {
+                EnsureRecepcionLinea(linea, documento.Estado);
+                linea.TotalLinea = CalculateTotalLinea(linea.Cantidad, linea.CostoUnitario, linea.DescuentoPorcentaje, linea.DescuentoMonto, linea.ImpuestoPorcentaje);
+            }
+
+            documento.LineasEspeciales = BuildLineasEspeciales(documento.DetalleLineas);
+            documento.CantidadLineasDetalle = documento.DetalleLineas.Count;
+            documento.CantidadLineasEspeciales = documento.LineasEspeciales.Count;
+            documento.TotalLineasEspeciales = documento.LineasEspeciales.Sum(x => x.Cantidad * x.Costo);
+            documento.ResumenAuditoria = BuildResumenAuditoria(documento.LineasEspeciales);
+            documento.Producto = BuildResumenProducto(documento.DetalleLineas, documento.LineasEspeciales);
+            documento.Total = documento.DetalleLineas.Sum(x => x.TotalLinea);
+            documento.EventosAuditoria = documento.EventosAuditoria ?? new List<DocumentoAuditoriaEventoViewModel>();
+        }
+
+        private static void SplitCodeName(string value, out string code, out string name)
+        {
+            code = "";
+            name = value ?? "";
+
+            var parts = (value ?? "").Split(new[] { " - " }, 2, StringSplitOptions.None);
+            if (parts.Length == 2)
+            {
+                code = parts[0].Trim();
+                name = parts[1].Trim();
+            }
         }
 
         private static string JoinCodeName(string code, string name)
@@ -993,8 +1264,9 @@ ORDER BY R.DatePosted DESC, R.ID DESC, E.LineNumber ASC;";
         {
             try
             {
+                int limit = take <= 0 ? 100 : take;
                 return new CT_Supplier()
-                    .GetAll("%", searchValue ?? "", 0, take)
+                    .GetAll("%", searchValue ?? "", 0, limit)
                     .Where(x => x != null)
                     .Select(x => new ProveedorCatalogo(x.Code, x.Name, 0))
                     .Where(x => !String.IsNullOrWhiteSpace(x.Codigo) || !String.IsNullOrWhiteSpace(x.Nombre))
@@ -1004,14 +1276,7 @@ ORDER BY R.DatePosted DESC, R.ID DESC, E.LineNumber ASC;";
             }
             catch
             {
-                var lookup = NormalizeLookup(searchValue);
-                return Proveedores
-                    .Where(x => String.IsNullOrWhiteSpace(lookup) ||
-                        NormalizeLookup(x.Key).Contains(lookup) ||
-                        NormalizeLookup(x.Codigo).Contains(lookup) ||
-                        NormalizeLookup(x.Nombre).Contains(lookup))
-                    .Take(take <= 0 ? Proveedores.Count : take)
-                    .ToList();
+                return new List<ProveedorCatalogo>();
             }
         }
 
@@ -1030,7 +1295,7 @@ ORDER BY R.DatePosted DESC, R.ID DESC, E.LineNumber ASC;";
             }
             catch
             {
-                return GetProductosDemo(searchValue, take);
+                return new List<ProductoCatalogo>();
             }
         }
 
@@ -1046,29 +1311,6 @@ ORDER BY R.DatePosted DESC, R.ID DESC, E.LineNumber ASC;";
                 Costo = cost,
                 Impuesto = Convert.ToDecimal(item.TaxPercentage)
             };
-        }
-
-        private static List<ProductoCatalogo> GetProductosDemo(string searchValue, int take)
-        {
-            var demo = new List<ProductoCatalogo>
-            {
-                new ProductoCatalogo { Codigo = "ACE-015", Descripcion = "Aceite vegetal", Unidad = "UND", Costo = 2590m, Impuesto = 13m },
-                new ProductoCatalogo { Codigo = "ARR-220", Descripcion = "Arroz precocido", Unidad = "KG", Costo = 2750m, Impuesto = 1m },
-                new ProductoCatalogo { Codigo = "CAF-009", Descripcion = "Cafe molido", Unidad = "BQ", Costo = 4521m, Impuesto = 13m },
-                new ProductoCatalogo { Codigo = "EMP-001", Descripcion = "Insumos de empaque", Unidad = "CJ", Costo = 4520.50m, Impuesto = 13m },
-                new ProductoCatalogo { Codigo = "FIL-014", Descripcion = "Film termico", Unidad = "UND", Costo = 1295.75m, Impuesto = 13m },
-                new ProductoCatalogo { Codigo = "HAR-112", Descripcion = "Harina preparada", Unidad = "QQ", Costo = 10900m, Impuesto = 1m },
-                new ProductoCatalogo { Codigo = "PROMO-1", Descripcion = "Producto de cortesia", Unidad = "UND", Costo = 0m, Impuesto = 0m },
-                new ProductoCatalogo { Codigo = "SAL-441", Descripcion = "Salsa base", Unidad = "GAL", Costo = 74850m, Impuesto = 13m }
-            };
-
-            var lookup = NormalizeLookup(searchValue);
-            return demo
-                .Where(x => String.IsNullOrWhiteSpace(lookup) ||
-                    NormalizeLookup(x.Codigo).Contains(lookup) ||
-                    NormalizeLookup(x.Descripcion).Contains(lookup))
-                .Take(take <= 0 ? demo.Count : take)
-                .ToList();
         }
 
         private static object ToProveedorJson(ProveedorCatalogo proveedor)
@@ -1686,7 +1928,7 @@ ORDER BY R.DatePosted DESC, R.ID DESC, E.LineNumber ASC;";
 
         private DocumentoInventarioViewModel GetSqlDocumentoForOperation(int id)
         {
-            return GetHistoricoAjustesFromDatabase("", "", "", "", "", "")
+            return GetHistoricoAjustesFromDatabase("", "", "", "", "", "", id)
                 .FirstOrDefault(x => x.ID == id);
         }
 
@@ -1741,26 +1983,44 @@ ORDER BY R.DatePosted DESC, R.ID DESC, E.LineNumber ASC;";
             return "Compra";
         }
 
-        private static string GetNextNumero(string tipoDocumento)
+        private string GetNextNumero(string tipoDocumento)
         {
             var prefix = GetNumeroPrefix(tipoDocumento);
             var seed = GetNumeroSeed(tipoDocumento);
             var max = seed - 1;
 
-            lock (SyncRoot)
+            try
             {
-                foreach (var numero in Documentos.Select(x => x.Numero))
+                EnsureDocumentSqlSchema();
+                using (SqlConnection connection = CreateMasterConnection())
+                using (SqlCommand command = connection.CreateCommand())
                 {
-                    if (String.IsNullOrWhiteSpace(numero) ||
-                        !numero.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                        continue;
+                    command.CommandType = CommandType.Text;
+                    command.CommandText = @"
+SELECT MAX(Value) AS MaxValue
+FROM
+(
+    SELECT TRY_CONVERT(INT, SUBSTRING(Numero, LEN(@Prefix) + 1, 20)) AS Value
+    FROM dbo.ExtCentral_DocumentoInventario
+    WHERE Numero LIKE @PrefixLike
+    UNION ALL
+    SELECT TRY_CONVERT(INT, SUBSTRING(Number, LEN(@Prefix) + 1, 20)) AS Value
+    FROM dbo.POD_Receipt
+    WHERE Number LIKE @PrefixLike
+) X
+WHERE Value IS NOT NULL;";
+                    command.Parameters.AddWithValue("@Prefix", prefix);
+                    command.Parameters.AddWithValue("@PrefixLike", prefix + "%");
 
-                    int value;
-                    if (Int32.TryParse(numero.Substring(prefix.Length), out value) && value > max)
-                    {
-                        max = value;
-                    }
+                    connection.Open();
+                    object value = command.ExecuteScalar();
+                    if (value != null && value != DBNull.Value)
+                        max = Math.Max(max, Convert.ToInt32(value));
                 }
+            }
+            catch
+            {
+                max = seed - 1;
             }
 
             return prefix + (max + 1).ToString("00000000", CultureInfo.InvariantCulture);

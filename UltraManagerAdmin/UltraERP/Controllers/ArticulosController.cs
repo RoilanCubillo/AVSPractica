@@ -17,48 +17,6 @@ namespace UltraERP.Controllers
     {
         private const int DefaultResultCount = 10000;
 
-        private static readonly List<string> Unidades = new List<string> { "UND", "KG", "CJ", "GAL", "L", "QQ", "BQ" };
-        private static readonly List<string> Proveedores = new List<string> { "Cooperativa Dos Pinos", "Cafe Britt Costa Rica", "Irex de Costa Rica", "Distribuidora San Jose", "Central de Abarrotes Cartago" };
-        private static readonly List<string> Bodegas = new List<string> { "Bodega Central Heredia", "Sucursal Escazu", "Sucursal Sabana", "Sucursal Cartago" };
-
-        private static readonly List<FamiliaCatalogo> Familias = new List<FamiliaCatalogo>
-        {
-            new FamiliaCatalogo(1, "ABAR", "Abarrotes ticos"),
-            new FamiliaCatalogo(2, "LACT", "Lacteos y frescos"),
-            new FamiliaCatalogo(3, "BEB", "Bebidas y cafe"),
-            new FamiliaCatalogo(4, "LIMP", "Limpieza y hogar")
-        };
-
-        private static readonly List<DepartamentoCatalogo> Departamentos = new List<DepartamentoCatalogo>
-        {
-            new DepartamentoCatalogo(1, 1, "GRANOS", "Granos basicos"),
-            new DepartamentoCatalogo(2, 1, "SALSAS", "Salsas y condimentos"),
-            new DepartamentoCatalogo(3, 2, "REFRI", "Refrigerados"),
-            new DepartamentoCatalogo(4, 3, "CAFE", "Cafe y bebidas"),
-            new DepartamentoCatalogo(5, 4, "HOGAR", "Cuidado del hogar")
-        };
-
-        private static readonly List<CategoriaCatalogo> Categorias = new List<CategoriaCatalogo>
-        {
-            new CategoriaCatalogo(1, 1, "ARROZ", "Arroces"),
-            new CategoriaCatalogo(2, 1, "FRIJ", "Frijoles"),
-            new CategoriaCatalogo(3, 2, "SALT", "Salsas ticas"),
-            new CategoriaCatalogo(4, 3, "LECHE", "Leches y lacteos"),
-            new CategoriaCatalogo(5, 4, "CAFCR", "Cafe costarricense"),
-            new CategoriaCatalogo(6, 5, "DETER", "Detergentes")
-        };
-
-        private static readonly List<SubCategoriaCatalogo> SubCategorias = new List<SubCategoriaCatalogo>
-        {
-            new SubCategoriaCatalogo(1, 1, "GRANO", "Arroz grano entero"),
-            new SubCategoriaCatalogo(2, 1, "PRECOC", "Arroz precocido"),
-            new SubCategoriaCatalogo(3, 2, "ROJOS", "Frijoles rojos"),
-            new SubCategoriaCatalogo(4, 3, "MESA", "Salsas de mesa"),
-            new SubCategoriaCatalogo(5, 4, "FLUIDA", "Leche fluida"),
-            new SubCategoriaCatalogo(6, 5, "MOLIDO", "Cafe molido"),
-            new SubCategoriaCatalogo(7, 6, "POLVO", "Detergente en polvo")
-        };
-
         public ActionResult Inicio()
         {
             try
@@ -617,8 +575,8 @@ ORDER BY RowNum;";
                 return NormalizeCatalogData(new CatalogData
                 {
                     Unidades = new List<string>(),
-                    Proveedores = Proveedores.Select((x, i) => new EN_Supplier(i + 1, x, x)).ToList(),
-                    Bodegas = Bodegas.Select((x, i) => new EN_Store(i + 1, x, x)).ToList(),
+                    Proveedores = new List<EN_Supplier>(),
+                    Bodegas = new List<EN_Store>(),
                     Familias = new List<FamiliaCatalogo>(),
                     Departamentos = new List<DepartamentoCatalogo>(),
                     Categorias = new List<CategoriaCatalogo>(),
@@ -644,19 +602,6 @@ ORDER BY RowNum;";
                 catalog.Categorias = GetCategoriesDirect();
             if (catalog.SubCategorias == null || !catalog.SubCategorias.Any())
                 catalog.SubCategorias = GetSubCategoriesDirect();
-
-            if (catalog.Unidades == null || !catalog.Unidades.Any())
-                catalog.Unidades = Unidades;
-            if (catalog.Bodegas == null || !catalog.Bodegas.Any())
-                catalog.Bodegas = Bodegas.Select((x, i) => new EN_Store(i + 1, x, x)).ToList();
-            if (catalog.Familias == null || !catalog.Familias.Any())
-                catalog.Familias = Familias;
-            if (catalog.Departamentos == null || !catalog.Departamentos.Any())
-                catalog.Departamentos = Departamentos;
-            if (catalog.Categorias == null || !catalog.Categorias.Any())
-                catalog.Categorias = Categorias;
-            if (catalog.SubCategorias == null || !catalog.SubCategorias.Any())
-                catalog.SubCategorias = SubCategorias;
 
             return catalog;
         }
@@ -779,14 +724,14 @@ ORDER BY RowNum;";
             {
                 Activo = true,
                 Inventariable = true,
-                UnidadMedida = catalog.Unidades.FirstOrDefault() ?? "UND",
+                UnidadMedida = catalog.Unidades.FirstOrDefault() ?? "",
                 FamiliaID = familia == null ? 0 : familia.ID,
                 DepartamentoID = departamento == null ? 0 : departamento.ID,
                 CategoriaID = categoria == null ? 0 : categoria.ID,
                 SubCategoriaID = subCategoria == null ? 0 : subCategoria.ID,
                 Proveedor = catalog.Proveedores.Select(x => x.Name).FirstOrDefault() ?? "",
                 Bodega = catalog.Bodegas.Select(x => x.NameS).FirstOrDefault() ?? "",
-                ImpuestoPorcentaje = 13m,
+                ImpuestoPorcentaje = ResolveDefaultTaxPercentage(catalog),
                 FechaCrea = DateTime.Now,
                 UsuarioCrea = GetCurrentUser()
             };
@@ -873,6 +818,16 @@ ORDER BY RowNum;";
         {
             EN_Tax tax = catalog.Impuestos.FirstOrDefault(x => Math.Abs(Convert.ToDecimal(x.Percentage) - percentage) < 0.01m);
             return tax == null ? currentTaxID : tax.ID;
+        }
+
+        private static decimal ResolveDefaultTaxPercentage(CatalogData catalog)
+        {
+            if (catalog == null || catalog.Impuestos == null || catalog.Impuestos.Count == 0)
+                return 0m;
+
+            EN_Tax preferred = catalog.Impuestos.FirstOrDefault(x => Math.Abs(Convert.ToDecimal(x.Percentage) - 13m) < 0.01m);
+            EN_Tax fallback = preferred ?? catalog.Impuestos.FirstOrDefault();
+            return fallback == null ? 0m : Convert.ToDecimal(fallback.Percentage);
         }
 
         private static string ResolveStoresSelectedForSave(string currentStores, string storesAvailable, CatalogData catalog)

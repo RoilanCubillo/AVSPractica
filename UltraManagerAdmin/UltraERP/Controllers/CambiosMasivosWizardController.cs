@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Data;
+using System.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
 using System.Web.Mvc;
@@ -14,36 +16,6 @@ namespace UltraERP.Controllers
     [Authorize]
     public class CambiosMasivosWizardController : Controller
     {
-        private static readonly List<CambioMasivoTaskViewModel> TareasBase = new List<CambioMasivoTaskViewModel>
-        {
-            CreateTask("104", "Cambio de impuestos", "Actualice el impuesto de venta para multiples articulos en una sola solicitud.", "Fiscal", 320, "Recomendado para ajustes tributarios por categoria o reforma.", "Codigo de producto", "Impuesto actual", "Impuesto nuevo"),
-            CreateTask("107", "Cambio de descripcion corta", "Renueve la descripcion corta visible en listado y punto de venta.", "Catalogo", 410, "Util para estandarizar nombres comerciales y marcas visibles.", "Codigo de producto", "Descripcion corta nueva"),
-            CreateTask("110", "Cambio de CABYS", "Corrija o sustituya la clasificacion CABYS de varios articulos.", "Catalogo", 410, "Pensado para depuracion regulatoria y homologacion contable.", "Codigo de producto", "CABYS nuevo"),
-            CreateTask("121", "Precio dinamico", "Prepare cambios de precio promocional con fechas y descuentos.", "Precios", 251, "Genera una hoja lista para aprobacion comercial.", "Codigo de producto", "Precio oferta", "Cantidad oferta", "Desc. factura (%)", "Desc. cliente (%)", "Fecha inicio", "Fecha fin"),
-            CreateTask("123", "Precio regular", "Actualice el precio regular base de un grupo de articulos.", "Precios", 251, "Ideal para cambios por proveedor, costo o estrategia comercial.", "Codigo de producto", "Precio regular nuevo"),
-            CreateTask("201", "Cambio de propiedades", "Cambie propiedades extendidas como origen, registro o atributos logisticos.", "Propiedades", 410, "Complementa la pantalla de Propiedades de Articulos cuando el cambio viene por lote.", "Codigo de producto", "Propiedad", "Valor nuevo")
-        };
-
-        private static readonly List<CambioMasivoTiendaViewModel> TiendasDemo = new List<CambioMasivoTiendaViewModel>
-        {
-            CreateStore(1, 1, "SJ-CTR", "San Jose Centro", "San Jose"),
-            CreateStore(2, 1, "HER-PLZ", "Heredia Plaza", "Heredia"),
-            CreateStore(3, 1, "CRT-EST", "Cartago Este", "Cartago"),
-            CreateStore(4, 2, "ESC-GAM", "Escazu", "San Jose"),
-            CreateStore(5, 2, "SBN-COR", "Sabana", "San Jose"),
-            CreateStore(6, 2, "SPD-UNI", "San Pedro", "San Jose"),
-            CreateStore(7, 3, "LBR-OCC", "Liberia", "Guanacaste"),
-            CreateStore(8, 3, "LIM-CAR", "Limon Centro", "Limon"),
-            CreateStore(9, 3, "PZM-SUR", "Perez Zeledon", "San Jose")
-        };
-
-        private static readonly List<CambioMasivoGrupoTiendaViewModel> GruposDemo = new List<CambioMasivoGrupoTiendaViewModel>
-        {
-            new CambioMasivoGrupoTiendaViewModel { ID = 1, Nombre = "Valle Central", CantidadTiendas = 3 },
-            new CambioMasivoGrupoTiendaViewModel { ID = 2, Nombre = "GAM Premium", CantidadTiendas = 3 },
-            new CambioMasivoGrupoTiendaViewModel { ID = 3, Nombre = "Regional", CantidadTiendas = 3 }
-        };
-
         public ActionResult Inicio()
         {
             var catalog = GetStoreCatalogSafe();
@@ -55,7 +27,7 @@ namespace UltraERP.Controllers
                 Tiendas = catalog.Tiendas
             };
 
-            ViewBag.CambiosMasivosDataSource = catalog.FromSql ? "SQL" : "Demo";
+            ViewBag.CambiosMasivosDataSource = catalog.FromSql ? "SQL" : "Sin datos";
             return View(model);
         }
 
@@ -90,64 +62,270 @@ namespace UltraERP.Controllers
             if (!DateTime.TryParseExact(request.EffectiveDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out fechaEfectiva))
                 fechaEfectiva = DateTime.Today.AddDays(1);
 
-            var now = DateTime.Now;
-            var usuario = User != null && User.Identity != null && User.Identity.IsAuthenticated && !String.IsNullOrWhiteSpace(User.Identity.Name)
-                ? User.Identity.Name
-                : "Usuario UltraERP";
-            var tiendasHoja = tiendasSeleccionadas
-                .Select(x => new HojaTrabajoTiendaViewModel
-                {
-                    TiendaID = x.ID,
-                    TiendaNombre = x.Nombre,
-                    EstadoID = 1,
-                    FechaProcesado = null
-                })
-                .ToList();
-
-            var contenido = BuildWorksheetContent(tarea, tiendasSeleccionadas, filas, fechaEfectiva);
             var notas = BuildNotes(request.Notes, request.FileName, request.Separator, filas.Count);
 
-            var hoja = new HojaTrabajoViewModel
-            {
-                EstiloID = tarea.EstiloHojaID,
-                EstadoID = 1,
-                Titulo = tarea.Nombre + " - " + now.ToString("dd/MM HH:mm"),
-                Notas = notas,
-                TareaCodigo = tarea.Codigo,
-                TareaDescripcion = tarea.Nombre,
-                Usuario = usuario,
-                FechaCreacion = now,
-                FechaEfectiva = fechaEfectiva.Date.AddHours(22),
-                ArchivoID = 1,
-                Tiendas = tiendasHoja,
-                Historial = new List<HojaTrabajoHistorialViewModel>
-                {
-                    new HojaTrabajoHistorialViewModel
-                    {
-                        EstadoID = 1,
-                        Tienda = "Oficina Central",
-                        FechaHora = now,
-                        Comentario = "Hoja creada desde Cambios Masivos Wizard."
-                    },
-                    new HojaTrabajoHistorialViewModel
-                    {
-                        EstadoID = 1,
-                        Tienda = "Oficina Central",
-                        FechaHora = now.AddMinutes(1),
-                        Comentario = "Pendiente de aprobacion comercial."
-                    }
-                },
-                Contenido = contenido
-            };
+            WorksheetCreationResult creation = CreateWorksheetInSql(tarea, tiendasSeleccionadas, filas, fechaEfectiva, notas);
+            if (!creation.Status)
+                return Json(new JsonResponse(creation.InternalMessage, creation.Message, null, false));
 
-            var registrada = HojasTrabajoController.RegistrarHoja(hoja);
-            return Json(new JsonResponse("", "Hoja de trabajo creada correctamente.", new
+            return Json(new JsonResponse("", creation.Message, new
             {
-                WorksheetID = registrada.ID,
+                WorksheetID = creation.WorksheetID,
                 RedirectUrl = Url.Action("Inicio", "HojasTrabajo"),
-                RegisteredRows = registrada.CantidadContenido,
-                Stores = registrada.CantidadTiendas
+                RegisteredRows = creation.RegisteredRows,
+                Stores = creation.Stores
             }, true));
+        }
+
+        private WorksheetCreationResult CreateWorksheetInSql(CambioMasivoTaskViewModel tarea, IList<CambioMasivoTiendaViewModel> tiendas, IList<List<string>> filas, DateTime fechaEfectiva, string notas)
+        {
+            var storeIDs = tiendas.Select(x => x.ID).ToArray();
+            var items = ResolveItems(filas);
+            if (items.MissingCodes.Count > 0)
+            {
+                return new WorksheetCreationResult
+                {
+                    Status = false,
+                    Message = "No se pudo crear la hoja: hay productos que no existen o no estan disponibles.",
+                    InternalMessage = "Productos no encontrados: " + String.Join(", ", items.MissingCodes.Take(8))
+                };
+            }
+
+            string title = BuildWizardTitle(tarea);
+            string userID = GetCurrentUserID();
+            var wizard = new CT_Wizard();
+            var responses = new List<Respuesta>();
+
+            switch ((tarea.Codigo ?? "").Trim())
+            {
+                case "104":
+                    var taxRows = filas.Select(row =>
+                    {
+                        EN_Item item = items.ByCode[NormalizeLookup(GetValue(row, 0))];
+                        return new EN_WizardStructs.TablaItemTax
+                        {
+                            ID = item.ID,
+                            ItemLookupCode = item.ItemLookupCode,
+                            Description = item.Description,
+                            TaxPerAnterior = FirstNonEmpty(GetValue(row, 1), Convert.ToString(item.TaxPercentage, CultureInfo.InvariantCulture)),
+                            TaxPercentage = GetValue(row, 2)
+                        };
+                    }).ToList();
+                    foreach (int storeID in storeIDs)
+                        responses.Add(wizard.Task104(storeID, title, notas, taxRows, userID));
+                    break;
+
+                case "107":
+                    var descriptionRows = filas.Select(row =>
+                    {
+                        EN_Item item = items.ByCode[NormalizeLookup(GetValue(row, 0))];
+                        return new EN_WizardStructs.TablaItemDes
+                        {
+                            ID = item.ID,
+                            ItemLookupCode = item.ItemLookupCode,
+                            Description = item.Description,
+                            DesAnterior = item.Description,
+                            NuevaDes = GetValue(row, 1)
+                        };
+                    }).ToList();
+                    foreach (int storeID in storeIDs)
+                        responses.Add(wizard.Task107(storeID, title, notas, descriptionRows, userID));
+                    break;
+
+                case "110":
+                    var cabysRows = filas.Select(row =>
+                    {
+                        EN_Item item = items.ByCode[NormalizeLookup(GetValue(row, 0))];
+                        return new EN_WizardStructs.TablaItemSub3
+                        {
+                            ID = item.ID,
+                            ItemLookupCode = item.ItemLookupCode,
+                            Description = item.Description,
+                            OldCabys = item.SubDescription3,
+                            SubDescription3 = GetValue(row, 1)
+                        };
+                    }).ToList();
+                    foreach (int storeID in storeIDs)
+                        responses.Add(wizard.Task110(storeID, title, notas, cabysRows, userID));
+                    break;
+
+                case "121":
+                    var dynamicRows = filas.Select(row =>
+                    {
+                        EN_Item item = items.ByCode[NormalizeLookup(GetValue(row, 0))];
+                        return new EN_WizardStructs.TablaItemPriceDynamic
+                        {
+                            ID = item.ID,
+                            SupplierCode = item.SupplierCode,
+                            ItemLookupCode = item.ItemLookupCode,
+                            InvoiceDiscount = FirstNonEmpty(GetValue(row, 3), "0"),
+                            CustomerDiscount = FirstNonEmpty(GetValue(row, 4), "0"),
+                            StartDate = FormatDateForWizard(ParseRowDate(GetValue(row, 5), fechaEfectiva)),
+                            EndDate = FormatDateForWizard(ParseRowDate(GetValue(row, 6), fechaEfectiva.AddDays(14))),
+                            SalePrice = GetValue(row, 1),
+                            Quantity = FirstNonEmpty(GetValue(row, 2), "0")
+                        };
+                    }).ToList();
+                    foreach (int storeID in storeIDs)
+                        responses.Add(wizard.Task121(storeID, title, notas, fechaEfectiva, dynamicRows, userID));
+                    break;
+
+                case "123":
+                    var priceRows = filas.Select(row =>
+                    {
+                        EN_Item item = items.ByCode[NormalizeLookup(GetValue(row, 0))];
+                        decimal newPrice = ParseDecimal(GetValue(row, 1));
+                        decimal cost = item.ReplacementCost > 0 ? item.ReplacementCost : item.Cost;
+                        decimal utility = cost > 0 ? Math.Round(((newPrice - cost) / cost) * 100m, 2) : item.Utility;
+                        return new EN_WizardStructs.TablaItemPriceRegular
+                        {
+                            ID = item.ID,
+                            ItemLookupCode = item.ItemLookupCode,
+                            InvoiceDiscount = "0",
+                            CustomerDiscount = "0",
+                            Cost = FormatDecimalForWizard(cost),
+                            Utility = FormatDecimalForWizard(utility)
+                        };
+                    }).ToList();
+                    responses.Add(wizard.Task123(storeIDs, title, notas, fechaEfectiva, priceRows, userID));
+                    break;
+
+                default:
+                    return new WorksheetCreationResult
+                    {
+                        Status = false,
+                        Message = "La tarea " + tarea.Codigo + " todavia no tiene guardado SQL conectado desde esta pantalla.",
+                        InternalMessage = "TaskCode no soportado por CambiosMasivosWizardController."
+                    };
+            }
+
+            bool ok = responses.Count > 0 && responses.All(x => x != null && x.Status);
+            return new WorksheetCreationResult
+            {
+                Status = ok,
+                Message = ok
+                    ? "Hoja de trabajo creada correctamente en SQL."
+                    : FirstNonEmpty(responses.Where(x => x != null).Select(x => x.Message).FirstOrDefault(), "No se pudo crear la hoja de trabajo en SQL."),
+                InternalMessage = String.Join(" | ", responses.Where(x => x != null && !String.IsNullOrWhiteSpace(x.InternalMessage)).Select(x => x.InternalMessage)),
+                WorksheetID = GetLatestWorksheetID(title, userID),
+                RegisteredRows = filas.Count,
+                Stores = storeIDs.Length
+            };
+        }
+
+        private ResolvedWizardItems ResolveItems(IList<List<string>> filas)
+        {
+            var result = new ResolvedWizardItems();
+            var codes = filas
+                .Select(x => GetValue(x, 0))
+                .Where(x => !String.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            if (codes.Length == 0)
+                return result;
+
+            List<EN_Item> items = new CT_Item().GetByItemLookupCodebyLista(String.Join(",", codes), GetStoresAvailable());
+            foreach (EN_Item item in items ?? new List<EN_Item>())
+            {
+                string key = NormalizeLookup(item.ItemLookupCode);
+                if (!String.IsNullOrWhiteSpace(key) && !result.ByCode.ContainsKey(key))
+                    result.ByCode.Add(key, item);
+            }
+
+            foreach (string code in codes)
+            {
+                if (!result.ByCode.ContainsKey(NormalizeLookup(code)))
+                    result.MissingCodes.Add(code);
+            }
+
+            return result;
+        }
+
+        private int GetLatestWorksheetID(string title, string userID)
+        {
+            try
+            {
+                ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings["UltraERP.BusinessDataAccess.Properties.Settings.MasterDB"];
+                if (settings == null || String.IsNullOrWhiteSpace(settings.ConnectionString))
+                    return 0;
+
+                using (SqlConnection connection = new SqlConnection(settings.ConnectionString))
+                using (SqlCommand command = connection.CreateCommand())
+                {
+                    command.CommandType = CommandType.Text;
+                    command.CommandText = @"
+SELECT TOP 1 W.ID
+FROM dbo.Worksheet W
+LEFT JOIN dbo.ExtCentral_Worksheet EW ON EW.WorksheetID = W.ID
+WHERE (@Title = '' OR W.Title = @Title OR EW.WorsheetTitle = @Title)
+  AND (@UserID = '' OR EW.HQUserID = TRY_CONVERT(INT, @UserID))
+ORDER BY W.ID DESC;";
+                    command.Parameters.AddWithValue("@Title", title ?? "");
+                    command.Parameters.AddWithValue("@UserID", userID ?? "");
+
+                    connection.Open();
+                    object value = command.ExecuteScalar();
+                    return value == null || value == DBNull.Value ? 0 : Convert.ToInt32(value);
+                }
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        private string GetCurrentUserID()
+        {
+            return Session["USER_AUTOID"] == null ? "0" : Convert.ToString(Session["USER_AUTOID"]);
+        }
+
+        private string GetCurrentUserName(int maxLength = 0)
+        {
+            string name = User != null && User.Identity != null && !String.IsNullOrWhiteSpace(User.Identity.Name)
+                ? User.Identity.Name.Trim()
+                : "UltraERP";
+
+            return maxLength > 0 && name.Length > maxLength ? name.Substring(0, maxLength) : name;
+        }
+
+        private string BuildWizardTitle(CambioMasivoTaskViewModel tarea)
+        {
+            string title = (tarea.Codigo + "-" + tarea.Nombre + "-" + GetCurrentUserName(18)).Trim();
+            return title.Length > 50 ? title.Substring(0, 50) : title;
+        }
+
+        private static DateTime ParseRowDate(string value, DateTime fallback)
+        {
+            if (String.IsNullOrWhiteSpace(value))
+                return fallback;
+
+            DateTime date;
+            string[] formats = { "yyyy-MM-dd", "dd/MM/yyyy", "d/M/yyyy", "yyyy/MM/dd" };
+            if (DateTime.TryParseExact(value.Trim(), formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out date))
+                return date;
+
+            return DateTime.TryParse(value, out date) ? date : fallback;
+        }
+
+        private static decimal ParseDecimal(string value)
+        {
+            decimal number;
+            if (Decimal.TryParse((value ?? "").Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out number))
+                return number;
+
+            return 0m;
+        }
+
+        private static string FormatDecimalForWizard(decimal value)
+        {
+            return value.ToString("0.####", CultureInfo.InvariantCulture);
+        }
+
+        private static string FormatDateForWizard(DateTime value)
+        {
+            return value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         }
 
         private List<CambioMasivoTaskViewModel> GetTareasSafe()
@@ -160,7 +338,7 @@ namespace UltraERP.Controllers
                     .ToList();
 
                 if (dbTasks.Count == 0)
-                    return TareasBase.Select(CloneTask).ToList();
+                    return new List<CambioMasivoTaskViewModel>();
 
                 return dbTasks
                     .Select(MapTaskFromDatabase)
@@ -170,7 +348,7 @@ namespace UltraERP.Controllers
             }
             catch
             {
-                return TareasBase.Select(CloneTask).ToList();
+                return new List<CambioMasivoTaskViewModel>();
             }
         }
 
@@ -179,7 +357,7 @@ namespace UltraERP.Controllers
             if (source == null || String.IsNullOrWhiteSpace(source.Codigo))
                 return null;
 
-            var template = TareasBase.FirstOrDefault(x => String.Equals(x.Codigo, source.Codigo, StringComparison.OrdinalIgnoreCase));
+            var template = GetSupportedTaskTemplate(source.Codigo);
             if (template != null)
             {
                 var task = CloneTask(template);
@@ -276,8 +454,8 @@ namespace UltraERP.Controllers
                 return new StoreCatalogData
                 {
                     FromSql = false,
-                    Grupos = GruposDemo.Select(CloneGroup).ToList(),
-                    Tiendas = TiendasDemo.Select(CloneStore).ToList()
+                    Grupos = new List<CambioMasivoGrupoTiendaViewModel>(),
+                    Tiendas = new List<CambioMasivoTiendaViewModel>()
                 };
             }
         }
@@ -464,28 +642,6 @@ namespace UltraERP.Controllers
             };
         }
 
-        private static CambioMasivoGrupoTiendaViewModel CloneGroup(CambioMasivoGrupoTiendaViewModel group)
-        {
-            return new CambioMasivoGrupoTiendaViewModel
-            {
-                ID = group.ID,
-                Nombre = group.Nombre,
-                CantidadTiendas = group.CantidadTiendas
-            };
-        }
-
-        private static CambioMasivoTiendaViewModel CloneStore(CambioMasivoTiendaViewModel store)
-        {
-            return new CambioMasivoTiendaViewModel
-            {
-                ID = store.ID,
-                GrupoID = store.GrupoID,
-                Codigo = store.Codigo,
-                Nombre = store.Nombre,
-                Ciudad = store.Ciudad
-            };
-        }
-
         private static CambioMasivoTiendaViewModel MapStore(EN_Store store, int groupID)
         {
             if (store == null || store.IDS <= 0)
@@ -509,6 +665,11 @@ namespace UltraERP.Controllers
             return values.FirstOrDefault(x => !String.IsNullOrWhiteSpace(x)) ?? "";
         }
 
+        private static string NormalizeLookup(string value)
+        {
+            return (value ?? "").Trim().ToUpperInvariant();
+        }
+
         private static CambioMasivoTaskViewModel CreateTask(string codigo, string nombre, string descripcion, string categoria, int estiloHojaID, string resumen, params string[] columnas)
         {
             return new CambioMasivoTaskViewModel
@@ -523,16 +684,25 @@ namespace UltraERP.Controllers
             };
         }
 
-        private static CambioMasivoTiendaViewModel CreateStore(int id, int grupoID, string codigo, string nombre, string ciudad)
+        private static CambioMasivoTaskViewModel GetSupportedTaskTemplate(string codigo)
         {
-            return new CambioMasivoTiendaViewModel
+            switch ((codigo ?? "").Trim())
             {
-                ID = id,
-                GrupoID = grupoID,
-                Codigo = codigo,
-                Nombre = nombre,
-                Ciudad = ciudad
-            };
+                case "104":
+                    return CreateTask("104", "Cambio de impuestos", "Actualice el impuesto de venta para multiples articulos en una sola solicitud.", "Fiscal", 320, "Recomendado para ajustes tributarios por categoria o reforma.", "Codigo de producto", "Impuesto actual", "Impuesto nuevo");
+                case "107":
+                    return CreateTask("107", "Cambio de descripcion corta", "Renueve la descripcion corta visible en listado y punto de venta.", "Catalogo", 410, "Util para estandarizar nombres comerciales y marcas visibles.", "Codigo de producto", "Descripcion corta nueva");
+                case "110":
+                    return CreateTask("110", "Cambio de CABYS", "Corrija o sustituya la clasificacion CABYS de varios articulos.", "Catalogo", 410, "Pensado para depuracion regulatoria y homologacion contable.", "Codigo de producto", "CABYS nuevo");
+                case "121":
+                    return CreateTask("121", "Precio dinamico", "Prepare cambios de precio promocional con fechas y descuentos.", "Precios", 251, "Genera una hoja lista para aprobacion comercial.", "Codigo de producto", "Precio oferta", "Cantidad oferta", "Desc. factura (%)", "Desc. cliente (%)", "Fecha inicio", "Fecha fin");
+                case "123":
+                    return CreateTask("123", "Precio regular", "Actualice el precio regular base de un grupo de articulos.", "Precios", 251, "Ideal para cambios por proveedor, costo o estrategia comercial.", "Codigo de producto", "Precio regular nuevo");
+                case "201":
+                    return CreateTask("201", "Cambio de propiedades", "Cambie propiedades extendidas como origen, registro o atributos logisticos.", "Propiedades", 410, "Complementa la pantalla de Propiedades de Articulos cuando el cambio viene por lote.", "Codigo de producto", "Propiedad", "Valor nuevo");
+                default:
+                    return null;
+            }
         }
 
         private class StoreCatalogData
@@ -546,6 +716,28 @@ namespace UltraERP.Controllers
             public bool FromSql { get; set; }
             public List<CambioMasivoGrupoTiendaViewModel> Grupos { get; set; }
             public List<CambioMasivoTiendaViewModel> Tiendas { get; set; }
+        }
+
+        private class ResolvedWizardItems
+        {
+            public ResolvedWizardItems()
+            {
+                ByCode = new Dictionary<string, EN_Item>(StringComparer.OrdinalIgnoreCase);
+                MissingCodes = new List<string>();
+            }
+
+            public Dictionary<string, EN_Item> ByCode { get; private set; }
+            public List<string> MissingCodes { get; private set; }
+        }
+
+        private class WorksheetCreationResult
+        {
+            public bool Status { get; set; }
+            public string Message { get; set; }
+            public string InternalMessage { get; set; }
+            public int WorksheetID { get; set; }
+            public int RegisteredRows { get; set; }
+            public int Stores { get; set; }
         }
     }
 }

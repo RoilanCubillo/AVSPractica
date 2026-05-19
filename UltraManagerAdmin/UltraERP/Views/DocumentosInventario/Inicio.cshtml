@@ -292,6 +292,10 @@
 
             buttons.splice(1, 0, "<button class='icon-button neutral' title='Duplicar' onclick='onDuplicar(" + id + ")'>Duplicar</button>");
 
+            if (documento.SoloLecturaSql) {
+                return "<div class='action-stack'>" + buttons.join("") + "</div>";
+            }
+
             if (canRunDocumentProcesses) {
                 buttons.splice(1, 0, "<button class='icon-button primary' title='Editar' onclick='onEditar(" + id + ")'>Editar</button>");
                 buttons.push("<button class='icon-button warning' title='Enviar' onclick='onAccion(" + id + ", \"enviar\")'>Enviar</button>");

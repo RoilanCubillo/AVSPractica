@@ -37,18 +37,6 @@ namespace UltraERP.Controllers
             }
         }
 
-        public static HojaTrabajoViewModel RegistrarHoja(HojaTrabajoViewModel hoja)
-        {
-            if (hoja == null)
-                return null;
-
-            hoja.ID = hoja.ID > 0 ? hoja.ID : 0;
-            hoja.FechaCreacion = hoja.FechaCreacion == default(DateTime) ? DateTime.Now : hoja.FechaCreacion;
-            hoja.FechaEfectiva = hoja.FechaEfectiva == default(DateTime) ? hoja.FechaCreacion : hoja.FechaEfectiva;
-            hoja.TiendasTexto = hoja.Tiendas == null ? "" : String.Join(", ", hoja.Tiendas.Select(x => x.TiendaNombre));
-            return hoja;
-        }
-
         [HttpPost]
         public JsonResult CambiarEstado(int id, int estado)
         {
