@@ -41,6 +41,25 @@ BEGIN
     END;
 END;
 
+IF OBJECT_ID('dbo.ItemExt', 'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_ItemExt_ItemId' AND object_id = OBJECT_ID('dbo.ItemExt'))
+    BEGIN
+        CREATE NONCLUSTERED INDEX IX_ItemExt_ItemId
+            ON dbo.ItemExt (ItemId);
+    END;
+END;
+
+IF OBJECT_ID('dbo.ItemCustomProperty', 'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_ItemCustomProperty_Name' AND object_id = OBJECT_ID('dbo.ItemCustomProperty'))
+    BEGIN
+        CREATE NONCLUSTERED INDEX IX_ItemCustomProperty_Name
+            ON dbo.ItemCustomProperty (Name)
+            INCLUDE (ID, Type, Inactive);
+    END;
+END;
+
 IF OBJECT_ID('dbo.Supplier', 'U') IS NOT NULL
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Supplier_Code_List' AND object_id = OBJECT_ID('dbo.Supplier'))
@@ -55,7 +74,7 @@ BEGIN
         CREATE NONCLUSTERED INDEX IX_Supplier_Name_List
             ON dbo.Supplier (SupplierName)
             INCLUDE (Code, ID);
-    END;
+    END;o
 END;
 
 IF OBJECT_ID('dbo.ExtCentral_Family', 'U') IS NOT NULL
@@ -98,6 +117,23 @@ BEGIN
     END;
 END;
 
+IF OBJECT_ID('dbo.QuantityDiscount', 'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_QuantityDiscount_Description' AND object_id = OBJECT_ID('dbo.QuantityDiscount'))
+    BEGIN
+        CREATE NONCLUSTERED INDEX IX_QuantityDiscount_Description
+            ON dbo.QuantityDiscount ([Description], ID)
+            INCLUDE ([Type], DiscountOddItems);
+    END;
+
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_QuantityDiscount_Type_Description' AND object_id = OBJECT_ID('dbo.QuantityDiscount'))
+    BEGIN
+        CREATE NONCLUSTERED INDEX IX_QuantityDiscount_Type_Description
+            ON dbo.QuantityDiscount ([Type], [Description], ID)
+            INCLUDE (DiscountOddItems);
+    END;
+END;
+
 IF OBJECT_ID('dbo.POD_Receipt', 'U') IS NOT NULL
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_POD_Receipt_DatePosted_List' AND object_id = OBJECT_ID('dbo.POD_Receipt'))
@@ -112,6 +148,23 @@ BEGIN
         CREATE NONCLUSTERED INDEX IX_POD_Receipt_Number
             ON dbo.POD_Receipt (Number)
             INCLUDE (DatePosted, SupplierID, UserID, Reference, SupplierDocNo, TotalAmount);
+    END;
+END;
+
+IF OBJECT_ID('dbo.AVS_INTEGRAFAST_01', 'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_AVSIntegrafast_Store_Date_Number' AND object_id = OBJECT_ID('dbo.AVS_INTEGRAFAST_01'))
+    BEGIN
+        CREATE NONCLUSTERED INDEX IX_AVSIntegrafast_Store_Date_Number
+            ON dbo.AVS_INTEGRAFAST_01 (COD_SUCURSAL, FECHA_TRANSAC DESC, TRANSACTIONNUMBER DESC)
+            INCLUDE (CLAVE50, COMPROBANTE_TIPO, NOMBRE_CLIENTE, FECHA_HACIENDA, ESTADO_HACIENDA);
+    END;
+
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_AVSIntegrafast_Number_Store' AND object_id = OBJECT_ID('dbo.AVS_INTEGRAFAST_01'))
+    BEGIN
+        CREATE NONCLUSTERED INDEX IX_AVSIntegrafast_Number_Store
+            ON dbo.AVS_INTEGRAFAST_01 (TRANSACTIONNUMBER, COD_SUCURSAL)
+            INCLUDE (FECHA_TRANSAC, CLAVE50, COMPROBANTE_TIPO, NOMBRE_CLIENTE, FECHA_HACIENDA, ESTADO_HACIENDA);
     END;
 END;
 

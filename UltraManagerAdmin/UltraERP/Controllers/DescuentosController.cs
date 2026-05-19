@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Configuration;
+using System.Data;
+using System.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
 using System.Web.Mvc;
@@ -16,18 +19,58 @@ namespace UltraERP.Controllers
         {
             try
             {
-                List<DescuentoViewModel> model = new CT_QuantityDiscount()
-                    .GetAll(0, 0)
-                    .Select(MapDescuento)
-                    .OrderBy(x => x.Descripcion)
-                    .ToList();
-
-                return View(model);
+                return View(Enumerable.Empty<DescuentoViewModel>());
             }
             catch (Exception ex)
             {
                 TempData["DescuentoError"] = "No se pudo cargar descuentos desde SQL: " + ex.Message;
                 return View(Enumerable.Empty<DescuentoViewModel>());
+            }
+        }
+
+        [HttpGet]
+        public JsonResult Buscar(int page = 1, int pageSize = 10, string search = "", string tipo = "Todos")
+        {
+            try
+            {
+                page = Math.Max(page, 1);
+                pageSize = NormalizePageSize(pageSize);
+
+                int total;
+                List<DescuentoViewModel> rows = SearchDescuentos(page, pageSize, search, tipo, out total);
+                int totalPages = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
+
+                return Json(new JsonResponse("", "", new
+                {
+                    Rows = rows.Select(ToGridSummary).ToList(),
+                    Total = total,
+                    TotalPages = totalPages,
+                    Page = Math.Min(page, totalPages),
+                    PageSize = pageSize,
+                    SummaryTypes = rows.Select(x => x.Tipo).Distinct().Count(),
+                    SummaryOdd = rows.Count(x => x.DescontarImpares)
+                }, true), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new JsonResponse(ex.Message, "No se pudieron cargar descuentos desde SQL.", null, false), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        [HttpGet]
+        public JsonResult Detalle(int id)
+        {
+            try
+            {
+                EN_QuantityDiscount discount = GetDescuentoById(id);
+                if (discount == null)
+                    return Json(new JsonResponse("Descuento no encontrado.", "No se pudo cargar el descuento.", null, false), JsonRequestBehavior.AllowGet);
+
+                return Json(new JsonResponse("", "", MapDescuento(discount), true), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new JsonResponse(ex.Message, "No se pudo cargar el descuento.", null, false), JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -93,8 +136,8 @@ namespace UltraERP.Controllers
 
             try
             {
-                List<DescuentoViewModel> descuentos = new CT_QuantityDiscount()
-                    .GetAll(0, 0)
+                List<DescuentoViewModel> descuentos = (new CT_QuantityDiscount()
+                    .GetAll(0, 0) ?? new List<EN_QuantityDiscount>())
                     .Select(MapDescuento)
                     .ToList();
 
@@ -311,6 +354,205 @@ namespace UltraERP.Controllers
             return new CT_QuantityDiscount().Get(id);
         }
 
+        private List<DescuentoViewModel> SearchDescuentos(int page, int pageSize, string search, string tipo, out int total)
+        {
+            try
+            {
+                return SearchDescuentosFromSql(page, pageSize, search, tipo, out total);
+            }
+            catch
+            {
+                return SearchDescuentosFromBusinessLogic(page, pageSize, search, tipo, out total);
+            }
+        }
+
+        private List<DescuentoViewModel> SearchDescuentosFromSql(int page, int pageSize, string search, string tipo, out int total)
+        {
+            var rows = new List<DescuentoViewModel>();
+            total = 0;
+
+            ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings["UltraERP.BusinessDataAccess.Properties.Settings.MasterDB"];
+            if (settings == null || String.IsNullOrWhiteSpace(settings.ConnectionString))
+                throw new InvalidOperationException("No se encontro la cadena de conexion MasterDB.");
+
+            int typeValue = GetTipoValue(tipo);
+            string cleanSearch = (search ?? "").Trim();
+            int startRow = ((page - 1) * pageSize) + 1;
+            int endRow = page * pageSize;
+
+            using (var connection = new SqlConnection(settings.ConnectionString))
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandType = CommandType.Text;
+                command.CommandText = @"
+WITH Filtered AS
+(
+    SELECT
+        Q.[Description],
+        Q.HQID,
+        Q.ID,
+        Q.DiscountOddItems,
+        Q.Quantity1,
+        Q.Price1,
+        Q.Price1A,
+        Q.Price1B,
+        Q.Price1C,
+        Q.Quantity2,
+        Q.Price2,
+        Q.Price2A,
+        Q.Price2B,
+        Q.Price2C,
+        Q.Quantity3,
+        Q.Price3,
+        Q.Price3A,
+        Q.Price3B,
+        Q.Price3C,
+        Q.Quantity4,
+        Q.Price4,
+        Q.Price4A,
+        Q.Price4B,
+        Q.Price4C,
+        Q.[Type],
+        Q.PercentOffPrice1,
+        Q.PercentOffPrice1A,
+        Q.PercentOffPrice1B,
+        Q.PercentOffPrice1C,
+        Q.PercentOffPrice2,
+        Q.PercentOffPrice2A,
+        Q.PercentOffPrice2B,
+        Q.PercentOffPrice2C,
+        Q.PercentOffPrice3,
+        Q.PercentOffPrice3A,
+        Q.PercentOffPrice3B,
+        Q.PercentOffPrice3C,
+        Q.PercentOffPrice4,
+        Q.PercentOffPrice4A,
+        Q.PercentOffPrice4B,
+        Q.PercentOffPrice4C,
+        ROW_NUMBER() OVER (ORDER BY Q.[Description], Q.ID) AS RowNumber,
+        COUNT(1) OVER () AS TotalRows
+    FROM dbo.QuantityDiscount Q
+    WHERE (@Tipo = 0 OR Q.[Type] = @Tipo)
+      AND (@Search = '' OR Q.[Description] LIKE @SearchPrefix OR CONVERT(NVARCHAR(30), Q.ID) LIKE @SearchPrefix)
+)
+SELECT *
+FROM Filtered
+WHERE RowNumber BETWEEN @StartRow AND @EndRow
+ORDER BY RowNumber;";
+
+                command.Parameters.AddWithValue("@Tipo", typeValue);
+                command.Parameters.AddWithValue("@Search", cleanSearch);
+                command.Parameters.AddWithValue("@SearchPrefix", cleanSearch + "%");
+                command.Parameters.AddWithValue("@StartRow", startRow);
+                command.Parameters.AddWithValue("@EndRow", endRow);
+
+                connection.Open();
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        if (total == 0 && !reader.IsDBNull(reader.GetOrdinal("TotalRows")))
+                            total = reader.GetInt32(reader.GetOrdinal("TotalRows"));
+
+                        rows.Add(MapDescuento(reader));
+                    }
+                }
+            }
+
+            return rows;
+        }
+
+        private List<DescuentoViewModel> SearchDescuentosFromBusinessLogic(int page, int pageSize, string search, string tipo, out int total)
+        {
+            int typeValue = GetTipoValue(tipo);
+            string cleanSearch = (search ?? "").Trim();
+
+            IEnumerable<DescuentoViewModel> query = (new CT_QuantityDiscount().GetAll(0, 0) ?? new List<EN_QuantityDiscount>())
+                .Select(MapDescuento)
+                .Where(x => x != null);
+
+            if (typeValue > 0)
+                query = query.Where(x => x.Tipo == typeValue);
+
+            if (!String.IsNullOrWhiteSpace(cleanSearch))
+            {
+                query = query.Where(x =>
+                    StartsWith(x.CodigoTexto, cleanSearch) ||
+                    StartsWith(x.Descripcion, cleanSearch) ||
+                    StartsWith(x.TipoTexto, cleanSearch));
+            }
+
+            List<DescuentoViewModel> filtered = query
+                .OrderBy(x => x.Descripcion)
+                .ThenBy(x => x.ID)
+                .ToList();
+
+            total = filtered.Count;
+            return filtered.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        }
+
+        private static DescuentoViewModel MapDescuento(SqlDataReader reader)
+        {
+            return MapDescuento(new EN_QuantityDiscount
+            {
+                Description = GetString(reader, "Description"),
+                HQID = GetInt(reader, "HQID"),
+                ID = GetInt(reader, "ID"),
+                DiscountOddItems = GetBool(reader, "DiscountOddItems"),
+                Quantity1 = GetFloat(reader, "Quantity1"),
+                Price1 = GetDecimal(reader, "Price1"),
+                Price1A = GetDecimal(reader, "Price1A"),
+                Price1B = GetDecimal(reader, "Price1B"),
+                Price1C = GetDecimal(reader, "Price1C"),
+                Quantity2 = GetFloat(reader, "Quantity2"),
+                Price2 = GetDecimal(reader, "Price2"),
+                Price2A = GetDecimal(reader, "Price2A"),
+                Price2B = GetDecimal(reader, "Price2B"),
+                Price2C = GetDecimal(reader, "Price2C"),
+                Quantity3 = GetFloat(reader, "Quantity3"),
+                Price3 = GetDecimal(reader, "Price3"),
+                Price3A = GetDecimal(reader, "Price3A"),
+                Price3B = GetDecimal(reader, "Price3B"),
+                Price3C = GetDecimal(reader, "Price3C"),
+                Quantity4 = GetFloat(reader, "Quantity4"),
+                Price4 = GetDecimal(reader, "Price4"),
+                Price4A = GetDecimal(reader, "Price4A"),
+                Price4B = GetDecimal(reader, "Price4B"),
+                Price4C = GetDecimal(reader, "Price4C"),
+                Type = GetInt(reader, "Type"),
+                PercentOffPrice1 = GetFloat(reader, "PercentOffPrice1"),
+                PercentOffPrice1A = GetFloat(reader, "PercentOffPrice1A"),
+                PercentOffPrice1B = GetFloat(reader, "PercentOffPrice1B"),
+                PercentOffPrice1C = GetFloat(reader, "PercentOffPrice1C"),
+                PercentOffPrice2 = GetFloat(reader, "PercentOffPrice2"),
+                PercentOffPrice2A = GetFloat(reader, "PercentOffPrice2A"),
+                PercentOffPrice2B = GetFloat(reader, "PercentOffPrice2B"),
+                PercentOffPrice2C = GetFloat(reader, "PercentOffPrice2C"),
+                PercentOffPrice3 = GetFloat(reader, "PercentOffPrice3"),
+                PercentOffPrice3A = GetFloat(reader, "PercentOffPrice3A"),
+                PercentOffPrice3B = GetFloat(reader, "PercentOffPrice3B"),
+                PercentOffPrice3C = GetFloat(reader, "PercentOffPrice3C"),
+                PercentOffPrice4 = GetFloat(reader, "PercentOffPrice4"),
+                PercentOffPrice4A = GetFloat(reader, "PercentOffPrice4A"),
+                PercentOffPrice4B = GetFloat(reader, "PercentOffPrice4B"),
+                PercentOffPrice4C = GetFloat(reader, "PercentOffPrice4C")
+            });
+        }
+
+        private static object ToGridSummary(DescuentoViewModel discount)
+        {
+            return new
+            {
+                discount.ID,
+                discount.CodigoTexto,
+                discount.Descripcion,
+                discount.Tipo,
+                discount.TipoTexto,
+                discount.ResumenTexto,
+                discount.DescontarImpares
+            };
+        }
+
         private static DescuentoViewModel MapDescuento(EN_QuantityDiscount discount)
         {
             if (discount == null)
@@ -410,6 +652,71 @@ namespace UltraERP.Controllers
                 PercentOffPrice4B = Convert.ToSingle(model.Porcentaje4B),
                 PercentOffPrice4C = Convert.ToSingle(model.Porcentaje4C)
             };
+        }
+
+        private static int NormalizePageSize(int pageSize)
+        {
+            return new[] { 5, 10, 20, 50, 100 }.Contains(pageSize) ? pageSize : 10;
+        }
+
+        private static int GetTipoValue(string tipo)
+        {
+            if (String.IsNullOrWhiteSpace(tipo) || String.Equals(tipo, "Todos", StringComparison.OrdinalIgnoreCase))
+                return 0;
+
+            int numericType;
+            if (Int32.TryParse(tipo, out numericType))
+                return numericType >= 1 && numericType <= 4 ? numericType : 0;
+
+            if (String.Equals(tipo, "Mezcle y Combine: Precio Unitario", StringComparison.OrdinalIgnoreCase))
+                return 1;
+
+            if (String.Equals(tipo, "Compre X y lleve Y por Z: Precio Unitario", StringComparison.OrdinalIgnoreCase))
+                return 2;
+
+            if (String.Equals(tipo, "Mezcle y Combine: Porcentaje de Descuento", StringComparison.OrdinalIgnoreCase))
+                return 3;
+
+            if (String.Equals(tipo, "Compre X y lleve Y por Z: Porcentaje de Descuento", StringComparison.OrdinalIgnoreCase))
+                return 4;
+
+            return 0;
+        }
+
+        private static bool StartsWith(string value, string filter)
+        {
+            return String.IsNullOrWhiteSpace(filter) ||
+                   (value ?? "").StartsWith(filter, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string GetString(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? "" : Convert.ToString(reader.GetValue(ordinal));
+        }
+
+        private static int GetInt(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? 0 : Convert.ToInt32(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+        }
+
+        private static bool GetBool(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return !reader.IsDBNull(ordinal) && Convert.ToBoolean(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+        }
+
+        private static float GetFloat(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? 0F : Convert.ToSingle(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+        }
+
+        private static decimal GetDecimal(SqlDataReader reader, string column)
+        {
+            int ordinal = reader.GetOrdinal(column);
+            return reader.IsDBNull(ordinal) ? 0m : Convert.ToDecimal(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
         }
 
         private string GetCurrentUser()

@@ -321,6 +321,7 @@ namespace UltraERP.BusinessDataAccess.DataAccessIntegration
             List<SqlParameter> parameters = new List<SqlParameter>
             {
                 new SqlParameter("@SearchValue", searchValue ?? ""),
+                new SqlParameter("@SearchPrefix", (searchValue ?? "").Trim() + "%"),
                 new SqlParameter("@Skip", skip),
                 new SqlParameter("@Take", take <= 0 ? 10000 : take)
             };
@@ -329,8 +330,8 @@ namespace UltraERP.BusinessDataAccess.DataAccessIntegration
             if (!String.IsNullOrWhiteSpace(searchValue))
             {
                 where = @"
-                    WHERE I.ItemLookupCode LIKE '%' + @SearchValue + '%'
-                       OR I.[Description] LIKE '%' + @SearchValue + '%'
+                    WHERE I.ItemLookupCode LIKE @SearchPrefix
+                       OR I.[Description] LIKE @SearchPrefix
                        OR CONVERT(NVARCHAR(MAX), I.ExtendedDescription) LIKE '%' + @SearchValue + '%'";
             }
 

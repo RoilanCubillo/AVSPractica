@@ -27,7 +27,7 @@ namespace UltraERP.Controllers
 
                 var model = new PropiedadesArticuloInicioViewModel
                 {
-                    Articulos = GetArticulosFromDatabase(propiedades, "", DefaultResultCount),
+                    Articulos = new List<ArticuloPropiedadViewModel>(),
                     PropiedadesDisponibles = propiedades,
                     Tiendas = GetTiendasDisponibles()
                 };
@@ -41,6 +41,54 @@ namespace UltraERP.Controllers
                 ViewBag.PropiedadesArticulosDataSource = "SQL";
 
                 return View(new PropiedadesArticuloInicioViewModel());
+            }
+        }
+
+        [HttpGet]
+        public JsonResult Buscar(int page = 1, int pageSize = 10, string codigo = "", string search = "", string estado = "Todos")
+        {
+            try
+            {
+                IList<PropiedadPersonalizadaViewModel> propiedades = GetPropiedadesDisponibles();
+                page = Math.Max(page, 1);
+                pageSize = NormalizePageSize(pageSize);
+
+                int total;
+                IList<ArticuloPropiedadViewModel> rows = SearchArticulos(propiedades, page, pageSize, codigo, search, estado, out total);
+                int totalPages = Math.Max(1, (int)Math.Ceiling(total / (double)pageSize));
+
+                return Json(new JsonResponse("", "", new
+                {
+                    Rows = rows.Select(ToGridSummary).ToList(),
+                    Total = total,
+                    TotalPages = totalPages,
+                    Page = Math.Min(page, totalPages),
+                    PageSize = pageSize,
+                    SummaryReady = rows.Sum(x => x.PropiedadesConfiguradas),
+                    SummaryPending = rows.Sum(x => x.PropiedadesPendientes)
+                }, true), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new JsonResponse(ex.Message, "No se pudieron cargar los art\u00edculos desde SQL.", null, false), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        [HttpGet]
+        public JsonResult Detalle(int id)
+        {
+            try
+            {
+                IList<PropiedadPersonalizadaViewModel> propiedades = GetPropiedadesDisponibles();
+                ArticuloPropiedadViewModel articulo = GetArticuloById(id, propiedades);
+                if (articulo == null)
+                    return Json(new JsonResponse("Art\u00edculo no encontrado.", "No se pudo cargar el detalle de propiedades.", null, false), JsonRequestBehavior.AllowGet);
+
+                return Json(new JsonResponse("", "", articulo, true), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new JsonResponse(ex.Message, "No se pudo cargar el detalle de propiedades.", null, false), JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -126,10 +174,100 @@ namespace UltraERP.Controllers
                 .ToList();
         }
 
+        private IList<ArticuloPropiedadViewModel> SearchArticulos(IList<PropiedadPersonalizadaViewModel> propiedades, int page, int pageSize, string codigo, string searchValue, string estado, out int total)
+        {
+            string cleanCodigo = (codigo ?? "").Trim();
+            string cleanSearch = (searchValue ?? "").Trim();
+            string combinedSearch = !String.IsNullOrWhiteSpace(cleanCodigo) ? cleanCodigo : cleanSearch;
+            int skip = (page - 1) * pageSize;
+
+            IList<ArticuloPropiedadViewModel> rows = new CT_ItemProperties()
+                .GetAllItemsProperties(GetStoresAvailable(), GetPropertiesAvailable(), combinedSearch, 0, "asc", skip, pageSize)
+                .Select(x => MapArticulo(x, propiedades))
+                .Where(x => MatchesArticuloFilters(x, cleanCodigo, cleanSearch, estado))
+                .OrderBy(x => x.Codigo)
+                .ToList();
+
+            total = CountArticulosPropiedades(cleanCodigo, cleanSearch);
+            if (total < skip + rows.Count)
+                total = skip + rows.Count;
+
+            return rows;
+        }
+
+        private int CountArticulosPropiedades(string codigo, string searchValue)
+        {
+            ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings["UltraERP.BusinessDataAccess.Properties.Settings.MasterDB"];
+            if (settings == null || String.IsNullOrWhiteSpace(settings.ConnectionString))
+                return 0;
+
+            string cleanCodigo = (codigo ?? "").Trim();
+            string cleanSearch = (searchValue ?? "").Trim();
+
+            using (var connection = new SqlConnection(settings.ConnectionString))
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandType = CommandType.Text;
+                command.CommandText = @"
+SELECT COUNT(1)
+FROM dbo.Item I
+WHERE (@Codigo = '' OR I.ItemLookupCode LIKE @CodigoPrefix)
+  AND (@Search = '' OR I.ItemLookupCode LIKE @SearchPrefix OR I.[Description] LIKE @SearchLike OR CONVERT(NVARCHAR(MAX), I.ExtendedDescription) LIKE @SearchLike);";
+                command.Parameters.AddWithValue("@Codigo", cleanCodigo);
+                command.Parameters.AddWithValue("@CodigoPrefix", cleanCodigo + "%");
+                command.Parameters.AddWithValue("@Search", cleanSearch);
+                command.Parameters.AddWithValue("@SearchPrefix", cleanSearch + "%");
+                command.Parameters.AddWithValue("@SearchLike", "%" + cleanSearch + "%");
+
+                connection.Open();
+                object value = command.ExecuteScalar();
+                return value == null || value == DBNull.Value ? 0 : Convert.ToInt32(value);
+            }
+        }
+
+        private static bool MatchesArticuloFilters(ArticuloPropiedadViewModel item, string codigo, string searchValue, string estado)
+        {
+            if (item == null)
+                return false;
+
+            if (!String.IsNullOrWhiteSpace(codigo) && !StartsWith(item.Codigo, codigo))
+                return false;
+
+            if (!String.IsNullOrWhiteSpace(searchValue) &&
+                !StartsWith(item.Codigo, searchValue) &&
+                !Contains(item.Descripcion, searchValue) &&
+                !Contains(item.DescripcionExtendida, searchValue) &&
+                !Contains(item.PropiedadesTexto, searchValue))
+                return false;
+
+            if (String.Equals(estado, "Completos", StringComparison.OrdinalIgnoreCase) && item.PropiedadesPendientes > 0)
+                return false;
+
+            if (String.Equals(estado, "Pendientes", StringComparison.OrdinalIgnoreCase) && item.PropiedadesPendientes == 0)
+                return false;
+
+            return true;
+        }
+
+        private static object ToGridSummary(ArticuloPropiedadViewModel item)
+        {
+            return new
+            {
+                item.ID,
+                item.Codigo,
+                item.Descripcion,
+                item.DescripcionExtendida,
+                item.PropiedadesConfiguradas,
+                item.PropiedadesPendientes,
+                item.PropiedadesTexto,
+                item.FechaModificaTexto
+            };
+        }
+
         private ArticuloPropiedadViewModel GetArticuloById(int itemID, IList<PropiedadPersonalizadaViewModel> propiedades)
         {
             EN_ItemProperty item = new CT_ItemProperties()
-                .GetAllItemsProperties(GetStoresAvailable(), GetPropertiesAvailable(), "", 0, "asc", 0, 10000)
+                .GetAllItemsProperties_By_List(Convert.ToString(itemID, CultureInfo.InvariantCulture), GetStoresAvailable(), GetPropertiesAvailable())
                 .FirstOrDefault(x => x.ID == itemID);
 
             return item == null ? null : MapArticulo(item, propiedades);
@@ -365,6 +503,23 @@ namespace UltraERP.Controllers
             }
 
             return text;
+        }
+
+        private static int NormalizePageSize(int pageSize)
+        {
+            return new[] { 5, 10, 20, 50, 100 }.Contains(pageSize) ? pageSize : 10;
+        }
+
+        private static bool StartsWith(string value, string filter)
+        {
+            return String.IsNullOrWhiteSpace(filter) ||
+                   (value ?? "").StartsWith(filter, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool Contains(string value, string filter)
+        {
+            return String.IsNullOrWhiteSpace(filter) ||
+                   (value ?? "").IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static string GetDataTypeProperty(int type)

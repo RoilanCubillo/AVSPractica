@@ -154,13 +154,17 @@
 @section scripts {
     <script>
         var urls = {
+            buscar: '@Url.Action("Buscar", "PropiedadesArticulos")',
+            detalle: '@Url.Action("Detalle", "PropiedadesArticulos")',
             guardar: '@Url.Action("Guardar", "PropiedadesArticulos")'
         };
         var pantalla = @Html.Raw(propiedadesJson);
         var articulos = pantalla.Articulos || [];
         var tiendas = pantalla.Tiendas || [];
-        var filteredRows = [];
-        var pager = null;
+        var currentPage = 1;
+        var totalRows = 0;
+        var totalPages = 1;
+        var searchTimer = null;
         var currentItem = null;
         var propiedadesModal = null;
         var modalMode = "edit";
@@ -171,23 +175,47 @@
 
         $(function () {
             propiedadesModal = new bootstrap.Modal(document.getElementById("propiedadesModal"));
-            pager = window.UltraERP.createTablePager({ onChange: renderTable });
             restoreStoreSelection();
             bindEvents();
             renderStores();
-            renderTable();
-            setLoading(false);
+            loadArticulos();
         });
 
         function bindEvents() {
-            $("#btnConsultar").on("click", renderTable);
-            $("#filter_codigo, #table_search, #filter_estado").on("input change", renderTable);
+            $("#btnConsultar").on("click", function () {
+                currentPage = 1;
+                loadArticulos();
+            });
+            $("#filter_codigo, #table_search").on("input", function () {
+                currentPage = 1;
+                queueLoad();
+            });
+            $("#filter_estado").on("change", function () {
+                currentPage = 1;
+                loadArticulos();
+            });
+            $("#page_size").on("change", function () {
+                currentPage = 1;
+                loadArticulos();
+            });
+            $("#btnPrevPage").on("click", function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    loadArticulos();
+                }
+            });
+            $("#btnNextPage").on("click", function () {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    loadArticulos();
+                }
+            });
             $("#btnLimpiar").on("click", function () {
                 $("#filter_codigo").val("");
                 $("#table_search").val("");
                 $("#filter_estado").val("Todos");
-                if (pager) pager.reset();
-                renderTable();
+                currentPage = 1;
+                loadArticulos();
             });
             $("#chk_all_stores").on("change", function () {
                 var selected = this.checked ? tiendas.map(function (t) { return t.ID; }) : [];
@@ -202,10 +230,48 @@
             $("#btnGuardarPropiedades").on("click", saveProperties);
         }
 
+        function queueLoad() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(loadArticulos, 300);
+        }
+
+        function loadArticulos() {
+            setLoading(true);
+            $.get(urls.buscar, {
+                page: currentPage,
+                pageSize: getPageSize(),
+                codigo: $("#filter_codigo").val() || "",
+                search: $("#table_search").val() || "",
+                estado: $("#filter_estado").val() || "Todos"
+            }).done(function (response) {
+                if (!response || !response.Status) {
+                    articulos = [];
+                    totalRows = 0;
+                    totalPages = 1;
+                    renderTable();
+                    showToast(response && response.Message ? response.Message : "No se pudieron cargar los articulos.");
+                    return;
+                }
+
+                var result = response.Result || {};
+                articulos = result.Rows || [];
+                totalRows = Number(result.Total || 0);
+                totalPages = Math.max(1, Number(result.TotalPages || 1));
+                currentPage = Math.min(Math.max(Number(result.Page || currentPage), 1), totalPages);
+                renderTable();
+            }).fail(function () {
+                articulos = [];
+                totalRows = 0;
+                totalPages = 1;
+                renderTable();
+                showToast("No se pudieron cargar los articulos.");
+            }).always(function () {
+                setLoading(false);
+            });
+        }
+
         function renderTable() {
-            filteredRows = getFilteredRows();
-            var pageRows = pager ? pager.pageRows(filteredRows) : filteredRows;
-            var html = pageRows.map(function (item) {
+            var html = articulos.map(function (item) {
                 return "<tr>" +
                     "<td><strong>" + escapeHtml(item.Codigo) + "</strong></td>" +
                     "<td class='item-property-article'><span class='table-title'>" + escapeHtml(item.Descripcion) + "</span><span class='table-subtitle'>" + escapeHtml(item.DescripcionExtendida || "-") + "</span></td>" +
@@ -217,30 +283,32 @@
                     "</tr>";
             }).join("");
 
-            if (pager) pager.update(filteredRows, pageRows);
-            else $("#results_hint").text(filteredRows.length + " resultados");
+            updatePagination();
             $("#propiedades_body").html(html || "<tr><td colspan='7' class='empty-state'>Sin art&iacute;culos para los filtros aplicados.</td></tr>");
             updateSummary();
         }
 
-        function getFilteredRows() {
-            var codigo = ($("#filter_codigo").val() || "").toLowerCase();
-            var text = ($("#table_search").val() || "").toLowerCase();
-            var estado = $("#filter_estado").val();
+        function getPageSize() {
+            return Number($("#page_size").val() || 10);
+        }
 
-            return articulos.filter(function (item) {
-                if (codigo && String(item.Codigo || "").toLowerCase().indexOf(codigo) < 0) return false;
-                if (estado === "Completos" && Number(item.PropiedadesPendientes || 0) > 0) return false;
-                if (estado === "Pendientes" && Number(item.PropiedadesPendientes || 0) === 0) return false;
-                if (!text) return true;
+        function updatePagination() {
+            var pageSize = getPageSize();
+            var start = totalRows === 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
+            var end = totalRows === 0 ? 0 : start + articulos.length - 1;
 
-                return [item.Codigo, item.Descripcion, item.DescripcionExtendida, item.PropiedadesTexto]
-                    .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
-            });
+            $("#results_hint").text(start + "-" + end + " de " + totalRows + " resultados");
+            $("#page_hint").text("Pagina " + currentPage + " de " + totalPages);
+            $("#btnPrevPage").prop("disabled", currentPage <= 1);
+            $("#btnNextPage").prop("disabled", currentPage >= totalPages);
         }
 
         function renderPropertyChips(item) {
             var properties = item.Propiedades || [];
+            if (!properties.length && item.PropiedadesTexto && item.PropiedadesTexto !== "-") {
+                return "<span class='status-badge received'>" + escapeHtml(item.PropiedadesTexto) + "</span>";
+            }
+
             var configured = properties.filter(function (p) { return String(p.Valor || "").length > 0; });
             if (!configured.length) return "<span class='status-badge closed'>Sin propiedades</span>";
 
@@ -277,18 +345,25 @@
         }
 
         function openItemModal(id, mode) {
-            currentItem = findItem(id);
-            if (!currentItem) return;
-
             modalMode = mode || "edit";
-            $("#propiedadesModalTitle").text((modalMode === "view" ? "Consulta " : "Propiedades ") + currentItem.Codigo);
-            $("#property_view_title").text(currentItem.Descripcion);
-            $("#property_view_subtitle").text(currentItem.Codigo + " - " + (currentItem.DescripcionExtendida || ""));
-            $("#property_view_count").text((currentItem.Propiedades || []).length);
-            applyStoreSelection();
-            renderPropertyForm(currentItem);
-            syncModalState();
-            propiedadesModal.show();
+            $.get(urls.detalle, { id: id }).done(function (response) {
+                if (!response || !response.Status) {
+                    showToast(response && response.Message ? response.Message : "No se pudo cargar el detalle.");
+                    return;
+                }
+
+                currentItem = response.Result;
+                $("#propiedadesModalTitle").text((modalMode === "view" ? "Consulta " : "Propiedades ") + currentItem.Codigo);
+                $("#property_view_title").text(currentItem.Descripcion);
+                $("#property_view_subtitle").text(currentItem.Codigo + " - " + (currentItem.DescripcionExtendida || ""));
+                $("#property_view_count").text((currentItem.Propiedades || []).length);
+                applyStoreSelection();
+                renderPropertyForm(currentItem);
+                syncModalState();
+                propiedadesModal.show();
+            }).fail(function () {
+                showToast("No se pudo cargar el detalle.");
+            });
         }
 
         function renderStores() {
@@ -459,7 +534,7 @@
 
                 persistStoreSelection(selectedAllStores, selectedStores);
                 replaceItem(response.Result);
-                renderTable();
+                loadArticulos();
                 propiedadesModal.hide();
                 showToast(response.Message || "Propiedades actualizadas correctamente.");
             }).fail(function () {
@@ -541,9 +616,9 @@
         }
 
         function updateSummary() {
-            var ready = filteredRows.reduce(function (sum, item) { return sum + Number(item.PropiedadesConfiguradas || 0); }, 0);
-            var pending = filteredRows.reduce(function (sum, item) { return sum + Number(item.PropiedadesPendientes || 0); }, 0);
-            $("#summary_count").text(filteredRows.length);
+            var ready = articulos.reduce(function (sum, item) { return sum + Number(item.PropiedadesConfiguradas || 0); }, 0);
+            var pending = articulos.reduce(function (sum, item) { return sum + Number(item.PropiedadesPendientes || 0); }, 0);
+            $("#summary_count").text(totalRows);
             $("#summary_ready").text(formatNumber(ready));
             $("#summary_pending").text(formatNumber(pending));
         }

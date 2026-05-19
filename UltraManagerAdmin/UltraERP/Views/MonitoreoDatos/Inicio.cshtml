@@ -170,6 +170,10 @@
 @section scripts {
     <script>
         var pantalla = @Html.Raw(monitoreoJson);
+        var urls = {
+            detalleDocumento: '@Url.Action("DetalleDocumento", "MonitoreoDatos")',
+            detalleAsiento: '@Url.Action("DetalleAsiento", "MonitoreoDatos")'
+        };
         var defaultFrom = "@Model.FechaDesdeDefault";
         var defaultTo = "@Model.FechaHastaDefault";
         var state = {
@@ -205,6 +209,12 @@
                 state.tab = String($(this).data("tab") || "mh");
                 if (pager) pager.reset();
                 renderTable();
+            });
+            $("#monitoring_table_wrap").on("click", ".js-doc-detail", function () {
+                showDocumentDetail($(this).data("origin"), $(this).data("key"), $(this).data("store"));
+            });
+            $("#monitoring_table_wrap").on("click", ".js-accounting-detail", function () {
+                showAccountingDetail(Number($(this).data("id") || 0));
             });
         }
 
@@ -332,7 +342,7 @@
                         "<td>" + escapeHtml(row.FechaSincronizacionTexto) + "</td>" +
                         "<td>" + formatMoney(row.Total) + "</td>" +
                         "<td>" + renderStatus(row) + "</td>" +
-                        "<td><button class='icon-button info' type='button' onclick='showDocumentDetail(" + row.ID + ", \"" + type + "\")'>Ver</button></td>" +
+                        "<td><button class='icon-button info js-doc-detail' type='button' data-origin='" + escapeAttr(row.Origen || type) + "' data-key='" + escapeAttr(row.Consecutivo) + "' data-store='" + escapeAttr(row.TiendaID) + "'>Ver</button></td>" +
                         "</tr>";
                 }).join("") +
                 "</tbody></table>";
@@ -358,7 +368,7 @@
                         "<td>" + formatMoney(row.Debito) + "</td>" +
                         "<td>" + formatMoney(row.Credito) + "</td>" +
                         "<td>" + renderStatus(row) + "</td>" +
-                        "<td><button class='icon-button info' type='button' onclick='showAccountingDetail(" + row.ID + ")'>Ver</button></td>" +
+                        "<td><button class='icon-button info js-accounting-detail' type='button' data-id='" + escapeAttr(row.ID) + "'>Ver</button></td>" +
                         "</tr>";
                 }).join("") +
                 "</tbody></table>";
@@ -368,11 +378,58 @@
             $("#monitoring_table_wrap").html(pageRows.length ? html : "<div class='empty-state'>Sin asientos para los filtros aplicados.</div>");
         }
 
-        function showDocumentDetail(id, type) {
-            var list = type === "erp" ? (pantalla.DocumentosERP || []) : (pantalla.DocumentosMH || []);
-            var row = list.find(function (item) { return item.ID === id; });
-            if (!row) return;
+        function showDocumentDetail(origen, consecutivo, tiendaID) {
+            $("#monitoringModalTitle").text("Cargando detalle");
+            $("#monitoringDetail").html("<div class='empty-state'>Cargando informacion...</div>");
+            monitoringModal.show();
 
+            $.get(urls.detalleDocumento, {
+                origen: origen || "MH",
+                consecutivo: consecutivo || "",
+                tiendaID: tiendaID || ""
+            }).done(function (response) {
+                if (!response || !response.Status) {
+                    showMonitoringError(response && response.Message ? response.Message : "No se pudo cargar el detalle.");
+                    return;
+                }
+
+                renderDocumentDetail(response.Result);
+            }).fail(function () {
+                showMonitoringError("No se pudo cargar el detalle.");
+            });
+        }
+
+        function showAccountingDetail(id) {
+            $("#monitoringModalTitle").text("Cargando asiento");
+            $("#monitoringDetail").html("<div class='empty-state'>Cargando informacion...</div>");
+            monitoringModal.show();
+
+            $.get(urls.detalleAsiento, { id: id }).done(function (response) {
+                if (!response || !response.Status) {
+                    showMonitoringError(response && response.Message ? response.Message : "No se pudo cargar el detalle.");
+                    return;
+                }
+
+                var row = response.Result;
+                $("#monitoringModalTitle").text("Asiento " + row.NumeroAsiento);
+                $("#monitoringDetail").html(renderDetailGrid([
+                    { label: "Asiento", value: row.NumeroAsiento },
+                    { label: "Referencia", value: row.Referencia },
+                    { label: "Tipo", value: row.Tipo },
+                    { label: "Tienda", value: row.Tienda },
+                    { label: "Fecha asiento", value: row.FechaAsientoTexto },
+                    { label: "Sincronizacion", value: row.FechaSincronizacionTexto },
+                    { label: "Debito", value: formatMoney(row.Debito) },
+                    { label: "Credito", value: formatMoney(row.Credito) },
+                    { label: "Estado", value: row.EstadoTexto },
+                    { label: "Mensaje", value: row.Mensaje }
+                ]));
+            }).fail(function () {
+                showMonitoringError("No se pudo cargar el detalle.");
+            });
+        }
+
+        function renderDocumentDetail(row) {
             $("#monitoringModalTitle").text(row.Origen + " - " + row.Consecutivo);
             $("#monitoringDetail").html(renderDetailGrid([
                 { label: "Consecutivo", value: row.Consecutivo },
@@ -386,27 +443,11 @@
                 { label: "Estado", value: row.EstadoTexto },
                 { label: "Mensaje", value: row.Mensaje }
             ]));
-            monitoringModal.show();
         }
 
-        function showAccountingDetail(id) {
-            var row = (pantalla.AsientosERP || []).find(function (item) { return item.ID === id; });
-            if (!row) return;
-
-            $("#monitoringModalTitle").text("Asiento " + row.NumeroAsiento);
-            $("#monitoringDetail").html(renderDetailGrid([
-                { label: "Asiento", value: row.NumeroAsiento },
-                { label: "Referencia", value: row.Referencia },
-                { label: "Tipo", value: row.Tipo },
-                { label: "Tienda", value: row.Tienda },
-                { label: "Fecha asiento", value: row.FechaAsientoTexto },
-                { label: "Sincronizacion", value: row.FechaSincronizacionTexto },
-                { label: "Debito", value: formatMoney(row.Debito) },
-                { label: "Credito", value: formatMoney(row.Credito) },
-                { label: "Estado", value: row.EstadoTexto },
-                { label: "Mensaje", value: row.Mensaje }
-            ]));
-            monitoringModal.show();
+        function showMonitoringError(message) {
+            $("#monitoringModalTitle").text("Detalle no disponible");
+            $("#monitoringDetail").html("<div class='empty-state'>" + escapeHtml(message) + "</div>");
         }
 
         function renderDetailGrid(items) {
@@ -429,6 +470,10 @@
 
         function escapeHtml(value) {
             return $("<div />").text(value || "").html();
+        }
+
+        function escapeAttr(value) {
+            return escapeHtml(value).replace(/'/g, "&#39;");
         }
     </script>
 }

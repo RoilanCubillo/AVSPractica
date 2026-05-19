@@ -77,8 +77,10 @@ namespace UltraERP.Controllers
             }
 
             CatalogData catalog = GetCatalogDataSafe();
-            PrepareCatalogs(catalog);
-            return View(model ?? CreateNewArticulo(catalog));
+            model = model ?? CreateNewArticulo(catalog);
+            EnsureUnidadSeleccionada(model, catalog);
+            PrepareCatalogs(catalog, model);
+            return View(model);
         }
 
         [HttpPost]
@@ -88,13 +90,15 @@ namespace UltraERP.Controllers
             CatalogData catalog = GetCatalogDataSafe();
 
             TranslateModelBindingErrors();
+            NormalizeNumericFields(model);
             Normalize(model);
             ApplyClasificacion(model, catalog);
             ValidateArticulo(model, catalog);
 
             if (!ModelState.IsValid)
             {
-                PrepareCatalogs(catalog);
+                EnsureUnidadSeleccionada(model, catalog);
+                PrepareCatalogs(catalog, model);
                 return View(model);
             }
 
@@ -109,7 +113,8 @@ namespace UltraERP.Controllers
                 if (response.IndexOf("error", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     ModelState.AddModelError("", "SQL rechaz\u00f3 el guardado del art\u00edculo: " + response);
-                    PrepareCatalogs(catalog);
+                    EnsureUnidadSeleccionada(model, catalog);
+                    PrepareCatalogs(catalog, model);
                     return View(model);
                 }
 
@@ -119,7 +124,8 @@ namespace UltraERP.Controllers
             catch (Exception ex)
             {
                 ModelState.AddModelError("", "No se pudo guardar el art\u00edculo en SQL. " + ex.Message);
-                PrepareCatalogs(catalog);
+                EnsureUnidadSeleccionada(model, catalog);
+                PrepareCatalogs(catalog, model);
                 return View(model);
             }
         }
@@ -391,6 +397,23 @@ ORDER BY RowNum;";
         {
             ReplaceModelBindingError("Costo", "Ingrese el costo del art\u00edculo.", "Ingrese un costo v\u00e1lido.");
             ReplaceModelBindingError("PrecioVenta", "Ingrese el precio de venta del art\u00edculo.", "Ingrese un precio de venta v\u00e1lido.");
+            ReplaceModelBindingError("ImpuestoPorcentaje", "Ingrese el impuesto del art\u00edculo.", "Ingrese un impuesto v\u00e1lido.");
+            ReplaceModelBindingError("Existencia", "Ingrese la existencia del art\u00edculo.", "Ingrese una existencia v\u00e1lida.");
+            ReplaceModelBindingError("ExistenciaMinima", "Ingrese la existencia m\u00ednima.", "Ingrese una existencia m\u00ednima v\u00e1lida.");
+            ReplaceModelBindingError("ExistenciaMaxima", "Ingrese la existencia m\u00e1xima.", "Ingrese una existencia m\u00e1xima v\u00e1lida.");
+        }
+
+        private void NormalizeNumericFields(ArticuloViewModel model)
+        {
+            if (model == null)
+                return;
+
+            SetPostedDecimal("Costo", value => model.Costo = value);
+            SetPostedDecimal("PrecioVenta", value => model.PrecioVenta = value);
+            SetPostedDecimal("ImpuestoPorcentaje", value => model.ImpuestoPorcentaje = value);
+            SetPostedDecimal("Existencia", value => model.Existencia = value);
+            SetPostedDecimal("ExistenciaMinima", value => model.ExistenciaMinima = value);
+            SetPostedDecimal("ExistenciaMaxima", value => model.ExistenciaMaxima = value);
         }
 
         private void ReplaceModelBindingError(string fieldName, string requiredMessage, string invalidMessage)
@@ -402,6 +425,47 @@ ORDER BY RowNum;";
             string value = Request.Form[fieldName];
             ModelState.Remove(fieldName);
             ModelState.AddModelError(fieldName, String.IsNullOrWhiteSpace(value) ? requiredMessage : invalidMessage);
+        }
+
+        private void SetPostedDecimal(string key, Action<decimal> setValue)
+        {
+            string postedValue = Request.Form[key];
+            decimal parsedValue;
+
+            if (postedValue == null || !TryParseDecimal(postedValue, out parsedValue))
+                return;
+
+            setValue(parsedValue);
+            ModelState.Remove(key);
+        }
+
+        private static bool TryParseDecimal(string value, out decimal result)
+        {
+            value = (value ?? "").Trim();
+            if (String.IsNullOrWhiteSpace(value))
+            {
+                result = 0m;
+                return true;
+            }
+
+            if (Decimal.TryParse(value, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.CurrentCulture, out result))
+                return true;
+
+            if (Decimal.TryParse(value, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out result))
+                return true;
+
+            string normalized = value.Replace(" ", "");
+            bool hasComma = normalized.IndexOf(",") >= 0;
+            bool hasDot = normalized.IndexOf(".") >= 0;
+
+            if (hasComma && hasDot && normalized.LastIndexOf(",") > normalized.LastIndexOf("."))
+                normalized = normalized.Replace(".", "").Replace(",", ".");
+            else if (hasComma && hasDot)
+                normalized = normalized.Replace(",", "");
+            else if (hasComma)
+                normalized = normalized.Replace(",", ".");
+
+            return Decimal.TryParse(normalized, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out result);
         }
 
         private void ValidateArticulo(ArticuloViewModel model, CatalogData catalog)
@@ -482,9 +546,10 @@ ORDER BY RowNum;";
             model.SubCategoria = subCategoria == null ? "" : subCategoria.Texto;
         }
 
-        private void PrepareCatalogs(CatalogData catalog)
+        private void PrepareCatalogs(CatalogData catalog, ArticuloViewModel model)
         {
-            ViewBag.Unidades = ToSelectList(catalog.Unidades);
+            EnsureUnidadSeleccionada(model, catalog);
+            ViewBag.Unidades = ToSelectList(catalog.Unidades, model == null ? "" : model.UnidadMedida);
             ViewBag.Proveedores = ToSelectList(catalog.Proveedores.Select(x => x.Name).Where(x => !String.IsNullOrWhiteSpace(x)));
             ViewBag.Bodegas = ToSelectList(catalog.Bodegas.Select(x => x.NameS).Where(x => !String.IsNullOrWhiteSpace(x)));
             ViewBag.Familias = catalog.Familias.Select(x => new SelectListItem { Text = x.Texto, Value = x.ID.ToString() }).ToList();
@@ -499,6 +564,35 @@ ORDER BY RowNum;";
             });
         }
 
+        private void EnsureUnidadSeleccionada(ArticuloViewModel model, CatalogData catalog)
+        {
+            if (catalog == null)
+                return;
+
+            if (catalog.Unidades == null)
+                catalog.Unidades = new List<EN_UOM>();
+
+            string currentCode = model == null ? "" : (model.UnidadMedida ?? "").Trim().ToUpperInvariant();
+            EN_UOM firstUnit = catalog.Unidades.FirstOrDefault(x => x != null && !String.IsNullOrWhiteSpace(x.Code));
+
+            if (!String.IsNullOrWhiteSpace(currentCode) &&
+                !catalog.Unidades.Any(x => x != null && String.Equals((x.Code ?? "").Trim(), currentCode, StringComparison.OrdinalIgnoreCase)))
+            {
+                catalog.Unidades.Insert(0, new EN_UOM
+                {
+                    Code = currentCode,
+                    Name = currentCode,
+                    Inactive = false
+                });
+            }
+
+            if (model != null && String.IsNullOrWhiteSpace(currentCode))
+            {
+                model.UnidadMedida = firstUnit == null ? "" : (firstUnit.Code ?? "").Trim().ToUpperInvariant();
+                ModelState.Remove("UnidadMedida");
+            }
+        }
+
         private CatalogData GetCatalogDataSafe()
         {
             try
@@ -506,7 +600,7 @@ ORDER BY RowNum;";
                 string storesAvailable = GetStoresAvailable();
                 return NormalizeCatalogData(new CatalogData
                 {
-                    Unidades = new CT_UOM().GetAllByInactive(false).Select(x => x.Code).Where(x => !String.IsNullOrWhiteSpace(x)).ToList(),
+                    Unidades = new CT_UOM().GetAllByInactive(false),
                     Proveedores = new CT_Supplier().GetAll(storesAvailable, "", 0, 0),
                     Bodegas = new CT_Store().GetAll("", 0, 0),
                     Familias = new CT_ExtCentral_Family().GetAll("", 0, 0).Select(x => new FamiliaCatalogo(x.ID, x.Code, x.Name)).ToList(),
@@ -520,7 +614,7 @@ ORDER BY RowNum;";
             {
                 return NormalizeCatalogData(new CatalogData
                 {
-                    Unidades = new List<string>(),
+                    Unidades = new List<EN_UOM>(),
                     Proveedores = new List<EN_Supplier>(),
                     Bodegas = new List<EN_Store>(),
                     Familias = new List<FamiliaCatalogo>(),
@@ -536,8 +630,12 @@ ORDER BY RowNum;";
         {
             catalog = catalog ?? new CatalogData();
 
+            catalog.Unidades = NormalizeUnits(catalog.Unidades);
             if (catalog.Unidades == null || !catalog.Unidades.Any())
                 catalog.Unidades = GetUnitsDirect();
+            catalog.Unidades = NormalizeUnits(catalog.Unidades);
+            if (catalog.Unidades == null || !catalog.Unidades.Any())
+                catalog.Unidades = GetDefaultUnits();
             if (catalog.Bodegas == null || !catalog.Bodegas.Any())
                 catalog.Bodegas = GetStoresDirect();
             if (catalog.Familias == null || !catalog.Familias.Any())
@@ -552,15 +650,69 @@ ORDER BY RowNum;";
             return catalog;
         }
 
-        private IList<string> GetUnitsDirect()
+        private static IList<EN_UOM> NormalizeUnits(IEnumerable<EN_UOM> units)
         {
-            return ReadCatalogRows(@"
-                SELECT Code
-                FROM dbo.POA_UOM
-                WHERE ISNULL(Inactive, 0) = 0
-                  AND Code IS NOT NULL
-                  AND LTRIM(RTRIM(Code)) <> ''
-                ORDER BY Code", reader => ReadString(reader, "Code"));
+            return (units ?? Enumerable.Empty<EN_UOM>())
+                .Where(x => x != null && !String.IsNullOrWhiteSpace(x.Code))
+                .Select(x => new EN_UOM
+                {
+                    ID = x.ID,
+                    Code = (x.Code ?? "").Trim().ToUpperInvariant(),
+                    Name = String.IsNullOrWhiteSpace(x.Name) ? (x.Code ?? "").Trim().ToUpperInvariant() : x.Name.Trim(),
+                    Inactive = x.Inactive
+                })
+                .GroupBy(x => x.Code, StringComparer.OrdinalIgnoreCase)
+                .Select(x => x.First())
+                .OrderBy(x => GetUnitSortOrder(x.Code))
+                .ThenBy(x => x.Code)
+                .ToList();
+        }
+
+        private static int GetUnitSortOrder(string code)
+        {
+            switch ((code ?? "").Trim().ToUpperInvariant())
+            {
+                case "UND":
+                    return 1;
+                case "KG":
+                    return 2;
+                case "CJ":
+                    return 3;
+                case "GAL":
+                    return 4;
+                case "L":
+                    return 5;
+                case "QQ":
+                    return 6;
+                case "BQ":
+                    return 7;
+                default:
+                    return 100;
+            }
+        }
+
+        private IList<EN_UOM> GetUnitsDirect()
+        {
+            try
+            {
+                return ReadCatalogRows(@"
+                    SELECT ID, Code, Name, Inactive
+                    FROM dbo.POA_UOM
+                    WHERE ISNULL(Inactive, 0) = 0
+                      AND Code IS NOT NULL
+                      AND LTRIM(RTRIM(Code)) <> ''
+                    ORDER BY Code", reader => new EN_UOM
+                    {
+                        ID = ReadInt(reader, "ID"),
+                        Code = ReadString(reader, "Code"),
+                        Name = ReadString(reader, "Name"),
+                        Inactive = ReadBool(reader, "Inactive")
+                    });
+            }
+            catch
+            {
+                return GetDefaultUnits();
+            }
         }
 
         private IList<EN_Store> GetStoresDirect()
@@ -648,9 +800,19 @@ ORDER BY RowNum;";
             return items;
         }
 
-        private static IEnumerable<SelectListItem> ToSelectList(IEnumerable<string> values)
+        private static IEnumerable<SelectListItem> ToSelectList(IEnumerable<EN_UOM> values, string selectedValue)
         {
-            return values.Select(x => new SelectListItem { Text = x, Value = x });
+            string selected = (selectedValue ?? "").Trim().ToUpperInvariant();
+
+            return (values ?? Enumerable.Empty<EN_UOM>())
+                .Where(x => x != null && !String.IsNullOrWhiteSpace(x.Code))
+                .Select(x => new SelectListItem
+                {
+                    Text = String.IsNullOrWhiteSpace(x.Name) ? x.Code : x.Code + " - " + x.Name,
+                    Value = x.Code,
+                    Selected = !String.IsNullOrWhiteSpace(selected) && String.Equals((x.Code ?? "").Trim(), selected, StringComparison.OrdinalIgnoreCase)
+                })
+                .ToList();
         }
 
         private ArticuloViewModel CreateNewArticulo(CatalogData catalog)
@@ -670,7 +832,7 @@ ORDER BY RowNum;";
             {
                 Activo = true,
                 Inventariable = true,
-                UnidadMedida = catalog.Unidades.FirstOrDefault() ?? "",
+                UnidadMedida = catalog.Unidades.FirstOrDefault() == null ? "" : catalog.Unidades.FirstOrDefault().Code,
                 FamiliaID = familia == null ? 0 : familia.ID,
                 DepartamentoID = departamento == null ? 0 : departamento.ID,
                 CategoriaID = categoria == null ? 0 : categoria.ID,
@@ -846,7 +1008,7 @@ ORDER BY RowNum;";
         {
             public CatalogData()
             {
-                Unidades = new List<string>();
+                Unidades = new List<EN_UOM>();
                 Proveedores = new List<EN_Supplier>();
                 Bodegas = new List<EN_Store>();
                 Familias = new List<FamiliaCatalogo>();
@@ -856,7 +1018,7 @@ ORDER BY RowNum;";
                 Impuestos = new List<EN_Tax>();
             }
 
-            public IList<string> Unidades { get; set; }
+            public IList<EN_UOM> Unidades { get; set; }
             public IList<EN_Supplier> Proveedores { get; set; }
             public IList<EN_Store> Bodegas { get; set; }
             public IList<FamiliaCatalogo> Familias { get; set; }
@@ -864,6 +1026,20 @@ ORDER BY RowNum;";
             public IList<CategoriaCatalogo> Categorias { get; set; }
             public IList<SubCategoriaCatalogo> SubCategorias { get; set; }
             public IList<EN_Tax> Impuestos { get; set; }
+        }
+
+        private static IList<EN_UOM> GetDefaultUnits()
+        {
+            return new List<EN_UOM>
+            {
+                new EN_UOM { ID = 1, Code = "UND", Name = "Unidad", Inactive = false },
+                new EN_UOM { ID = 2, Code = "KG", Name = "Kilogramo", Inactive = false },
+                new EN_UOM { ID = 3, Code = "CJ", Name = "Caja", Inactive = false },
+                new EN_UOM { ID = 4, Code = "GAL", Name = "Gal\u00f3n", Inactive = false },
+                new EN_UOM { ID = 5, Code = "L", Name = "Litro", Inactive = false },
+                new EN_UOM { ID = 6, Code = "QQ", Name = "Quintal", Inactive = false },
+                new EN_UOM { ID = 7, Code = "BQ", Name = "Bolsa", Inactive = false }
+            };
         }
 
         private class FamiliaCatalogo

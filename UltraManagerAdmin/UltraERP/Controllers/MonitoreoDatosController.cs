@@ -23,6 +23,54 @@ namespace UltraERP.Controllers
             return View(model);
         }
 
+        [HttpGet]
+        public JsonResult DetalleDocumento(string origen, string consecutivo, string tiendaID)
+        {
+            try
+            {
+                MonitoreoDocumentoViewModel document;
+
+                if (String.Equals(origen, "ERP", StringComparison.OrdinalIgnoreCase))
+                {
+                    document = GetDocumentosErpFromAnalitica(DefaultResultCount, true)
+                        .FirstOrDefault(x => String.Equals(x.Consecutivo, consecutivo, StringComparison.OrdinalIgnoreCase) &&
+                                             String.Equals(x.TiendaID, tiendaID, StringComparison.OrdinalIgnoreCase));
+                }
+                else
+                {
+                    document = GetDocumentoHaciendaDetalleFromSql(consecutivo, tiendaID);
+                }
+
+                if (document == null)
+                    return Json(new JsonResponse("Documento no encontrado.", "No se pudo cargar el detalle del documento.", null, false), JsonRequestBehavior.AllowGet);
+
+                return Json(new JsonResponse("", "", document, true), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new JsonResponse(ex.Message, "No se pudo cargar el detalle del documento.", null, false), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        [HttpGet]
+        public JsonResult DetalleAsiento(int id)
+        {
+            try
+            {
+                MonitoreoAsientoViewModel asiento = GetAsientosFromAnalitica(DefaultResultCount, true)
+                    .FirstOrDefault(x => x.ID == id);
+
+                if (asiento == null)
+                    return Json(new JsonResponse("Asiento no encontrado.", "No se pudo cargar el detalle del asiento.", null, false), JsonRequestBehavior.AllowGet);
+
+                return Json(new JsonResponse("", "", asiento, true), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new JsonResponse(ex.Message, "No se pudo cargar el detalle del asiento.", null, false), JsonRequestBehavior.AllowGet);
+            }
+        }
+
         private MonitoreoDatosViewModel BuildModel()
         {
             var model = new MonitoreoDatosViewModel();
@@ -116,9 +164,7 @@ namespace UltraERP.Controllers
                         I.NOMBRE_CLIENTE,
                         I.FECHA_TRANSAC,
                         I.FECHA_HACIENDA,
-                        I.ESTADO_HACIENDA,
-                        I.OBSERVACIONES,
-                        I.XML_RESPUESTA
+                        I.ESTADO_HACIENDA
                     FROM dbo.AVS_INTEGRAFAST_01 I
                     LEFT JOIN dbo.Store S ON S.ID = TRY_CONVERT(INT, I.COD_SUCURSAL)
                     WHERE (@Stores = '%' OR TRY_CONVERT(INT, I.COD_SUCURSAL) IN (SELECT TRY_CONVERT(INT, value) FROM STRING_SPLIT(@Stores, ',') WHERE value <> ''))
@@ -148,7 +194,7 @@ namespace UltraERP.Controllers
                             FechaSincronizacion = ReadNullableDate(reader, "FECHA_HACIENDA"),
                             Total = 0,
                             EstadoID = MapHaciendaStatus(estado),
-                            Mensaje = FirstNotEmpty(ReadString(reader, "OBSERVACIONES"), ReadString(reader, "XML_RESPUESTA"), "Sin mensaje registrado.")
+                            Mensaje = ""
                         });
                     }
                 }
@@ -157,7 +203,72 @@ namespace UltraERP.Controllers
             return documents;
         }
 
-        private IList<MonitoreoDocumentoViewModel> GetDocumentosErpFromAnalitica(int take)
+        private MonitoreoDocumentoViewModel GetDocumentoHaciendaDetalleFromSql(string consecutivo, string tiendaID)
+        {
+            ConnectionStringSettings settings = GetMasterConnection();
+            if (settings == null || String.IsNullOrWhiteSpace(settings.ConnectionString))
+                return null;
+
+            using (var connection = new SqlConnection(settings.ConnectionString))
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandType = CommandType.Text;
+                command.CommandText = @"
+                    SELECT TOP (1)
+                        I.COD_SUCURSAL,
+                        ISNULL(S.Name, 'Tienda ' + I.COD_SUCURSAL) AS StoreName,
+                        I.TRANSACTIONNUMBER,
+                        I.CLAVE50,
+                        I.CLAVE20,
+                        I.COMPROBANTE_TIPO,
+                        I.COD_CLIENTE,
+                        I.NOMBRE_CLIENTE,
+                        I.FECHA_TRANSAC,
+                        I.FECHA_HACIENDA,
+                        I.ESTADO_HACIENDA,
+                        I.OBSERVACIONES,
+                        I.XML_RESPUESTA
+                    FROM dbo.AVS_INTEGRAFAST_01 I
+                    LEFT JOIN dbo.Store S ON S.ID = TRY_CONVERT(INT, I.COD_SUCURSAL)
+                    WHERE I.TRANSACTIONNUMBER = @Consecutivo
+                      AND (@TiendaID = '' OR I.COD_SUCURSAL = @TiendaID)
+                      AND (@Stores = '%' OR TRY_CONVERT(INT, I.COD_SUCURSAL) IN (SELECT TRY_CONVERT(INT, value) FROM STRING_SPLIT(@Stores, ',') WHERE value <> ''))
+                    ORDER BY I.FECHA_TRANSAC DESC";
+
+                command.Parameters.AddWithValue("@Consecutivo", (consecutivo ?? "").Trim());
+                command.Parameters.AddWithValue("@TiendaID", (tiendaID ?? "").Trim());
+                command.Parameters.AddWithValue("@Stores", GetStoresAvailable());
+
+                connection.Open();
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    if (!reader.Read())
+                        return null;
+
+                    string estado = ReadString(reader, "ESTADO_HACIENDA");
+                    DateTime fecha = ReadNullableDate(reader, "FECHA_TRANSAC") ?? DateTime.MinValue;
+
+                    return new MonitoreoDocumentoViewModel
+                    {
+                        ID = 0,
+                        Origen = "MH",
+                        TiendaID = ReadString(reader, "COD_SUCURSAL"),
+                        Tienda = ReadString(reader, "StoreName"),
+                        Consecutivo = ReadString(reader, "TRANSACTIONNUMBER"),
+                        Clave = ReadString(reader, "CLAVE50"),
+                        ComprobanteTipo = GetComprobanteDescription(ReadString(reader, "COMPROBANTE_TIPO")),
+                        Cliente = ReadString(reader, "NOMBRE_CLIENTE"),
+                        Fecha = fecha == DateTime.MinValue ? DateTime.Now : fecha,
+                        FechaSincronizacion = ReadNullableDate(reader, "FECHA_HACIENDA"),
+                        Total = 0,
+                        EstadoID = MapHaciendaStatus(estado),
+                        Mensaje = FirstNotEmpty(ReadString(reader, "OBSERVACIONES"), ReadString(reader, "XML_RESPUESTA"), "Sin mensaje registrado.")
+                    };
+                }
+            }
+        }
+
+        private IList<MonitoreoDocumentoViewModel> GetDocumentosErpFromAnalitica(int take, bool includeMessage = false)
         {
             EN_DocumentosERP[] records = ExecuteAnalitica(client => client.GetAllDocsERP(
                 GetStoresAvailable(),
@@ -186,12 +297,12 @@ namespace UltraERP.Controllers
                     FechaSincronizacion = x.Fecha_Envio,
                     Total = 0,
                     EstadoID = MapErpDocumentStatus(x.Status),
-                    Mensaje = FirstNotEmpty(x.Detalles_Envio, x.Respuesta_Envio, "Sin detalle registrado.")
+                    Mensaje = includeMessage ? FirstNotEmpty(x.Detalles_Envio, x.Respuesta_Envio, "Sin detalle registrado.") : ""
                 })
                 .ToList();
         }
 
-        private IList<MonitoreoAsientoViewModel> GetAsientosFromAnalitica(int take)
+        private IList<MonitoreoAsientoViewModel> GetAsientosFromAnalitica(int take, bool includeMessage = false)
         {
             EN_Asientos[] records = ExecuteAnalitica(client => client.GetAllAsientos(
                 GetStoresAvailable(),
@@ -219,7 +330,7 @@ namespace UltraERP.Controllers
                     Debito = 0,
                     Credito = 0,
                     EstadoID = MapAccountingStatus(x.Estado_Sync),
-                    Mensaje = FirstNotEmpty(x.Detalle_Sync, "Sin detalle registrado.")
+                    Mensaje = includeMessage ? FirstNotEmpty(x.Detalle_Sync, "Sin detalle registrado.") : ""
                 })
                 .ToList();
         }

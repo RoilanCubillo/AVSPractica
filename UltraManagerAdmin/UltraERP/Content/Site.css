@@ -699,8 +699,14 @@ body {
     border: 1px solid #d7e1de;
     border-radius: 12px;
     background: #fcfdfd;
+    color: var(--app-text);
     box-shadow: none;
     transition: border-color .16s ease, box-shadow .16s ease, background .16s ease, transform .16s ease;
+}
+
+.app-main .form-select option {
+    color: var(--app-text);
+    background: #fff;
 }
 
 .app-main textarea.form-control {

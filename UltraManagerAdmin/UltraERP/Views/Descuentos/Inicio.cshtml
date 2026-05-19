@@ -2,7 +2,6 @@
 @{
     ViewBag.Title = "Descuentos";
     ViewBag.ActiveMenu = "Descuentos";
-    var descuentosJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model);
 }
 
 <section class="page-header">
@@ -135,35 +134,97 @@
 @section scripts {
     <script>
         var urls = {
+            buscar: '@Url.Action("Buscar", "Descuentos")',
+            detalle: '@Url.Action("Detalle", "Descuentos")',
             registro: '@Url.Action("Registro", "Descuentos")'
         };
-        var descuentos = @Html.Raw(descuentosJson);
-        var filteredRows = [];
-        var pager = null;
+        var descuentos = [];
+        var currentPage = 1;
+        var totalRows = 0;
+        var totalPages = 1;
+        var searchTimer = null;
 
         $(function () {
-            pager = window.UltraERP.createTablePager({ onChange: renderTable });
             bindEvents();
-            renderTable();
-            setLoading(false);
+            loadDescuentos();
         });
 
         function bindEvents() {
-            $("#btnConsultar").on("click", renderTable);
-            $("#table_search").on("input", renderTable);
-            $("#filter_tipo").on("change", renderTable);
+            $("#btnConsultar").on("click", function () {
+                currentPage = 1;
+                loadDescuentos();
+            });
+            $("#table_search").on("input", function () {
+                currentPage = 1;
+                queueLoad();
+            });
+            $("#filter_tipo").on("change", function () {
+                currentPage = 1;
+                loadDescuentos();
+            });
+            $("#page_size").on("change", function () {
+                currentPage = 1;
+                loadDescuentos();
+            });
+            $("#btnPrevPage").on("click", function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    loadDescuentos();
+                }
+            });
+            $("#btnNextPage").on("click", function () {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    loadDescuentos();
+                }
+            });
             $("#btnLimpiar").on("click", function () {
                 $("#filter_tipo").val("Todos");
                 $("#table_search").val("");
-                if (pager) pager.reset();
+                currentPage = 1;
+                loadDescuentos();
+            });
+        }
+
+        function queueLoad() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(loadDescuentos, 300);
+        }
+
+        function loadDescuentos() {
+            setLoading(true);
+            $.get(urls.buscar, {
+                page: currentPage,
+                pageSize: getPageSize(),
+                search: $("#table_search").val() || "",
+                tipo: $("#filter_tipo").val() || "Todos"
+            }).done(function (response) {
+                if (!response || !response.Status) {
+                    descuentos = [];
+                    totalRows = 0;
+                    totalPages = 1;
+                    renderTable();
+                    return;
+                }
+
+                var result = response.Result || {};
+                descuentos = result.Rows || [];
+                totalRows = Number(result.Total || 0);
+                totalPages = Math.max(1, Number(result.TotalPages || 1));
+                currentPage = Math.min(Math.max(Number(result.Page || currentPage), 1), totalPages);
                 renderTable();
+            }).fail(function () {
+                descuentos = [];
+                totalRows = 0;
+                totalPages = 1;
+                renderTable();
+            }).always(function () {
+                setLoading(false);
             });
         }
 
         function renderTable() {
-            filteredRows = getFilteredRows();
-            var pageRows = pager ? pager.pageRows(filteredRows) : filteredRows;
-            var html = pageRows.map(function (d) {
+            var html = descuentos.map(function (d) {
                 return "<tr>" +
                     "<td><strong>" + escapeHtml(d.CodigoTexto) + "</strong></td>" +
                     "<td>" + escapeHtml(d.Descripcion) + "</td>" +
@@ -173,23 +234,24 @@
                     "</tr>";
             }).join("");
 
-            if (pager) pager.update(filteredRows, pageRows);
-            else $("#results_hint").text(filteredRows.length + " resultados");
+            updatePagination();
             $("#descuentos_body").html(html || "<tr><td colspan='5' class='empty-state'>Sin descuentos para los filtros aplicados.</td></tr>");
             updateSummary();
         }
 
-        function getFilteredRows() {
-            var tipo = $("#filter_tipo").val();
-            var text = ($("#table_search").val() || "").toLowerCase();
+        function getPageSize() {
+            return Number($("#page_size").val() || 10);
+        }
 
-            return descuentos.filter(function (d) {
-                if (tipo !== "Todos" && d.TipoTexto !== tipo) return false;
-                if (!text) return true;
+        function updatePagination() {
+            var pageSize = getPageSize();
+            var start = totalRows === 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
+            var end = totalRows === 0 ? 0 : start + descuentos.length - 1;
 
-                return [d.CodigoTexto, d.Descripcion, d.TipoTexto, d.ResumenTexto]
-                    .some(function (value) { return String(value || "").toLowerCase().indexOf(text) >= 0; });
-            });
+            $("#results_hint").text(start + "-" + end + " de " + totalRows + " resultados");
+            $("#page_hint").text("Pagina " + currentPage + " de " + totalPages);
+            $("#btnPrevPage").prop("disabled", currentPage <= 1);
+            $("#btnNextPage").prop("disabled", currentPage >= totalPages);
         }
 
         function getActionButtons(descuento) {
@@ -200,21 +262,23 @@
         }
 
         function onVer(id) {
-            var descuento = findDescuento(id);
-            if (!descuento) return;
+            $.get(urls.detalle, { id: id }).done(function (response) {
+                if (!response || !response.Status) return;
 
-            $("#descuentoModalTitle").text("Descuento " + descuento.CodigoTexto);
-            $("#discount_view_title").text(descuento.Descripcion);
-            $("#discount_view_subtitle").text(descuento.TipoTexto);
-            $("#discount_view_type").text(descuento.TipoTexto);
-            $("#discount_view_summary").html(renderViewGrid([
-                { label: "Codigo", value: descuento.CodigoTexto },
-                { label: "Descripcion", value: descuento.Descripcion },
-                { label: "Tipo", value: descuento.TipoTexto },
-                { label: "Resumen", value: descuento.ResumenTexto },
-                { label: "Descontar impares", value: descuento.DescontarImpares ? "Si" : "No" }
-            ]));
-            new bootstrap.Modal(document.getElementById("descuentoCatalogoModal")).show();
+                var descuento = response.Result;
+                $("#descuentoModalTitle").text("Descuento " + descuento.CodigoTexto);
+                $("#discount_view_title").text(descuento.Descripcion);
+                $("#discount_view_subtitle").text(descuento.TipoTexto);
+                $("#discount_view_type").text(descuento.TipoTexto);
+                $("#discount_view_summary").html(renderViewGrid([
+                    { label: "Codigo", value: descuento.CodigoTexto },
+                    { label: "Descripcion", value: descuento.Descripcion },
+                    { label: "Tipo", value: descuento.TipoTexto },
+                    { label: "Resumen", value: descuento.ResumenTexto },
+                    { label: "Descontar impares", value: descuento.DescontarImpares ? "Si" : "No" }
+                ]));
+                new bootstrap.Modal(document.getElementById("descuentoCatalogoModal")).show();
+            });
         }
 
         function onEditar(id) {
@@ -225,18 +289,14 @@
             window.location.href = urls.registro + "?id=" + encodeURIComponent(id);
         }
 
-        function findDescuento(id) {
-            return descuentos.find(function (item) { return item.ID === id; });
-        }
-
         function updateSummary() {
             var types = {};
             var odd = 0;
-            filteredRows.forEach(function (d) {
+            descuentos.forEach(function (d) {
                 types[d.TipoTexto || ""] = true;
                 if (d.DescontarImpares) odd += 1;
             });
-            $("#summary_count").text(filteredRows.length);
+            $("#summary_count").text(totalRows);
             $("#summary_types").text(Object.keys(types).filter(function (key) { return key; }).length);
             $("#summary_odd").text(odd);
         }

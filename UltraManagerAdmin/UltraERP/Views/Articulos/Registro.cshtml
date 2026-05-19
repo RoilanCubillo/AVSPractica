@@ -1,7 +1,22 @@
 @model UltraERP.Models.ArticuloViewModel
 @{
-    ViewBag.Title = Model.ID > 0 ? "Editar Art\u00edculo" : "Nuevo Art\u00edculo";
+    ViewBag.Title = Model.ID > 0 ? "Editar Articulo" : "Nuevo Articulo";
     ViewBag.ActiveMenu = "Articulos";
+    var unidades = ViewBag.Unidades as IEnumerable<SelectListItem>;
+
+    if (unidades == null || !unidades.Any())
+    {
+        unidades = new[]
+        {
+            new SelectListItem { Text = "UND - Unidad", Value = "UND", Selected = String.IsNullOrWhiteSpace(Model.UnidadMedida) || Model.UnidadMedida == "UND" },
+            new SelectListItem { Text = "KG - Kilogramo", Value = "KG", Selected = Model.UnidadMedida == "KG" },
+            new SelectListItem { Text = "CJ - Caja", Value = "CJ", Selected = Model.UnidadMedida == "CJ" },
+            new SelectListItem { Text = "GAL - Galon", Value = "GAL", Selected = Model.UnidadMedida == "GAL" },
+            new SelectListItem { Text = "L - Litro", Value = "L", Selected = Model.UnidadMedida == "L" },
+            new SelectListItem { Text = "QQ - Quintal", Value = "QQ", Selected = Model.UnidadMedida == "QQ" },
+            new SelectListItem { Text = "BQ - Bolsa", Value = "BQ", Selected = Model.UnidadMedida == "BQ" }
+        };
+    }
 }
 
 <section class="document-topbar">
@@ -56,7 +71,7 @@
             </div>
             <div class="col-12 col-md-2">
                 <label class="form-label required" for="UnidadMedida">Unidad</label>
-                @Html.DropDownListFor(m => m.UnidadMedida, (IEnumerable<SelectListItem>)ViewBag.Unidades, new { @class = "form-select" })
+                @Html.DropDownListFor(m => m.UnidadMedida, unidades, new { @class = "form-select" })
                 @Html.ValidationMessageFor(m => m.UnidadMedida, "", new { @class = "text-danger small" })
             </div>
             <div class="col-12 col-md-2">
