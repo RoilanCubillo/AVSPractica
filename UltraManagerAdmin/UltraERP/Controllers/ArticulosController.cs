@@ -134,56 +134,64 @@ namespace UltraERP.Controllers
                 false));
         }
 
-        private List<ArticuloViewModel> GetArticulosFromDatabase(string searchValue, int take)
-        {
-            int recordLimit = take <= 0 ? 10000 : take;
-
-            return new CT_Item()
-                .GetDynamicList(searchValue ?? "", 1, "asc", 0, recordLimit, null, null, null, null, null, GetStoresAvailable())
-                .Select(MapArticulo)
-                .ToList();
-        }
-
         private ArticuloViewModel GetArticuloById(int id)
         {
-            return GetArticulosFromDatabase("", 0).FirstOrDefault(x => x.ID == id);
-        }
+            ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings["UltraERP.BusinessDataAccess.Properties.Settings.MasterDB"];
+            if (settings == null || String.IsNullOrWhiteSpace(settings.ConnectionString))
+                return null;
 
-        private static ArticuloViewModel MapArticulo(EN_Item item)
-        {
-            decimal costo = item.ReplacementCost > 0 ? item.ReplacementCost : item.Cost;
-            decimal precio = item.Price > 0 ? item.Price : CalculatePrice(costo, item.Utility);
-
-            return new ArticuloViewModel
+            using (var connection = new SqlConnection(settings.ConnectionString))
+            using (var command = connection.CreateCommand())
             {
-                ID = item.ID,
-                Codigo = item.ItemLookupCode,
-                Descripcion = item.Description,
-                DescripcionExtendida = item.ExtendedDescription,
-                UnidadMedida = item.UnitOfMeasure,
-                FamiliaID = item.FamilyID,
-                DepartamentoID = item.DepartmentID,
-                CategoriaID = item.CategoryID,
-                SubCategoriaID = item.SubCategoryID,
-                Familia = JoinCodeName(item.FamilyCode, item.FamilyName),
-                Departamento = JoinCodeName(item.DepartmentCode, item.DepartmentName),
-                Categoria = JoinCodeName(item.CategoryCode, item.CategoryName),
-                SubCategoria = JoinCodeName(item.SubCategoryCode, item.SubCategoryName),
-                Proveedor = !String.IsNullOrWhiteSpace(item.SupplierName) ? item.SupplierName : item.SupplierCode,
-                Bodega = item.StoresNameSelected,
-                Costo = costo,
-                PrecioVenta = precio,
-                ImpuestoPorcentaje = Convert.ToDecimal(item.TaxPercentage),
-                Existencia = Convert.ToDecimal(item.Quantity),
-                ExistenciaMinima = 0,
-                ExistenciaMaxima = 0,
-                Activo = !item.Inactive,
-                Inventariable = true,
-                Exento = item.TaxPercentage <= 0,
-                UsuarioCrea = "SQL",
-                FechaCrea = item.DateCreated == DateTime.MinValue || item.DateCreated.Year <= 1900 ? DateTime.Now : item.DateCreated,
-                FechaModifica = item.LastUpdated
-            };
+                command.CommandType = CommandType.Text;
+                command.CommandText = @"
+SELECT TOP 1
+    I.ID,
+    I.ItemLookupCode,
+    I.Description,
+    I.ExtendedDescription,
+    I.UnitOfMeasure,
+    ISNULL(EI.FamilyID, 0) AS FamilyID,
+    ISNULL(I.DepartmentID, 0) AS DepartmentID,
+    ISNULL(I.CategoryID, 0) AS CategoryID,
+    ISNULL(EI.SubCategoryID, 0) AS SubCategoryID,
+    ISNULL(F.Code, '') AS FamilyCode,
+    ISNULL(F.Name, '') AS FamilyName,
+    ISNULL(D.Code, '') AS DepartmentCode,
+    ISNULL(D.Name, '') AS DepartmentName,
+    ISNULL(C.Code, '') AS CategoryCode,
+    ISNULL(C.Name, '') AS CategoryName,
+    ISNULL(SC.Code, '') AS SubCategoryCode,
+    ISNULL(SC.Description, '') AS SubCategoryName,
+    ISNULL(S.SupplierName, '') AS SupplierName,
+    ISNULL(S.Code, '') AS SupplierCode,
+    ISNULL(I.ReplacementCost, 0) AS ReplacementCost,
+    ISNULL(I.Cost, 0) AS Cost,
+    ISNULL(I.Price, 0) AS Price,
+    CONVERT(DECIMAL(18, 4), ISNULL(TD.Percentage, ISNULL(TI.Percentage, 0))) AS TaxPercentage,
+    CONVERT(DECIMAL(18, 4), 0) AS Quantity,
+    ISNULL(I.Inactive, 0) AS Inactive,
+    I.DateCreated,
+    I.LastUpdated
+FROM dbo.Item I
+LEFT JOIN dbo.ExtCentral_Item EI ON EI.ItemID = I.ID
+LEFT JOIN dbo.ExtCentral_Family F ON F.ID = EI.FamilyID
+LEFT JOIN dbo.Department D ON D.ID = I.DepartmentID
+LEFT JOIN dbo.Category C ON C.ID = I.CategoryID
+LEFT JOIN dbo.ExtCentral_SubCategory SC ON SC.ID = EI.SubCategoryID
+LEFT JOIN dbo.Supplier S ON S.ID = I.SupplierID
+LEFT JOIN dbo.ItemTax IT ON IT.ID = I.TaxID
+LEFT JOIN dbo.Tax TD ON TD.ID = I.TaxID
+LEFT JOIN dbo.Tax TI ON TI.ID = IT.TaxID01
+WHERE I.ID = @ID;";
+                command.Parameters.AddWithValue("@ID", id);
+
+                connection.Open();
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    return reader.Read() ? MapArticuloSearch(reader) : null;
+                }
+            }
         }
 
         private static decimal CalculatePrice(decimal cost, decimal utility)
@@ -219,136 +227,74 @@ namespace UltraERP.Controllers
             {
                 command.CommandType = CommandType.Text;
                 command.CommandText = @"
-DECLARE @Filtered TABLE
+;WITH Filtered AS
 (
-    RowNum INT IDENTITY(1,1),
-    ID INT,
-    ItemLookupCode VARCHAR(25),
-    Description VARCHAR(80),
-    ExtendedDescription VARCHAR(MAX),
-    UnitOfMeasure VARCHAR(30),
-    FamilyID INT,
-    DepartmentID INT,
-    CategoryID INT,
-    SubCategoryID INT,
-    FamilyCode NVARCHAR(50),
-    FamilyName NVARCHAR(100),
-    DepartmentCode NVARCHAR(50),
-    DepartmentName NVARCHAR(100),
-    CategoryCode NVARCHAR(50),
-    CategoryName NVARCHAR(100),
-    SubCategoryCode NVARCHAR(50),
-    SubCategoryName NVARCHAR(100),
-    SupplierName NVARCHAR(200),
-    SupplierCode NVARCHAR(50),
-    ReplacementCost MONEY,
-    Cost MONEY,
-    Price MONEY,
-    TaxPercentage DECIMAL(18, 4),
-    Quantity DECIMAL(18, 4),
-    Inactive BIT,
-    DateCreated DATETIME,
-    LastUpdated DATETIME
-);
-
-INSERT INTO @Filtered
-(
-    ID,
-    ItemLookupCode,
-    Description,
-    ExtendedDescription,
-    UnitOfMeasure,
-    FamilyID,
-    DepartmentID,
-    CategoryID,
-    SubCategoryID,
-    FamilyCode,
-    FamilyName,
-    DepartmentCode,
-    DepartmentName,
-    CategoryCode,
-    CategoryName,
-    SubCategoryCode,
-    SubCategoryName,
-    SupplierName,
-    SupplierCode,
-    ReplacementCost,
-    Cost,
-    Price,
-    TaxPercentage,
-    Quantity,
-    Inactive,
-    DateCreated,
-    LastUpdated
+    SELECT
+        I.ID,
+        I.ItemLookupCode,
+        I.Description,
+        I.ExtendedDescription,
+        I.UnitOfMeasure,
+        ISNULL(EI.FamilyID, 0) AS FamilyID,
+        ISNULL(I.DepartmentID, 0) AS DepartmentID,
+        ISNULL(I.CategoryID, 0) AS CategoryID,
+        ISNULL(EI.SubCategoryID, 0) AS SubCategoryID,
+        ISNULL(F.Code, '') AS FamilyCode,
+        ISNULL(F.Name, '') AS FamilyName,
+        ISNULL(D.Code, '') AS DepartmentCode,
+        ISNULL(D.Name, '') AS DepartmentName,
+        ISNULL(C.Code, '') AS CategoryCode,
+        ISNULL(C.Name, '') AS CategoryName,
+        ISNULL(SC.Code, '') AS SubCategoryCode,
+        ISNULL(SC.Description, '') AS SubCategoryName,
+        ISNULL(S.SupplierName, '') AS SupplierName,
+        ISNULL(S.Code, '') AS SupplierCode,
+        ISNULL(I.ReplacementCost, 0) AS ReplacementCost,
+        ISNULL(I.Cost, 0) AS Cost,
+        ISNULL(I.Price, 0) AS Price,
+        CONVERT(DECIMAL(18, 4), ISNULL(TD.Percentage, ISNULL(TI.Percentage, 0))) AS TaxPercentage,
+        CONVERT(DECIMAL(18, 4), 0) AS Quantity,
+        ISNULL(I.Inactive, 0) AS Inactive,
+        I.DateCreated,
+        I.LastUpdated,
+        COUNT(1) OVER() AS TotalRows,
+        ROW_NUMBER() OVER (ORDER BY ISNULL(I.LastUpdated, I.DateCreated) DESC, I.ID DESC) AS RowNum
+    FROM dbo.Item I
+    LEFT JOIN dbo.ExtCentral_Item EI ON EI.ItemID = I.ID
+    LEFT JOIN dbo.ExtCentral_Family F ON F.ID = EI.FamilyID
+    LEFT JOIN dbo.Department D ON D.ID = I.DepartmentID
+    LEFT JOIN dbo.Category C ON C.ID = I.CategoryID
+    LEFT JOIN dbo.ExtCentral_SubCategory SC ON SC.ID = EI.SubCategoryID
+    LEFT JOIN dbo.Supplier S ON S.ID = I.SupplierID
+    LEFT JOIN dbo.ItemTax IT ON IT.ID = I.TaxID
+    LEFT JOIN dbo.Tax TD ON TD.ID = I.TaxID
+    LEFT JOIN dbo.Tax TI ON TI.ID = IT.TaxID01
+    WHERE (@Estado = 'Todos' OR (@Estado = 'Activo' AND ISNULL(I.Inactive, 0) = 0) OR (@Estado = 'Inactivo' AND ISNULL(I.Inactive, 0) = 1))
+      AND (@Search = '' OR I.ItemLookupCode LIKE @SearchLike OR I.Description LIKE @SearchLike OR ISNULL(I.ExtendedDescription, '') LIKE @SearchLike OR ISNULL(F.Code, '') LIKE @SearchLike OR ISNULL(F.Name, '') LIKE @SearchLike OR ISNULL(D.Code, '') LIKE @SearchLike OR ISNULL(D.Name, '') LIKE @SearchLike OR ISNULL(C.Code, '') LIKE @SearchLike OR ISNULL(C.Name, '') LIKE @SearchLike OR ISNULL(SC.Code, '') LIKE @SearchLike OR ISNULL(SC.Description, '') LIKE @SearchLike OR ISNULL(S.SupplierName, '') LIKE @SearchLike)
+      AND (@Familia = '' OR ISNULL(F.Code, '') LIKE @FamiliaLike OR ISNULL(F.Name, '') LIKE @FamiliaLike)
+      AND (@Departamento = '' OR ISNULL(D.Code, '') LIKE @DepartamentoLike OR ISNULL(D.Name, '') LIKE @DepartamentoLike)
+      AND (@Categoria = '' OR ISNULL(C.Code, '') LIKE @CategoriaLike OR ISNULL(C.Name, '') LIKE @CategoriaLike)
+      AND (@Subcategoria = '' OR ISNULL(SC.Code, '') LIKE @SubcategoriaLike OR ISNULL(SC.Description, '') LIKE @SubcategoriaLike)
+      AND (@Proveedor = '' OR ISNULL(S.SupplierName, '') LIKE @ProveedorLike OR ISNULL(S.Code, '') LIKE @ProveedorLike)
 )
-SELECT
-    I.ID,
-    I.ItemLookupCode,
-    I.Description,
-    I.ExtendedDescription,
-    I.UnitOfMeasure,
-    ISNULL(EI.FamilyID, 0),
-    ISNULL(I.DepartmentID, 0),
-    ISNULL(I.CategoryID, 0),
-    ISNULL(EI.SubCategoryID, 0),
-    ISNULL(F.Code, ''),
-    ISNULL(F.Name, ''),
-    ISNULL(D.Code, ''),
-    ISNULL(D.Name, ''),
-    ISNULL(C.Code, ''),
-    ISNULL(C.Name, ''),
-    ISNULL(SC.Code, ''),
-    ISNULL(SC.Description, ''),
-    ISNULL(S.SupplierName, ''),
-    ISNULL(S.Code, ''),
-    ISNULL(I.ReplacementCost, 0),
-    ISNULL(I.Cost, 0),
-    ISNULL(I.Price, 0),
-    CONVERT(DECIMAL(18, 4), ISNULL(TD.Percentage, ISNULL(TI.Percentage, 0))),
-    0,
-    ISNULL(I.Inactive, 0),
-    I.DateCreated,
-    I.LastUpdated
-FROM dbo.Item I
-LEFT JOIN dbo.ExtCentral_Item EI ON EI.ItemID = I.ID
-LEFT JOIN dbo.ExtCentral_Family F ON F.ID = EI.FamilyID
-LEFT JOIN dbo.Department D ON D.ID = I.DepartmentID
-LEFT JOIN dbo.Category C ON C.ID = I.CategoryID
-LEFT JOIN dbo.ExtCentral_SubCategory SC ON SC.ID = EI.SubCategoryID
-LEFT JOIN dbo.Supplier S ON S.ID = I.SupplierID
-LEFT JOIN dbo.ItemTax IT ON IT.ID = I.TaxID
-LEFT JOIN dbo.Tax TD ON TD.ID = I.TaxID
-LEFT JOIN dbo.Tax TI ON TI.ID = IT.TaxID01
-WHERE (@Estado = 'Todos' OR (@Estado = 'Activo' AND ISNULL(I.Inactive, 0) = 0) OR (@Estado = 'Inactivo' AND ISNULL(I.Inactive, 0) = 1))
-  AND (@Search = '' OR I.ItemLookupCode LIKE @SearchLike OR I.Description LIKE @SearchLike OR ISNULL(I.ExtendedDescription, '') LIKE @SearchLike OR ISNULL(F.Code, '') LIKE @SearchLike OR ISNULL(F.Name, '') LIKE @SearchLike OR ISNULL(D.Code, '') LIKE @SearchLike OR ISNULL(D.Name, '') LIKE @SearchLike OR ISNULL(C.Code, '') LIKE @SearchLike OR ISNULL(C.Name, '') LIKE @SearchLike OR ISNULL(SC.Code, '') LIKE @SearchLike OR ISNULL(SC.Description, '') LIKE @SearchLike OR ISNULL(S.SupplierName, '') LIKE @SearchLike)
-  AND (@Familia = '' OR ISNULL(F.Code, '') LIKE @FamiliaLike OR ISNULL(F.Name, '') LIKE @FamiliaLike)
-  AND (@Departamento = '' OR ISNULL(D.Code, '') LIKE @DepartamentoLike OR ISNULL(D.Name, '') LIKE @DepartamentoLike)
-  AND (@Categoria = '' OR ISNULL(C.Code, '') LIKE @CategoriaLike OR ISNULL(C.Name, '') LIKE @CategoriaLike)
-  AND (@Subcategoria = '' OR ISNULL(SC.Code, '') LIKE @SubcategoriaLike OR ISNULL(SC.Description, '') LIKE @SubcategoriaLike)
-  AND (@Proveedor = '' OR ISNULL(S.SupplierName, '') LIKE @ProveedorLike OR ISNULL(S.Code, '') LIKE @ProveedorLike)
-ORDER BY ISNULL(I.LastUpdated, I.DateCreated) DESC, I.ID DESC;
-
-SELECT @Total = COUNT(*) FROM @Filtered;
-
 SELECT *
-FROM @Filtered
+FROM Filtered
 WHERE RowNum BETWEEN @StartRow AND @EndRow
 ORDER BY RowNum;";
 
                 AddSearchParameters(command, search, estado, familia, departamento, categoria, subcategoria, proveedor);
                 command.Parameters.AddWithValue("@StartRow", ((page - 1) * pageSize) + 1);
                 command.Parameters.AddWithValue("@EndRow", page * pageSize);
-                SqlParameter totalParameter = command.Parameters.Add("@Total", SqlDbType.Int);
-                totalParameter.Direction = ParameterDirection.Output;
-
                 connection.Open();
                 using (SqlDataReader reader = command.ExecuteReader())
                 {
                     while (reader.Read())
+                    {
                         rows.Add(MapArticuloSearch(reader));
+                        if (total == 0)
+                            total = ReadInt(reader, "TotalRows");
+                    }
                 }
-
-                total = totalParameter.Value == DBNull.Value ? 0 : Convert.ToInt32(totalParameter.Value);
             }
 
             return rows;

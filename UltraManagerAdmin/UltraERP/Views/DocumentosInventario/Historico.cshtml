@@ -161,15 +161,46 @@
 @section scripts {
     <script>
         var historicoUrls = {
-            historico: '@Url.Action("GetHistoricoAjustes", "DocumentosInventario")'
+            historico: '@Url.Action("GetHistoricoAjustes", "DocumentosInventario")',
+            detalle: '@Url.Action("GetDocumentoDetalle", "DocumentosInventario")'
         };
         var historico = [];
-        var pager = null;
+        var currentPage = 1;
+        var totalRows = 0;
+        var totalPages = 1;
+        var summaryTotal = 0;
+        var summaryLast = "-";
+        var searchTimer = null;
 
         $(function () {
-            pager = window.UltraERP.createTablePager({ resultsSelector: "#hist_results_hint", onChange: renderHistorico });
-            $("#btnHistConsultar").on("click", getHistorico);
-            $("#hist_search").on("input", renderHistorico);
+            $("#btnHistConsultar").on("click", function () {
+                currentPage = 1;
+                getHistorico();
+            });
+            $("#hist_search, #hist_proveedor, #hist_usuario, #hist_factura, #hist_producto").on("input", function () {
+                currentPage = 1;
+                queueHistoricoLoad();
+            });
+            $("#hist_tipo, #hist_fecha_aplicacion").on("change", function () {
+                currentPage = 1;
+                getHistorico();
+            });
+            $("#page_size").on("change", function () {
+                currentPage = 1;
+                getHistorico();
+            });
+            $("#btnPrevPage").on("click", function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    getHistorico();
+                }
+            });
+            $("#btnNextPage").on("click", function () {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    getHistorico();
+                }
+            });
             $("#btnHistLimpiar").on("click", function () {
                 $("#hist_tipo").val("Todos");
                 $("#hist_fecha_aplicacion").val("");
@@ -178,11 +209,16 @@
                 $("#hist_factura").val("");
                 $("#hist_producto").val("");
                 $("#hist_search").val("");
-                if (pager) pager.reset();
+                currentPage = 1;
                 getHistorico();
             });
             getHistorico();
         });
+
+        function queueHistoricoLoad() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(getHistorico, 300);
+        }
 
         function getHistoricoFilters() {
             return {
@@ -191,7 +227,10 @@
                 proveedor: $("#hist_proveedor").val(),
                 usuario: $("#hist_usuario").val(),
                 facturaRef: $("#hist_factura").val(),
-                producto: $("#hist_producto").val()
+                producto: $("#hist_producto").val(),
+                search: $("#hist_search").val() || "",
+                page: currentPage,
+                pageSize: getPageSize()
             };
         }
 
@@ -200,16 +239,35 @@
             $.get(historicoUrls.historico, getHistoricoFilters())
                 .done(function (data) {
                     if (!data.Status) {
+                        historico = [];
+                        totalRows = 0;
+                        totalPages = 1;
+                        summaryTotal = 0;
+                        summaryLast = "-";
+                        renderHistorico();
+                        updateHistoricoSummary();
                         showToast(data.Message || "No se pudo consultar el historico.");
                         return;
                     }
 
-                    historico = data.Result || [];
-                    if (pager) pager.reset();
+                    var result = data.Result || {};
+                    historico = result.Rows || [];
+                    totalRows = Number(result.Total || 0);
+                    totalPages = Math.max(1, Number(result.TotalPages || 1));
+                    currentPage = Math.min(Math.max(Number(result.Page || currentPage), 1), totalPages);
+                    summaryTotal = Number(result.SummaryTotal || 0);
+                    summaryLast = result.SummaryLast || "-";
                     renderHistorico();
                     updateHistoricoSummary();
                 })
                 .fail(function () {
+                    historico = [];
+                    totalRows = 0;
+                    totalPages = 1;
+                    summaryTotal = 0;
+                    summaryLast = "-";
+                    renderHistorico();
+                    updateHistoricoSummary();
                     showToast("No se pudo consultar el historico.");
                 })
                 .always(function () {
@@ -218,16 +276,7 @@
         }
 
         function renderHistorico() {
-            var text = ($("#hist_search").val() || "").toLowerCase();
-            var rows = historico.filter(function (item) {
-                if (!text) return true;
-                return Object.keys(item).some(function (key) {
-                    return String(item[key] || "").toLowerCase().indexOf(text) >= 0;
-                });
-            });
-
-            var pageRows = pager ? pager.pageRows(rows) : rows;
-            var html = pageRows.map(function (d) {
+            var html = historico.map(function (d) {
                 return "<tr>" +
                     "<td>" + escapeHtml(d.Numero) + "</td>" +
                     "<td>" + escapeHtml(d.Tipo) + "</td>" +
@@ -246,31 +295,56 @@
                     "</tr>";
             }).join("");
 
-            if (pager) pager.update(rows, pageRows);
-            else $("#hist_results_hint").text(rows.length + " resultados");
+            updateHistoricoPagination();
             $("#historico_body").html(html || "<tr><td colspan='11' class='empty-state'>Sin documentos cerrados para los filtros aplicados.</td></tr>");
         }
 
-        function onHistoricoVer(id) {
-            var documento = findHistorico(id);
-            if (!documento) return;
+        function getPageSize() {
+            return Number($("#page_size").val() || 10);
+        }
 
-            $("#historicoModalTitle").text("Historico " + documento.Numero);
-            $("#hist_view_title").text(documento.Numero);
-            $("#hist_view_subtitle").text(documento.Tipo + " registrado para " + (documento.Proveedor || "Proveedor no definido") + ".");
-            $("#hist_view_total").text(formatMoney(documento.Total));
-            $("#hist_view_total").closest(".document-view-total").toggleClass("voided-total", documento.Estado === "Anulada");
-            renderHistoricoHeaderBadges(documento);
-            renderHistoricoSummary(documento);
-            renderHistoricoTipoDocumento(documento);
-            renderHistoricoAuditoria(documento);
-            renderHistoricoDetalleLineas(documento);
-            new bootstrap.Modal(document.getElementById("historicoModal")).show();
+        function updateHistoricoPagination() {
+            var pageSize = getPageSize();
+            var start = totalRows === 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
+            var end = totalRows === 0 ? 0 : start + historico.length - 1;
+
+            $("#hist_results_hint").text(start + "-" + end + " de " + totalRows + " resultados");
+            $("#page_hint").text("Pagina " + currentPage + " de " + totalPages);
+            $("#btnPrevPage").prop("disabled", currentPage <= 1);
+            $("#btnNextPage").prop("disabled", currentPage >= totalPages);
+        }
+
+        function onHistoricoVer(id) {
+            fetchHistoricoDetalle(id, function (documento) {
+                $("#historicoModalTitle").text("Historico " + documento.Numero);
+                $("#hist_view_title").text(documento.Numero);
+                $("#hist_view_subtitle").text(documento.Tipo + " registrado para " + (documento.Proveedor || "Proveedor no definido") + ".");
+                $("#hist_view_total").text(formatMoney(documento.Total));
+                $("#hist_view_total").closest(".document-view-total").toggleClass("voided-total", documento.Estado === "Anulada");
+                renderHistoricoHeaderBadges(documento);
+                renderHistoricoSummary(documento);
+                renderHistoricoTipoDocumento(documento);
+                renderHistoricoAuditoria(documento);
+                renderHistoricoDetalleLineas(documento);
+                new bootstrap.Modal(document.getElementById("historicoModal")).show();
+            });
         }
 
         function onHistoricoImprimir(id) {
-            onHistoricoVer(id);
-            setTimeout(function () { startDocumentPrint("historicoModal"); }, 300);
+            fetchHistoricoDetalle(id, function (documento) {
+                $("#historicoModalTitle").text("Historico " + documento.Numero);
+                $("#hist_view_title").text(documento.Numero);
+                $("#hist_view_subtitle").text(documento.Tipo + " registrado para " + (documento.Proveedor || "Proveedor no definido") + ".");
+                $("#hist_view_total").text(formatMoney(documento.Total));
+                $("#hist_view_total").closest(".document-view-total").toggleClass("voided-total", documento.Estado === "Anulada");
+                renderHistoricoHeaderBadges(documento);
+                renderHistoricoSummary(documento);
+                renderHistoricoTipoDocumento(documento);
+                renderHistoricoAuditoria(documento);
+                renderHistoricoDetalleLineas(documento);
+                new bootstrap.Modal(document.getElementById("historicoModal")).show();
+                setTimeout(function () { startDocumentPrint("historicoModal"); }, 300);
+            });
         }
 
         function findHistorico(id) {
@@ -278,11 +352,24 @@
         }
 
         function updateHistoricoSummary() {
-            var total = historico.reduce(function (sum, item) { return sum + Number(item.Total || 0); }, 0);
-            var last = historico.length ? historico[0].FechaAplicacion : "-";
-            $("#hist_count").text(historico.length);
-            $("#hist_total").text(formatMoney(total));
-            $("#hist_last").text(last || "-");
+            $("#hist_count").text(totalRows);
+            $("#hist_total").text(formatMoney(summaryTotal));
+            $("#hist_last").text(summaryLast || "-");
+        }
+
+        function fetchHistoricoDetalle(id, onSuccess) {
+            $.get(historicoUrls.detalle, { id: id }).done(function (data) {
+                if (!data.Status) {
+                    showToast(data.Message || "No se pudo cargar el detalle del historico.");
+                    return;
+                }
+
+                if (typeof onSuccess === "function") {
+                    onSuccess(data.Result || {});
+                }
+            }).fail(function () {
+                showToast("No se pudo cargar el detalle del historico.");
+            });
         }
 
         function getHistoricoAuditoriaBadge(documento) {

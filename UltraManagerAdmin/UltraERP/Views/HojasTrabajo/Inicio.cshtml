@@ -170,6 +170,7 @@
 @section scripts {
     <script>
         var worksheetUrls = {
+            detalle: '@Url.Action("GetHojaTrabajo", "HojasTrabajo")',
             cambiarEstado: '@Url.Action("CambiarEstado", "HojasTrabajo")',
             descargar: '@Url.Action("DescargarArchivo", "HojasTrabajo")'
         };
@@ -258,30 +259,39 @@
         }
 
         function onWorksheetView(id) {
-            currentWorksheet = findWorksheet(id);
-            if (!currentWorksheet) return;
+            $.get(worksheetUrls.detalle, { id: id })
+                .done(function (response) {
+                    if (!response || !response.Status) {
+                        showWorksheetToast(response && response.Message ? response.Message : "No se pudo cargar la hoja de trabajo.");
+                        return;
+                    }
 
-            $("#worksheetModalTitle").text("Hoja de trabajo " + currentWorksheet.ID);
-            $("#worksheet_view_title").text(currentWorksheet.Titulo);
-            $("#worksheet_view_subtitle").text(currentWorksheet.EstiloTexto + " - " + currentWorksheet.TareaDescripcion);
-            $("#worksheet_view_count").text(formatNumber(currentWorksheet.CantidadContenido));
-            $("#worksheet_view_badges").html(renderWorksheetBadges(currentWorksheet));
-            $("#worksheet_view_general").html(renderViewGrid([
-                { label: "Referencia", value: currentWorksheet.ID },
-                { label: "Estado", value: currentWorksheet.EstadoTexto },
-                { label: "Tarea", value: currentWorksheet.TareaCodigo + " - " + currentWorksheet.TareaDescripcion },
-                { label: "Usuario", value: currentWorksheet.Usuario || "-" },
-                { label: "Fecha creada", value: currentWorksheet.FechaCreacionTexto || "-" },
-                { label: "Fecha efectiva", value: currentWorksheet.FechaEfectivaTexto || "-" },
-                { label: "Fecha aplicaci\u00f3n", value: currentWorksheet.FechaAplicacionTexto || "-" },
-                { label: "Tiendas", value: formatNumber(currentWorksheet.CantidadTiendas) }
-            ]));
-            $("#worksheet_view_notes").text(currentWorksheet.Notas || "Sin notas registradas.");
-            $("#worksheet_view_stores").html(renderWorksheetStores(currentWorksheet.Tiendas || []));
-            $("#worksheet_view_content").html(renderWorksheetContent(currentWorksheet));
-            $("#worksheet_view_history").html(renderWorksheetHistory(currentWorksheet.Historial || []));
-            syncWorksheetActions();
-            worksheetModal.show();
+                    currentWorksheet = response.Result;
+                    $("#worksheetModalTitle").text("Hoja de trabajo " + currentWorksheet.ID);
+                    $("#worksheet_view_title").text(currentWorksheet.Titulo);
+                    $("#worksheet_view_subtitle").text(currentWorksheet.EstiloTexto + " - " + currentWorksheet.TareaDescripcion);
+                    $("#worksheet_view_count").text(formatNumber(currentWorksheet.CantidadContenido));
+                    $("#worksheet_view_badges").html(renderWorksheetBadges(currentWorksheet));
+                    $("#worksheet_view_general").html(renderViewGrid([
+                        { label: "Referencia", value: currentWorksheet.ID },
+                        { label: "Estado", value: currentWorksheet.EstadoTexto },
+                        { label: "Tarea", value: currentWorksheet.TareaCodigo + " - " + currentWorksheet.TareaDescripcion },
+                        { label: "Usuario", value: currentWorksheet.Usuario || "-" },
+                        { label: "Fecha creada", value: currentWorksheet.FechaCreacionTexto || "-" },
+                        { label: "Fecha efectiva", value: currentWorksheet.FechaEfectivaTexto || "-" },
+                        { label: "Fecha aplicaci\u00f3n", value: currentWorksheet.FechaAplicacionTexto || "-" },
+                        { label: "Tiendas", value: formatNumber(currentWorksheet.CantidadTiendas) }
+                    ]));
+                    $("#worksheet_view_notes").text(currentWorksheet.Notas || "Sin notas registradas.");
+                    $("#worksheet_view_stores").html(renderWorksheetStores(currentWorksheet.Tiendas || []));
+                    $("#worksheet_view_content").html(renderWorksheetContent(currentWorksheet));
+                    $("#worksheet_view_history").html(renderWorksheetHistory(currentWorksheet.Historial || []));
+                    syncWorksheetActions();
+                    worksheetModal.show();
+                })
+                .fail(function () {
+                    showWorksheetToast("No se pudo cargar la hoja de trabajo.");
+                });
         }
 
         function onWorksheetDownload(id) {

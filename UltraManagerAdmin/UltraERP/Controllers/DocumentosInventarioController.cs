@@ -161,42 +161,37 @@ namespace UltraERP.Controllers
             }
         }
 
-        public JsonResult GetDocumentos(string tipoDocumento, string estado, string fechaDesde, string fechaHasta, string proveedor, string numeroDocumento, string facturaRef, string personaSolicita)
+        public JsonResult GetDocumentos(string tipoDocumento, string estado, string fechaDesde, string fechaHasta, string proveedor, string numeroDocumento, string facturaRef, string personaSolicita, string search = "", int page = 1, int pageSize = 10)
         {
             try
             {
-                DateTime? desde = ParseDate(fechaDesde);
-                DateTime? hasta = ParseDate(fechaHasta);
-                var documentos = GetHistoricoAjustesFromDatabase(tipoDocumento, "", proveedor, personaSolicita, facturaRef, "")
-                    .Where(x =>
-                        IsTipoMatch(tipoDocumento, x.Tipo) &&
-                        IsMatch(estado, "Todos", x.Estado) &&
-                        (!desde.HasValue || x.FechaSolicitud.Date >= desde.Value.Date) &&
-                        (!hasta.HasValue || x.FechaSolicitud.Date <= hasta.Value.Date) &&
-                        Contains(x.Proveedor, proveedor) &&
-                        Contains(x.Numero, numeroDocumento) &&
-                        Contains(x.FacturaRef, facturaRef) &&
-                        Contains(x.PersonaSolicita, personaSolicita))
-                    .ToList();
+                var result = GetDocumentoGridPage(new DocumentoGridQuery
+                {
+                    TipoDocumento = tipoDocumento,
+                    Estado = estado,
+                    FechaDesde = fechaDesde,
+                    FechaHasta = fechaHasta,
+                    Proveedor = proveedor,
+                    NumeroDocumento = numeroDocumento,
+                    FacturaRef = facturaRef,
+                    PersonaSolicita = personaSolicita,
+                    Search = search,
+                    Page = page,
+                    PageSize = pageSize,
+                    HistoricoOnly = false
+                });
 
-                var customDocuments = GetCustomDocumentosFromDatabase(tipoDocumento, estado, fechaDesde, fechaHasta, "", proveedor, personaSolicita, facturaRef, "", false);
-                var customNumbers = new HashSet<string>(customDocuments.Select(x => NormalizeLookup(x.Numero)), StringComparer.OrdinalIgnoreCase);
-                documentos = documentos
-                    .Where(x => !customNumbers.Contains(NormalizeLookup(x.Numero)))
-                    .ToList();
-
-                documentos = customDocuments
-                    .Concat(documentos)
-                    .OrderByDescending(x => x.FechaSolicitud)
-                    .ThenByDescending(x => x.FechaAplicacion ?? DateTime.MinValue)
-                    .ThenByDescending(x => x.ID)
-                    .ToList();
-
-                var result = documentos
-                    .Select(x => ToGrid(x, !IsCustomDocumentClientId(x.ID)))
-                    .ToList();
-
-                return Json(new JsonResponse("", "", result, true), JsonRequestBehavior.AllowGet);
+                return Json(new JsonResponse("", "", new
+                {
+                    Rows = result.Rows.Select(ToGridSummary).ToList(),
+                    Total = result.Total,
+                    TotalPages = Math.Max(1, (int)Math.Ceiling(result.Total / (double)result.PageSize)),
+                    Page = result.Page,
+                    PageSize = result.PageSize,
+                    SummaryTotal = result.SummaryTotal,
+                    SummaryPending = result.SummaryPending,
+                    SummaryCount = result.Total
+                }, true), JsonRequestBehavior.AllowGet);
             }
             catch (Exception e)
             {
@@ -204,28 +199,59 @@ namespace UltraERP.Controllers
             }
         }
 
-        public JsonResult GetHistoricoAjustes(string tipoDocumento, string fechaAplicacion, string proveedor, string usuario, string facturaRef, string producto)
+        public JsonResult GetHistoricoAjustes(string tipoDocumento, string fechaAplicacion, string proveedor, string usuario, string facturaRef, string producto, string search = "", int page = 1, int pageSize = 10)
         {
             try
             {
-                var databaseDocuments = GetHistoricoAjustesFromDatabase(tipoDocumento, fechaAplicacion, proveedor, usuario, facturaRef, producto);
-                var customDocuments = GetCustomDocumentosFromDatabase(tipoDocumento, "Cerrada", "", "", fechaAplicacion, proveedor, usuario, facturaRef, producto, true);
-                var databaseNumbers = new HashSet<string>(
-                    databaseDocuments.Select(x => NormalizeLookup(x.Numero)),
-                    StringComparer.OrdinalIgnoreCase);
+                var result = GetDocumentoGridPage(new DocumentoGridQuery
+                {
+                    TipoDocumento = tipoDocumento,
+                    FechaAplicacion = fechaAplicacion,
+                    Proveedor = proveedor,
+                    Usuario = usuario,
+                    FacturaRef = facturaRef,
+                    Producto = producto,
+                    Search = search,
+                    Page = page,
+                    PageSize = pageSize,
+                    HistoricoOnly = true
+                });
 
-                var result = databaseDocuments
-                    .Concat(customDocuments.Where(x => !databaseNumbers.Contains(NormalizeLookup(x.Numero))))
-                    .OrderByDescending(x => x.FechaAplicacion ?? DateTime.MinValue)
-                    .ThenByDescending(x => x.ID)
-                    .Select(x => ToGrid(x))
-                    .ToList();
-
-                return Json(new JsonResponse("", "", result, true), JsonRequestBehavior.AllowGet);
+                return Json(new JsonResponse("", "", new
+                {
+                    Rows = result.Rows.Select(ToGridSummary).ToList(),
+                    Total = result.Total,
+                    TotalPages = Math.Max(1, (int)Math.Ceiling(result.Total / (double)result.PageSize)),
+                    Page = result.Page,
+                    PageSize = result.PageSize,
+                    SummaryTotal = result.SummaryTotal,
+                    SummaryCount = result.Total,
+                    SummaryLast = result.SummaryLastDate
+                }, true), JsonRequestBehavior.AllowGet);
             }
             catch (Exception e)
             {
                 return Json(new JsonResponse(e.Message, "No se pudo obtener el historico de ajustes.", null, false), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        [HttpGet]
+        public JsonResult GetDocumentoDetalle(int id)
+        {
+            try
+            {
+                DocumentoInventarioViewModel documento = IsCustomDocumentClientId(id)
+                    ? GetCustomDocumentoByClientId(id)
+                    : GetSqlDocumentoForOperation(id);
+
+                if (documento == null)
+                    return Json(new JsonResponse("Documento no encontrado.", "No se pudo cargar el detalle del documento.", null, false), JsonRequestBehavior.AllowGet);
+
+                return Json(new JsonResponse("", "", ToGrid(documento, !IsCustomDocumentClientId(id)), true), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new JsonResponse(ex.Message, "No se pudo cargar el detalle del documento.", null, false), JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -391,6 +417,296 @@ ORDER BY R.DatePosted DESC, R.ID DESC, E.LineNumber ASC;";
             }
 
             return documentos.Values.ToList();
+        }
+
+        private DocumentoGridPageResult GetDocumentoGridPage(DocumentoGridQuery query)
+        {
+            EnsureDocumentSqlSchema();
+
+            var result = new DocumentoGridPageResult
+            {
+                Page = Math.Max(query == null ? 1 : query.Page, 1),
+                PageSize = NormalizePageSize(query == null ? 10 : query.PageSize)
+            };
+
+            ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings["UltraERP.BusinessDataAccess.Properties.Settings.MasterDB"];
+            if (settings == null || String.IsNullOrWhiteSpace(settings.ConnectionString))
+                return result;
+
+            DateTime? fechaDesde = ParseDate(query == null ? "" : query.FechaDesde);
+            DateTime? fechaHasta = ParseDate(query == null ? "" : query.FechaHasta);
+            DateTime? fechaAplicacion = ParseDate(query == null ? "" : query.FechaAplicacion);
+
+            using (var connection = new SqlConnection(settings.ConnectionString))
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandType = CommandType.Text;
+                command.CommandText = @"
+;WITH ReceiptRows AS
+(
+    SELECT
+        R.ID AS SourceID,
+        CAST(0 AS BIT) AS IsCustom,
+        CAST(1 AS BIT) AS SoloLecturaSql,
+        ISNULL(R.Number, '') AS Numero,
+        CAST('Compra' AS NVARCHAR(80)) AS Tipo,
+        CASE
+            WHEN ISNULL(S.Code, '') = '' THEN ISNULL(S.SupplierName, '')
+            WHEN ISNULL(S.SupplierName, '') = '' THEN ISNULL(S.Code, '')
+            ELSE S.Code + ' - ' + S.SupplierName
+        END AS Proveedor,
+        ISNULL(LineAgg.Producto, '') AS Producto,
+        ISNULL(NULLIF(R.Reference, ''), ISNULL(NULLIF(R.SupplierDocNo, ''), ISNULL(R.Number, ''))) AS FacturaRef,
+        R.OrderDate AS FechaSolicitud,
+        R.RequiredDate AS FechaEntrega,
+        R.DatePosted AS FechaAplicacion,
+        CAST('Cerrada' AS NVARCHAR(50)) AS Estado,
+        CONVERT(DECIMAL(19,4), ISNULL(R.TotalAmount, 0)) AS Total,
+        CASE
+            WHEN ISNULL(CA.Name, '') = '' OR ISNULL(CA.Name, '') = 'SQL' THEN 'Usuario no encontrado'
+            ELSE CA.Name
+        END AS PersonaSolicita,
+        ISNULL(LineAgg.LineCount, 0) AS CantidadLineasDetalle,
+        ISNULL(LineAgg.SpecialCount, 0) AS CantidadLineasEspeciales,
+        CASE
+            WHEN ISNULL(LineAgg.SpecialCount, 0) > 0 THEN CONVERT(VARCHAR(20), ISNULL(LineAgg.SpecialCount, 0)) + ' lineas especiales detectadas desde SQL.'
+            ELSE 'Sin lineas especiales.'
+        END AS ResumenAuditoria,
+        R.ID AS SortID,
+        ISNULL(R.DatePosted, R.OrderDate) AS SortDate
+    FROM dbo.POD_Receipt R
+    LEFT JOIN dbo.Supplier S ON S.ID = R.SupplierID
+    LEFT JOIN dbo.Cashier CA ON CA.ID = R.UserID
+    OUTER APPLY
+    (
+        SELECT
+            COUNT(1) AS LineCount,
+            SUM(CASE WHEN ISNULL(E.UnitCost, 0) <= 0 THEN 1 ELSE 0 END) AS SpecialCount,
+            CASE
+                WHEN COUNT(1) = 1 THEN MAX(ISNULL(E.Description, I.Description))
+                WHEN COUNT(1) > 1 THEN CONVERT(VARCHAR(20), COUNT(1)) + ' lineas'
+                ELSE ''
+            END AS Producto
+        FROM dbo.POD_ReceiptEntry E
+        LEFT JOIN dbo.Item I ON I.ID = E.EntryID
+        WHERE E.ReceiptID = R.ID
+    ) LineAgg
+    WHERE (@HistoricoOnly = 1 OR @Estado = '' OR @Estado = 'Todos' OR @Estado = 'Cerrada')
+      AND (@TipoDocumento = '' OR @TipoDocumento = 'Todos' OR @TipoDocumento = 'Compra')
+      AND (@FechaDesde IS NULL OR CONVERT(date, R.OrderDate) >= @FechaDesde)
+      AND (@FechaHasta IS NULL OR CONVERT(date, R.OrderDate) <= @FechaHasta)
+      AND (@FechaAplicacion IS NULL OR CONVERT(date, R.DatePosted) = @FechaAplicacion)
+      AND (@Proveedor = '' OR ISNULL(S.SupplierName, '') LIKE @ProveedorLike OR ISNULL(S.Code, '') LIKE @ProveedorLike)
+      AND (@NumeroDocumento = '' OR ISNULL(R.Number, '') LIKE @NumeroDocumentoLike)
+      AND (@FacturaRef = '' OR ISNULL(R.Reference, '') LIKE @FacturaRefLike OR ISNULL(R.SupplierDocNo, '') LIKE @FacturaRefLike OR ISNULL(R.Number, '') LIKE @FacturaRefLike)
+      AND (@PersonaSolicita = '' OR (CASE WHEN ISNULL(CA.Name, '') = '' OR ISNULL(CA.Name, '') = 'SQL' THEN 'Usuario no encontrado' ELSE CA.Name END) LIKE @PersonaSolicitaLike)
+      AND (@Usuario = '' OR (CASE WHEN ISNULL(CA.Name, '') = '' OR ISNULL(CA.Name, '') = 'SQL' THEN 'Usuario no encontrado' ELSE CA.Name END) LIKE @UsuarioLike)
+      AND (@Producto = '' OR EXISTS
+      (
+            SELECT 1
+            FROM dbo.POD_ReceiptEntry EF
+            LEFT JOIN dbo.Item IFI ON IFI.ID = EF.EntryID
+            WHERE EF.ReceiptID = R.ID
+              AND (ISNULL(IFI.ItemLookupCode, '') LIKE @ProductoLike OR ISNULL(EF.Description, IFI.Description) LIKE @ProductoLike)
+      ))
+),
+CustomRows AS
+(
+    SELECT
+        D.ID AS SourceID,
+        CAST(1 AS BIT) AS IsCustom,
+        CAST(0 AS BIT) AS SoloLecturaSql,
+        ISNULL(D.Numero, '') AS Numero,
+        ISNULL(D.Tipo, '') AS Tipo,
+        CASE
+            WHEN ISNULL(D.ProveedorCodigo, '') = '' THEN ISNULL(D.ProveedorNombre, '')
+            WHEN ISNULL(D.ProveedorNombre, '') = '' THEN ISNULL(D.ProveedorCodigo, '')
+            ELSE D.ProveedorCodigo + ' - ' + D.ProveedorNombre
+        END AS Proveedor,
+        ISNULL(LineAgg.Producto, '') AS Producto,
+        ISNULL(D.FacturaRef, '') AS FacturaRef,
+        D.FechaSolicitud,
+        D.FechaEntrega,
+        D.FechaAplicacion,
+        ISNULL(D.Estado, '') AS Estado,
+        CONVERT(DECIMAL(19,4), ISNULL(D.Total, 0)) AS Total,
+        ISNULL(D.PersonaSolicita, '') AS PersonaSolicita,
+        ISNULL(LineAgg.LineCount, 0) AS CantidadLineasDetalle,
+        ISNULL(LineAgg.SpecialCount, 0) AS CantidadLineasEspeciales,
+        CASE
+            WHEN ISNULL(LineAgg.SpecialCount, 0) > 0 THEN CONVERT(VARCHAR(20), ISNULL(LineAgg.SpecialCount, 0)) + ' lineas especiales detectadas desde SQL.'
+            ELSE 'Sin lineas especiales.'
+        END AS ResumenAuditoria,
+        D.ID AS SortID,
+        ISNULL(D.FechaAplicacion, D.FechaSolicitud) AS SortDate
+    FROM dbo.ExtCentral_DocumentoInventario D
+    OUTER APPLY
+    (
+        SELECT
+            COUNT(1) AS LineCount,
+            SUM(CASE WHEN ISNULL(L.Regalia, 0) = 1 THEN 1 ELSE 0 END) AS SpecialCount,
+            CASE
+                WHEN COUNT(1) = 1 THEN MAX(L.Descripcion)
+                WHEN COUNT(1) > 1 THEN CONVERT(VARCHAR(20), COUNT(1)) + ' lineas'
+                ELSE ''
+            END AS Producto
+        FROM dbo.ExtCentral_DocumentoInventarioDetalle L
+        WHERE L.DocumentoID = D.ID
+    ) LineAgg
+    WHERE (@HistoricoOnly = 0 OR ISNULL(D.Estado, '') = 'Cerrada')
+      AND (@TipoDocumento = '' OR @TipoDocumento = 'Todos' OR D.Tipo = @TipoDocumento
+           OR (@TipoDocumento = 'Entrada' AND D.Tipo = 'Entrada de Inventario')
+           OR (@TipoDocumento = 'Salida' AND D.Tipo = 'Salida de Inventario'))
+      AND (@Estado = '' OR @Estado = 'Todos' OR D.Estado = @Estado)
+      AND (@FechaDesde IS NULL OR CONVERT(date, D.FechaSolicitud) >= @FechaDesde)
+      AND (@FechaHasta IS NULL OR CONVERT(date, D.FechaSolicitud) <= @FechaHasta)
+      AND (@FechaAplicacion IS NULL OR CONVERT(date, D.FechaAplicacion) = @FechaAplicacion)
+      AND (@Proveedor = '' OR ISNULL(D.ProveedorCodigo, '') LIKE @ProveedorLike OR ISNULL(D.ProveedorNombre, '') LIKE @ProveedorLike)
+      AND (@NumeroDocumento = '' OR ISNULL(D.Numero, '') LIKE @NumeroDocumentoLike)
+      AND (@FacturaRef = '' OR ISNULL(D.FacturaRef, '') LIKE @FacturaRefLike OR ISNULL(D.Numero, '') LIKE @FacturaRefLike)
+      AND (@PersonaSolicita = '' OR ISNULL(D.PersonaSolicita, '') LIKE @PersonaSolicitaLike)
+      AND (@Usuario = '' OR ISNULL(D.PersonaSolicita, '') LIKE @UsuarioLike)
+      AND (@Producto = '' OR EXISTS
+      (
+            SELECT 1
+            FROM dbo.ExtCentral_DocumentoInventarioDetalle LF
+            WHERE LF.DocumentoID = D.ID
+              AND (ISNULL(LF.Codigo, '') LIKE @ProductoLike OR ISNULL(LF.Descripcion, '') LIKE @ProductoLike)
+      ))
+),
+Combined AS
+(
+    SELECT * FROM ReceiptRows
+    UNION ALL
+    SELECT * FROM CustomRows
+),
+Filtered AS
+(
+    SELECT
+        *,
+        COUNT(1) OVER() AS TotalRows,
+        SUM(Total) OVER() AS SummaryTotal,
+        SUM(CASE WHEN Estado IN ('Borrador', 'Enviada', 'Parcial') THEN 1 ELSE 0 END) OVER() AS SummaryPending,
+        MAX(FechaAplicacion) OVER() AS SummaryLastDate,
+        ROW_NUMBER() OVER (ORDER BY SortDate DESC, FechaSolicitud DESC, IsCustom DESC, SortID DESC) AS RowNum
+    FROM Combined
+    WHERE (@Search = '' OR Numero LIKE @SearchLike OR Proveedor LIKE @SearchLike OR FacturaRef LIKE @SearchLike OR PersonaSolicita LIKE @SearchLike OR Producto LIKE @SearchLike)
+)
+SELECT
+    SourceID,
+    IsCustom,
+    SoloLecturaSql,
+    Numero,
+    Tipo,
+    Proveedor,
+    Producto,
+    FacturaRef,
+    FechaSolicitud,
+    FechaEntrega,
+    FechaAplicacion,
+    Estado,
+    Total,
+    PersonaSolicita,
+    CantidadLineasDetalle,
+    CantidadLineasEspeciales,
+    ResumenAuditoria,
+    TotalRows,
+    SummaryTotal,
+    SummaryPending,
+    SummaryLastDate
+FROM Filtered
+WHERE RowNum BETWEEN @StartRow AND @EndRow
+ORDER BY RowNum;";
+
+                command.Parameters.Add("@HistoricoOnly", SqlDbType.Bit).Value = query != null && query.HistoricoOnly;
+                command.Parameters.AddWithValue("@TipoDocumento", ((query == null ? "" : query.TipoDocumento) ?? "").Trim());
+                command.Parameters.AddWithValue("@Estado", ((query == null ? "" : query.Estado) ?? "").Trim());
+                command.Parameters.Add("@FechaDesde", SqlDbType.Date).Value = fechaDesde.HasValue ? (object)fechaDesde.Value.Date : DBNull.Value;
+                command.Parameters.Add("@FechaHasta", SqlDbType.Date).Value = fechaHasta.HasValue ? (object)fechaHasta.Value.Date : DBNull.Value;
+                command.Parameters.Add("@FechaAplicacion", SqlDbType.Date).Value = fechaAplicacion.HasValue ? (object)fechaAplicacion.Value.Date : DBNull.Value;
+                AddLikeParameter(command, "@Proveedor", query == null ? "" : query.Proveedor);
+                AddLikeParameter(command, "@NumeroDocumento", query == null ? "" : query.NumeroDocumento);
+                AddLikeParameter(command, "@FacturaRef", query == null ? "" : query.FacturaRef);
+                AddLikeParameter(command, "@PersonaSolicita", query == null ? "" : query.PersonaSolicita);
+                AddLikeParameter(command, "@Usuario", query == null ? "" : query.Usuario);
+                AddLikeParameter(command, "@Producto", query == null ? "" : query.Producto);
+                AddLikeParameter(command, "@Search", query == null ? "" : query.Search);
+                command.Parameters.AddWithValue("@StartRow", ((result.Page - 1) * result.PageSize) + 1);
+                command.Parameters.AddWithValue("@EndRow", result.Page * result.PageSize);
+
+                connection.Open();
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        var row = MapDocumentoGridRow(reader);
+                        result.Rows.Add(row);
+
+                        if (result.Total == 0)
+                        {
+                            result.Total = ReadInt(reader, "TotalRows");
+                            result.SummaryTotal = ReadDecimal(reader, "SummaryTotal");
+                            result.SummaryPending = ReadInt(reader, "SummaryPending");
+                            result.SummaryLastDate = FormatDate(ReadNullableDateTime(reader, "SummaryLastDate"));
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private static int NormalizePageSize(int pageSize)
+        {
+            return new[] { 5, 10, 20, 50, 100 }.Contains(pageSize) ? pageSize : 10;
+        }
+
+        private static DocumentoGridRow MapDocumentoGridRow(SqlDataReader reader)
+        {
+            bool isCustom = ReadBool(reader, "IsCustom");
+
+            return new DocumentoGridRow
+            {
+                ID = isCustom ? ToCustomDocumentClientId(ReadInt(reader, "SourceID")) : ReadInt(reader, "SourceID"),
+                SoloLecturaSql = ReadBool(reader, "SoloLecturaSql"),
+                Numero = ReadString(reader, "Numero"),
+                Tipo = ReadString(reader, "Tipo"),
+                Proveedor = ReadString(reader, "Proveedor"),
+                Producto = ReadString(reader, "Producto"),
+                FacturaRef = ReadString(reader, "FacturaRef"),
+                FechaSolicitud = FormatDate(ReadNullableDateTime(reader, "FechaSolicitud")),
+                FechaEntrega = FormatDate(ReadNullableDateTime(reader, "FechaEntrega")),
+                FechaAplicacion = FormatDate(ReadNullableDateTime(reader, "FechaAplicacion")),
+                Estado = ReadString(reader, "Estado"),
+                Total = ReadDecimal(reader, "Total"),
+                PersonaSolicita = ReadString(reader, "PersonaSolicita"),
+                CantidadLineasDetalle = ReadInt(reader, "CantidadLineasDetalle"),
+                CantidadLineasEspeciales = ReadInt(reader, "CantidadLineasEspeciales"),
+                ResumenAuditoria = ReadString(reader, "ResumenAuditoria")
+            };
+        }
+
+        private static object ToGridSummary(DocumentoGridRow row)
+        {
+            return new
+            {
+                row.ID,
+                row.SoloLecturaSql,
+                row.Numero,
+                row.Tipo,
+                row.Proveedor,
+                row.Producto,
+                row.FacturaRef,
+                row.FechaSolicitud,
+                row.FechaEntrega,
+                row.FechaAplicacion,
+                row.Estado,
+                row.Total,
+                row.PersonaSolicita,
+                row.CantidadLineasDetalle,
+                row.CantidadLineasEspeciales,
+                row.ResumenAuditoria
+            };
         }
 
         [HttpPost]
@@ -2119,6 +2435,61 @@ WHERE Value IS NOT NULL;";
                 Value = x,
                 Selected = String.Equals(x, selected, StringComparison.OrdinalIgnoreCase)
             });
+        }
+
+        private class DocumentoGridQuery
+        {
+            public string TipoDocumento { get; set; }
+            public string Estado { get; set; }
+            public string FechaDesde { get; set; }
+            public string FechaHasta { get; set; }
+            public string FechaAplicacion { get; set; }
+            public string Proveedor { get; set; }
+            public string NumeroDocumento { get; set; }
+            public string FacturaRef { get; set; }
+            public string PersonaSolicita { get; set; }
+            public string Usuario { get; set; }
+            public string Producto { get; set; }
+            public string Search { get; set; }
+            public int Page { get; set; }
+            public int PageSize { get; set; }
+            public bool HistoricoOnly { get; set; }
+        }
+
+        private class DocumentoGridPageResult
+        {
+            public DocumentoGridPageResult()
+            {
+                Rows = new List<DocumentoGridRow>();
+            }
+
+            public List<DocumentoGridRow> Rows { get; private set; }
+            public int Total { get; set; }
+            public int Page { get; set; }
+            public int PageSize { get; set; }
+            public decimal SummaryTotal { get; set; }
+            public int SummaryPending { get; set; }
+            public string SummaryLastDate { get; set; }
+        }
+
+        private class DocumentoGridRow
+        {
+            public int ID { get; set; }
+            public bool SoloLecturaSql { get; set; }
+            public string Numero { get; set; }
+            public string Tipo { get; set; }
+            public string Proveedor { get; set; }
+            public string Producto { get; set; }
+            public string FacturaRef { get; set; }
+            public string FechaSolicitud { get; set; }
+            public string FechaEntrega { get; set; }
+            public string FechaAplicacion { get; set; }
+            public string Estado { get; set; }
+            public decimal Total { get; set; }
+            public string PersonaSolicita { get; set; }
+            public int CantidadLineasDetalle { get; set; }
+            public int CantidadLineasEspeciales { get; set; }
+            public string ResumenAuditoria { get; set; }
         }
 
         private class ProveedorCatalogo

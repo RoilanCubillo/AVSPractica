@@ -25,7 +25,7 @@ namespace UltraERP.Controllers
         {
             try
             {
-                List<HojaTrabajoViewModel> model = GetHojasTrabajoFromSql(DefaultResultCount);
+                List<HojaTrabajoViewModel> model = GetHojasTrabajoFromSql(DefaultResultCount, false);
                 ViewBag.HojasTrabajoDataSource = "SQL";
                 return View(model);
             }
@@ -34,6 +34,23 @@ namespace UltraERP.Controllers
                 TempData["HojaTrabajoError"] = "No se pudieron cargar las hojas de trabajo desde SQL: " + ex.Message;
                 ViewBag.HojasTrabajoDataSource = "SQL";
                 return View(Enumerable.Empty<HojaTrabajoViewModel>());
+            }
+        }
+
+        [HttpGet]
+        public JsonResult GetHojaTrabajo(int id)
+        {
+            try
+            {
+                HojaTrabajoViewModel hoja = GetHojaTrabajoById(id);
+                if (hoja == null)
+                    return Json(new JsonResponse("Hoja no encontrada.", "No se pudo cargar la hoja de trabajo.", null, false), JsonRequestBehavior.AllowGet);
+
+                return Json(new JsonResponse("", "", hoja, true), JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                return Json(new JsonResponse(ex.Message, "No se pudo cargar la hoja de trabajo.", null, false), JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -105,7 +122,7 @@ namespace UltraERP.Controllers
             }
         }
 
-        private List<HojaTrabajoViewModel> GetHojasTrabajoFromSql(int take)
+        private List<HojaTrabajoViewModel> GetHojasTrabajoFromSql(int take, bool includeDetail = true)
         {
             var worksheets = new List<HojaTrabajoViewModel>();
             ConnectionStringSettings settings = GetMasterConnection();
@@ -180,15 +197,20 @@ namespace UltraERP.Controllers
                 }
             }
 
-            foreach (HojaTrabajoViewModel worksheet in worksheets)
-                HydrateWorksheetDetail(worksheet);
+            if (includeDetail)
+            {
+                foreach (HojaTrabajoViewModel worksheet in worksheets)
+                    HydrateWorksheetDetail(worksheet);
+            }
 
             return worksheets;
         }
 
         private HojaTrabajoViewModel GetHojaTrabajoById(int id)
         {
-            return GetHojasTrabajoFromSql(DefaultResultCount).FirstOrDefault(x => x.ID == id);
+            HojaTrabajoViewModel worksheet = GetHojasTrabajoFromSql(DefaultResultCount, false).FirstOrDefault(x => x.ID == id);
+            HydrateWorksheetDetail(worksheet);
+            return worksheet;
         }
 
         private void HydrateWorksheetDetail(HojaTrabajoViewModel worksheet)

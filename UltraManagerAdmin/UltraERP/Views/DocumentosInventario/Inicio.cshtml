@@ -182,24 +182,55 @@
     <script>
         var urls = {
             documentos: '@Url.Action("GetDocumentos", "DocumentosInventario")',
+            detalle: '@Url.Action("GetDocumentoDetalle", "DocumentosInventario")',
             registro: '@Url.Action("Registro", "DocumentosInventario")',
             duplicar: '@Url.Action("Duplicar", "DocumentosInventario")',
             accion: '@Url.Action("EjecutarAccion", "DocumentosInventario")',
             validarClaveProceso: '@Url.Action("ValidarClaveProceso", "DocumentosInventario")'
         };
         var documentos = [];
-        var pager = null;
+        var currentPage = 1;
+        var totalRows = 0;
+        var totalPages = 1;
+        var summaryTotal = 0;
+        var summaryPending = 0;
+        var searchTimer = null;
         var canRunDocumentProcesses = @((ViewBag.DocumentProcessAdmin == true).ToString().ToLowerInvariant());
 
         $(function () {
-            pager = window.UltraERP.createTablePager({ onChange: renderTable });
             bindEvents();
             getDocumentos();
         });
 
         function bindEvents() {
-            $("#btnConsultar").on("click", getDocumentos);
-            $("#table_search").on("input", renderTable);
+            $("#btnConsultar").on("click", function () {
+                currentPage = 1;
+                getDocumentos();
+            });
+            $("#table_search, #filter_proveedor, #filter_numero, #filter_factura, #filter_persona").on("input", function () {
+                currentPage = 1;
+                queueLoad();
+            });
+            $("#filter_tipo, #filter_estado, #filter_fecha_desde, #filter_fecha_hasta").on("change", function () {
+                currentPage = 1;
+                getDocumentos();
+            });
+            $("#page_size").on("change", function () {
+                currentPage = 1;
+                getDocumentos();
+            });
+            $("#btnPrevPage").on("click", function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    getDocumentos();
+                }
+            });
+            $("#btnNextPage").on("click", function () {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    getDocumentos();
+                }
+            });
             $("#btnLimpiar").on("click", function () {
                 $("#filter_tipo").val("Todos");
                 $("#filter_estado").val("Todos");
@@ -210,9 +241,14 @@
                 $("#filter_factura").val("");
                 $("#filter_persona").val("");
                 $("#table_search").val("");
-                if (pager) pager.reset();
+                currentPage = 1;
                 getDocumentos();
             });
+        }
+
+        function queueLoad() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(getDocumentos, 300);
         }
 
         function getFilters() {
@@ -224,7 +260,10 @@
                 proveedor: $("#filter_proveedor").val(),
                 numeroDocumento: $("#filter_numero").val(),
                 facturaRef: $("#filter_factura").val(),
-                personaSolicita: $("#filter_persona").val()
+                personaSolicita: $("#filter_persona").val(),
+                search: $("#table_search").val() || "",
+                page: currentPage,
+                pageSize: getPageSize()
             };
         }
 
@@ -233,16 +272,33 @@
             $.get(urls.documentos, getFilters())
                 .done(function (data) {
                     if (!data.Status) {
+                        documentos = [];
+                        totalRows = 0;
+                        totalPages = 1;
+                        summaryTotal = 0;
+                        summaryPending = 0;
+                        renderTable();
                         showToast(data.Message || "No se pudo consultar.");
                         return;
                     }
 
-                    documentos = data.Result || [];
-                    if (pager) pager.reset();
+                    var result = data.Result || {};
+                    documentos = result.Rows || [];
+                    totalRows = Number(result.Total || 0);
+                    totalPages = Math.max(1, Number(result.TotalPages || 1));
+                    currentPage = Math.min(Math.max(Number(result.Page || currentPage), 1), totalPages);
+                    summaryTotal = Number(result.SummaryTotal || 0);
+                    summaryPending = Number(result.SummaryPending || 0);
                     renderTable();
                     updateSummary();
                 })
                 .fail(function () {
+                    documentos = [];
+                    totalRows = 0;
+                    totalPages = 1;
+                    summaryTotal = 0;
+                    summaryPending = 0;
+                    renderTable();
                     showToast("No se pudo consultar la informacion.");
                 })
                 .always(function () {
@@ -251,16 +307,7 @@
         }
 
         function renderTable() {
-            var text = ($("#table_search").val() || "").toLowerCase();
-            var rows = documentos.filter(function (item) {
-                if (!text) return true;
-                return Object.keys(item).some(function (key) {
-                    return String(item[key] || "").toLowerCase().indexOf(text) >= 0;
-                });
-            });
-
-            var pageRows = pager ? pager.pageRows(rows) : rows;
-            var html = pageRows.map(function (d) {
+            var html = documentos.map(function (d) {
                 return "<tr>" +
                     "<td>" + escapeHtml(d.Numero) + "</td>" +
                     "<td>" + escapeHtml(d.Tipo) + "</td>" +
@@ -277,9 +324,23 @@
                     "</tr>";
             }).join("");
 
-            if (pager) pager.update(rows, pageRows);
-            else $("#results_hint").text(rows.length + " resultados");
+            updatePagination();
             $("#documentos_body").html(html || "<tr><td colspan='12' class='empty-state'>Sin documentos para los filtros aplicados.</td></tr>");
+        }
+
+        function getPageSize() {
+            return Number($("#page_size").val() || 10);
+        }
+
+        function updatePagination() {
+            var pageSize = getPageSize();
+            var start = totalRows === 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
+            var end = totalRows === 0 ? 0 : start + documentos.length - 1;
+
+            $("#results_hint").text(start + "-" + end + " de " + totalRows + " resultados");
+            $("#page_hint").text("Pagina " + currentPage + " de " + totalPages);
+            $("#btnPrevPage").prop("disabled", currentPage <= 1);
+            $("#btnNextPage").prop("disabled", currentPage >= totalPages);
         }
 
         function getActionButtons(documento) {
@@ -343,20 +404,19 @@
         }
 
         function onVer(id) {
-            var documento = findDocumento(id);
-            if (!documento) return;
-
-            $("#documentoModalTitle").text("Documento " + documento.Numero);
-            $("#doc_view_title").text(documento.Numero);
-            $("#doc_view_subtitle").text(documento.Tipo + " gestionado para " + (documento.Proveedor || "Proveedor no definido") + ".");
-            $("#doc_view_total").text(formatMoney(documento.Total));
-            $("#doc_view_total").closest(".document-view-total").toggleClass("voided-total", documento.Estado === "Anulada");
-            renderDocumentoHeaderBadges(documento);
-            renderDocumentoSummary(documento);
-            renderTipoDocumentoDetail(documento);
-            renderAuditDetail(documento);
-            renderDetalleLineas(documento);
-            new bootstrap.Modal(document.getElementById("documentoModal")).show();
+            fetchDocumentoDetalle(id, function (documento) {
+                $("#documentoModalTitle").text("Documento " + documento.Numero);
+                $("#doc_view_title").text(documento.Numero);
+                $("#doc_view_subtitle").text(documento.Tipo + " gestionado para " + (documento.Proveedor || "Proveedor no definido") + ".");
+                $("#doc_view_total").text(formatMoney(documento.Total));
+                $("#doc_view_total").closest(".document-view-total").toggleClass("voided-total", documento.Estado === "Anulada");
+                renderDocumentoHeaderBadges(documento);
+                renderDocumentoSummary(documento);
+                renderTipoDocumentoDetail(documento);
+                renderAuditDetail(documento);
+                renderDetalleLineas(documento);
+                new bootstrap.Modal(document.getElementById("documentoModal")).show();
+            });
         }
 
         function onEditar(id) {
@@ -400,8 +460,20 @@
         }
 
         function onImprimir(id) {
-            onVer(id);
-            setTimeout(function () { startDocumentPrint("documentoModal"); }, 300);
+            fetchDocumentoDetalle(id, function (documento) {
+                $("#documentoModalTitle").text("Documento " + documento.Numero);
+                $("#doc_view_title").text(documento.Numero);
+                $("#doc_view_subtitle").text(documento.Tipo + " gestionado para " + (documento.Proveedor || "Proveedor no definido") + ".");
+                $("#doc_view_total").text(formatMoney(documento.Total));
+                $("#doc_view_total").closest(".document-view-total").toggleClass("voided-total", documento.Estado === "Anulada");
+                renderDocumentoHeaderBadges(documento);
+                renderDocumentoSummary(documento);
+                renderTipoDocumentoDetail(documento);
+                renderAuditDetail(documento);
+                renderDetalleLineas(documento);
+                new bootstrap.Modal(document.getElementById("documentoModal")).show();
+                setTimeout(function () { startDocumentPrint("documentoModal"); }, 300);
+            });
         }
 
         function onAccion(id, accion) {
@@ -479,11 +551,24 @@
         }
 
         function updateSummary() {
-            var total = documentos.reduce(function (sum, item) { return sum + Number(item.Total || 0); }, 0);
-            var pending = documentos.filter(function (item) { return item.Estado === "Borrador" || item.Estado === "Enviada" || item.Estado === "Parcial"; }).length;
-            $("#summary_count").text(documentos.length);
-            $("#summary_total").text(formatMoney(total));
-            $("#summary_pending").text(pending);
+            $("#summary_count").text(totalRows);
+            $("#summary_total").text(formatMoney(summaryTotal));
+            $("#summary_pending").text(summaryPending);
+        }
+
+        function fetchDocumentoDetalle(id, onSuccess) {
+            $.get(urls.detalle, { id: id }).done(function (data) {
+                if (!data.Status) {
+                    showToast(data.Message || "No se pudo cargar el detalle del documento.");
+                    return;
+                }
+
+                if (typeof onSuccess === "function") {
+                    onSuccess(data.Result || {});
+                }
+            }).fail(function () {
+                showToast("No se pudo cargar el detalle del documento.");
+            });
         }
 
         function getAuditoriaBadge(documento) {
