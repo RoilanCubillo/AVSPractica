@@ -9,6 +9,7 @@ using System.Web.Mvc;
 using UltraERP.BusinessEntities;
 using UltraERP.BusinessLogic;
 using UltraERP.Models;
+using UltraERP.Services;
 
 namespace UltraERP.Controllers
 {
@@ -26,6 +27,7 @@ namespace UltraERP.Controllers
             }
             catch (Exception ex)
             {
+                ErrorLogService.Log(ex, "Articulos", "Inicio", null);
                 TempData["ArticuloError"] = "No se pudo cargar art\u00edculos desde SQL: " + ex.Message;
                 ViewBag.ArticulosDataSource = "SQL";
                 return View(Enumerable.Empty<ArticuloViewModel>());
@@ -54,6 +56,7 @@ namespace UltraERP.Controllers
             }
             catch (Exception ex)
             {
+                ErrorLogService.Log(ex, "Articulos", "Buscar", new { page, pageSize, search, estado, familia, departamento, categoria, subcategoria, proveedor });
                 return Json(new JsonResponse(ex.Message, "No se pudieron cargar los art\u00edculos desde SQL.", null, false), JsonRequestBehavior.AllowGet);
             }
         }
@@ -72,12 +75,14 @@ namespace UltraERP.Controllers
                 }
                 catch (Exception ex)
                 {
+                    ErrorLogService.Log(ex, "Articulos", "Leer articulo", new { id = id.Value });
                     TempData["ArticuloError"] = "No se pudo leer el art\u00edculo desde SQL: " + ex.Message;
                 }
             }
 
             CatalogData catalog = GetCatalogDataSafe();
             model = model ?? CreateNewArticulo(catalog);
+            SyncNumericTextFields(model);
             EnsureUnidadSeleccionada(model, catalog);
             PrepareCatalogs(catalog, model);
             return View(model);
@@ -89,14 +94,14 @@ namespace UltraERP.Controllers
         {
             CatalogData catalog = GetCatalogDataSafe();
 
-            TranslateModelBindingErrors();
-            NormalizeNumericFields(model);
+            ParseNumericTextFields(model);
             Normalize(model);
             ApplyClasificacion(model, catalog);
             ValidateArticulo(model, catalog);
 
             if (!ModelState.IsValid)
             {
+                SyncNumericTextFields(model);
                 EnsureUnidadSeleccionada(model, catalog);
                 PrepareCatalogs(catalog, model);
                 return View(model);
@@ -113,6 +118,7 @@ namespace UltraERP.Controllers
                 if (response.IndexOf("error", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     ModelState.AddModelError("", "SQL rechaz\u00f3 el guardado del art\u00edculo: " + response);
+                    SyncNumericTextFields(model);
                     EnsureUnidadSeleccionada(model, catalog);
                     PrepareCatalogs(catalog, model);
                     return View(model);
@@ -123,7 +129,9 @@ namespace UltraERP.Controllers
             }
             catch (Exception ex)
             {
+                ErrorLogService.Log(ex, "Articulos", "Guardar articulo", model == null ? null : new { model.ID, model.Codigo, model.Descripcion, model.UnidadMedida, model.FamiliaID, model.DepartamentoID, model.CategoriaID, model.SubCategoriaID });
                 ModelState.AddModelError("", "No se pudo guardar el art\u00edculo en SQL. " + ex.Message);
+                SyncNumericTextFields(model);
                 EnsureUnidadSeleccionada(model, catalog);
                 PrepareCatalogs(catalog, model);
                 return View(model);
@@ -393,50 +401,70 @@ ORDER BY RowNum;";
             return item;
         }
 
-        private void TranslateModelBindingErrors()
-        {
-            ReplaceModelBindingError("Costo", "Ingrese el costo del art\u00edculo.", "Ingrese un costo v\u00e1lido.");
-            ReplaceModelBindingError("PrecioVenta", "Ingrese el precio de venta del art\u00edculo.", "Ingrese un precio de venta v\u00e1lido.");
-            ReplaceModelBindingError("ImpuestoPorcentaje", "Ingrese el impuesto del art\u00edculo.", "Ingrese un impuesto v\u00e1lido.");
-            ReplaceModelBindingError("Existencia", "Ingrese la existencia del art\u00edculo.", "Ingrese una existencia v\u00e1lida.");
-            ReplaceModelBindingError("ExistenciaMinima", "Ingrese la existencia m\u00ednima.", "Ingrese una existencia m\u00ednima v\u00e1lida.");
-            ReplaceModelBindingError("ExistenciaMaxima", "Ingrese la existencia m\u00e1xima.", "Ingrese una existencia m\u00e1xima v\u00e1lida.");
-        }
-
-        private void NormalizeNumericFields(ArticuloViewModel model)
+        private void ParseNumericTextFields(ArticuloViewModel model)
         {
             if (model == null)
                 return;
 
-            SetPostedDecimal("Costo", value => model.Costo = value);
-            SetPostedDecimal("PrecioVenta", value => model.PrecioVenta = value);
-            SetPostedDecimal("ImpuestoPorcentaje", value => model.ImpuestoPorcentaje = value);
-            SetPostedDecimal("Existencia", value => model.Existencia = value);
-            SetPostedDecimal("ExistenciaMinima", value => model.ExistenciaMinima = value);
-            SetPostedDecimal("ExistenciaMaxima", value => model.ExistenciaMaxima = value);
+            SetParsedDecimalFromText(model.CostoTexto, "CostoTexto", true, "Ingrese el costo del art\u00edculo.", "Ingrese un costo v\u00e1lido.", value => model.Costo = value);
+            SetParsedDecimalFromText(model.PrecioVentaTexto, "PrecioVentaTexto", true, "Ingrese el precio de venta del art\u00edculo.", "Ingrese un precio de venta v\u00e1lido.", value => model.PrecioVenta = value);
+            SetParsedDecimalFromText(model.ImpuestoPorcentajeTexto, "ImpuestoPorcentajeTexto", false, "", "Ingrese un impuesto v\u00e1lido.", value => model.ImpuestoPorcentaje = value);
+            SetParsedDecimalFromText(model.ExistenciaTexto, "ExistenciaTexto", false, "", "Ingrese una existencia v\u00e1lida.", value => model.Existencia = value);
+            SetParsedDecimalFromText(model.ExistenciaMinimaTexto, "ExistenciaMinimaTexto", false, "", "Ingrese una existencia m\u00ednima v\u00e1lida.", value => model.ExistenciaMinima = value);
+            SetParsedDecimalFromText(model.ExistenciaMaximaTexto, "ExistenciaMaximaTexto", false, "", "Ingrese una existencia m\u00e1xima v\u00e1lida.", value => model.ExistenciaMaxima = value);
         }
 
-        private void ReplaceModelBindingError(string fieldName, string requiredMessage, string invalidMessage)
+        private void SetParsedDecimalFromText(string value, string fieldName, bool required, string requiredMessage, string invalidMessage, Action<decimal> assign)
         {
-            ModelState state = ModelState[fieldName];
-            if (state == null || state.Errors.Count == 0)
-                return;
-
-            string value = Request.Form[fieldName];
-            ModelState.Remove(fieldName);
-            ModelState.AddModelError(fieldName, String.IsNullOrWhiteSpace(value) ? requiredMessage : invalidMessage);
-        }
-
-        private void SetPostedDecimal(string key, Action<decimal> setValue)
-        {
-            string postedValue = Request.Form[key];
             decimal parsedValue;
+            string rawValue = (value ?? "").Trim();
 
-            if (postedValue == null || !TryParseDecimal(postedValue, out parsedValue))
+            if (String.IsNullOrWhiteSpace(rawValue))
+            {
+                assign(0m);
+                if (required)
+                    ModelState.AddModelError(fieldName, requiredMessage);
+
+                return;
+            }
+
+            if (!TryParseDecimal(rawValue, out parsedValue))
+            {
+                ModelState.AddModelError(fieldName, invalidMessage);
+                return;
+            }
+
+            assign(parsedValue);
+        }
+
+        private void SyncNumericTextFields(ArticuloViewModel model)
+        {
+            if (model == null)
                 return;
 
-            setValue(parsedValue);
-            ModelState.Remove(key);
+            if (!HasModelStateError("CostoTexto"))
+                model.CostoTexto = FormatDecimalText(model.Costo);
+            if (!HasModelStateError("PrecioVentaTexto"))
+                model.PrecioVentaTexto = FormatDecimalText(model.PrecioVenta);
+            if (!HasModelStateError("ImpuestoPorcentajeTexto"))
+                model.ImpuestoPorcentajeTexto = FormatDecimalText(model.ImpuestoPorcentaje);
+            if (!HasModelStateError("ExistenciaTexto"))
+                model.ExistenciaTexto = FormatDecimalText(model.Existencia);
+            if (!HasModelStateError("ExistenciaMinimaTexto"))
+                model.ExistenciaMinimaTexto = FormatDecimalText(model.ExistenciaMinima);
+            if (!HasModelStateError("ExistenciaMaximaTexto"))
+                model.ExistenciaMaximaTexto = FormatDecimalText(model.ExistenciaMaxima);
+        }
+
+        private bool HasModelStateError(string key)
+        {
+            ModelState state;
+            return ModelState.TryGetValue(key, out state) && state != null && state.Errors.Count > 0;
+        }
+
+        private static string FormatDecimalText(decimal value)
+        {
+            return value.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
         }
 
         private static bool TryParseDecimal(string value, out decimal result)
@@ -447,12 +475,6 @@ ORDER BY RowNum;";
                 result = 0m;
                 return true;
             }
-
-            if (Decimal.TryParse(value, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.CurrentCulture, out result))
-                return true;
-
-            if (Decimal.TryParse(value, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out result))
-                return true;
 
             string normalized = value.Replace(" ", "");
             bool hasComma = normalized.IndexOf(",") >= 0;
@@ -465,7 +487,13 @@ ORDER BY RowNum;";
             else if (hasComma)
                 normalized = normalized.Replace(",", ".");
 
-            return Decimal.TryParse(normalized, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out result);
+            if (Decimal.TryParse(normalized, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out result))
+                return true;
+
+            if (Decimal.TryParse(value, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out result))
+                return true;
+
+            return Decimal.TryParse(value, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.CurrentCulture, out result);
         }
 
         private void ValidateArticulo(ArticuloViewModel model, CatalogData catalog)
@@ -511,10 +539,36 @@ ORDER BY RowNum;";
             }
 
             if (model.ExistenciaMaxima > 0 && model.ExistenciaMinima > model.ExistenciaMaxima)
-                ModelState.AddModelError("ExistenciaMinima", "La existencia m\u00ednima no puede ser mayor que la m\u00e1xima.");
+                ModelState.AddModelError("ExistenciaMinimaTexto", "La existencia m\u00ednima no puede ser mayor que la m\u00e1xima.");
 
             if (model.Exento)
+            {
                 model.ImpuestoPorcentaje = 0;
+                model.ImpuestoPorcentajeTexto = "0.00";
+            }
+
+            ValidateDecimalRanges(model);
+        }
+
+        private void ValidateDecimalRanges(ArticuloViewModel model)
+        {
+            if (model.Costo < 0)
+                ModelState.AddModelError("CostoTexto", "El costo debe ser mayor o igual a cero.");
+
+            if (model.PrecioVenta <= 0)
+                ModelState.AddModelError("PrecioVentaTexto", "El precio de venta debe ser mayor a cero.");
+
+            if (model.ImpuestoPorcentaje < 0 || model.ImpuestoPorcentaje > 100)
+                ModelState.AddModelError("ImpuestoPorcentajeTexto", "El impuesto debe estar entre 0 y 100.");
+
+            if (model.Existencia < 0)
+                ModelState.AddModelError("ExistenciaTexto", "La existencia no puede ser negativa.");
+
+            if (model.ExistenciaMinima < 0)
+                ModelState.AddModelError("ExistenciaMinimaTexto", "La existencia m\u00ednima no puede ser negativa.");
+
+            if (model.ExistenciaMaxima < 0)
+                ModelState.AddModelError("ExistenciaMaximaTexto", "La existencia m\u00e1xima no puede ser negativa.");
         }
 
         private static void Normalize(ArticuloViewModel model)
@@ -811,6 +865,18 @@ ORDER BY RowNum;";
                     Text = String.IsNullOrWhiteSpace(x.Name) ? x.Code : x.Code + " - " + x.Name,
                     Value = x.Code,
                     Selected = !String.IsNullOrWhiteSpace(selected) && String.Equals((x.Code ?? "").Trim(), selected, StringComparison.OrdinalIgnoreCase)
+                })
+                .ToList();
+        }
+
+        private static IEnumerable<SelectListItem> ToSelectList(IEnumerable<string> values)
+        {
+            return (values ?? Enumerable.Empty<string>())
+                .Where(x => !String.IsNullOrWhiteSpace(x))
+                .Select(x => new SelectListItem
+                {
+                    Text = x,
+                    Value = x
                 })
                 .ToList();
         }

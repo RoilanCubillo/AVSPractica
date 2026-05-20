@@ -10,6 +10,7 @@ using Security.Logic;
 using UltraERP.BusinessEntities;
 using UltraERP.BusinessLogic;
 using UltraERP.Models;
+using UltraERP.Services;
 
 namespace UltraERP.Controllers
 
@@ -107,6 +108,7 @@ namespace UltraERP.Controllers
             }
             catch (Exception e)
             {
+                ErrorLogService.Log(e, "Login", "Validar usuario", new { Usuario = model == null ? "" : model.UserName });
                 ModelState.AddModelError("", "No se pudo validar el usuario. " + e.Message);
                 return View(model);
             }
@@ -148,6 +150,9 @@ namespace UltraERP.Controllers
             Session["USER_MODULES"] = new CT_SC_Module().ValidateModules(scUser.ID, SystemCode).ToArray();
             Session["USER_VIEWS"] = new CT_SC_View().ValidateViews(scUser.ID, SystemCode).ToArray();
             Session["USER_DATAACCESS"] = new CT_SC_DataAccess().ValidateDataAccess(scUser.ID, SystemCode, "%").ToArray();
+            Session["USER_ROLE"] = "";
+            Session["USER_ROLE_SOURCE"] = "";
+            Session["USER_SECURITY_ROLES"] = "";
         }
 
         private void ClearUserSessions()
@@ -163,6 +168,9 @@ namespace UltraERP.Controllers
             Session["USER_MODULES"] = null;
             Session["USER_VIEWS"] = null;
             Session["USER_DATAACCESS"] = null;
+            Session["USER_ROLE"] = "";
+            Session["USER_ROLE_SOURCE"] = "";
+            Session["USER_SECURITY_ROLES"] = "";
 
             Session.Clear();
             Session.RemoveAll();

@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using UltraERP.BusinessEntities;
 using UltraERP.BusinessLogic;
 using UltraERP.Models;
+using UltraERP.Services;
 
 namespace UltraERP.Controllers
 {
@@ -157,6 +158,7 @@ namespace UltraERP.Controllers
             }
             catch (Exception e)
             {
+                ErrorLogService.Log(e, "DocumentosInventario", "Guardar encabezado", new { accion = accion, numero = model == null ? "" : model.NumeroDocumento, documentoId = model == null ? null : model.DocumentoId });
                 return Json(new JsonResponse(e.Message, "No se pudo guardar el encabezado.", null, false));
             }
         }
@@ -195,6 +197,7 @@ namespace UltraERP.Controllers
             }
             catch (Exception e)
             {
+                ErrorLogService.Log(e, "DocumentosInventario", "Listar documentos", new { tipoDocumento, estado, fechaDesde, fechaHasta, proveedor, numeroDocumento, facturaRef, personaSolicita, search, page, pageSize });
                 return Json(new JsonResponse(e.Message, "No se pudo obtener la lista de documentos.", null, false), JsonRequestBehavior.AllowGet);
             }
         }
@@ -231,6 +234,7 @@ namespace UltraERP.Controllers
             }
             catch (Exception e)
             {
+                ErrorLogService.Log(e, "DocumentosInventario", "Listar historico", new { tipoDocumento, fechaAplicacion, proveedor, usuario, facturaRef, producto, search, page, pageSize });
                 return Json(new JsonResponse(e.Message, "No se pudo obtener el historico de ajustes.", null, false), JsonRequestBehavior.AllowGet);
             }
         }
@@ -251,6 +255,7 @@ namespace UltraERP.Controllers
             }
             catch (Exception ex)
             {
+                ErrorLogService.Log(ex, "DocumentosInventario", "Detalle documento", new { id });
                 return Json(new JsonResponse(ex.Message, "No se pudo cargar el detalle del documento.", null, false), JsonRequestBehavior.AllowGet);
             }
         }
@@ -715,7 +720,7 @@ ORDER BY RowNum;";
             try
             {
                 if (!IsProcessAuthorized(password))
-                    return Json(new JsonResponse("Clave invalida.", "La clave de autorizacion no es correcta.", null, false), JsonRequestBehavior.AllowGet);
+                    return Json(GetProcessAuthorizationError(), JsonRequestBehavior.AllowGet);
 
                 DocumentoInventarioViewModel source = IsCustomDocumentClientId(id)
                     ? GetCustomDocumentoByClientId(id)
@@ -751,6 +756,7 @@ ORDER BY RowNum;";
             }
             catch (Exception e)
             {
+                ErrorLogService.Log(e, "DocumentosInventario", "Duplicar", new { id });
                 return Json(new JsonResponse(e.Message, "No se pudo duplicar el documento.", null, false), JsonRequestBehavior.AllowGet);
             }
         }
@@ -759,7 +765,7 @@ ORDER BY RowNum;";
         public JsonResult ValidarClaveProceso(string password)
         {
             if (!IsProcessAuthorized(password))
-                return Json(new JsonResponse("Clave invalida.", "La clave de autorizacion no es correcta.", null, false), JsonRequestBehavior.AllowGet);
+                return Json(GetProcessAuthorizationError(), JsonRequestBehavior.AllowGet);
 
             return Json(new JsonResponse("", "Clave autorizada.", null, true), JsonRequestBehavior.AllowGet);
         }
@@ -770,7 +776,7 @@ ORDER BY RowNum;";
             try
             {
                 if (!IsProcessAuthorized(password))
-                    return Json(new JsonResponse("Clave invalida.", "La clave de autorizacion no es correcta.", null, false), JsonRequestBehavior.AllowGet);
+                    return Json(GetProcessAuthorizationError(), JsonRequestBehavior.AllowGet);
 
                 if (!IsCustomDocumentClientId(id))
                     return Json(new JsonResponse("Documento historico.", "Este documento viene del historico SQL y no se modifica desde la bandeja. Use Duplicar para crear un borrador editable.", null, false), JsonRequestBehavior.AllowGet);
@@ -789,6 +795,7 @@ ORDER BY RowNum;";
             }
             catch (Exception e)
             {
+                ErrorLogService.Log(e, "DocumentosInventario", "Ejecutar accion", new { id, accion, motivo });
                 return Json(new JsonResponse(e.Message, "No se pudo actualizar el documento.", null, false), JsonRequestBehavior.AllowGet);
             }
         }
@@ -2250,34 +2257,24 @@ VALUES (@DocumentoID, @Evento, @Usuario, @FechaHora, @Comentario);";
 
         private bool IsProcessAuthorized(string password)
         {
-            return IsCurrentProcessAdmin() || IsProcessPasswordValid(password);
+            return UserPermissionService.CanExecuteProcessAction(password);
         }
 
         private bool IsCurrentProcessAdmin()
         {
-            string account = ConfigurationManager.AppSettings["ProcessAuthorizationUserAccount"] ?? "100";
-            string identityName = User != null && User.Identity != null ? User.Identity.Name : "";
-            string sessionAccount = Session["USER_ACCOUNT"] == null ? "" : Convert.ToString(Session["USER_ACCOUNT"]);
-
-            return String.Equals((identityName ?? "").Trim(), account, StringComparison.OrdinalIgnoreCase) ||
-                   String.Equals((sessionAccount ?? "").Trim(), account, StringComparison.OrdinalIgnoreCase);
+            return UserPermissionService.IsAdmin();
         }
 
-        private static bool IsProcessPasswordValid(string password)
+        private JsonResponse GetProcessAuthorizationError()
         {
-            if (String.IsNullOrWhiteSpace(password))
-                return false;
+            if (UserPermissionService.GetCurrentRole() == UserRoleLevel.Usuario)
+            {
+                ErrorLogService.LogMessage("Intento de proceso sin permiso.", "DocumentosInventario", "Autorizar proceso", new { Rol = UserPermissionService.GetCurrentRoleName(), Cuenta = UserPermissionService.GetCurrentAccount() });
+                return new JsonResponse("Usuario sin permiso.", "Este usuario no tiene permiso para ejecutar procesos de documentos.", null, false);
+            }
 
-            try
-            {
-                string account = ConfigurationManager.AppSettings["ProcessAuthorizationUserAccount"] ?? "100";
-                var result = new CT_User().ValidateUser(account, password.Trim());
-                return result.Item1 != null && result.Item2 == 0;
-            }
-            catch
-            {
-                return false;
-            }
+            ErrorLogService.LogMessage("Clave de proceso invalida.", "DocumentosInventario", "Autorizar proceso", new { Rol = UserPermissionService.GetCurrentRoleName(), Cuenta = UserPermissionService.GetCurrentAccount() });
+            return new JsonResponse("Clave invalida.", "La clave de autorizacion no es correcta.", null, false);
         }
 
         private static string GetDisplayUserName(string databaseUserName)

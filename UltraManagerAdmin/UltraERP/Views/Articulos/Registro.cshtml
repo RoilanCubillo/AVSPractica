@@ -137,18 +137,18 @@
             <div class="row g-3">
                 <div class="col-12 col-md-4">
                     <label class="form-label required" for="Costo">Costo</label>
-                    @Html.TextBox("Costo", Model.Costo.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture), new { @class = "form-control", type = "number", step = "0.01", min = "0" })
-                    @Html.ValidationMessageFor(m => m.Costo, "", new { @class = "text-danger small" })
+                    @Html.TextBoxFor(m => m.CostoTexto, new { @class = "form-control js-decimal-2", inputmode = "decimal", autocomplete = "off", id = "Costo" })
+                    @Html.ValidationMessageFor(m => m.CostoTexto, "", new { @class = "text-danger small" })
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label required" for="PrecioVenta">Precio venta</label>
-                    @Html.TextBox("PrecioVenta", Model.PrecioVenta.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture), new { @class = "form-control", type = "number", step = "0.01", min = "0.01" })
-                    @Html.ValidationMessageFor(m => m.PrecioVenta, "", new { @class = "text-danger small" })
+                    @Html.TextBoxFor(m => m.PrecioVentaTexto, new { @class = "form-control js-decimal-2", inputmode = "decimal", autocomplete = "off", id = "PrecioVenta" })
+                    @Html.ValidationMessageFor(m => m.PrecioVentaTexto, "", new { @class = "text-danger small" })
                 </div>
                 <div class="col-12 col-md-4">
                     <label class="form-label" for="ImpuestoPorcentaje">Impuesto %</label>
-                    @Html.TextBox("ImpuestoPorcentaje", Model.ImpuestoPorcentaje.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture), new { @class = "form-control", type = "number", step = "0.01", min = "0", max = "100", id = "ImpuestoPorcentaje" })
-                    @Html.ValidationMessageFor(m => m.ImpuestoPorcentaje, "", new { @class = "text-danger small" })
+                    @Html.TextBoxFor(m => m.ImpuestoPorcentajeTexto, new { @class = "form-control js-decimal-2", inputmode = "decimal", autocomplete = "off", id = "ImpuestoPorcentaje" })
+                    @Html.ValidationMessageFor(m => m.ImpuestoPorcentajeTexto, "", new { @class = "text-danger small" })
                 </div>
                 <div class="col-12 col-md-6">
                     <div class="article-switch">
@@ -175,18 +175,18 @@
         <div class="row g-3">
             <div class="col-12 col-md-4">
                 <label class="form-label" for="Existencia">Existencia</label>
-                @Html.TextBoxFor(m => m.Existencia, new { @class = "form-control", type = "number", step = "0.01", min = "0" })
-                @Html.ValidationMessageFor(m => m.Existencia, "", new { @class = "text-danger small" })
+                @Html.TextBoxFor(m => m.ExistenciaTexto, new { @class = "form-control js-decimal-2", inputmode = "decimal", autocomplete = "off", id = "Existencia" })
+                @Html.ValidationMessageFor(m => m.ExistenciaTexto, "", new { @class = "text-danger small" })
             </div>
             <div class="col-12 col-md-4">
                 <label class="form-label" for="ExistenciaMinima">Existencia m&iacute;nima</label>
-                @Html.TextBoxFor(m => m.ExistenciaMinima, new { @class = "form-control", type = "number", step = "0.01", min = "0" })
-                @Html.ValidationMessageFor(m => m.ExistenciaMinima, "", new { @class = "text-danger small" })
+                @Html.TextBoxFor(m => m.ExistenciaMinimaTexto, new { @class = "form-control js-decimal-2", inputmode = "decimal", autocomplete = "off", id = "ExistenciaMinima" })
+                @Html.ValidationMessageFor(m => m.ExistenciaMinimaTexto, "", new { @class = "text-danger small" })
             </div>
             <div class="col-12 col-md-4">
                 <label class="form-label" for="ExistenciaMaxima">Existencia m&aacute;xima</label>
-                @Html.TextBoxFor(m => m.ExistenciaMaxima, new { @class = "form-control", type = "number", step = "0.01", min = "0" })
-                @Html.ValidationMessageFor(m => m.ExistenciaMaxima, "", new { @class = "text-danger small" })
+                @Html.TextBoxFor(m => m.ExistenciaMaximaTexto, new { @class = "form-control js-decimal-2", inputmode = "decimal", autocomplete = "off", id = "ExistenciaMaxima" })
+                @Html.ValidationMessageFor(m => m.ExistenciaMaximaTexto, "", new { @class = "text-danger small" })
             </div>
         </div>
     </section>
@@ -215,6 +215,7 @@
             fillSubCategorias(initialSubCategoriaId);
             $("#Exento").on("change", syncExento);
             syncExento();
+            $(".js-decimal-2").on("blur", formatDecimal2);
         });
 
         function fillDepartamentos(selectedId) {
@@ -275,8 +276,41 @@
             var isExento = $("#Exento").is(":checked");
             $("#ImpuestoPorcentaje").prop("readonly", isExento);
             if (isExento) {
-                $("#ImpuestoPorcentaje").val("0");
+                $("#ImpuestoPorcentaje").val("0.00");
             }
+        }
+
+        function formatDecimal2() {
+            var input = $(this);
+            var value = parseDecimal(input.val());
+
+            if (value === null) {
+                return;
+            }
+
+            input.val(value.toFixed(2));
+        }
+
+        function parseDecimal(value) {
+            value = String(value || "").trim();
+            if (!value) {
+                return 0;
+            }
+
+            value = value.replace(/\s/g, "");
+            var hasComma = value.indexOf(",") >= 0;
+            var hasDot = value.indexOf(".") >= 0;
+
+            if (hasComma && hasDot && value.lastIndexOf(",") > value.lastIndexOf(".")) {
+                value = value.replace(/\./g, "").replace(",", ".");
+            } else if (hasComma && hasDot) {
+                value = value.replace(/,/g, "");
+            } else if (hasComma) {
+                value = value.replace(",", ".");
+            }
+
+            var number = Number(value);
+            return isNaN(number) ? null : number;
         }
 
         function escapeHtml(value) {

@@ -10,19 +10,20 @@ namespace Security.DataAccess.DataAccessIntegration
 
         public List<EN_SC_View> ValidateViews(int userID, string systemCode)
         {
-            List<EN_SC_View> list = (
-                from i in db.SC_VIEW_VALIDATE_GET(userID, systemCode)
-                select new EN_SC_View()
-                {
-                    Code = i.Code,
-                    Enable = i.Enable,
-                    ID = i.ID,
-                    ModuleID = i.MuduleID,
-                    Name = i.Name
-                }
-            ).ToList();
-
-            return list;
+            using (var localDb = new Data.SecurityDBDataContext())
+            {
+                return (
+                    from i in localDb.SC_VIEW_VALIDATE_GET(userID, systemCode)
+                    select new EN_SC_View()
+                    {
+                        Code = i.Code,
+                        Enable = i.Enable,
+                        ID = i.ID,
+                        ModuleID = i.MuduleID,
+                        Name = i.Name
+                    }
+                ).ToList();
+            }
         }
     }
 }

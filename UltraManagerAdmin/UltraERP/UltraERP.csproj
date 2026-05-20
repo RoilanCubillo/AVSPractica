@@ -228,6 +228,9 @@
     <Compile Include="Models\PropiedadArticuloViewModel.cs" />
     <Compile Include="Models\SegmentoViewModel.cs" />
     <Compile Include="Models\SubCategoriaViewModel.cs" />
+    <Compile Include="Services\ErrorLogService.cs" />
+    <Compile Include="Services\FlexibleDecimalModelBinder.cs" />
+    <Compile Include="Services\UserPermissionService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

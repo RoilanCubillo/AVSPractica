@@ -27,23 +27,26 @@ namespace UltraERP.BusinessDataAccess.DataAccessIntegration
 
             EN_User user = null;
             string userPassword = "";
-         var resultado = db.UEP_USER_GET_BY_ACCOUNT(userName);
-
-            foreach (var u in resultado)
+            using (var localDb = new MasterDBDataContext())
             {
-                user = new EN_User()
+                var resultado = localDb.UEP_USER_GET_BY_ACCOUNT(userName);
+
+                foreach (var u in resultado)
                 {
-                    ID = u.ID,
-                    Account = u.Account,
-                    EmailAddress = u.EmailAddress ?? string.Empty,
-                    Name = u.UserName,
-                    SecurityLevel = u.SecurityLevel,
-                    UserPrivileges = u.UserPrivileges
-                };
+                    user = new EN_User()
+                    {
+                        ID = u.ID,
+                        Account = u.Account,
+                        EmailAddress = u.EmailAddress ?? string.Empty,
+                        Name = u.UserName,
+                        SecurityLevel = u.SecurityLevel,
+                        UserPrivileges = u.UserPrivileges
+                    };
 
-                userPassword = u.Password;
+                    userPassword = u.Password;
 
-                count++;
+                    count++;
+                }
             }
 
             if (count == 1)

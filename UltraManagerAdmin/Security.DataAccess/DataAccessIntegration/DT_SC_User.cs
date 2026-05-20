@@ -14,19 +14,22 @@ namespace Security.DataAccess.DataAccessIntegration
 
             try
             {
-                foreach (var u in db.SC_USER_VALIDATE(account, autoID, systemID))
+                using (var localDb = new Data.SecurityDBDataContext())
                 {
-                    user = new EN_SC_User()
+                    foreach (var u in localDb.SC_USER_VALIDATE(account, autoID, systemID))
                     {
-                        Account = u.Account,
-                        AutoID = u.AutoID,
-                        Enable = u.Enable,
-                        EnableCloseSession = u.EnCloseSession,
-                        ID = u.ID,
-                        ID_Company = 0,
-                        Name = u.Name,
-                        SystemID = u.SystemID
-                    };
+                        user = new EN_SC_User()
+                        {
+                            Account = u.Account,
+                            AutoID = u.AutoID,
+                            Enable = u.Enable,
+                            EnableCloseSession = u.EnCloseSession,
+                            ID = u.ID,
+                            ID_Company = 0,
+                            Name = u.Name,
+                            SystemID = u.SystemID
+                        };
+                    }
                 }
 
                 return (user, (user == null ? -1 : 1), "");
@@ -39,9 +42,12 @@ namespace Security.DataAccess.DataAccessIntegration
 
         public bool validateUserSession(int iD, int autoID, int systemID)
         {
-            foreach (var u in db.SC_USER_VALIDATE_SESSION(iD, autoID, systemID))
+            using (var localDb = new Data.SecurityDBDataContext())
             {
-                return true;
+                foreach (var u in localDb.SC_USER_VALIDATE_SESSION(iD, autoID, systemID))
+                {
+                    return true;
+                }
             }
 
             return false;
@@ -49,17 +55,20 @@ namespace Security.DataAccess.DataAccessIntegration
 
         public List<EN_SC_Company> GetCompaniesByUser(string account, int autoID, int systemID)
         {
-            return (
-                from i in db.SC_COMPANY_GET_BY_USER(account, autoID, systemID)
-                select new EN_SC_Company()
-                {
-                    ID_Company = i.ID_Company,
-                    Code = i.Code,
-                    Name = i.Name,
-                    Connection_String = i.Connection_String,
-                    Enable = i.Enable
-                }
-            ).ToList();
+            using (var localDb = new Data.SecurityDBDataContext())
+            {
+                return (
+                    from i in localDb.SC_COMPANY_GET_BY_USER(account, autoID, systemID)
+                    select new EN_SC_Company()
+                    {
+                        ID_Company = i.ID_Company,
+                        Code = i.Code,
+                        Name = i.Name,
+                        Connection_String = i.Connection_String,
+                        Enable = i.Enable
+                    }
+                ).ToList();
+            }
         }
 
         public (EN_SC_User, int, string) ValidateUserCompany(string account, int autoID, int systemID, int idCompany)
@@ -68,19 +77,22 @@ namespace Security.DataAccess.DataAccessIntegration
 
             try
             {
-                foreach (var u in db.SC_USER_VALIDATE_COMPANY(account, autoID, systemID, idCompany))
+                using (var localDb = new Data.SecurityDBDataContext())
                 {
-                    user = new EN_SC_User()
+                    foreach (var u in localDb.SC_USER_VALIDATE_COMPANY(account, autoID, systemID, idCompany))
                     {
-                        Account = u.Account,
-                        AutoID = u.AutoID,
-                        Enable = u.Enable,
-                        EnableCloseSession = u.EnCloseSession,
-                        ID = u.ID,
-                        ID_Company = u.ID_Company,
-                        Name = u.Name,
-                        SystemID = u.SystemID
-                    };
+                        user = new EN_SC_User()
+                        {
+                            Account = u.Account,
+                            AutoID = u.AutoID,
+                            Enable = u.Enable,
+                            EnableCloseSession = u.EnCloseSession,
+                            ID = u.ID,
+                            ID_Company = u.ID_Company,
+                            Name = u.Name,
+                            SystemID = u.SystemID
+                        };
+                    }
                 }
 
                 return (user, (user == null ? -1 : 1), "");
@@ -93,7 +105,10 @@ namespace Security.DataAccess.DataAccessIntegration
 
         public bool ValidateUserSessionCompany(int id, int autoID, int systemID, int idCompany)
         {
-            return db.SC_USER_VALIDATE_SESSION_COMPANY(id, autoID, systemID, idCompany).Any();
+            using (var localDb = new Data.SecurityDBDataContext())
+            {
+                return localDb.SC_USER_VALIDATE_SESSION_COMPANY(id, autoID, systemID, idCompany).Any();
+            }
         }
     }
 }

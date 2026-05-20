@@ -44,24 +44,22 @@ namespace UltraERP.Models
         public string Proveedor { get; set; }
         public string Bodega { get; set; }
 
-        [Required(ErrorMessage = "Ingrese el costo del art\u00edculo.")]
-        [Range(0, 999999999, ErrorMessage = "El costo debe ser mayor o igual a cero.")]
+        public string CostoTexto { get; set; }
         public decimal Costo { get; set; }
 
-        [Required(ErrorMessage = "Ingrese el precio de venta del art\u00edculo.")]
-        [Range(0.01, 999999999, ErrorMessage = "El precio de venta debe ser mayor a cero.")]
+        public string PrecioVentaTexto { get; set; }
         public decimal PrecioVenta { get; set; }
 
-        [Range(0, 100, ErrorMessage = "El impuesto debe estar entre 0 y 100.")]
+        public string ImpuestoPorcentajeTexto { get; set; }
         public decimal ImpuestoPorcentaje { get; set; }
 
-        [Range(0, 999999999, ErrorMessage = "La existencia no puede ser negativa.")]
+        public string ExistenciaTexto { get; set; }
         public decimal Existencia { get; set; }
 
-        [Range(0, 999999999, ErrorMessage = "La existencia m\u00ednima no puede ser negativa.")]
+        public string ExistenciaMinimaTexto { get; set; }
         public decimal ExistenciaMinima { get; set; }
 
-        [Range(0, 999999999, ErrorMessage = "La existencia m\u00e1xima no puede ser negativa.")]
+        public string ExistenciaMaximaTexto { get; set; }
         public decimal ExistenciaMaxima { get; set; }
 
         public bool Activo { get; set; }

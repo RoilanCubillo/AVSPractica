@@ -5,6 +5,7 @@ using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
 using System.Web.Security;
+using UltraERP.Services;
 
 namespace UltraERP
 {
@@ -13,12 +14,17 @@ namespace UltraERP
         protected void Application_Start()
         {
             AreaRegistration.RegisterAllAreas();
+            ModelBinders.Binders[typeof(decimal)] = new FlexibleDecimalModelBinder();
+            ModelBinders.Binders[typeof(decimal?)] = new FlexibleDecimalModelBinder();
             RouteConfig.RegisterRoutes(RouteTable.Routes);
         }
 
         protected void Application_Error()
         {
             Exception exception = Server.GetLastError();
+            if (exception != null)
+                ErrorLogService.Log(exception, "Aplicacion", "Error global", null);
+
             HttpAntiForgeryException antiForgeryException = exception as HttpAntiForgeryException;
 
             if (antiForgeryException == null && exception != null)

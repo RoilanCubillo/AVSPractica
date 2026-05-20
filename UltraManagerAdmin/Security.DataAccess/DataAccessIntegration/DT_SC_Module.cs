@@ -10,19 +10,20 @@ namespace Security.DataAccess.DataAccessIntegration
 
         public List<EN_SC_Module> ValidateModules(int userID, string systemCode)
         {
-            List<EN_SC_Module> list = (
-                from i in db.SC_MODULE_VALIDATE_GET(systemCode, userID)
-                select new EN_SC_Module()
-                {
-                    Code = i.Code,
-                    Enable = i.Enable,
-                    ID = i.ID,
-                    Name = i.Name,
-                    SystemID = i.SystemID
-                }
-            ).ToList();
-
-            return list;
+            using (var localDb = new Data.SecurityDBDataContext())
+            {
+                return (
+                    from i in localDb.SC_MODULE_VALIDATE_GET(systemCode, userID)
+                    select new EN_SC_Module()
+                    {
+                        Code = i.Code,
+                        Enable = i.Enable,
+                        ID = i.ID,
+                        Name = i.Name,
+                        SystemID = i.SystemID
+                    }
+                ).ToList();
+            }
         }
     }
 }
