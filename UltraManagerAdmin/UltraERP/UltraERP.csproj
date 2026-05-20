@@ -194,11 +194,13 @@
     <Compile Include="Controllers\CasasComercialesController.cs" />
     <Compile Include="Controllers\DepartamentosController.cs" />
     <Compile Include="Controllers\DescuentosController.cs" />
+    <Compile Include="Controllers\DiagnosticoController.cs" />
     <Compile Include="Controllers\DocumentosInventarioController.cs" />
     <Compile Include="Controllers\FabricantesController.cs" />
     <Compile Include="Controllers\FamiliasController.cs" />
     <Compile Include="Controllers\HojasTrabajoController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\LogsController.cs" />
     <Compile Include="Controllers\MarcasController.cs" />
     <Compile Include="Controllers\MonitoreoDatosController.cs" />
     <Compile Include="Controllers\PropiedadesArticulosController.cs" />
@@ -222,12 +224,14 @@
     <Compile Include="Models\FamiliaViewModel.cs" />
     <Compile Include="Models\HojaTrabajoViewModel.cs" />
     <Compile Include="Models\JsonResponse.cs" />
+    <Compile Include="Models\LogEntryViewModel.cs" />
     <Compile Include="Models\LoginViewModel.cs" />
     <Compile Include="Models\MarcaViewModel.cs" />
     <Compile Include="Models\MonitoreoDatosViewModel.cs" />
     <Compile Include="Models\PropiedadArticuloViewModel.cs" />
     <Compile Include="Models\SegmentoViewModel.cs" />
     <Compile Include="Models\SubCategoriaViewModel.cs" />
+    <Compile Include="Models\UserDiagnosticsViewModel.cs" />
     <Compile Include="Services\ErrorLogService.cs" />
     <Compile Include="Services\FlexibleDecimalModelBinder.cs" />
     <Compile Include="Services\UserPermissionService.cs" />
@@ -248,6 +252,8 @@
     <Content Include="Views\Departamentos\Registro.cshtml" />
     <Content Include="Views\Descuentos\Inicio.cshtml" />
     <Content Include="Views\Descuentos\Registro.cshtml" />
+    <Content Include="Views\Diagnostico\Inicio.cshtml" />
+    <Content Include="Views\Diagnostico\_DiagnosticTable.cshtml" />
     <Content Include="Views\DocumentosInventario\Historico.cshtml" />
     <Content Include="Views\DocumentosInventario\Inicio.cshtml" />
     <Content Include="Views\DocumentosInventario\Registro.cshtml" />
@@ -256,6 +262,7 @@
     <Content Include="Views\Familias\Inicio.cshtml" />
     <Content Include="Views\Familias\Registro.cshtml" />
     <Content Include="Views\HojasTrabajo\Inicio.cshtml" />
+    <Content Include="Views\Logs\Inicio.cshtml" />
     <Content Include="Views\Marcas\Inicio.cshtml" />
     <Content Include="Views\Marcas\Registro.cshtml" />
     <Content Include="Views\MonitoreoDatos\Inicio.cshtml" />

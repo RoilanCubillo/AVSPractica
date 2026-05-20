@@ -117,12 +117,15 @@ namespace UltraERP.Controllers
 
                 if (response.IndexOf("error", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
-                    ModelState.AddModelError("", "SQL rechaz\u00f3 el guardado del art\u00edculo: " + response);
+                    ErrorLogService.LogMessage("SQL rechazo el guardado del articulo: " + response, "Articulos", "Guardar articulo", new { model.ID, model.Codigo, Respuesta = response });
+                    ModelState.AddModelError("", TranslateArticleSaveResponse(response));
                     SyncNumericTextFields(model);
                     EnsureUnidadSeleccionada(model, catalog);
                     PrepareCatalogs(catalog, model);
                     return View(model);
                 }
+
+                UpdateSavedArticleFields(model, item, catalog, result);
 
                 TempData["ArticuloMessage"] = model.ID > 0 ? "Art\u00edculo actualizado correctamente en SQL." : "Art\u00edculo creado correctamente en SQL.";
                 return RedirectToAction("Inicio");
@@ -130,7 +133,7 @@ namespace UltraERP.Controllers
             catch (Exception ex)
             {
                 ErrorLogService.Log(ex, "Articulos", "Guardar articulo", model == null ? null : new { model.ID, model.Codigo, model.Descripcion, model.UnidadMedida, model.FamiliaID, model.DepartamentoID, model.CategoriaID, model.SubCategoriaID });
-                ModelState.AddModelError("", "No se pudo guardar el art\u00edculo en SQL. " + ex.Message);
+                ModelState.AddModelError("", TranslateArticleException(ex));
                 SyncNumericTextFields(model);
                 EnsureUnidadSeleccionada(model, catalog);
                 PrepareCatalogs(catalog, model);
@@ -199,6 +202,7 @@ LEFT JOIN dbo.Tax TD ON TD.ID = I.TaxID
 LEFT JOIN dbo.Tax TI ON TI.ID = IT.TaxID01
 WHERE I.ID = @ID;";
                 command.Parameters.AddWithValue("@ID", id);
+                command.CommandTimeout = 8;
 
                 connection.Open();
                 using (SqlDataReader reader = command.ExecuteReader())
@@ -299,6 +303,7 @@ ORDER BY RowNum;";
                 AddSearchParameters(command, search, estado, familia, departamento, categoria, subcategoria, proveedor);
                 command.Parameters.AddWithValue("@StartRow", ((page - 1) * pageSize) + 1);
                 command.Parameters.AddWithValue("@EndRow", page * pageSize);
+                command.CommandTimeout = 8;
                 connection.Open();
                 using (SqlDataReader reader = command.ExecuteReader())
                 {
@@ -399,6 +404,129 @@ ORDER BY RowNum;";
             item.StoresSelected = ResolveStoresSelectedForSave(item.StoresSelected, storesAvailable, catalog);
 
             return item;
+        }
+
+        private void UpdateSavedArticleFields(ArticuloViewModel model, EN_Item item, CatalogData catalog, Dictionary<string, object> saveResult)
+        {
+            int itemID = ResolveSavedItemID(model, item, saveResult);
+            if (itemID <= 0)
+                return;
+
+            int supplierID = ResolveSupplierID(model.Proveedor, catalog, item == null ? 0 : item.SupplierID);
+            int taxID = ResolveTaxID(model.ImpuestoPorcentaje, catalog, item == null ? 0 : item.TaxID);
+            string storesSelected = ResolveStoresSelectedForSave(item == null ? "" : item.StoresSelected, GetStoresAvailable(), catalog);
+
+            ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings["UltraERP.BusinessDataAccess.Properties.Settings.MasterDB"];
+            if (settings == null || String.IsNullOrWhiteSpace(settings.ConnectionString))
+                return;
+
+            using (var connection = new SqlConnection(settings.ConnectionString))
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandType = CommandType.Text;
+                command.CommandTimeout = 8;
+                command.CommandText = @"
+UPDATE dbo.Item
+SET
+    UnitOfMeasure = @UnitOfMeasure,
+    SupplierID = CASE WHEN @SupplierID > 0 THEN @SupplierID ELSE SupplierID END,
+    ReplacementCost = @Cost,
+    Cost = @Cost,
+    Price = @Price,
+    DepartmentID = @DepartmentID,
+    CategoryID = @CategoryID,
+    TaxID = CASE WHEN @TaxID > 0 THEN @TaxID ELSE TaxID END,
+    Inactive = @Inactive,
+    LastUpdated = GETDATE()
+WHERE ID = @ItemID;
+
+IF OBJECT_ID('dbo.ExtCentral_Item', 'U') IS NOT NULL
+BEGIN
+    UPDATE dbo.ExtCentral_Item
+    SET
+        FamilyID = @FamilyID,
+        SubCategoryID = @SubCategoryID,
+        StoresSelected = @StoresSelected,
+        Utility = @Utility,
+        StartDate = ISNULL(StartDate, GETDATE()),
+        EndDate = NULL
+    WHERE ItemID = @ItemID;
+END
+
+IF @SupplierID > 0 AND OBJECT_ID('dbo.SupplierList', 'U') IS NOT NULL
+BEGIN
+    IF EXISTS (SELECT 1 FROM dbo.SupplierList WHERE ItemID = @ItemID AND SupplierID = @SupplierID)
+    BEGIN
+        UPDATE dbo.SupplierList
+        SET Cost = @Cost
+        WHERE ItemID = @ItemID AND SupplierID = @SupplierID;
+    END
+    ELSE
+    BEGIN
+        INSERT INTO dbo.SupplierList (Cost, ItemID, MasterPackQuantity, MinimumOrder, ReorderNumber, SupplierID, TaxRate)
+        VALUES (@Cost, @ItemID, 0, 0, '', @SupplierID, @TaxPercentage);
+    END
+END";
+
+                command.Parameters.Add("@ItemID", SqlDbType.Int).Value = itemID;
+                command.Parameters.Add("@UnitOfMeasure", SqlDbType.VarChar, 30).Value = (model.UnidadMedida ?? "").Trim();
+                command.Parameters.Add("@SupplierID", SqlDbType.Int).Value = supplierID;
+                command.Parameters.Add("@Cost", SqlDbType.Money).Value = model.Costo;
+                command.Parameters.Add("@Price", SqlDbType.Money).Value = model.PrecioVenta;
+                command.Parameters.Add("@DepartmentID", SqlDbType.Int).Value = model.DepartamentoID;
+                command.Parameters.Add("@CategoryID", SqlDbType.Int).Value = model.CategoriaID;
+                command.Parameters.Add("@TaxID", SqlDbType.Int).Value = taxID;
+                command.Parameters.Add("@Inactive", SqlDbType.Bit).Value = !model.Activo;
+                command.Parameters.Add("@FamilyID", SqlDbType.Int).Value = model.FamiliaID;
+                command.Parameters.Add("@SubCategoryID", SqlDbType.Int).Value = model.SubCategoriaID;
+                command.Parameters.Add("@StoresSelected", SqlDbType.VarChar, 1000).Value = storesSelected ?? "";
+                command.Parameters.Add("@Utility", SqlDbType.Decimal).Value = model.Costo > 0 ? Math.Round(((model.PrecioVenta - model.Costo) / model.Costo) * 100, 2) : 0m;
+                command.Parameters.Add("@TaxPercentage", SqlDbType.Decimal).Value = model.ImpuestoPorcentaje;
+
+                connection.Open();
+                command.ExecuteNonQuery();
+            }
+        }
+
+        private int ResolveSavedItemID(ArticuloViewModel model, EN_Item item, Dictionary<string, object> saveResult)
+        {
+            if (model != null && model.ID > 0)
+                return model.ID;
+
+            if (item != null && item.ID > 0)
+                return item.ID;
+
+            if (saveResult != null && saveResult.ContainsKey("SCOPE"))
+            {
+                int scopeID;
+                if (Int32.TryParse(Convert.ToString(saveResult["SCOPE"]), out scopeID) && scopeID > 0)
+                    return scopeID;
+            }
+
+            return GetItemIDByCode(model == null ? "" : model.Codigo);
+        }
+
+        private int GetItemIDByCode(string code)
+        {
+            if (String.IsNullOrWhiteSpace(code))
+                return 0;
+
+            ConnectionStringSettings settings = ConfigurationManager.ConnectionStrings["UltraERP.BusinessDataAccess.Properties.Settings.MasterDB"];
+            if (settings == null || String.IsNullOrWhiteSpace(settings.ConnectionString))
+                return 0;
+
+            using (var connection = new SqlConnection(settings.ConnectionString))
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandType = CommandType.Text;
+                command.CommandTimeout = 8;
+                command.CommandText = "SELECT TOP 1 ID FROM dbo.Item WHERE ItemLookupCode = @Code ORDER BY ID DESC;";
+                command.Parameters.Add("@Code", SqlDbType.VarChar, 25).Value = code.Trim();
+
+                connection.Open();
+                object result = command.ExecuteScalar();
+                return result == null || result == DBNull.Value ? 0 : Convert.ToInt32(result);
+            }
         }
 
         private void ParseNumericTextFields(ArticuloViewModel model)
@@ -507,17 +635,23 @@ ORDER BY RowNum;";
                 ModelState.AddModelError("FamiliaID", "Seleccione una familia v\u00e1lida.");
 
             var departamento = catalog.Departamentos.FirstOrDefault(x => x.ID == model.DepartamentoID);
-            if (model.DepartamentoID > 0 && departamento == null)
+            if (model.DepartamentoID <= 0 || departamento == null)
                 ModelState.AddModelError("DepartamentoID", "Seleccione un departamento v\u00e1lido.");
+            else if (model.FamiliaID > 0 && departamento.FamiliaID != model.FamiliaID)
+                ModelState.AddModelError("DepartamentoID", "Seleccione un departamento de la familia elegida.");
 
             var categoria = catalog.Categorias.FirstOrDefault(x => x.ID == model.CategoriaID);
-            if (model.CategoriaID > 0 && categoria == null)
+            if (model.CategoriaID <= 0 || categoria == null)
                 ModelState.AddModelError("CategoriaID", "Seleccione una categor\u00eda v\u00e1lida.");
+            else if (model.DepartamentoID > 0 && categoria.DepartamentoID != model.DepartamentoID)
+                ModelState.AddModelError("CategoriaID", "Seleccione una categor\u00eda del departamento elegido.");
 
             if (categoryHasSubCategories)
             {
                 var subCategoria = catalog.SubCategorias.FirstOrDefault(x => x.ID == model.SubCategoriaID);
-                if (model.SubCategoriaID > 0 && (subCategoria == null || subCategoria.CategoriaID != model.CategoriaID))
+                if (model.SubCategoriaID <= 0)
+                    ModelState.AddModelError("SubCategoriaID", "Seleccione una subcategor\u00eda.");
+                else if (subCategoria == null || subCategoria.CategoriaID != model.CategoriaID)
                     ModelState.AddModelError("SubCategoriaID", "Seleccione una subcategor\u00eda v\u00e1lida para la categor\u00eda.");
             }
             else
@@ -569,6 +703,50 @@ ORDER BY RowNum;";
 
             if (model.ExistenciaMaxima < 0)
                 ModelState.AddModelError("ExistenciaMaximaTexto", "La existencia m\u00e1xima no puede ser negativa.");
+        }
+
+        private static string TranslateArticleSaveResponse(string response)
+        {
+            string clean = (response ?? "").Trim();
+            string normalized = clean.ToLowerInvariant();
+
+            if (normalized.Contains("error_sql_515"))
+                return "Falta un dato requerido para guardar el art\u00edculo. Revise proveedor, bodega, impuesto y clasificaci\u00f3n.";
+
+            if (normalized.Contains("error_reg_actualizado"))
+                return "No se pudo actualizar el art\u00edculo. Verifique que el c\u00f3digo exista y que no haya sido modificado por otro usuario.";
+
+            if (normalized.Contains("duplicate") || normalized.Contains("duplicado") || normalized.Contains("unique"))
+                return "Ya existe un art\u00edculo con ese c\u00f3digo.";
+
+            if (normalized.Contains("truncated") || normalized.Contains("truncat"))
+                return "Uno de los campos supera el largo permitido. Revise c\u00f3digo, descripci\u00f3n y descripci\u00f3n extendida.";
+
+            return "No se pudo guardar el art\u00edculo. Revise los datos e intente de nuevo.";
+        }
+
+        private static string TranslateArticleException(Exception exception)
+        {
+            Exception baseException = exception == null ? null : exception.GetBaseException();
+            string message = baseException == null ? "" : baseException.Message;
+            string normalized = message.ToLowerInvariant();
+
+            if (normalized.Contains("cannot insert the value null") || normalized.Contains("error_sql_515"))
+                return "Falta un dato requerido para guardar el art\u00edculo. Revise proveedor, bodega, impuesto y clasificaci\u00f3n.";
+
+            if (normalized.Contains("string or binary data would be truncated") || normalized.Contains("truncated"))
+                return "Uno de los campos supera el largo permitido. Revise c\u00f3digo, descripci\u00f3n y descripci\u00f3n extendida.";
+
+            if (normalized.Contains("timeout"))
+                return "La base de datos tard\u00f3 demasiado en responder. Intente guardar de nuevo en unos segundos.";
+
+            if (normalized.Contains("network-related") || normalized.Contains("server was not found"))
+                return "La base de datos no est\u00e1 disponible en este momento.";
+
+            if (normalized.Contains("foreign key") || normalized.Contains("reference constraint"))
+                return "La clasificaci\u00f3n seleccionada no coincide con los cat\u00e1logos actuales. Revise familia, departamento, categor\u00eda y subcategor\u00eda.";
+
+            return "No se pudo guardar el art\u00edculo. Revise los datos e intente de nuevo.";
         }
 
         private static void Normalize(ArticuloViewModel model)
@@ -842,6 +1020,7 @@ ORDER BY RowNum;";
             {
                 command.CommandType = CommandType.Text;
                 command.CommandText = sql;
+                command.CommandTimeout = 8;
                 connection.Open();
 
                 using (SqlDataReader reader = command.ExecuteReader())
@@ -981,9 +1160,11 @@ ORDER BY RowNum;";
 
         private static int ResolveSupplierID(string supplierName, CatalogData catalog, int currentSupplierID)
         {
+            string supplierText = (supplierName ?? "").Trim();
             EN_Supplier supplier = catalog.Proveedores.FirstOrDefault(x =>
-                String.Equals(x.Name, supplierName, StringComparison.OrdinalIgnoreCase) ||
-                String.Equals(x.Code, supplierName, StringComparison.OrdinalIgnoreCase));
+                String.Equals((x.Name ?? "").Trim(), supplierText, StringComparison.OrdinalIgnoreCase) ||
+                String.Equals((x.Code ?? "").Trim(), supplierText, StringComparison.OrdinalIgnoreCase) ||
+                String.Equals((x.Code ?? "").Trim() + " - " + (x.Name ?? "").Trim(), supplierText, StringComparison.OrdinalIgnoreCase));
 
             return supplier == null ? currentSupplierID : supplier.ID;
         }

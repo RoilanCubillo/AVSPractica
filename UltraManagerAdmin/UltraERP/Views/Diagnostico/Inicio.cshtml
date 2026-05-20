@@ -1,0 +1,98 @@
+@model UltraERP.Models.UserDiagnosticsViewModel
+@{
+    ViewBag.Title = "Diagnostico";
+    ViewBag.ActiveMenu = "Diagnostico";
+}
+
+<section class="page-header">
+    <div class="page-header-copy">
+        <span class="eyebrow">Sesion y permisos</span>
+        <h1>Diagn&oacute;stico de usuario</h1>
+        <p>Consulte con qu&eacute; empresa, rol, vistas y tiendas trabaja el usuario logueado.</p>
+    </div>
+</section>
+
+<section class="metric-grid">
+    <article>
+        <span>Rol actual</span>
+        <strong>@Model.Rol</strong>
+    </article>
+    <article>
+        <span>Origen del rol</span>
+        <strong>@(String.IsNullOrWhiteSpace(Model.RolOrigen) ? "Sesion" : Model.RolOrigen)</strong>
+    </article>
+    <article>
+        <span>Empresa</span>
+        <strong>@Model.EmpresaCodigo</strong>
+    </article>
+</section>
+
+<section class="form-card">
+    <div class="section-title">
+        <span>1.</span>
+        <h2>Usuario</h2>
+    </div>
+    <div class="document-view-grid">
+        <div>
+            <span>Login</span>
+            <strong>@Model.Login</strong>
+        </div>
+        <div>
+            <span>Nombre</span>
+            <strong>@Model.Nombre</strong>
+        </div>
+        <div>
+            <span>Cuenta</span>
+            <strong>@Model.Cuenta</strong>
+        </div>
+        <div>
+            <span>Correo</span>
+            <strong>@Model.Correo</strong>
+        </div>
+        <div>
+            <span>User ID seguridad</span>
+            <strong>@Model.UserID</strong>
+        </div>
+        <div>
+            <span>Auto ID ERP</span>
+            <strong>@Model.AutoID</strong>
+        </div>
+        <div>
+            <span>Administrador</span>
+            <strong>@(Model.EsAdministrador ? "Si" : "No")</strong>
+        </div>
+        <div>
+            <span>Soporte</span>
+            <strong>@(Model.EsSoporte ? "Si" : "No")</strong>
+        </div>
+    </div>
+</section>
+
+<section class="form-card">
+    <div class="section-title">
+        <span>2.</span>
+        <h2>Empresa y rol</h2>
+    </div>
+    <div class="document-view-grid">
+        <div>
+            <span>ID empresa</span>
+            <strong>@Model.EmpresaID</strong>
+        </div>
+        <div>
+            <span>C&oacute;digo empresa</span>
+            <strong>@Model.EmpresaCodigo</strong>
+        </div>
+        <div>
+            <span>Nombre empresa</span>
+            <strong>@Model.EmpresaNombre</strong>
+        </div>
+        <div>
+            <span>Roles AVS</span>
+            <strong>@(String.IsNullOrWhiteSpace(Model.RolesSeguridad) ? "Sin roles cargados" : Model.RolesSeguridad)</strong>
+        </div>
+    </div>
+</section>
+
+@Html.Partial("_DiagnosticTable", new UltraERP.Models.DiagnosticTableViewModel("Modulos", Model.Modulos))
+@Html.Partial("_DiagnosticTable", new UltraERP.Models.DiagnosticTableViewModel("Vistas", Model.Vistas))
+@Html.Partial("_DiagnosticTable", new UltraERP.Models.DiagnosticTableViewModel("Tiendas y accesos de datos", Model.AccesosDatos))

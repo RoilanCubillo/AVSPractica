@@ -10,6 +10,27 @@
     --app-danger: #b23a48;
 }
 
+.log-detail {
+    margin-top: 10px;
+    min-width: 420px;
+}
+
+.log-detail strong {
+    display: block;
+    margin-top: 8px;
+    color: #0e6f5f;
+}
+
+.log-detail pre {
+    max-height: 180px;
+    overflow: auto;
+    padding: 10px;
+    border: 1px solid #d9e2df;
+    border-radius: 8px;
+    background: #f7faf9;
+    white-space: pre-wrap;
+}
+
 body {
     margin: 0;
     overflow-x: hidden;

@@ -33,8 +33,10 @@
                 @{
                     var catalogMenus = new[] { "Familias", "Departamentos", "Categorias", "SubCategorias", "Segmentos", "Marcas", "Fabricantes", "Descuentos" };
                     var processMenus = new[] { "HojasTrabajo", "CambiosMasivos", "MonitoreoDatos" };
+                    var systemMenus = new[] { "Logs", "Diagnostico" };
                     var isCatalogMenu = Array.IndexOf(catalogMenus, Convert.ToString(ViewBag.ActiveMenu)) >= 0;
                     var isProcessMenu = Array.IndexOf(processMenus, Convert.ToString(ViewBag.ActiveMenu)) >= 0;
+                    var isSystemMenu = Array.IndexOf(systemMenus, Convert.ToString(ViewBag.ActiveMenu)) >= 0;
                 }
                 <nav id="appNavAccordion" class="app-nav">
                     <a class="@(ViewBag.ActiveMenu == "Documentos" ? "active" : "")" href="@Url.Action("Inicio", "DocumentosInventario")">Documentos</a>
@@ -73,6 +75,19 @@
                         <a class="nav-sub-link @(ViewBag.ActiveMenu == "HojasTrabajo" ? "active" : "")" href="@Url.Action("Inicio", "HojasTrabajo")">Hojas de Trabajo</a>
                         <a class="nav-sub-link @(ViewBag.ActiveMenu == "CambiosMasivos" ? "active" : "")" href="@Url.Action("Inicio", "CambiosMasivosWizard")">Cambios Masivos</a>
                         <a class="nav-sub-link @(ViewBag.ActiveMenu == "MonitoreoDatos" ? "active" : "")" href="@Url.Action("Inicio", "MonitoreoDatos")">Monitoreo de Datos</a>
+                    </div>
+                    <a id="sistemaToggle" class="nav-section-toggle @(isSystemMenu ? "active" : "") @(isSystemMenu ? "" : "collapsed")" href="#sistemaMenu" role="button" data-bs-toggle="collapse" data-bs-target="#sistemaMenu" aria-expanded="@(isSystemMenu ? "true" : "false")" aria-controls="sistemaMenu">
+                        <span>Sistema</span>
+                        <span class="nav-section-icon @(isSystemMenu ? "open" : "")" aria-hidden="true">
+                            <svg class="nav-arrow-svg" width="26" height="26" viewBox="0 0 26 26" focusable="false">
+                                <circle cx="13" cy="13" r="12" style="fill: rgba(255, 255, 255, .08); stroke: rgba(217, 155, 39, .34); stroke-width: 1;" />
+                                <path class="nav-arrow-path" d="@(isSystemMenu ? "M8 10 L13 15 L18 10" : "M8 16 L13 11 L18 16")" style="fill: none; stroke: #ffffff; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;" />
+                            </svg>
+                        </span>
+                    </a>
+                    <div id="sistemaMenu" class="nav-section collapse @(isSystemMenu ? "show" : "")" data-bs-parent="#appNavAccordion">
+                        <a class="nav-sub-link @(ViewBag.ActiveMenu == "Logs" ? "active" : "")" href="@Url.Action("Inicio", "Logs")">Logs</a>
+                        <a class="nav-sub-link @(ViewBag.ActiveMenu == "Diagnostico" ? "active" : "")" href="@Url.Action("Inicio", "Diagnostico")">Diagn&oacute;stico</a>
                     </div>
                     <a class="@(ViewBag.ActiveMenu == "Historico" ? "active" : "")" href="@Url.Action("Historico", "DocumentosInventario")">Historico de Ajustes</a>
                 </nav>

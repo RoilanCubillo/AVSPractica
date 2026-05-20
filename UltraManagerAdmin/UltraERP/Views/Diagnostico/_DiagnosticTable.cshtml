@@ -1,0 +1,43 @@
+@model UltraERP.Models.DiagnosticTableViewModel
+
+<section class="table-panel">
+    <div class="table-toolbar">
+        <div class="table-toolbar-main">
+            <span class="toolbar-chip">@Model.Title</span>
+            <span class="toolbar-chip">@Model.Rows.Count registros</span>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle document-table">
+            <thead>
+                <tr>
+                    <th>C&oacute;digo</th>
+                    <th>Nombre</th>
+                    <th>Descripci&oacute;n</th>
+                    <th>Detalle</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td><strong>@row.Codigo</strong></td>
+                        <td>@row.Nombre</td>
+                        <td>@row.Descripcion</td>
+                        <td>@row.Extra</td>
+                        <td>
+                            <span class="status-badge @(row.Activo ? "applied" : "closed")">@(row.Activo ? "Activo" : "Inactivo")</span>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Rows.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="empty-state">Sin datos cargados en sesi&oacute;n.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

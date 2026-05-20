@@ -1,0 +1,115 @@
+@model IEnumerable<UltraERP.Models.LogEntryViewModel>
+@{
+    ViewBag.Title = "Logs";
+    ViewBag.ActiveMenu = "Logs";
+    var search = Convert.ToString(ViewBag.Search ?? "");
+    var pageSize = Convert.ToInt32(ViewBag.PageSize ?? 50);
+}
+
+<section class="page-header">
+    <div class="page-header-copy">
+        <span class="eyebrow">Bit&aacute;cora del sistema</span>
+        <h1>Logs</h1>
+        <p>Revise errores SQL, intentos fallidos y eventos t&eacute;cnicos registrados por pantalla, usuario y fecha.</p>
+    </div>
+</section>
+
+@if (ViewBag.LogError != null)
+{
+    <div class="alert alert-warning">@ViewBag.LogError</div>
+}
+
+<section class="filter-panel">
+    <form method="get" action="@Url.Action("Inicio", "Logs")" data-no-loader="true">
+        <div class="row g-3">
+            <div class="col-12 col-md-6">
+                <label for="search" class="form-label">Buscar</label>
+                <input id="search" name="search" value="@search" type="search" class="form-control" placeholder="Pantalla, accion, usuario, error o URL" />
+            </div>
+            <div class="col-12 col-md-2">
+                <label for="pageSize" class="form-label">Mostrar</label>
+                <select id="pageSize" name="pageSize" class="form-select">
+                    <option value="10" @(pageSize == 10 ? "selected" : "")>10</option>
+                    <option value="20" @(pageSize == 20 ? "selected" : "")>20</option>
+                    <option value="50" @(pageSize == 50 ? "selected" : "")>50</option>
+                    <option value="100" @(pageSize == 100 ? "selected" : "")>100</option>
+                    <option value="200" @(pageSize == 200 ? "selected" : "")>200</option>
+                </select>
+            </div>
+        </div>
+        <div class="filter-actions">
+            <a class="btn btn-outline-secondary" href="@Url.Action("Inicio", "Logs")">Limpiar</a>
+            <button class="btn btn-primary" type="submit">Consultar</button>
+        </div>
+    </form>
+</section>
+
+<section class="metric-grid">
+    <article>
+        <span>Registros visibles</span>
+        <strong>@Model.Count()</strong>
+    </article>
+    <article>
+        <span>Filtro</span>
+        <strong>@(String.IsNullOrWhiteSpace(search) ? "Todos" : search)</strong>
+    </article>
+</section>
+
+<section class="table-panel">
+    <div class="table-toolbar">
+        <div class="table-toolbar-main">
+            <span class="toolbar-chip">@Model.Count() registros</span>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle document-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Usuario</th>
+                    <th>Pantalla</th>
+                    <th>Acci&oacute;n</th>
+                    <th>Error</th>
+                    <th>Detalle</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var log in Model)
+                {
+                    <tr>
+                        <td>
+                            <strong>@log.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss")</strong>
+                            <div class="text-muted">#@log.ID</div>
+                        </td>
+                        <td>
+                            <strong>@(String.IsNullOrWhiteSpace(log.UserName) ? "Sin usuario" : log.UserName)</strong>
+                            <div class="text-muted">@log.UserAccount</div>
+                        </td>
+                        <td>@log.Screen</td>
+                        <td>@log.ActionName</td>
+                        <td>@log.ErrorMessage</td>
+                        <td>
+                            <details>
+                                <summary>Ver</summary>
+                                <div class="log-detail">
+                                    <strong>URL</strong>
+                                    <pre>@log.Url</pre>
+                                    <strong>Datos enviados</strong>
+                                    <pre>@log.RequestData</pre>
+                                    <strong>Error completo</strong>
+                                    <pre>@log.ErrorDetail</pre>
+                                </div>
+                            </details>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="empty-state">No hay logs para el filtro aplicado.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

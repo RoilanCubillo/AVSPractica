@@ -1,7 +1,7 @@
 using System;
 using System.Configuration;
+using System.Data.SqlClient;
 using System.Linq;
-using System.Threading;
 using System.Web;
 using System.Web.Mvc;
 using System.Web.Security;
@@ -58,21 +58,21 @@ namespace UltraERP.Controllers
 
                 if (String.IsNullOrWhiteSpace(model.UserName) || String.IsNullOrWhiteSpace(model.Password))
                 {
-                    ModelState.AddModelError("", "Ingrese usuario y contrasena.");
+                    AddLoginFailure(model, "Campos requeridos", "Ingrese usuario y contrasena.");
                     return View(model);
                 }
 
                 var userResult = userLogic.ValidateUser(model.UserName, model.Password);
                 if (userResult.Item1 == null || userResult.Item2 != 0)
                 {
-                    ModelState.AddModelError("", userResult.Item2 == 2 ? "Usuario o contrasena invalida." : "Usuario no encontrado.");
+                    AddLoginFailure(model, userResult.Item2 == 2 ? "Credenciales invalidas" : "Usuario no encontrado", "Usuario o contrasena incorrectos.");
                     return View(model);
                 }
 
                 EN_SC_Company[] companies = (securityUserLogic.GetCompaniesByUser(model.UserName, userResult.Item1.ID, SystemID) ?? new System.Collections.Generic.List<EN_SC_Company>()).ToArray();
                 if (companies.Length == 0)
                 {
-                    ModelState.AddModelError("", "El usuario no tiene empresas autorizadas en AVS_SECURITY.");
+                    AddLoginFailure(model, "Sin empresas autorizadas", "El usuario existe, pero no tiene empresas autorizadas para UltraERP.");
                     return View(model);
                 }
 
@@ -87,7 +87,7 @@ namespace UltraERP.Controllers
                 }
                 else
                 {
-                    PrepareCompanySelection(model, companies, "Seleccione una empresa y vuelva a ingresar la contrasena.");
+                    PrepareCompanySelection(model, companies, "Seleccione una empresa para continuar.");
                     return View(model);
                 }
 
@@ -103,13 +103,14 @@ namespace UltraERP.Controllers
                     return RedirectToAction("Inicio", "DocumentosInventario");
                 }
 
-                PrepareCompanySelection(model, companies, "El usuario no esta autorizado para esta empresa en AVS_SECURITY.");
+                AddLoginFailure(model, "Empresa no autorizada", "El usuario no esta autorizado para la empresa seleccionada.");
+                PrepareCompanySelection(model, companies, "El usuario no esta autorizado para la empresa seleccionada.");
                 return View(model);
             }
             catch (Exception e)
             {
                 ErrorLogService.Log(e, "Login", "Validar usuario", new { Usuario = model == null ? "" : model.UserName });
-                ModelState.AddModelError("", "No se pudo validar el usuario. " + e.Message);
+                ModelState.AddModelError("", GetFriendlyLoginError(e));
                 return View(model);
             }
         }
@@ -135,6 +136,38 @@ namespace UltraERP.Controllers
                     Selected = model.CompanyId == c.ID_Company
                 })
                 .ToArray();
+        }
+
+        private void AddLoginFailure(LoginViewModel model, string reason, string message)
+        {
+            string userName = model == null ? "" : (model.UserName ?? "").Trim();
+            ErrorLogService.LogMessage("Intento fallido de login: " + reason, "Login", "Intento fallido", new
+            {
+                Usuario = userName,
+                Motivo = reason,
+                Empresa = model == null ? null : model.CompanyId
+            });
+
+            ModelState.AddModelError("", message);
+        }
+
+        private static string GetFriendlyLoginError(Exception exception)
+        {
+            Exception baseException = exception == null ? null : exception.GetBaseException();
+            string message = baseException == null ? "" : baseException.Message;
+
+            if (baseException is SqlException || message.IndexOf("timeout", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "No se pudo conectar con la base de seguridad. Intente de nuevo en unos segundos.";
+
+            if (message.IndexOf("network-related", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                message.IndexOf("server was not found", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "La base de seguridad no esta disponible en este momento.";
+
+            if (message.IndexOf("connection from the pool", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                message.IndexOf("max pool size", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Hay demasiadas conexiones abiertas en este momento. Intente de nuevo en unos segundos.";
+
+            return "No se pudo validar el usuario. Revise sus credenciales o intente de nuevo.";
         }
 
         private void SetUserSession(EN_User user, EN_SC_User scUser, EN_SC_Company company)
